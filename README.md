@@ -107,6 +107,15 @@ How well a game runs varies a lot; many games do not start yet.
 2. Install it with SideStore, AltStore or LiveContainer.
 3. Open BCD. Setup walks you through JIT, LocalDevVPN, Steam and the extra runtimes.
 
+## Reporting a problem
+
+1. When a game crashes, freezes or is closed by iOS, BCD's **auto-tune** suggests a fix. Tap
+   **Close BCD**, open BCD again and start the game again. Let it go on, round after round, until
+   it is done.
+2. When auto-tune gives up, its message offers **Send Log**. Send that log: it has what is needed
+   to look into the game.
+3. For ideas and everything else, use **Settings › Feedback**.
+
 ## What is not in the package
 
 BCD's packages carry no Microsoft software. The Visual C++ runtime most games need is
