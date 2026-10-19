@@ -62,8 +62,7 @@ LiveContainer. If something breaks inside LiveContainer, try BCD outside it befo
 - **GOG** (new, early): sign in, download and play your GOG games, with no launcher
   running inside Windows. The Epic Games Store is next.
 - **BCD Dock:** Valve's Steam client starts the games that need Steam, without its window.
-  BCD never circumvents DRM: those games run through Valve's own client, signed in with your
-  account.
+  Those games run through Valve's own client, signed in with your account.
 - **Graphics:** Direct3D 9, 10 and 11 through DXMT; Direct3D 12 through BCD's runtime and
   Apple's Metal Shader Converter.
 - **32-bit and 64-bit games**, controllers (DualSense with rumble, adaptive triggers and light
