@@ -24,7 +24,7 @@ import SwiftUI
 import UIKit
 
 enum LogUpload {
-    static let endpoint = URL(string: "https://madeira-log-intake.bcd-logs.workers.dev/v1/logs")!
+    static let endpoint = URL(string: "https://bcd.bcd-logs.workers.dev/v1/logs")!
     static let intake = "madeira-bcd/2"
     static let maxPacked = 25 << 20
     /// The newest logs the list offers; nothing older can be sent.

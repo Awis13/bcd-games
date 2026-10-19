@@ -11,8 +11,9 @@ Madeira is built from several upstream projects plus original work. Each
 component keeps its own license. This file records what is here, what ships in
 the binary, and what is still unresolved.
 
-Madeira's own code, and the combined application as distributed, are under
-**GPL-3.0-or-later** (`LICENSE`). Each upstream keeps its own license; the
+Madeira's own code is under **GPL-3.0-or-later** (`LICENSE`). The combined
+application as distributed is under **GPL-3.0**, because BCD's own files are
+GPL-3.0-only (`LICENSE-BCD.md`). Each upstream keeps its own license; the
 dependency license texts are in `LICENSES/`. See "Why GPL-3.0-or-later" below.
 
 ## Components that ship in the built app

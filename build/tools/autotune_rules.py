@@ -319,6 +319,16 @@ RULES = [
         "evidence": ["crysis3remastered-2026-10-15-15-08-17", "HANDOFF 2026-10-15: Crysis 3 Remastered 547/549"],
     },
     {
+        "id": "wer-dll-optin",
+        "lines": ["env.MADEIRA_WER = 1"],
+        "priority": 10,
+        "all": [s("err:module:import_dll Library wer.dll", "not found")],
+        "none": [s("MADEIRA_WER=1: wer.dll -> wer-optin.dll")],
+        "reason": "The game's program imports wer.dll, which BCD does not ship for every game (Wine's has "
+                  "unimplemented exports); the line gives this game Wine's wer.dll.",
+        "evidence": ["hello-neighbor-2026-10-19-13-22-30 (Hello Neighbor Pre-Alpha, Steam 1092700, 0xc0000135 at once)"],
+    },
+    {
         "id": "fex-avx-on",
         "lines": ["env.MADEIRA_FEX_AVX = 1"],
         "priority": 25,

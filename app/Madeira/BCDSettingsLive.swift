@@ -650,7 +650,7 @@ struct BCDLiveSwitch {
 
 @MainActor final class BCDLogsLive: BCDLogsBackend {
     private let input = InputSettings.shared
-    private let tune = BCDLiveSwitch(read: { AutoTune.preferred }, write: { AutoTune.preferred = $0 }, running: AutoTune.enabled)   // madeira-bcd: auto-tune's switch in BCD's Settings, off by default
+    private let tune = BCDLiveSwitch(read: { AutoTune.preferred }, write: { AutoTune.preferred = $0 }, running: AutoTune.enabled)   // madeira-bcd: auto-tune's switch in BCD's Settings, on by default
     private var bag = Set<AnyCancellable>()
     private var files: [String: URL] = [:]
     @Published private(set) var recent: [BCDLogFile] = []

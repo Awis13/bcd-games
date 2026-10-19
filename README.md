@@ -116,11 +116,9 @@ How well a game runs varies a lot; many games do not start yet.
 
 ## Reporting a problem
 
-1. Open **Settings › Logs** and make sure **Auto-tune** is on, then open the game's own page and
-   check its **Auto-tune** switch too. Newer builds have both on by default; in build 573 they are
-   off, and each applies from BCD's next start.
-   When a game crashes, freezes or is closed by iOS, auto-tune suggests a fix. Tap **Close BCD**,
-   open BCD again and start the game again. Let it go on, round after round, until it is done.
+1. When a game crashes, freezes or is closed by iOS, BCD's **auto-tune** suggests a fix. It is on
+   by default (**Settings › Logs**, and a switch on each game's page). Tap **Close BCD**, open BCD
+   again and start the game again. Let it go on, round after round, until it is done.
 2. When auto-tune gives up, its message offers **Send Log**. Send that log: it has what is needed
    to look into the game.
 3. For ideas and everything else, use **Settings › Feedback**.

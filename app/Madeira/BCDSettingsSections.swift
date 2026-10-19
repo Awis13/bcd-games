@@ -981,7 +981,7 @@ struct BCDLogsSettings<Backend: BCDLogsBackend>: View {
             }
             BCDSettingsGroup(title: "After a crash") {
                 BCDSettingsToggleRow(id: BCDSettingsID.control(.logs, "autotune"), title: "Auto-tune",
-                                     note: "Experimental, for the games you turn it on for on their pages. When one of them crashes, freezes or is closed by iOS, BCD looks through its log afterwards and tries one known fix at its next start, and keeps it if the game gets further. Your own settings always win.",
+                                     note: "On by default for every game (each game's page has its own switch). When a game crashes, freezes or is closed by iOS, BCD looks through its log afterwards and tries one known fix at its next start, and keeps it if the game gets further. Your own settings always win.",
                                      isOn: backend.crashTuning) { backend.setCrashTuning($0) }
             }
             if backend.restartNeeded || backend.crashTuning != backend.crashTuningRunning {

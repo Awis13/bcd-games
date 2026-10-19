@@ -19,7 +19,7 @@
 import Foundation
 
 enum FeedbackUpload {
-    static let endpoint = URL(string: "https://madeira-log-intake.bcd-logs.workers.dev/v1/feedback")!
+    static let endpoint = URL(string: "https://bcd.bcd-logs.workers.dev/v1/feedback")!
     static let intake = "madeira-bcd/2"
     private static let historyKey = "madeira.bcd.feedback.sent"
     private static let kept = 20

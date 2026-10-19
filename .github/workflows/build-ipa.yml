@@ -1647,6 +1647,10 @@ jobs:
       - name: Check kernelbase fiber trace
         run: python3 tests/host/check-kernelbase-fibertrace.py
 
+      # madeira-bcd: wer-optin.dll (env.MADEIRA_WER): Wine's wer.dll for the one game that imports it.
+      - name: Check wer opt-in
+        run: python3 tests/host/check-wer-optin.py
+
       # madeira-bcd: quiet-log (madeira-d3d12) and MADEIRA_SRV_FGETPATH (wineserver).
       - name: Check quiet-log
         run: python3 tests/host/check-quiet-log.py

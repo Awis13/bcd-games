@@ -36,6 +36,7 @@ repository is a separate, deliberate step at release time.
 """
 import argparse
 import io
+import json
 import os
 import re
 import subprocess
@@ -68,6 +69,11 @@ MARKDOWN_PUBLIC = {"README.md", "LICENSE-BCD.md", "LICENSE-EXCEPTION.md", "THIRD
 # shipped pin must stay available, so BCD hosts it rather than relying on upstream).
 # rpmalloc is FEX's own submodule: its pin and URL live in the FEX mirror; the source
 # archive carries it either way.
+# The release commit's identity: the project account's own noreply address (ID+login). The short form
+# bcd@users.noreply.github.com belongs to a stranger's account named "bcd", whose photo GitHub then shows
+# on every BCD release commit (2026-10-19).
+BCD_EMAIL = "190844990+thebcd69@users.noreply.github.com"
+PIN_REWRITES = Path.home() / "madeira-local" / "state" / "pin-rewrites.json"
 MIRRORS = {"FEX": "https://github.com/thebcd69/bcd-fex.git",
            "wine": "https://github.com/thebcd69/bcd-wine.git",
            "dxmt": "https://github.com/thebcd69/bcd-dxmt.git",
@@ -239,6 +245,14 @@ def main():
         modules = rewrite_gitmodules(git(SOURCE_REPO, "show", f"{source}:.gitmodules"))
         blob = git(SOURCE_REPO, "hash-object", "-w", "--stdin", input=modules)
         git(SOURCE_REPO, "update-index", "--cacheinfo", f"100644,{blob},.gitmodules", env=env)
+        # The mirrors' BCD-made commits are published with cleaned messages (same trees, new ids;
+        # ~/madeira-local/clean-mirrors.py writes them into the local mirrors and this file).
+        if PIN_REWRITES.exists():
+            for sub, pin in json.loads(PIN_REWRITES.read_text()).items():
+                now = git(SOURCE_REPO, "ls-tree", source, sub).split()
+                if now and now[0] == "160000" and now[2] == pin["old"]:
+                    git(SOURCE_REPO, "update-index", "--cacheinfo", f"160000,{pin['new']},{sub}", env=env)
+                    print(f"export-public: {sub} pinned at {pin['new'][:9]} (the mirror's cleaned history of {pin['old'][:9]})")
         tree = git(SOURCE_REPO, "write-tree", env=env)
 
     # Scan every blob of the result.
@@ -299,8 +313,8 @@ def main():
     message = (f"BCD {a.version}{' (DRAFT, do not publish)' if a.draft else ''}\n\n"
                f"BCD, a fork of Madeira. Built from the private tree's {source[:12]}; upstream base {base[:12]}.\n")
     args = ["commit-tree", tree] + sum((["-p", p] for p in parents), []) + ["-m", message]
-    commit = git(SOURCE_REPO, *args, env={"GIT_AUTHOR_NAME": "BCD", "GIT_AUTHOR_EMAIL": "bcd@users.noreply.github.com",
-                                          "GIT_COMMITTER_NAME": "BCD", "GIT_COMMITTER_EMAIL": "bcd@users.noreply.github.com"})
+    commit = git(SOURCE_REPO, *args, env={"GIT_AUTHOR_NAME": "BCD", "GIT_AUTHOR_EMAIL": BCD_EMAIL,
+                                          "GIT_COMMITTER_NAME": "BCD", "GIT_COMMITTER_EMAIL": BCD_EMAIL})
     branch = "draft" if a.draft else "main"
     git(SOURCE_REPO, "push", "-q", str(PUBLIC_REPO), f"{commit}:refs/heads/{branch}")
     if not a.draft:

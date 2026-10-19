@@ -4,9 +4,10 @@
 // madeira-bcd: auto-tune's app side on the host (docs/AUTO-TUNE.md): app/Madeira/AutoTune.swift
 // with AutoTuneCore.swift, the rule table and tests/host/autotune_glue_stubs.swift.
 //
-//   glue off   UserDefaults without madeira.autotune: every entry point is called with a
+//   glue off   run with "-madeira.autotune NO" (UserDefaults' argument domain): every entry point is called with a
 //              tuned game, a leftover marker and a state file on disk, and nothing may
 //              change: files, MADEIRA_CFG_GAME, log lines, the offer.
+//   glue default  no argument for the key: auto-tune is on for the app and for every game.
 //   glue on    run with "-madeira.autotune YES" (UserDefaults' argument domain): the launch
 //              file, the marker, the analysis after a session, a killed run recovered at
 //              the next start, and the question when its log says nothing.
@@ -76,7 +77,7 @@ struct AutoTuneGlueChecks {
         let profile = GameProfile(windowsPath: game.windowsPath)
         profile.text = "# the user's own lines\nvram-mb = 3072\nenv.MADEIRA_X = 2\n"
         copy(env["AUTOTUNE_TEST_CRASH"]!, to: log)
-        if mode == "off" { off(profile) } else { on(profile) }
+        if mode == "off" { off(profile) } else if mode == "default" { byDefault() } else { on(profile) }
         UserDefaults.standard.removeObject(forKey: AutoTune.globalKey)
         UserDefaults.standard.removeObject(forKey: AutoTune.gamesKey)
         print(failures == 0 ? "PASS: auto-tune app side (\(mode))" : "FAILED: auto-tune app side (\(mode), \(failures))")
@@ -84,7 +85,7 @@ struct AutoTuneGlueChecks {
     }
 
     static func off(_ profile: GameProfile) {
-        expect(!AutoTune.enabled, "without the setting auto-tune is off")
+        expect(!AutoTune.enabled, "with -madeira.autotune NO auto-tune is off")
         // Everything a tuned game could have on disk, as if auto-tune had been on before.
         UserDefaults.standard.set([game.windowsPath.lowercased(): true], forKey: AutoTune.gamesKey)
         var st = AutoTuneState()
@@ -110,11 +111,31 @@ struct AutoTuneGlueChecks {
                "off: no launch file")
     }
 
+    /// No argument for the key at all, as on a device that never touched the setting: auto-tune is on,
+    /// for the app and for every game; a stored off is kept, and Settings' off applies from the next start.
+    static func byDefault() {
+        expect(UserDefaults.standard.object(forKey: AutoTune.globalKey) == nil, "the setting is absent")
+        expect(AutoTune.enabled && AutoTune.preferred, "with the setting absent auto-tune is on")
+        expect(AutoTune.isOn(game.windowsPath), "and so is every game")
+        AutoTune.preferred = false
+        expect(!AutoTune.preferred && AutoTune.enabled, "turned off in Settings: stored now, this run keeps its value")
+        AutoTune.preferred = true
+        expect(AutoTune.preferred, "and on again")
+        AutoTune.setOn(game.windowsPath, false)
+        expect(!AutoTune.isOn(game.windowsPath) && AutoTune.isOn("c:\\other\\game.exe"), "a game's own off is kept for that game only")
+        AutoTune.setOn(game.windowsPath, true)
+        expect(AutoTune.isOn(game.windowsPath), "and its on")
+    }
+
     static func on(_ profile: GameProfile) {
         expect(AutoTune.enabled, "with -madeira.autotune YES auto-tune is on")
         let launch = configs.appendingPathComponent("autotune-launch.cfg")
 
-        // Not tuned yet: the game's switch is off.
+        // Every game starts with its switch on; the owner of the device can turn it off, and that is kept.
+        expect(AutoTune.isOn(game.windowsPath), "a game's own switch is on until it is turned off")
+        AutoTune.setOn(game.windowsPath, false)
+        expect(!AutoTune.isOn(game.windowsPath) && !AutoTune.isOn(game.windowsPath.uppercased()), "a game turned off stays off, any case")
+        expect(AutoTune.isOn(game.windowsPath + "-other"), "turning one game off leaves the others on")
         setenv("MADEIRA_CFG_GAME", profile.url!.path, 1)
         AutoTune.exportLayer(for: game)
         expect(String(cString: getenv("MADEIRA_CFG_GAME")) == profile.url!.path && !FileManager.default.fileExists(atPath: launch.path),

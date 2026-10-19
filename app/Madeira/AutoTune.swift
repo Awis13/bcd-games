@@ -8,7 +8,8 @@
 //  madeira-bcd: auto-tune's app side (docs/AUTO-TUNE.md): the global switch,
 //  the per-game files, the session marker and the hooks LibraryModel and BCDLaunch call.
 //
-//  Off (Settings › Auto-tune, the default) the app is the app without auto-tune: every
+//  On is the default, for the app (Settings › Auto-tune) and for every game (Game details
+//  › Auto-tune); a stored "off" is kept. Off, the app is the app without auto-tune: every
 //  hook is skipped at its call site behind `AutoTune.enabled`, and every entry point
 //  below returns at once as well. Nothing is read, written or logged.
 //
@@ -26,11 +27,12 @@ enum AutoTune {
     static let globalKey = "madeira.autotune"
     static let gamesKey = "madeira.autotune.games"
     /// Settings › Auto-tune, read once per app run: a session that started without
-    /// auto-tune ends without it. Absent key: off.
-    static let enabled: Bool = UserDefaults.standard.bool(forKey: globalKey)
+    /// auto-tune ends without it. Absent key: on (only a stored "off" turns it off).
+    static let enabled: Bool = storedOn(globalKey)
+    private static func storedOn(_ key: String) -> Bool { UserDefaults.standard.object(forKey: key) == nil || UserDefaults.standard.bool(forKey: key) }
     /// What Settings shows and stores; applies from the next start.
     static var preferred: Bool {
-        get { UserDefaults.standard.bool(forKey: globalKey) }
+        get { storedOn(globalKey) }
         set {
             UserDefaults.standard.set(newValue, forKey: globalKey)
             if !newValue, let m = markerURL { try? FileManager.default.removeItem(at: m) }
@@ -39,13 +41,13 @@ enum AutoTune {
 
     // MARK: Per game
 
-    /// The game's own switch (Game details › Auto-tune); off by default.
+    /// The game's own switch (Game details › Auto-tune); on unless the owner of the device turned it off.
     static func isOn(_ windowsPath: String) -> Bool {
-        (UserDefaults.standard.dictionary(forKey: gamesKey) as? [String: Bool])?[windowsPath.lowercased()] ?? false
+        (UserDefaults.standard.dictionary(forKey: gamesKey) as? [String: Bool])?[windowsPath.lowercased()] ?? true
     }
     static func setOn(_ windowsPath: String, _ on: Bool) {
         var d = (UserDefaults.standard.dictionary(forKey: gamesKey) as? [String: Bool]) ?? [:]
-        d[windowsPath.lowercased()] = on ? true : nil
+        d[windowsPath.lowercased()] = on
         UserDefaults.standard.set(d, forKey: gamesKey)
     }
     /// The Desktop is no game; everything else can be tuned (Steam games through Madeira Dock too).

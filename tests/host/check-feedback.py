@@ -142,7 +142,7 @@ w_kinds = re.findall(r'"(\w+)"', re.search(r"export const FEEDBACK_KINDS = \[(.*
 # ---- the app: the client ---------------------------------------------------------------------
 host = lambda text: re.search(r'URL\(string: "https://([^/"]+)(/[^"]*)"\)!', text).groups()
 check(host(upload)[0] == host(logup)[0] and host(upload)[1] == "/v1/feedback" and host(logup)[1] == "/v1/logs"
-      and host(upload)[0] == "madeira-log-intake.bcd-logs.workers.dev",
+      and host(upload)[0] == "bcd.bcd-logs.workers.dev",
       "FeedbackUpload: the same host as Send Log, path /v1/feedback")
 check('static let intake = "madeira-bcd/2"' in upload and 'static let intake = "madeira-bcd/2"' in logup
       and 'export const INTAKE = "madeira-bcd/2";' in worker

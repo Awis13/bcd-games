@@ -198,9 +198,31 @@ enum BCDFormat {
         case ..<3600: return "\(Int(seconds / 60)) min ago"
         case ..<86400: return "\(Int(seconds / 3600)) h ago"
         case ..<(86400 * 7): return "\(Int(seconds / 86400)) d ago"
-        default: return date.formatted(date: .abbreviated, time: .omitted)
+        default: return shortDate(date, now: now)
         }
     }
+    // shortDate-begin
+    /// "12 Oct" (this year) or "12 Oct 2025", from numbers only. `Date.formatted` builds an ICU date formatter on
+    /// every call and the Home and Library cards call this on every draw: one of those calls crashed the interface
+    /// the moment a game started (a tester's log, KDY8E6, 2026-10-19). The screens are English, so a fixed table does.
+    static func shortDate(_ date: Date, now: Date = Date()) -> String {
+        func civil(_ d: Date) -> (year: Int, month: Int, day: Int) {
+            let local = d.timeIntervalSince1970 + Double(TimeZone.current.secondsFromGMT(for: d))
+            let z = Int((local / 86400).rounded(.down)) + 719_468
+            let era = (z >= 0 ? z : z - 146_096) / 146_097
+            let doe = z - era * 146_097
+            let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365
+            let doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+            let mp = (5 * doy + 2) / 153
+            let month = mp < 10 ? mp + 3 : mp - 9
+            return (yoe + era * 400 + (month <= 2 ? 1 : 0), month, doy - (153 * mp + 2) / 5 + 1)
+        }
+        let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        let then = civil(date), today = civil(now)
+        let text = "\(then.day) \(months[then.month - 1])"
+        return then.year == today.year ? text : text + " \(then.year)"
+    }
+    // shortDate-end
     static func playtime(_ minutes: Int) -> String {
         minutes < 60 ? "\(minutes) min" : String(format: "%.1f h", Double(minutes) / 60)
     }

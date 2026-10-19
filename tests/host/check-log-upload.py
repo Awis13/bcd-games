@@ -62,7 +62,7 @@ check("LogUploadCore's rules are SCRUB's, in its order",
       [(p, r.replace("$1", "\\1")) for p, r in swift_rules] == [(p.pattern.replace('\\"', '"'), r) for p, r in fx.SCRUB],
       swift_rules)
 check("the app sends to the deployed intake with the intake header",
-      'URL(string: "https://madeira-log-intake.bcd-logs.workers.dev/v1/logs")' in app
+      'URL(string: "https://bcd.bcd-logs.workers.dev/v1/logs")' in app
       and 'static let intake = "madeira-bcd/2"' in app and 'export const INTAKE = "madeira-bcd/2";' in worker)
 up = app[app.index("session.uploadTask(with: req, fromFile: gz)"):]
 check("the compressed copy is deleted as soon as the upload ends, sent or not",
@@ -92,7 +92,7 @@ for f in ("app/Madeira/LogUpload.swift", "app/Madeira/LogUploadCore.swift", "bcd
           "bcd-logs/worker/wrangler.toml", "bcd-logs/worker/worker.test.mjs", "tools/pull-logs.py"):
     check(f"{f} is marked FORK-ONLY", "FORK-ONLY" in (R / f).read_text()[:800])
 check("the Worker's R2 binding is its own bucket, with an hourly trim",
-      'bucket_name = "madeira-logs"' in toml and 'crons = ["17 * * * *"]' in toml and "macosvm" not in toml)
+      'bucket_name = "bcd-logs"' in toml and 'crons = ["17 * * * *"]' in toml and "macosvm" not in toml)
 CI = R / ".github/workflows/build-ipa.yml"
 if CI.exists():
     check("CI runs this check", "run: python3 tests/host/check-log-upload.py --require-swift" in CI.read_text())

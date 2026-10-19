@@ -1,0 +1,66 @@
+[13:22:30.811] [INFO] [build] v0.1.573 (573)
+[13:22:30.812] [INFO] [device] model=iPhone16,1 idiom=phone os=iOS Version 27.2 (Build 24B5099f) ram=7681MB available=6127MB cores=6
+[13:22:30.812] [INFO] [device] address-map=[0x104af0000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[13:22:30.845] [INFO] [device] gpu="Apple A17 Pro GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[13:22:56.765] [INFO] [bcd] library launch Hello Neighbor Pre-Alpha: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[13:22:56.779] [INFO] [dock-launch] image-retire=1
+[13:22:56.779] [INFO] [dock-launch] image-map-guard=1
+[13:22:56.796] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104af0000,0x8000000000) 512GB available=6108MB low-power=0 thermal=fair
+[13:22:56.801] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[13:22:56.801] [INFO] [jit-debugger] attached=1 at the pool request
+[13:22:56.803] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[13:22:57.674] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  0.932s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=622 MB (peak 622) internal=621 MB compressed=0 MB external=78 MB reusable=8 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11C550000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[footprint] rev=ml358 phys=960 MB (peak 960) internal=959 MB compressed=0 MB external=148 MB reusable=8 MB (cycle=2)
+[footprint] rev=ml358 phys=1061 MB (peak 1061) internal=1059 MB compressed=0 MB external=151 MB reusable=8 MB (cycle=3)
+[footprint] rev=ml358 phys=1102 MB (peak 1102) internal=1100 MB compressed=0 MB external=151 MB reusable=8 MB (cycle=4)
+[footprint] rev=ml358 phys=1092 MB (peak 1102) internal=1090 MB compressed=0 MB external=152 MB reusable=8 MB (cycle=5)
+[footprint] rev=ml358 phys=1242 MB (peak 1242) internal=1240 MB compressed=0 MB external=180 MB reusable=8 MB (cycle=6)
+00b8:err:module:import_dll Library wer.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Hello Neighbor Pre-Alpha\\HelloNeighbour\\Binaries\\Win64\\HelloNeighbour-Win64-Shipping.exe") not found
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D B8 Load module d3d9.dll (d3d9.dll-23c2a01a8eade245): 71F0130000
+D B8 Load module wined3d.dll (wined3d.dll-e53ebe6d434bb891): 71EFDC0000
+D B8 Load module d3d11.dll (d3d11.dll-8ad678a9894b5214): 71EF940000
+D B8 Load module X3DAudio1_7.dll (x3daudio1_7.dll-04fa97b26702dfec): 71EF8C0000
+D B8 Load module XAPOFX1_5.dll (xapofx1_5.dll-2ae1704241001f50): 71EF840000
+D B8 Load module dsound.dll (dsound.dll-541ca4d6eb8180ce): 71EF780000
+00b8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000135) syscalls=0 unix_calls=9353
+00b0:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0xc0000135) syscalls=0 unix_calls=9353
+00b0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000135) syscalls=0 unix_calls=9370
+[Wine child thread] child exited with code -1073741515
+[Wine child thread] child exited with code -1073741515
+0050:err:module:load_dll [dll-missing] rev=ml336 #47 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #48 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1179 MB (peak 1355) internal=1177 MB compressed=0 MB external=222 MB reusable=8 MB (cycle=10)
+[store-noalias] #1 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x149aa2000 NO pool/anon alias | region 0x104af0000+0x1fc4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[footprint] rev=ml358 phys=1179 MB (peak 1355) internal=1177 MB compressed=0 MB external=222 MB reusable=8 MB (cycle=11)
+[footprint] rev=ml358 phys=1179 MB (peak 1355) internal=1177 MB compressed=0 MB external=222 MB reusable=8 MB (cycle=12)
+[footprint] rev=ml358 phys=1179 MB (peak 1355) internal=1177 MB compressed=0 MB external=222 MB reusable=8 MB (cycle=13)
+[footprint] rev=ml358 phys=1179 MB (peak 1355) internal=1176 MB compressed=1 MB external=233 MB reusable=7 MB (cycle=14)
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=1179 MB (peak 1355) internal=1035 MB compressed=141 MB external=233 MB reusable=7 MB (cycle=15)
+[frontend] graceful close requested
+[13:23:27.829] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=20 resident=1103MB dbg=DEBUGGED rev=ml525

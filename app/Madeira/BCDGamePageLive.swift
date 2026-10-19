@@ -659,7 +659,7 @@ import UniformTypeIdentifiers
         default: status = "Play once: the first start is the baseline."
         }
         d.tuning = BCDGameTuning(on: tuned.on, status: tuned.on || history ? status : nil, canUndo: history, found: state.kept, history: steps)
-        if tuned.on { d.settings = "Auto-tune on" }
+        if tuned.on && history { d.settings = "Auto-tune on" }   // on for every game now: the label says so only once it has a search or kept lines, so "Recommended" and "Your own" stay visible
     }
 
     /// How a start ended, in auto-tune's words.

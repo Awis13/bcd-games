@@ -1836,6 +1836,46 @@ static void *wine_process_thread(void *arg) {
                 }
             }
 
+            /* madeira-bcd: env.MADEIRA_WER = 1 (the game's own file) runs wer-optin.dll as
+             * wer.dll: Wine's own wer.dll, which tools/build-wine-extra-dlls.sh ships under
+             * that name and never as wer.dll. Hello Neighbor's UE4 executable imports
+             * wer.dll and exited at once with 0xc0000135 (a tester's log, build 573).
+             * Wine's wer.dll has 68 unimplemented exports, so a program that loads it
+             * optionally today could be aborted by one of them: only a game with the line
+             * gets it (the line is added after a "Library wer.dll ... not found" failure).
+             * wer.dll is no part of the bundle, so the farms above never relink or remove
+             * it: without the line a link of ours left by an earlier session is removed,
+             * so the game that needed it is the only one that has it. Linked like
+             * kernelbase-fibertrace.dll: sysx64 in any session, system32 too in an
+             * ARM64EC one. */
+            {
+                const char *werOptIn = getenv("MADEIRA_WER");
+                NSMutableArray *werDirs = [NSMutableArray arrayWithObject:
+                    [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"]];
+                if (use_arm64ec) [werDirs addObject:sys32Dir];
+                NSString *werDll = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"]
+                                    stringByAppendingPathComponent:@"wer-optin.dll"];
+                if (werOptIn && werOptIn[0] == '1') {
+                    if ([fm fileExistsAtPath:werDll]) {
+                        for (NSString *dir in werDirs) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"wer.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:werDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_WER=1: wer.dll -> wer-optin.dll (Wine's wer.dll for this game; %s)\n",
+                                use_arm64ec ? "system32 + sysx64" : "sysx64 only");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_WER=1 but this build has no wer-optin.dll -- the game gets no wer.dll\n");
+                    }
+                } else {
+                    for (NSString *dir in @[ [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"], sys32Dir ]) {
+                        NSString *dst = [dir stringByAppendingPathComponent:@"wer.dll"];
+                        NSString *to = [fm destinationOfSymbolicLinkAtPath:dst error:nil];
+                        if (to && [to.lastPathComponent isEqualToString:@"wer-optin.dll"]) [fm removeItemAtPath:dst error:nil];
+                    }
+                }
+            }
+
             /* madeira-bcd: ntdll-sync.dll (tools/patch-wine-ntdll-sync.py, built by
              * tools/build-wine-extra-dlls.sh next to the shipped ntdll.dll) is the
              * ARM64EC ntdll the unix loader maps when env.MADEIRA_NTDLL_SYNC = 1 or
@@ -2244,6 +2284,7 @@ static void *wine_process_thread(void *arg) {
         unsetenv("MADEIRA_UCRT_X64_MATH"); unsetenv("MADEIRA_SRV_FGETPATH");
         unsetenv("MADEIRA_NTDLL_SYNC");   /* madeira-bcd: a game's switch is its own */
         unsetenv("MADEIRA_FIBER_TRACE");  /* madeira-bcd: likewise */
+        unsetenv("MADEIRA_WER");          /* madeira-bcd: likewise */
         g_madeira_srv_fgetpath = 0;
         /* madeira-bcd: the server's per-launch switches end with the session as well */
         unsetenv("MADEIRA_SRV_ECO_FOLLOW"); unsetenv("MADEIRA_SRV_DIRECT");

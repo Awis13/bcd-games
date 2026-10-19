@@ -516,6 +516,32 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "err:module:import_dll Library wer.dll",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "hello-neighbor-2026-10-19-13-22-30 (Hello Neighbor Pre-Alpha, Steam 1092700, 0xc0000135 at once)"
+  ],
+  "id": "wer-dll-optin",
+  "lines": [
+   "env.MADEIRA_WER = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "MADEIRA_WER=1: wer.dll -> wer-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game's program imports wer.dll, which BCD does not ship for every game (Wine's has unimplemented exports); the line gives this game Wine's wer.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[bcd] library launch",
      "avx=0"
     ]

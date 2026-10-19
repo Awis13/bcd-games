@@ -5,14 +5,14 @@
 """Auto-tune (docs/AUTO-TUNE.md): the switch, the hooks, the rules, the fixtures, the engine.
 
 Auto-tune reads a tuned game's session log after the session (never during it), recognises
-the failure and tries one known config line at the next start. Off (Settings › Auto-tune,
-the default) it must be as if it did not exist. These checks hold it to that:
+the failure and tries one known config line at the next start. On by default (Settings ›
+Auto-tune, and each game's own switch); turned off it must be as if it did not exist. These checks hold it to that:
 
 Structure (every host):
   - every line outside AutoTune*.swift that names auto-tune is one of the registered hooks,
     and each hook is behind `AutoTune.enabled` (the Settings row, which is the switch itself,
     and the offer's alert binding are the registered exceptions);
-  - the switch is a UserDefaults bool read once per run, off when absent; every entry point
+  - the switch is a UserDefaults bool read once per run, on when absent; every entry point
     of AutoTune.swift starts with `guard enabled`;
   - nothing of it runs in the Wine process: no native file names it, and AutoTune*.swift
     keeps no timer, observer or display link and reads no environment switch (no catalog
@@ -80,7 +80,7 @@ HOOKS = {
     # BCD's Settings › Logs: the switch itself, like the old Settings row (one line, so the
     # whole of BCD's settings code names auto-tune nowhere else).
     "BCDSettingsLive.swift": [
-        "private let tune = BCDLiveSwitch(read: { AutoTune.preferred }, write: { AutoTune.preferred = $0 }, running: AutoTune.enabled)   // madeira-bcd: auto-tune's switch in BCD's Settings, off by default",
+        "private let tune = BCDLiveSwitch(read: { AutoTune.preferred }, write: { AutoTune.preferred = $0 }, running: AutoTune.enabled)   // madeira-bcd: auto-tune's switch in BCD's Settings, on by default",
     ],
     # BCD's interface (BCDLiveStore.swift, 2026-10-18): a tuned game's badge, read only while auto-tune is on.
     "BCDLiveStore.swift": [
@@ -138,8 +138,11 @@ check("its Close BCD is the only way an attempt restarts the app (no relaunch by
       and views.count("exit(") == 1)
 
 glue = GLUE.read_text()
-check("the switch is a UserDefaults bool read once per run, off when absent",
-      "static let enabled: Bool = UserDefaults.standard.bool(forKey: globalKey)" in glue)
+check("the switch is a UserDefaults bool read once per run, on when absent",
+      "static let enabled: Bool = storedOn(globalKey)" in glue
+      and "UserDefaults.standard.object(forKey: key) == nil || UserDefaults.standard.bool(forKey: key)" in glue)
+check("the game's switch is on when absent and a stored off is kept",
+      "[String: Bool])?[windowsPath.lowercased()] ?? true" in glue and "d[windowsPath.lowercased()] = on\n" in glue)
 for name in ("exportLayer", "sessionBegan", "sessionEnded", "recoverUnfinishedSession", "answer"):
     i = glue.index(f"static func {name}(")
     body = code_lines(glue[glue.index("{", i) + 1:])
@@ -316,7 +319,7 @@ with tempfile.TemporaryDirectory(prefix="madeira-autotune-") as tmp:
     glue_exe = build(tmp, "madeira-autotune-glue-check",
                      [GLUE, CORE, RULES_SWIFT, R / "tests/host/autotune_glue_stubs.swift", R / "tests/host/autotune_glue_checks.swift"])
     if glue_exe:
-        for mode in ("off", "on"):
+        for mode in ("off", "on", "default"):
             t = Path(tmp) / mode
             for d in ("home", "configs", "docs"):
                 (t / d).mkdir(parents=True)
@@ -325,7 +328,7 @@ with tempfile.TemporaryDirectory(prefix="madeira-autotune-") as tmp:
                        AUTOTUNE_TEST_LOG=str(t / "docs/bcd-log.txt"),
                        AUTOTUNE_TEST_CRASH=str(FIX / "rift-apart-2026-10-15-23-02-21.log"),
                        AUTOTUNE_TEST_SILENT=str(FIX / "synthetic-silent-end.log"))
-            extra = ["-madeira.autotune", "YES"] if mode == "on" else []
+            extra = {"on": ["-madeira.autotune", "YES"], "off": ["-madeira.autotune", "NO"]}.get(mode, [])
             r = subprocess.run([str(glue_exe), mode] + extra, capture_output=True, text=True, env=env, timeout=300)
             check(f"the app side with auto-tune {mode}", r.returncode == 0,
                   "\n".join(l for l in r.stdout.splitlines() if not l.startswith("ok"))[-3000:] + r.stderr[-1000:])

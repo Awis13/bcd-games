@@ -7,7 +7,8 @@
 # upstream's build/wine-pe/build-ntdll.sh configures wine/build-arm64ec;
 # stripped and padded by 64 KB past SizeOfImage like the shipped builtins.
 # Also ucrtbase-x64math.dll, an opt-in variant of ucrtbase (see UCX below), and
-# kernelbase-fibertrace.dll, an opt-in diagnostic kernelbase (see FBT below).
+# kernelbase-fibertrace.dll, an opt-in diagnostic kernelbase (see FBT below), and
+# wer-optin.dll, Wine's own wer.dll for the one game that imports it (see WER below).
 # A DLL upstream already ships is never replaced. Run from the repository
 # root; needs llvm-mingw on PATH (or MINGW) and the native wine tools.
 #   usage: build-wine-extra-dlls.sh [native tools dir]
@@ -98,7 +99,17 @@ FBT=""
 if [ "${MADEIRA_FIBER_TRACE_BUILD:-1}" != 0 ] && [ -f "$R/wine/dlls/kernelbase/thread.c" ] && [ -f "$SHIP/kernelbase.dll" ]; then
     FBT=kernelbase
 fi
-[ -n "$todo$XI$WGI$UCX$NTS$FBT" ] || { echo "nothing to build"; exit 0; }
+# madeira-bcd: a new file too. wer-optin.dll is Wine's own, unpatched wer.dll (Hello Neighbor's
+# UE4 executable imports it and exited at once with 0xc0000135, a tester's log, build 573). It is
+# NOT shipped as wer.dll: Wine's wer.dll has 68 unimplemented exports, so a program that loads
+# wer.dll optionally today could be aborted by one of them. Only a game with env.MADEIRA_WER = 1
+# gets it, linked as wer.dll for that session (app/Madeira/WineProcessBridge.m; auto-tune sets the
+# line itself after a "Library wer.dll ... not found" failure). MADEIRA_WER_BUILD=0 skips it.
+WER=""
+if [ "${MADEIRA_WER_BUILD:-1}" != 0 ] && [ -d "$R/wine/dlls/wer" ] && ! shipped wer; then
+    targets="$targets dlls/wer/arm64ec-windows/wer.dll"; WER=wer
+fi
+[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER" ] || { echo "nothing to build"; exit 0; }
 
 # The cached tree may have disabled winegstreamer because macOS has no
 # GStreamer headers. Only its real PE frontend is needed here; the iOS unix
@@ -324,6 +335,25 @@ PY
     mv "$SHIP/$d.dll.tmp" "$SHIP/$d.dll"
     built=$((built + 1))
 done
+if [ -n "$WER" ]; then
+    f="$B/dlls/wer/arm64ec-windows/wer.dll"
+    if [ -f "$f" ]; then
+        cp "$f" "$SHIP/wer-optin.dll.tmp"
+        "$MINGW/llvm-strip" "$SHIP/wer-optin.dll.tmp"
+        python3 - "$SHIP/wer-optin.dll.tmp" <<'PY'
+import struct, sys
+p = sys.argv[1]; d = open(p, 'rb').read()
+pe = struct.unpack_from('<I', d, 0x3c)[0]
+target = struct.unpack_from('<I', d, pe + 24 + 56)[0] + 0x10000
+if len(d) < target:
+    open(p, 'ab').write(b'\0' * (target - len(d)))
+PY
+        mv "$SHIP/wer-optin.dll.tmp" "$SHIP/wer-optin.dll"
+        echo "::notice::wer-optin.dll (Wine's wer.dll, linked as wer.dll only with env.MADEIRA_WER = 1): built; no wer.dll is shipped"
+    else
+        echo "::warning::wer-optin.dll did not build; env.MADEIRA_WER = 1 does nothing"
+    fi
+fi
 echo "::notice::built $built extra Wine DLLs for arm64ec${failed:+ (failed:$failed)}"
 [ -n "$failed" ] && grep -m 10 "error" "$B.build.log"
 exit 0

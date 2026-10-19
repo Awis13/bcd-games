@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "wer-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_WER = 1"
+ ],
+ "note": "Hello Neighbor Pre-Alpha (Steam 1092700, through BCD Dock), build 573, iPhone (a tester's Send Log 0E6KGP): the UE4 program imports wer.dll, which build 573 does not ship; the process ended at once with 0xc0000135",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

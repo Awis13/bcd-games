@@ -856,6 +856,15 @@ OVERLAY = {
                         "\"Device error at frame N\" a [fault-enc] line names the faulted, affected and unknown encoders. "
                         "For D3D9/10/11 games that hang or fault the GPU (GTA V Legacy at Story Mode, build 546). A "
                         "diagnostic with some GPU cost; off (default): unchanged. Set it in the game's own file."},
+    "env.MADEIRA_WER": {"category": "Wine libraries", "title": "Give the game Wine's wer.dll",
+                "kind": "bool", "default": "0",
+                "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
+                "note": "1: the game runs wer-optin.dll as wer.dll, Wine's own Windows Error Reporting library, for "
+                        "a program that imports it and exits at once with c0000135 (\"Library wer.dll ... not found\"; "
+                        "Hello Neighbor, an Unreal Engine 4 game). BCD ships no wer.dll for every game: Wine's has "
+                        "68 unimplemented exports, so only a game with this line gets it, and an earlier session's "
+                        "link is removed when the line is gone. Set it in the game's own file; read at session start. "
+                        "Auto-tune adds it after that failure."},
     "env.MADEIRA_FIBER_TRACE": {"category": "Debugging / logs", "title": "Log the fiber calls (kernelbase)",
                 "kind": "bool", "default": "0",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/patch-wine-kernelbase-fibertrace.py"],
