@@ -41,6 +41,14 @@ Valve's own Steam client (BCD Dock).
 BCD is a fork of [Madeira](https://github.com/willfaust/Madeira) by Will Faust and its
 contributors (see [Credits](#credits)).
 
+### Free Apple ID
+
+A free Apple ID keeps only three sideloaded apps active at once. BCD, StikDebug (where you need it for
+JIT) and SideStore or AltStore can fill all three. The usual way around it is **LiveContainer**, which
+runs more apps inside one container. A typical setup: GetMoreRam gives LiveContainer the Increased Memory
+Limit entitlement (you can remove GetMoreRam afterwards), StikDebug provides JIT, and BCD runs inside
+LiveContainer. If something breaks inside LiveContainer, try BCD outside it before you report a problem.
+
 ## What it does
 
 - **A whole new app around the games:**
