@@ -7,12 +7,15 @@
 #import "Winios/WiniosCursor.h"
 // ml2106: rumble / DualSense output to the physical pad (PadOutput.m)
 #import "PadOutput.h"
+#import "MemoryHostTest.h"
 // Steam content decoders (liblzma shim, zstd decoder, zip chunks), used by the owned library's downloads.
 #import "SwiftSteam/lzma_shim.h"
 // On-device remote pairing for Built-in StikJIT (build/rppairing-ios, JITPairing.swift).
 #import "MadeiraRPPairing.h"
 // madeira-bcd: the bundled prefix template, read by the Dock's Reset (DockReset.swift).
 #include "PrefixExtractor.h"
+// BCD: the cabinet reader that unpacks Microsoft's VC++ installer on the device (VCRuntimeDownload.swift).
+#include "BCDCab.h"
 
 // Wine file-based logging (server_ios.c)
 void wine_log_set_file(const char *path);
@@ -66,12 +69,12 @@ void winios_phase(const char *name);
 
 /* madeira-d3d12: M1 shader-converter canary, compiled into libdxmt.
  * Returns the number of failed checks; 0 means the gate passed. Output goes to
- * stderr, which is already captured into madeira-log.txt. */
+ * stderr, which is already captured into bcd-log.txt. */
 int madeira_d3d12_canary_run(const char *fixture_dir, const char *dylib_path,
                              void (*sink)(const char *));
 /* Same run, but also writes the full per-check transcript to log_path, which is
  * how the in-app detail is captured: stderr is not redirected into
- * madeira-log.txt until later in startup. */
+ * bcd-log.txt until later in startup. */
 int madeira_d3d12_canary_run_log(const char *fixture_dir, const char *dylib_path,
                                  void (*sink)(const char *), const char *log_path,
                                  const char *build_id);

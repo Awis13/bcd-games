@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "d3d12-helper-kernels-ios18"
+ ],
+ "next": [],
+ "note": "synthetic: built from madeira-d3d12's mad_kernels_ready and iOS 18.1's Metal refusal text; iOS 18 refused the AIR 2.8 helper kernels (gameplay.md 1.2)",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

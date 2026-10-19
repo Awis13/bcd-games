@@ -39,10 +39,14 @@ harness = r'''
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <string.h>
 typedef int semaphore_t;
 static sem_t real_sem;
 static semaphore_t ios_srv_wake_sem = 1;
 #define semaphore_signal(s) sem_post(&real_sem)
+/* build/madeira_cfg.h: no bcd.cfg here, so ios_srv_switch falls back to getenv
+ * (the switches are read from bcd.cfg first since the 2026-10-15 upstream merge) */
+static int madeira_cfg_get( const char *key, char *buf, size_t cap ) { (void)key; (void)buf; (void)cap; return 0; }
 ''' + wake + r'''
 #define NTHREADS 8
 #define NREQ 200000

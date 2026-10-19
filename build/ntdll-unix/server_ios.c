@@ -1728,7 +1728,8 @@ static void ios_xp_api_report( const char *wall, double wall_s )
  * Not before the game has presented for MADEIRA_BG_QOS_DELAY_S (default 60 s):
  * its first minute is when it talks to the launcher and Social Club (sign-in,
  * entitlement), which must not slow down. Never the game's own process.
- * Default list below; an empty value turns it off. Needs the [xp] sampler. */
+ * Default list below; an empty value turns it off. Needs the [xp] sampler
+ * (MADEIRA_PROBES not 0). */
 #include <pthread/qos.h>
 #define IOS_BG_QOS_HOLD_NS (2000ull * 1000 * 1000)
 static volatile uint64_t ios_bg_game_seen_ns;   /* 0: no game has presented */
@@ -1980,9 +1981,10 @@ static void ios_power_gov_step( uint64_t now, double dt_ms, double mj )
  * The cap is published in ios_fps_cap. The xprobe copies it into madeira-d3d12's
  * counter block, which its Present reads to hold the game's thread
  * (NtDelayExecution); DXMT's encode thread waits in winemetal's presentDrawable
- * (winemetal in DXMT -> ios_fps_cap_dxmt_pace) when no D3D12 runtime
+ * (tools/patch-winemetal-fps-cap.py -> ios_fps_cap_dxmt_pace) when no D3D12 runtime
  * paces itself. [fps-gov] summarises every 10 s. Unset: nothing is armed,
- * ios_fps_cap stays 0 and neither presenter waits. Needs the [xp] sampler. */
+ * ios_fps_cap stays 0 and neither presenter waits. Needs the [xp] sampler
+ * (MADEIRA_PROBES not 0). */
 volatile int ios_fps_cap;                     /* fps the presenters pace to; 0 = none */
 static volatile int ios_fps_gov_armed;        /* a cap or a target is set (read once by the xprobe) */
 static volatile uint64_t ios_fps_presents;    /* presents through winemetal while armed */
@@ -2099,7 +2101,7 @@ static void ios_fps_gov_step( uint64_t now, double dt_ms, double mj, uint64_t pr
     }
 }
 
-/* madeira-bcd fps-gov: DXMT's side of the cap. winemetal (DXMT)
+/* madeira-bcd fps-gov: DXMT's side of the cap. tools/patch-winemetal-fps-cap.py
  * calls this at the top of winemetal's presentDrawable (on the presenting thread:
  * DXMT's encode thread, or madeira-d3d12's queue worker). While a cap or governor
  * is armed it counts the present; when a cap is set and no D3D12 runtime paces
@@ -2579,7 +2581,7 @@ static void ios_xprobe_main( void )
             n = snprintf( line, sizeof(line),
                           "[xp] %s +%.2f dt=%.0f cpu=%.0f (thr %.0f) P=%.0f E=%.0f run=%.0f pgw=%.1f GHz P=%.2f E=%.2f Minst=%.0f IPC=%.2f mJ=%.0f pin=%llu rdKB=%llu fpMB=%llu",
                           wall, XP_MS( now - t_start ) / 1000.0, dt_ms, cpu, sum_thr_ms, pms, ems,
-                          XP_MS( ru.ri_runnable_time - pru.ri_runnable_time ), XP_MS( ru.ri_page_wait_time_mach - pru.ri_page_wait_time_mach ),
+                          XP_MS( ru.ri_runnable_time - pru.ri_runnable_time ), 0.0 /* pgw: the CI SDK's rusage_info_v6 has no ri_page_wait_time_mach (madeira-bcd) */,
                           pms > 0 ? pcy / (pms * 1e6) : 0, ems > 0 ? (cy - pcy) / (ems * 1e6) : 0, ins / 1e6, cy > 0 ? ins / cy : 0,
                           (double)(ru.ri_energy_nj - pru.ri_energy_nj) / 1e6,
                           (unsigned long long)(ru.ri_pageins - pru.ri_pageins), (unsigned long long)((ru.ri_diskio_bytesread - pru.ri_diskio_bytesread) >> 10),
@@ -2781,6 +2783,153 @@ static void ios_wprof_main( void )
     }
 }
 
+/* ============================================================================
+ * madeira-bcd [frame]: per-second frame anatomy for DXMT titles, opt-in.
+ *
+ * Question it answers: is a D3D11 game GPU-bound, CPU-bound or held by the
+ * display? The God of War logs of 2026-10-01 had no frame or GPU timing at all
+ * (only a Metal HUD screenshot), because DXMT's winemetal_unix.c reports into
+ * hooks (ios_frame_*, ml1050) whose instrument was not part of this port: they
+ * were empty stubs in virtual_ios.c. They are implemented here, behind
+ * MADEIRA_FRAME_STATS (unset or 0: off, exactly as before -- ios_frame_stats_on
+ * stays 0 and winemetal makes no hook call and adds no completion handler; any
+ * other value: on for every caller, 64-bit included). Once a second:
+ *
+ *   [frame] madeira-bcd 1.00 s: present 30.0/s (skipped 0) game 30.0/s |
+ *     GPU busy 948 ms = 95% (31.6 ms/frame) | cmdbufs 124, span sum 1010 ms,
+ *     in flight max 3 | nextDrawable wait 12.0 ms (max 4.1) | per frame:
+ *     render 41.0 compute 9.0 blit 6.0 passes, attachments load 22.0 store
+ *     63.0 clear 19.0 | panel 120 Hz intent 60 mode 1 | limiter 0.0 ms
+ *
+ * "GPU busy" is the union of the command buffers' GPUStartTime..GPUEndTime
+ * (ios_frame_gpu_span, fed by tools/patch-winemetal-gpu-span.py); "span sum"
+ * adds the spans and over-counts when buffers overlap. Busy near 100 % = the
+ * GPU is the limit; a large nextDrawable wait = the display/compositor holds
+ * the producer; neither = the CPU side. Accumulators are relaxed atomics, the
+ * busy union takes one uncontended mutex per command buffer, and the line is
+ * printed by whichever per-frame hook first sees a second elapsed. */
+int ios_frame_stats_on = 0;
+static uint64_t ios_fr_t0;
+static uint64_t ios_fr_ticks, ios_fr_presents, ios_fr_skipped, ios_fr_cmdbufs, ios_fr_span_ns, ios_fr_busy_ns;
+static uint64_t ios_fr_dw_ns, ios_fr_dw_max_ns, ios_fr_lim_ns, ios_fr_qmax, ios_fr_pass[3], ios_fr_att[3];
+static volatile int ios_fr_panel_hz, ios_fr_intent_hz, ios_fr_mode;
+static pthread_mutex_t ios_fr_gpu_lock = PTHREAD_MUTEX_INITIALIZER;
+static double ios_fr_gpu_end;   /* GPU timeline high-water mark (s), under ios_fr_gpu_lock */
+
+#define IOS_FR_ADD(v, x) __atomic_fetch_add( &(v), (uint64_t)(x), __ATOMIC_RELAXED )
+#define IOS_FR_TAKE(v)   __atomic_exchange_n( &(v), 0, __ATOMIC_RELAXED )
+
+static void ios_fr_max( uint64_t *v, uint64_t x )
+{
+    uint64_t c = __atomic_load_n( v, __ATOMIC_RELAXED );
+    while (x > c && !__atomic_compare_exchange_n( v, &c, x, 1, __ATOMIC_RELAXED, __ATOMIC_RELAXED )) ;
+}
+
+static void ios_fr_maybe_report( void )
+{
+    static mach_timebase_info_data_t tb;
+    uint64_t now = mach_absolute_time(), t0 = __atomic_load_n( &ios_fr_t0, __ATOMIC_RELAXED ), one_s;
+    double secs, frames, busy, span, dw, dwmax, lim;
+    uint64_t ticks, pres, skip, cmdbufs, qmax, pass[3], att[3];
+    int i;
+
+    if (!tb.denom) mach_timebase_info( &tb );
+    one_s = (uint64_t)(1e9 * tb.denom / tb.numer);
+    if (!t0) { __atomic_compare_exchange_n( &ios_fr_t0, &t0, now, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED ); return; }
+    if (now - t0 < one_s) return;
+    if (!__atomic_compare_exchange_n( &ios_fr_t0, &t0, now, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED )) return;   /* another thread reports */
+
+    secs = (double)(now - t0) * tb.numer / tb.denom / 1e9;
+    ticks = IOS_FR_TAKE( ios_fr_ticks ); pres = IOS_FR_TAKE( ios_fr_presents ); skip = IOS_FR_TAKE( ios_fr_skipped );
+    cmdbufs = IOS_FR_TAKE( ios_fr_cmdbufs ); qmax = IOS_FR_TAKE( ios_fr_qmax );
+    busy = IOS_FR_TAKE( ios_fr_busy_ns ) / 1e6; span = IOS_FR_TAKE( ios_fr_span_ns ) / 1e6;
+    dw = IOS_FR_TAKE( ios_fr_dw_ns ) / 1e6; dwmax = IOS_FR_TAKE( ios_fr_dw_max_ns ) / 1e6; lim = IOS_FR_TAKE( ios_fr_lim_ns ) / 1e6;
+    for (i = 0; i < 3; i++) { pass[i] = IOS_FR_TAKE( ios_fr_pass[i] ); att[i] = IOS_FR_TAKE( ios_fr_att[i] ); }
+    frames = pres ? (double)pres : ticks ? (double)ticks : 1.0;
+    wine_log_write( "[frame] madeira-bcd %.2f s: present %.1f/s (skipped %llu) game %.1f/s | GPU busy %.0f ms = %.0f%% (%.1f ms/frame) | "
+                    "cmdbufs %llu, span sum %.0f ms, in flight max %llu | nextDrawable wait %.1f ms (max %.1f) | per frame: render %.1f "
+                    "compute %.1f blit %.1f passes, attachments load %.1f store %.1f clear %.1f | panel %d Hz intent %d mode %d | limiter %.1f ms",
+                    secs, pres / secs, (unsigned long long)skip, ticks / secs, busy, secs > 0 ? busy / (secs * 10.0) : 0.0, busy / frames,
+                    (unsigned long long)cmdbufs, span, (unsigned long long)qmax, dw, dwmax,
+                    pass[0] / frames, pass[2] / frames, pass[1] / frames, att[0] / frames, att[1] / frames, att[2] / frames,
+                    ios_fr_panel_hz, ios_fr_intent_hz, ios_fr_mode, lim );
+}
+
+/* Called once at process init (the sampler arming site): reads the switch. */
+static void ios_frame_stats_arm( void )
+{
+    const char *e = getenv( "MADEIRA_FRAME_STATS" );   /* [frame] once a second: unset/0 off (default), anything else on */
+    if (!e || !*e || !strcmp( e, "0" )) return;
+    ios_frame_stats_on = 1;
+    wine_log_write( "[frame] madeira-bcd instrument on (MADEIRA_FRAME_STATS=%s): one line per second with presents, GPU busy "
+                    "and nextDrawable wait; unset it for timing-sensitive runs", e );
+}
+
+/* The game's Present: once per Present on the presenting thread (winemetal's
+ * QueryDisplaySettingForLayer, ml1050). */
+void ios_frame_game_tick( void )
+{
+    if (!ios_frame_stats_on) return;
+    IOS_FR_ADD( ios_fr_ticks, 1 );
+    ios_fr_maybe_report();
+}
+
+/* presentDrawable on the encode thread (skipped: RAW mode dropped the frame) */
+void ios_frame_encode_present( int skipped )
+{
+    if (!ios_frame_stats_on) return;
+    if (skipped) IOS_FR_ADD( ios_fr_skipped, 1 ); else IOS_FR_ADD( ios_fr_presents, 1 );
+    ios_fr_maybe_report();
+}
+
+void ios_frame_drawable_wait( unsigned long long ns )
+{
+    if (!ios_frame_stats_on) return;
+    IOS_FR_ADD( ios_fr_dw_ns, ns );
+    ios_fr_max( &ios_fr_dw_max_ns, ns );
+}
+
+/* a command buffer completed: its GPU span and how many were in flight */
+void ios_frame_gpu( unsigned long long gpu_ns, unsigned long long inflight )
+{
+    if (!ios_frame_stats_on) return;
+    IOS_FR_ADD( ios_fr_cmdbufs, 1 );
+    IOS_FR_ADD( ios_fr_span_ns, gpu_ns );
+    ios_fr_max( &ios_fr_qmax, inflight );
+}
+
+/* the same buffer on the GPU timeline (seconds, CACurrentMediaTime base):
+ * the union of these is the time the GPU had work */
+void ios_frame_gpu_span( double start_s, double end_s )
+{
+    double from, add = 0;
+    if (!ios_frame_stats_on || !(start_s > 0.0) || !(end_s > start_s)) return;
+    pthread_mutex_lock( &ios_fr_gpu_lock );
+    from = start_s > ios_fr_gpu_end ? start_s : ios_fr_gpu_end;
+    if (end_s > from) add = end_s - from;
+    if (end_s > ios_fr_gpu_end) ios_fr_gpu_end = end_s;
+    pthread_mutex_unlock( &ios_fr_gpu_lock );
+    if (add > 0) IOS_FR_ADD( ios_fr_busy_ns, add * 1e9 );
+}
+
+void ios_frame_note_display( int panel_hz, int intent_hz, int mode )
+{
+    ios_fr_panel_hz = panel_hz; ios_fr_intent_hz = intent_hz; ios_fr_mode = mode;
+}
+
+void ios_frame_limiter( unsigned long long ns )
+{
+    if (ios_frame_stats_on) IOS_FR_ADD( ios_fr_lim_ns, ns );
+}
+
+/* kind 0 render, 1 blit, 2 compute; attachments of a render pass */
+void ios_frame_pass( unsigned kind, unsigned loads, unsigned stores, unsigned clears )
+{
+    if (!ios_frame_stats_on) return;
+    IOS_FR_ADD( ios_fr_pass[kind < 3 ? kind : 0], 1 );
+    IOS_FR_ADD( ios_fr_att[0], loads ); IOS_FR_ADD( ios_fr_att[1], stores ); IOS_FR_ADD( ios_fr_att[2], clears );
+}
+
 /* madeira-bcd lean-diag: env.MADEIRA_LEAN_DIAG = 1 (opt-in, read once where the
  * samplers are armed). The periodic diagnostics that suspend threads stop: the
  * [thread-sample] bursts (every thread suspended 4x every 20 s), the guest RIP
@@ -2898,9 +3047,9 @@ unsigned int server_call_unlocked( void *req_ptr )
 
     ios_srv_req_count++;
 #ifdef WINE_IOS
-    ios_bg_qos_check();   /* madeira-bcd: [bg-qos] */
     /* killed inside a section (ios_defer_section_abort): no more requests */
     if (ios_section_state() & IOS_SECTION_ABORT) return STATUS_THREAD_IS_TERMINATING;
+    ios_bg_qos_check();   /* madeira-bcd: [bg-qos] */
     if (__atomic_load_n( &g_madeira_srv_direct, __ATOMIC_RELAXED ) > 0 && ios_srv_try_direct( req, &ret ))
         return ret;   /* madeira-bcd: MADEIRA_SRV_DIRECT */
 #endif
@@ -4859,27 +5008,17 @@ static void ios_create_drive_symlinks(void)
     wine_log_write( "[drives] published %d/%d DOS drive(s) in \\DosDevices rev=ml587", created, seen );
 }
 
-#include "hw_registry_ios.h"
+#include "../hidpad/hidpad_ids.h"
 
-/* CNTFRQ_EL0, the counter FEX scales the guest's TSC from. */
-static uint64_t ios_hw_cntfrq(void)
-{
-    uint64_t freq = 0;
-#ifdef __aarch64__
-    __asm__ volatile( "mrs %0, CNTFRQ_EL0" : "=r" (freq) );
-#endif
-    return freq;
-}
-
-/* hw-registry-test:begin (tests/host/check-hw-registry.py compiles from here to the end mark) */
-#define IOS_HW_RSMB 0x52534d42   /* 'RSMB', the SMBIOS firmware table provider */
-
-/* One registry key, created level by level below `base` (an existing key),
- * every new level volatile. NtCreateKey makes ONE key: since Wine 11 keys are
+/* ml2105: one registry key, created level by level below `base` (an existing
+ * key), every new level volatile -- gone at the next app start, so an XInput
+ * session never sees it. NtCreateKey makes ONE key: since Wine 11 keys are
  * named objects and a path whose parent is missing fails with
  * STATUS_OBJECT_NAME_NOT_FOUND (server/registry.c key_lookup_name), as on
- * Windows; only kernelbase's RegCreateKeyEx walks the path itself. */
-static HANDLE ios_hw_key( const char *base, const char *subpath )
+ * Windows; only kernelbase's RegCreateKeyEx walks the path itself. ml2102's
+ * single call would never have created Enum\HID\VID_054C&PID_0CE6&MI_03\...,
+ * and setupapi skips an interface whose Enum key it cannot open. */
+static HANDLE ios_hidpad_key( const char *base, const char *subpath )
 {
     WCHAR nameW[256];
     UNICODE_STRING name;
@@ -4915,196 +5054,6 @@ static HANDLE ios_hw_key( const char *base, const char *subpath )
     return parent;
 }
 
-/* The SMBIOS table exactly as GetSystemFirmwareTable('RSMB') hands it to the
- * guest (WMI's Win32_BIOS / Win32_BaseBoard read the same bytes); NULL when
- * ntdll has none. */
-static unsigned char *ios_hw_smbios( ULONG *len )
-{
-    const ULONG head = offsetof( SYSTEM_FIRMWARE_TABLE_INFORMATION, TableBuffer );
-    SYSTEM_FIRMWARE_TABLE_INFORMATION *sfti;
-    ULONG size = head, needed = 0;
-    unsigned char *table = NULL;
-    NTSTATUS status;
-    int tries;
-
-    *len = 0;
-    for (tries = 0; tries < 2; tries++)
-    {
-        if (!(sfti = calloc( 1, size ))) return NULL;
-        sfti->ProviderSignature = IOS_HW_RSMB;
-        sfti->Action = SystemFirmwareTable_Get;
-        sfti->TableID = 0;
-        status = NtQuerySystemInformation( SystemFirmwareTableInformation, sfti, size, &needed );
-        if (status == STATUS_BUFFER_TOO_SMALL && needed > size)
-        {
-            free( sfti );
-            size = needed;
-            continue;
-        }
-        if (!status && sfti->TableBufferLength && sfti->TableBufferLength <= size - head &&
-            (table = malloc( sfti->TableBufferLength )))
-        {
-            memcpy( table, sfti->TableBuffer, sfti->TableBufferLength );
-            *len = sfti->TableBufferLength;
-        }
-        free( sfti );
-        break;
-    }
-    return table;
-}
-
-/* wineboot's fallback when the TSC rate is unknown: the processor's MaxMhz. */
-static DWORD ios_hw_power_mhz(void)
-{
-    ULONG count = peb->NumberOfProcessors ? peb->NumberOfProcessors : 1;
-    PROCESSOR_POWER_INFORMATION *info;
-    DWORD mhz = 0;
-
-    if ((info = calloc( count, sizeof(*info) )))
-    {
-        if (!NtPowerInformation( ProcessorInformation, NULL, 0, info, count * sizeof(*info) ))
-            mhz = info[0].MaxMhz;
-        free( info );
-    }
-    return mhz;
-}
-
-static void ios_hw_sz( HANDLE key, const char *name, const char *value )
-{
-    WCHAR nameW[64], data[HWREG_STR];
-    UNICODE_STRING str;
-    size_t n = strnlen( value, HWREG_STR - 1 );
-
-    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
-    ascii_to_unicode( data, value, n );
-    data[n] = 0;
-    init_unicode_string( &str, nameW );
-    NtSetValueKey( key, &str, 0, REG_SZ, data, (n + 1) * sizeof(WCHAR) );
-}
-
-static void ios_hw_dword( HANDLE key, const char *name, DWORD value )
-{
-    WCHAR nameW[64];
-    UNICODE_STRING str;
-
-    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
-    init_unicode_string( &str, nameW );
-    NtSetValueKey( key, &str, 0, REG_DWORD, &value, sizeof(value) );
-}
-
-/***********************************************************************
- *           ios_hw_registry_publish
- *
- * wineboot's create_hardware_registry_keys for this port. Desktop Wine runs
- * wineboot at every boot and it writes the volatile
- * HKLM\HARDWARE\DESCRIPTION\System tree: Identifier and SystemBiosDate, BIOS
- * (from the SMBIOS table), CentralProcessor\N and FloatingPointProcessor\N for
- * every processor. wineboot never runs here, so none of it existed: GTA V
- * Enhanced's hardware-info thread failed to open CentralProcessor\0 and BIOS,
- * and WMI's Win32_Processor had no Caption. Written once per session, by the
- * first process, after init_cpu_info (the processor count) and before the
- * first process builds its environment. The processor values describe what
- * the x86-64 guest sees from FEX's CPUID (hw_registry_ios.h), the count is
- * GetSystemInfo's. Children of the session read the same registry.
- */
-void ios_hw_registry_publish(void)
-{
-    static const char machine[] = "\\Registry\\Machine";
-    static const char sysdesc[] = "HARDWARE\\DESCRIPTION\\System";
-    /* FEX reads this switch itself (FetchHostFeatures); it is only mirrored here. */
-    static const char fex_avx[] = "MADEIRA_FEX_AVX";
-    const char *avx = getenv( fex_avx );
-    struct hwreg_cpu cpu;
-    struct hwreg_bios bios;
-    unsigned int i, count, cpus = 0, fpus = 0;
-    unsigned char *smbios;
-    ULONG smbios_len = 0;
-    char path[96];
-    HANDLE key;
-
-    /* 0 writes no HARDWARE\DESCRIPTION keys (wineboot's volatile hardware tree,
-     * which no session had before). */
-    if (!hwreg_enabled( getenv( "MADEIRA_HW_REGISTRY" ) ))
-    {
-        wine_log_write( "[hw-registry] MADEIRA_HW_REGISTRY=0, no HARDWARE\\DESCRIPTION keys written" );
-        return;
-    }
-
-    count = hwreg_cpu_count( peb->NumberOfProcessors );
-    /* AVX exists only in FEX's ARM64EC module; a 32-bit main image runs the WOW64
-     * module, which has no AVX. */
-    hwreg_fex_cpu( &cpu, avx && avx[0] == '1' && !ios_main_image_i386, ios_hw_cntfrq() );
-    if (!cpu.mhz) cpu.mhz = ios_hw_power_mhz();
-    smbios = ios_hw_smbios( &smbios_len );
-    hwreg_bios_values( &bios, smbios, smbios_len, PACKAGE_VERSION );
-    free( smbios );
-
-    if (!(key = ios_hw_key( machine, sysdesc )))
-    {
-        wine_log_write( "[hw-registry] could not create HKLM\\%s, nothing written", sysdesc );
-        return;
-    }
-    ios_hw_sz( key, "Identifier", "AT compatible" );
-    ios_hw_sz( key, "SystemBiosDate", "01/01/70" );
-    NtClose( key );
-
-    snprintf( path, sizeof(path), "%s\\BIOS", sysdesc );
-    if ((key = ios_hw_key( machine, path )))
-    {
-        ios_hw_sz( key, "BaseBoardManufacturer", bios.board_vendor );
-        ios_hw_sz( key, "BaseBoardProduct", bios.board_product );
-        ios_hw_sz( key, "BaseBoardVersion", bios.board_version );
-        ios_hw_sz( key, "BIOSVendor", bios.bios_vendor );
-        ios_hw_sz( key, "BIOSVersion", bios.bios_version );
-        ios_hw_sz( key, "BIOSReleaseDate", bios.bios_date );
-        ios_hw_dword( key, "BiosMajorRelease", bios.bios_major );
-        ios_hw_dword( key, "BiosMinorRelease", bios.bios_minor );
-        ios_hw_dword( key, "ECFirmwareMajorVersion", bios.ec_major );
-        ios_hw_dword( key, "ECFirmwareMinorVersion", bios.ec_minor );
-        ios_hw_sz( key, "SystemManufacturer", bios.sys_vendor );
-        ios_hw_sz( key, "SystemProductName", bios.sys_product );
-        ios_hw_sz( key, "SystemVersion", bios.sys_version );
-        ios_hw_sz( key, "SystemSKU", bios.sys_sku );
-        ios_hw_sz( key, "SystemFamily", bios.sys_family );
-        NtClose( key );
-    }
-
-    for (i = 0; i < count; i++)
-    {
-        snprintf( path, sizeof(path), "%s\\CentralProcessor\\%u", sysdesc, i );
-        if ((key = ios_hw_key( machine, path )))
-        {
-            ios_hw_dword( key, "FeatureSet", cpu.feature_set );
-            ios_hw_sz( key, "Identifier", cpu.identifier );
-            ios_hw_sz( key, "VendorIdentifier", cpu.vendor );
-            ios_hw_sz( key, "ProcessorNameString", cpu.brand );
-            ios_hw_dword( key, "~MHz", cpu.mhz );
-            NtClose( key );
-            cpus++;
-        }
-        snprintf( path, sizeof(path), "%s\\FloatingPointProcessor\\%u", sysdesc, i );
-        if ((key = ios_hw_key( machine, path )))
-        {
-            ios_hw_sz( key, "Identifier", cpu.identifier );
-            NtClose( key );
-            fpus++;
-        }
-    }
-
-    wine_log_write( "[hw-registry] HKLM\\%s (volatile): %u/%u CentralProcessor + %u FloatingPointProcessor "
-                    "\"%s\" %s \"%s\" ~MHz %u FeatureSet 0x%08x; BIOS \"%s\" \"%s\" (%s, %u Wine default(s))",
-                    sysdesc, cpus, count, fpus, cpu.identifier, cpu.vendor, cpu.brand, (unsigned int)cpu.mhz,
-                    (unsigned int)cpu.feature_set, bios.sys_vendor, bios.sys_product,
-                    smbios_len ? "SMBIOS" : "no SMBIOS table", bios.defaults );
-}
-/* hw-registry-test:end */
-
-#include "../hidpad/hidpad_ids.h"
-
-/* ml2105: the HID pad's registry keys are made level by level, every new level
- * volatile, by the same helper as the hardware description keys above. */
-#define ios_hidpad_key ios_hw_key
-
 static void ios_hidpad_value( HANDLE key, const char *value, ULONG type, const char *const *strings,
                               unsigned int count, DWORD number )
 {
@@ -5134,8 +5083,8 @@ static void ios_hidpad_value( HANDLE key, const char *value, ULONG type, const c
 /* ml2105: the identity whose \??\HID#... link the wineserver created
  * (hidpad_ios.c), or NULL; `link` gets its interface name. The registry must
  * name exactly the device that exists: the wineserver reads MADEIRA_HIDPAD
- * when it starts, but madeira.cfg's env.NAME lines are exported later, just
- * before this process, and could name another identity. */
+ * when it starts, but bcd.cfg's and the game file's env.NAME lines are
+ * exported later, just before this process, and could name another identity. */
 static const struct hidpad_identity *ios_hidpad_live_identity( char *link, unsigned int size )
 {
     unsigned int i;
@@ -5238,6 +5187,259 @@ static void ios_hidpad_publish(void)
     wine_log_write( "[hid-pad] ml2102 %s %04X:%04X registered (%u/4 keys) as %s rev=ml2105",
                     id->env, id->vid, id->pid, written, symlink );
 }
+
+#include "hw_registry_ios.h"
+
+/* madeira-bcd: CNTFRQ_EL0, the counter FEX scales the guest's TSC from. */
+static uint64_t ios_hw_cntfrq(void)
+{
+    uint64_t freq = 0;
+#ifdef __aarch64__
+    __asm__ volatile( "mrs %0, CNTFRQ_EL0" : "=r" (freq) );
+#endif
+    return freq;
+}
+
+/* hw-registry-test:begin (tests/host/check-hw-registry.py compiles from here to the end mark) */
+#define IOS_HW_RSMB 0x52534d42   /* 'RSMB', the SMBIOS firmware table provider */
+
+/* The SMBIOS table exactly as GetSystemFirmwareTable('RSMB') hands it to the
+ * guest (WMI's Win32_BIOS / Win32_BaseBoard read the same bytes); NULL when
+ * ntdll has none. */
+static unsigned char *ios_hw_smbios( ULONG *len )
+{
+    const ULONG head = offsetof( SYSTEM_FIRMWARE_TABLE_INFORMATION, TableBuffer );
+    SYSTEM_FIRMWARE_TABLE_INFORMATION *sfti;
+    ULONG size = head, needed = 0;
+    unsigned char *table = NULL;
+    NTSTATUS status;
+    int tries;
+
+    *len = 0;
+    for (tries = 0; tries < 2; tries++)
+    {
+        if (!(sfti = calloc( 1, size ))) return NULL;
+        sfti->ProviderSignature = IOS_HW_RSMB;
+        sfti->Action = SystemFirmwareTable_Get;
+        sfti->TableID = 0;
+        status = NtQuerySystemInformation( SystemFirmwareTableInformation, sfti, size, &needed );
+        if (status == STATUS_BUFFER_TOO_SMALL && needed > size)
+        {
+            free( sfti );
+            size = needed;
+            continue;
+        }
+        if (!status && sfti->TableBufferLength && sfti->TableBufferLength <= size - head &&
+            (table = malloc( sfti->TableBufferLength )))
+        {
+            memcpy( table, sfti->TableBuffer, sfti->TableBufferLength );
+            *len = sfti->TableBufferLength;
+        }
+        free( sfti );
+        break;
+    }
+    return table;
+}
+
+/* wineboot's fallback when the TSC rate is unknown: the processor's MaxMhz. */
+static DWORD ios_hw_power_mhz(void)
+{
+    ULONG count = peb->NumberOfProcessors ? peb->NumberOfProcessors : 1;
+    PROCESSOR_POWER_INFORMATION *info;
+    DWORD mhz = 0;
+
+    if ((info = calloc( count, sizeof(*info) )))
+    {
+        if (!NtPowerInformation( ProcessorInformation, NULL, 0, info, count * sizeof(*info) ))
+            mhz = info[0].MaxMhz;
+        free( info );
+    }
+    return mhz;
+}
+
+static void ios_hw_sz( HANDLE key, const char *name, const char *value )
+{
+    WCHAR nameW[64], data[HWREG_STR];
+    UNICODE_STRING str;
+    size_t n = strnlen( value, HWREG_STR - 1 );
+
+    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
+    ascii_to_unicode( data, value, n );
+    data[n] = 0;
+    init_unicode_string( &str, nameW );
+    NtSetValueKey( key, &str, 0, REG_SZ, data, (n + 1) * sizeof(WCHAR) );
+}
+
+static void ios_hw_dword( HANDLE key, const char *name, DWORD value )
+{
+    WCHAR nameW[64];
+    UNICODE_STRING str;
+
+    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
+    init_unicode_string( &str, nameW );
+    NtSetValueKey( key, &str, 0, REG_DWORD, &value, sizeof(value) );
+}
+
+/* Session Manager\Environment is saved with the prefix: write a value only
+ * when it differs from what the key holds. 1 = written. */
+static int ios_hw_env_value( HANDLE key, const char *name, const char *value )
+{
+    union
+    {
+        KEY_VALUE_PARTIAL_INFORMATION info;
+        char raw[offsetof( KEY_VALUE_PARTIAL_INFORMATION, Data ) + 128 * sizeof(WCHAR)];
+    } buf;
+    WCHAR nameW[64];
+    UNICODE_STRING str;
+    ULONG size = 0, n = strlen( value ), i;
+    const WCHAR *old;
+
+    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
+    init_unicode_string( &str, nameW );
+    if (!NtQueryValueKey( key, &str, KeyValuePartialInformation, &buf, sizeof(buf), &size ) &&
+        buf.info.Type == REG_SZ && buf.info.DataLength >= n * sizeof(WCHAR))
+    {
+        old = (const WCHAR *)buf.info.Data;
+        for (i = 0; i < n; i++) if (old[i] != (unsigned char)value[i]) break;
+        if (i == n && (buf.info.DataLength == n * sizeof(WCHAR) || !old[n])) return 0;
+    }
+    ios_hw_sz( key, name, value );
+    return 1;
+}
+
+/***********************************************************************
+ *           ios_hw_registry_publish
+ *
+ * madeira-bcd: wineboot's create_hardware_registry_keys for this port
+ * (docs/hw-registry.md). Desktop Wine runs wineboot at every boot and it
+ * writes the volatile HKLM\HARDWARE\DESCRIPTION\System tree: Identifier and
+ * SystemBiosDate, BIOS (from the SMBIOS table), CentralProcessor\N and
+ * FloatingPointProcessor\N for every processor. wineboot never runs here, so
+ * none of it existed: GTA V Enhanced's hardware-info thread failed to open
+ * CentralProcessor\0 and BIOS (build 332, log PlayGTAV.exe 2026-10-02
+ * 15:13:38 with trace+reg), WMI's Win32_Processor had no Caption. Written
+ * once per session, by the first process, after init_cpu_info (the processor
+ * count) and before the first process builds its environment. The processor
+ * values describe what the x86-64 guest sees from FEX's CPUID
+ * (hw_registry_ios.h), the count is GetSystemInfo's. Children of the session
+ * read the same registry.
+ */
+void ios_hw_registry_publish(void)
+{
+    static const char machine[] = "\\Registry\\Machine";
+    static const char sysdesc[] = "HARDWARE\\DESCRIPTION\\System";
+    static const char envkey[] = "\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Session Manager\\Environment";
+    /* FEX reads this switch itself (tools/patch-fex-ios-avx.py); it is only mirrored here. */
+    static const char fex_avx[] = "MADEIRA_FEX_AVX";
+    const char *avx = getenv( fex_avx );
+    struct hwreg_cpu cpu;
+    struct hwreg_bios bios;
+    struct hwreg_env env[HWREG_ENV_VALUES];
+    unsigned int i, count, cpus = 0, fpus = 0, rewritten = 0;
+    unsigned char *smbios;
+    ULONG smbios_len = 0;
+    char path[96], extra[128] = "";
+    WCHAR envW[ARRAY_SIZE(envkey)];
+    UNICODE_STRING name;
+    OBJECT_ATTRIBUTES attr;
+    HANDLE key;
+    int mode;
+
+    /* Default 1: wineboot's volatile HKLM\HARDWARE\DESCRIPTION\System keys (CPU as FEX's
+     * CPUID shows it, BIOS from SMBIOS). 0: none. 2: also wineboot's five processor values
+     * in Session Manager\Environment (saved with the prefix). */
+    mode = hwreg_mode( getenv( "MADEIRA_HW_REGISTRY" ) );
+    if (!mode)
+    {
+        wine_log_write( "[hw-registry] madeira-bcd: MADEIRA_HW_REGISTRY=0, no HARDWARE\\DESCRIPTION keys written" );
+        return;
+    }
+
+    count = hwreg_cpu_count( peb->NumberOfProcessors );
+    /* AVX exists only in the ARM64EC module (WineProcessBridge.m links xtajit64-avx.dll for a
+     * 64-bit target); a 32-bit main image runs FEX's WOW64 module, which has no AVX. */
+    hwreg_fex_cpu( &cpu, avx && avx[0] == '1' && !ios_main_image_i386, ios_hw_cntfrq() );
+    if (!cpu.mhz) cpu.mhz = ios_hw_power_mhz();
+    smbios = ios_hw_smbios( &smbios_len );
+    hwreg_bios_values( &bios, smbios, smbios_len, PACKAGE_VERSION );
+    free( smbios );
+
+    if (!(key = ios_hidpad_key( machine, sysdesc )))
+    {
+        wine_log_write( "[hw-registry] madeira-bcd: could not create HKLM\\%s, nothing written", sysdesc );
+        return;
+    }
+    ios_hw_sz( key, "Identifier", "AT compatible" );
+    ios_hw_sz( key, "SystemBiosDate", "01/01/70" );
+    NtClose( key );
+
+    snprintf( path, sizeof(path), "%s\\BIOS", sysdesc );
+    if ((key = ios_hidpad_key( machine, path )))
+    {
+        ios_hw_sz( key, "BaseBoardManufacturer", bios.board_vendor );
+        ios_hw_sz( key, "BaseBoardProduct", bios.board_product );
+        ios_hw_sz( key, "BaseBoardVersion", bios.board_version );
+        ios_hw_sz( key, "BIOSVendor", bios.bios_vendor );
+        ios_hw_sz( key, "BIOSVersion", bios.bios_version );
+        ios_hw_sz( key, "BIOSReleaseDate", bios.bios_date );
+        ios_hw_dword( key, "BiosMajorRelease", bios.bios_major );
+        ios_hw_dword( key, "BiosMinorRelease", bios.bios_minor );
+        ios_hw_dword( key, "ECFirmwareMajorVersion", bios.ec_major );
+        ios_hw_dword( key, "ECFirmwareMinorVersion", bios.ec_minor );
+        ios_hw_sz( key, "SystemManufacturer", bios.sys_vendor );
+        ios_hw_sz( key, "SystemProductName", bios.sys_product );
+        ios_hw_sz( key, "SystemVersion", bios.sys_version );
+        ios_hw_sz( key, "SystemSKU", bios.sys_sku );
+        ios_hw_sz( key, "SystemFamily", bios.sys_family );
+        NtClose( key );
+    }
+
+    for (i = 0; i < count; i++)
+    {
+        snprintf( path, sizeof(path), "%s\\CentralProcessor\\%u", sysdesc, i );
+        if ((key = ios_hidpad_key( machine, path )))
+        {
+            ios_hw_dword( key, "FeatureSet", cpu.feature_set );
+            ios_hw_sz( key, "Identifier", cpu.identifier );
+            ios_hw_sz( key, "VendorIdentifier", cpu.vendor );
+            ios_hw_sz( key, "ProcessorNameString", cpu.brand );
+            ios_hw_dword( key, "~MHz", cpu.mhz );
+            NtClose( key );
+            cpus++;
+        }
+        snprintf( path, sizeof(path), "%s\\FloatingPointProcessor\\%u", sysdesc, i );
+        if ((key = ios_hidpad_key( machine, path )))
+        {
+            ios_hw_sz( key, "Identifier", cpu.identifier );
+            NtClose( key );
+            fpus++;
+        }
+    }
+
+    if (mode == 2)
+    {
+        ascii_to_unicode( envW, envkey, ARRAY_SIZE(envkey) );
+        init_unicode_string( &name, envW );
+        InitializeObjectAttributes( &attr, &name, OBJ_CASE_INSENSITIVE, 0, NULL );
+        if (!NtOpenKey( &key, KEY_QUERY_VALUE | KEY_SET_VALUE, &attr ))
+        {
+            hwreg_environment( env, &cpu, peb->NumberOfProcessors );
+            for (i = 0; i < HWREG_ENV_VALUES; i++) rewritten += ios_hw_env_value( key, env[i].name, env[i].value );
+            NtClose( key );
+            snprintf( extra, sizeof(extra), "; Session Manager\\Environment: %u of %u processor values rewritten",
+                      rewritten, (unsigned int)HWREG_ENV_VALUES );
+        }
+        else snprintf( extra, sizeof(extra), "; Session Manager\\Environment missing, not touched" );
+    }
+
+    wine_log_write( "[hw-registry] madeira-bcd: HKLM\\%s (volatile): %u/%u CentralProcessor + %u FloatingPointProcessor "
+                    "\"%s\" %s \"%s\" ~MHz %u FeatureSet 0x%08x; BIOS \"%s\" \"%s\" (%s, %u Wine default(s))%s; "
+                    "MADEIRA_HW_REGISTRY=0 turns it off",
+                    sysdesc, cpus, count, fpus, cpu.identifier, cpu.vendor, cpu.brand, (unsigned int)cpu.mhz,
+                    (unsigned int)cpu.feature_set, bios.sys_vendor, bios.sys_product,
+                    smbios_len ? "SMBIOS" : "no SMBIOS table", bios.defaults, extra );
+}
+/* hw-registry-test:end */
 #endif
 
 
@@ -5719,19 +5921,32 @@ void server_init_process_done(void)
          * ios_thread_sampler_main() above. */
         if (__sync_bool_compare_and_swap(&ios_ts_armed, 0, 1))
         {
+            /* madeira-bcd: MADEIRA_PROBES picks which always-on profilers start,
+             * for timing runs: unset/1 = all (as before); "light" = only the
+             * xprobe ([xp]/[xp-t]/[xp-api], counters read 4x a second, no thread
+             * is ever suspended); 0 = none. The thread sampler suspends every
+             * thread 4x per 20 s and the guest RIP profile suspends the game's
+             * threads 200x in a second after that -- cheap, but not free on a
+             * device whose efficiency cores are saturated (God of War at 1080p). */
+            const char *probes_env = getenv("MADEIRA_PROBES");
+            int probes = !probes_env || !*probes_env ? 2 : !strcmp(probes_env, "0") ? 0 : !strcmp(probes_env, "light") ? 1 : 2;
             /* 1: no thread-suspending samplers ([thread-sample], [rip-profile], [cpu-split], [wprof]) and rare memory walks; [xp] unchanged */
             const char *lean_env = getenv("MADEIRA_LEAN_DIAG");
             /* 1: a [power] line every 5 s (coalition GPU energy, IOReport, battery) and [power-t] (energy per thread) */
             const char *probe_env = getenv("MADEIRA_POWER_PROBE");
             ios_lean_diag = lean_env && *lean_env && strcmp(lean_env, "0") != 0;
             ios_power_probe_on = probe_env && *probe_env && strcmp(probe_env, "0") != 0;
+            if (probes < 2)
+                wine_log_write("[probes] madeira-bcd MADEIRA_PROBES=%s: thread sampler, guest RIP profile and W-thread profiler off%s",
+                               probes_env, probes ? "; [xp] counters stay" : "; [xp] counters off too");
             if (ios_lean_diag)
                 wine_log_write("[lean-diag] madeira-bcd MADEIRA_LEAN_DIAG=%s: [thread-sample] bursts, guest RIP profile ([rip-profile], "
                                "[cpu-split]) and [wprof] off; [sync-census] every 20 s and [xp]/[xp-t]/[xp-api] every 250 ms / 1 s as "
                                "before; the warmer's memory walks every ~10 min", lean_env);
-            dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{ ios_thread_sampler_main(); });
-            dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{ ios_xprobe_main(); });   /* ml1128 */
-            if (!ios_lean_diag) dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{ ios_wprof_main(); });   /* ml1129 */
+            ios_frame_stats_arm();   /* madeira-bcd [frame]: off unless MADEIRA_FRAME_STATS is set */
+            if (probes >= 2) dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{ ios_thread_sampler_main(); });
+            if (probes >= 1) dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{ ios_xprobe_main(); });   /* ml1128 */
+            if (probes >= 2 && !ios_lean_diag) dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{ ios_wprof_main(); });   /* ml1129 */
         }
         if (!getenv("MADEIRA_QUIET"))
         {

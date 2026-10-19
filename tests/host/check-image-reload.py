@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """A module loaded again at the base of its unloaded pool copy gets fresh .data/.bss; no Wine runs.
 
-GTA V Enhanced: the GTA5_Enhanced child loads dxgi.dll (DXMT), unloads it, then
-loads it again at the SAME base. mprotect_exec's already-copied check
+GTA V Enhanced with env.MADEIRA_DXGI_SRC = 1 (logs gta1051/1149/1150/1238/1321,
+2026-10-02): the GTA5_Enhanced child (peb 0x1099dc000) loads dxgi.dll at
+0x71f7ff0000 ([jit-pool] image ... pool 0x154b98000), unloads it ([iOS-xrem]),
+then loads it again at the SAME base. mprotect_exec's already-copied check
 (ml352: MZ + SizeOfImage) adopted the old pool copy -- no new [jit-pool] line --
 and with it the unloaded module's .bss: the guard of dxmt::Config::getInstance()'s
 function-local static still said "constructed", while DLL_PROCESS_DETACH had run
@@ -15,10 +17,9 @@ ios_jit_same_headers, struct ios_jit_mapping) against a model table, and checks
 the call sites textually:
   - delete_view marks the copies of an unmapped SEC_IMAGE view (after the opt-in
     retire, before unmap_area); data views, adjacent images: untouched;
-  - default (mode 1): same image (identical PE headers), NULL owner -> rebuild
-    in place, but only inside a pool ledger record of the process mapping it
-    again (ios_pool_ledger_holds); per-process copy / different headers -> new
-    copy; a live entry -> the old early-out;
+  - default (mode 1): same image (identical PE headers), same mapping process,
+    NULL owner -> rebuild in place; other process / per-process copy / different
+    headers -> new copy; a live entry -> the old early-out;
   - MADEIRA_IMAGE_RELOAD=2 -> always a new copy; =0 -> nothing marked, old
     behaviour; other values -> default;
   - new slots (add_mapping, child ntdll copies) start unmarked;
@@ -53,8 +54,7 @@ assert delete.index('ios_jit_retire_image') < delete.index('ios_jit_note_image_u
 
 add = function(native, 'void ios_jit_add_mapping(void *pe_base, void *jit_base, size_t size)')
 assert add.index('ios_jit_mappings[slot].unmapped = 0;') < add.index('ios_jit_mappings[slot].pe_base = pe_base;')
-child = native[native.index('ios_jit_mappings[slot].jit_base = rx_dest;'):][:900]
-assert 'ios_jit_mappings[slot].owner_peb = child_peb;' in child
+child = native[native.index('ios_jit_mappings[slot].owner_peb = child_peb;'):][:300]
 assert child.index('ios_jit_mappings[slot].unmapped = 0;') < child.index('ios_jit_mappings[slot].pe_base = m->pe_base;')
 
 early = native[native.index('/* Check if this image was already copied to JIT pool */'):]
@@ -159,15 +159,15 @@ int main(int argc, char **argv)
     view_lo = new_view; view_len = sizeof(new_view);
     ios_jit_mapping_count = 3;
     ios_jit_mappings[0] = (struct ios_jit_mapping){ .pe_base = (void *)base, .jit_base = old_copy,
-                                                    .size = 0x136000 };
+                                                    .size = 0x136000, .map_peb = child };
     /* a per-process copy of the same image, and the next image up */
     ios_jit_mappings[1] = (struct ios_jit_mapping){ .pe_base = (void *)base, .jit_base = old_copy,
-                                                    .size = 0x136000, .owner_peb = parent };
+                                                    .size = 0x136000, .owner_peb = parent, .map_peb = parent };
     ios_jit_mappings[2] = (struct ios_jit_mapping){ .pe_base = (void *)(base + 0x136000), .jit_base = neighbour,
-                                                    .size = 0x10000 };
+                                                    .size = 0x10000, .map_peb = child };
 
     /* live entry: the old early-out (second section of a loaded image) */
-    assert(ios_jit_reload_choice(&ios_jit_mappings[0], 1, mode) == 0);
+    assert(ios_jit_reload_choice(&ios_jit_mappings[0], child, 1, mode) == 0);
 
     struct file_view data = { (void *)base, 0x136000, 0 };
     delete_view_model(&data);
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
     if (mode == 0)
     {
         assert(!ios_jit_mappings[0].unmapped && !ios_jit_mappings[1].unmapped);
-        assert(ios_jit_reload_choice(&ios_jit_mappings[0], 1, mode) == 0);
+        assert(ios_jit_reload_choice(&ios_jit_mappings[0], child, 1, mode) == 0);
         puts("PASS (mode 0): nothing marked, the unloaded copy is adopted as before");
         return 0;
     }
@@ -196,14 +196,15 @@ int main(int argc, char **argv)
     assert(ios_jit_same_headers(base, old_copy) == 0);
     view_lo = new_view;
 
-    int c_same = ios_jit_reload_choice(&ios_jit_mappings[0], same, mode);
-    int c_diff = ios_jit_reload_choice(&ios_jit_mappings[0], 0, mode);
-    int c_owned = ios_jit_reload_choice(&ios_jit_mappings[1], same, mode);
-    assert(c_diff == 2 && c_owned == 2);
+    int c_same = ios_jit_reload_choice(&ios_jit_mappings[0], child, same, mode);
+    int c_other_peb = ios_jit_reload_choice(&ios_jit_mappings[0], parent, same, mode);
+    int c_diff = ios_jit_reload_choice(&ios_jit_mappings[0], child, 0, mode);
+    int c_owned = ios_jit_reload_choice(&ios_jit_mappings[1], parent, same, mode);
+    assert(c_other_peb == 2 && c_diff == 2 && c_owned == 2);
     if (mode == 1)
     {
         assert(c_same == 1);
-        puts("PASS (mode 1): same image/base -> rebuilt in place (inside the process's ledger record); "
+        puts("PASS (mode 1): same image/base/process -> rebuilt in place; other process, "
              "per-process copy or different headers -> new copy; live entry -> old early-out");
     }
     else
@@ -232,6 +233,8 @@ with tempfile.TemporaryDirectory(prefix='madeira-image-reload-') as directory:
         result = subprocess.run([str(executable), str(mode)], env=env, check=True,
                                 capture_output=True, text=True)
         print(f'MADEIRA_IMAGE_RELOAD={value!r}: {result.stdout.strip()}')
-        assert (f'[image-reload] mode={mode}' in result.stderr) == (mode != 1), result.stderr
+        assert f'[image-reload] madeira-bcd mode={mode}' in result.stderr, result.stderr
+        assert ('pool copy marked' in result.stderr or 'pool copies marked' in result.stderr) == (mode != 0), \
+            result.stderr
 print('PASS: an image loaded again at the base of its unloaded copy never adopts that copy\'s globals '
       '(default: rebuilt in place); MADEIRA_IMAGE_RELOAD=2 new copy, =0 old behaviour')

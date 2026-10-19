@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "x64-image-nocopy"
+ ],
+ "next": [
+  "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+ ],
+ "note": "Marvel's Spider-Man: Miles Morales, build 548, iPad16,5 (15416 MB): crashed",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

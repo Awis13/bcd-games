@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "GTA V Legacy, build 543, iPhone18,2 (11695 MB): crashed",
+ "outcome": "crashed",
+ "stage": 5,
+ "status": "stuck"
+}

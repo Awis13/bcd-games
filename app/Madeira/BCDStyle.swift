@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright 2026 thebcd69 (BCD)
+// BCD Material: additional terms under GPL-3.0 section 7 apply; see LICENSE-BCD.md.
+
+import SwiftUI
+
+/// BCD's look (2026-10-18): the night-violet ground and the violet-to-fuchsia light of
+/// the BCD logo, rounded heavy type, and soft glowing cards. The setup screens use it
+/// first; the new library screens will share it.
+enum BCDStyle {
+    static let ground = Color(red: 0.043, green: 0.031, blue: 0.086)        // #0B0816
+    static let groundTop = Color(red: 0.102, green: 0.059, blue: 0.200)     // #1A0F33
+    static let surface = Color(red: 0.102, green: 0.078, blue: 0.188)       // #1A1430
+    static let surfaceRaised = Color(red: 0.137, green: 0.106, blue: 0.247) // #231B3F
+    static let stroke = Color(red: 0.184, green: 0.137, blue: 0.314)        // #2F2350
+    static let text = Color(red: 0.957, green: 0.945, blue: 1.0)            // #F4F1FF
+    static let textSoft = Color(red: 0.718, green: 0.682, blue: 0.812)      // #B7AECF
+    static let violet = Color(red: 0.486, green: 0.227, blue: 0.929)        // #7C3AED
+    static let fuchsia = Color(red: 0.851, green: 0.275, blue: 0.937)       // #D946EF
+    static let lavender = Color(red: 0.788, green: 0.718, blue: 1.0)        // #C9B7FF
+    static let mint = Color(red: 0.204, green: 0.827, blue: 0.600)          // #34D399
+    static let alert = Color(red: 1.0, green: 0.459, blue: 0.533)           // #FF7588
+
+    static let glow = LinearGradient(colors: [violet, fuchsia], startPoint: .leading, endPoint: .trailing)
+    static let backdrop = LinearGradient(colors: [groundTop, ground, ground], startPoint: .top, endPoint: .bottom)
+
+    static func title(_ size: CGFloat = 32) -> Font { .system(size: size, weight: .heavy, design: .rounded) }
+    static func heading(_ size: CGFloat = 19) -> Font { .system(size: size, weight: .bold, design: .rounded) }
+    static func body(_ size: CGFloat = 16) -> Font { .system(size: size, weight: .regular, design: .rounded) }
+    static func label(_ size: CGFloat = 15) -> Font { .system(size: size, weight: .semibold, design: .rounded) }
+}
+
+/// The full-screen ground behind BCD's own screens, with the logo's glow at the top.
+struct BCDBackdrop: View {
+    var body: some View {
+        // The light is an overlay, so it never sizes the backdrop: a fixed 420-point light
+        // in the layout made screens shorter than that (a phone on its side) taller than the
+        // screen, pushing their top and bottom bars off it.
+        BCDStyle.backdrop
+            .overlay(alignment: .top) {
+                RadialGradient(colors: [BCDStyle.violet.opacity(0.35), .clear], center: .top, startRadius: 0, endRadius: 420)
+                    .frame(height: 420)
+            }
+            .clipped()
+            .ignoresSafeArea()
+    }
+}
+
+/// The BCD logo (the app icon's artwork, 256 px: enough for 84 pt at 3x) with the platform's corner and a soft glow.
+struct BCDLogoMark: View {
+    var size: CGFloat = 76
+    var body: some View {
+        Image("BCDLogo")
+            .resizable()
+            .interpolation(.high)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous))
+            .shadow(color: BCDStyle.fuchsia.opacity(0.45), radius: size * 0.25)
+            .accessibilityLabel("BCD")
+    }
+}
+
+/// The main action: a glowing violet-to-fuchsia capsule.
+struct BCDPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(BCDStyle.label(17))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(BCDStyle.glow, in: Capsule())
+            .shadow(color: BCDStyle.fuchsia.opacity(configuration.isPressed ? 0.15 : 0.35), radius: 14, y: 4)
+            .opacity(enabled ? 1 : 0.45)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+/// A quiet second choice: lavender text, full width so it is easy to reach.
+struct BCDSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(BCDStyle.label(16))
+            .foregroundStyle(BCDStyle.lavender.opacity(configuration.isPressed ? 0.6 : 1))
+            .frame(maxWidth: .infinity, minHeight: 46)
+            .contentShape(Rectangle())
+    }
+}
+
+/// An outlined alternative to the primary action.
+struct BCDOutlineButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(BCDStyle.label(16))
+            .foregroundStyle(BCDStyle.text)
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .background(BCDStyle.surface.opacity(configuration.isPressed ? 0.6 : 1), in: Capsule())
+            .overlay(Capsule().strokeBorder(BCDStyle.glow, lineWidth: 1.5))
+    }
+}
+
+extension View {
+    /// A BCD card: raised surface, hairline border, rounded corners.
+    func bcdCard(padding: CGFloat = 16) -> some View {
+        self.padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(BCDStyle.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(BCDStyle.stroke, lineWidth: 1))
+    }
+}

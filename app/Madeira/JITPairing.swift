@@ -33,7 +33,7 @@ import UserNotifications
     static let shared = OnDevicePairing()
 
     /// Shown on the iPhone as "Pair with Madeira"; the host identifier is derived from it.
-    static let hostName = "Madeira"
+    static let hostName = "BCD"
     static let timeout: TimeInterval = 300
 
     enum Phase: Equatable {
@@ -81,7 +81,7 @@ import UserNotifications
         guard Self.isSupported, !active, session == nil else { return }
         var error: UnsafeMutablePointer<CChar>?
         guard let session = madeira_rppairing_new(Self.hostName, &error) else {
-            fail(Self.take(error) ?? "Madeira could not open its pairing port.")
+            fail(Self.take(error) ?? "BCD couldn't open a network port for pairing.")
             return
         }
         self.session = session
@@ -96,7 +96,7 @@ import UserNotifications
         }
         beginBackground()
         deadline = Timer.scheduledTimer(withTimeInterval: Self.timeout, repeats: false) { _ in
-            MainActor.assumeIsolated { OnDevicePairing.shared.cancel(reason: "Pairing timed out. Try again when you are ready to pair from Settings.") }
+            MainActor.assumeIsolated { OnDevicePairing.shared.cancel(reason: "Time ran out before pairing finished. Start again when you're ready to go to Settings.") }
         }
 
         DispatchQueue.global(qos: .userInitiated).async {
@@ -133,11 +133,11 @@ import UserNotifications
         phase = .pin(pin)
         log("code shown")
         if #available(iOS 26.0, *), let task = continued as? BGContinuedProcessingTask {
-            task.updateTitle("Pairing code \(pin)", subtitle: "Enter it on this \(Self.deviceKind) to pair with Madeira")
+            task.updateTitle("Your BCD pairing code: \(pin)", subtitle: "Type it in when Settings on this \(Self.deviceKind) asks for it")
             task.progress.completedUnitCount = 1
         }
         if UIApplication.shared.applicationState != .active {
-            notify("Madeira pairing code: \(pin)", body: "Enter this code on your \(Self.deviceKind) to finish pairing.")
+            notify("\(pin) is your BCD pairing code", body: "Type it into Settings on your \(Self.deviceKind) to complete the pairing.")
         }
     }
 
@@ -155,16 +155,16 @@ import UserNotifications
                 phase = .paired(device: device ?? "this \(Self.deviceKind)")
                 log("paired")
                 if UIApplication.shared.applicationState != .active {
-                    notify("Paired with Madeira", body: "Return to Madeira to finish setting up JIT.")
+                    notify("Pairing complete", body: "Switch back to BCD to complete the JIT setup.")
                 }
                 endBackground(success: true)
             } catch {
-                fail("Pairing finished, but Madeira could not save the pairing file.")
+                fail("The pairing went through, but BCD couldn't store the pairing file.")
             }
         case 2:
             endBackground(success: false)
         default:
-            fail(message.map { "Pairing failed: \($0)" } ?? "Pairing failed. Try again.")
+            fail(message.map { "Pairing didn't go through: \($0)" } ?? "Pairing didn't go through. Please start it again.")
         }
     }
 
@@ -218,8 +218,8 @@ import UserNotifications
         guard active else { return }
         log("advertising failed error=\(error)")
         fail(error == DNSServiceErrorType(kDNSServiceErr_PolicyDenied)
-             ? "Madeira needs Local Network access to pair. Allow it in Settings › Apps › Madeira, then try again."
-             : "Madeira could not announce itself on the local network. Check that Wi-Fi is on, then try again.")
+             ? "Pairing needs Local Network access. Turn it on in Settings › Apps › BCD, then try again."
+             : "BCD couldn't make itself visible on the local network. Turn on Wi-Fi if it's off, and try again.")
     }
 
     private func stopAdvertising() {
@@ -237,11 +237,11 @@ import UserNotifications
     }
 
     private func beginBackground() {
-        grace = UIApplication.shared.beginBackgroundTask(withName: "Madeira pairing") {
+        grace = UIApplication.shared.beginBackgroundTask(withName: "BCD pairing") {
             MainActor.assumeIsolated {
                 let pairing = OnDevicePairing.shared
                 if pairing.continued == nil && pairing.active {
-                    pairing.cancel(reason: "iOS stopped Madeira in the background before pairing finished. Try again, and pair from Settings straight away.")
+                    pairing.cancel(reason: "iOS suspended BCD in the background before pairing was done. Start again, then head to Settings right away.")
                 }
                 pairing.endGrace()
             }
@@ -260,7 +260,7 @@ import UserNotifications
             guard ok else { log("register refused"); backgroundLimited = true; return }
             registered = identifier
         }
-        let request = BGContinuedProcessingTaskRequest(identifier: identifier, title: "Pairing with Madeira",
+        let request = BGContinuedProcessingTaskRequest(identifier: identifier, title: "Waiting to pair with BCD",
                                                        subtitle: "Settings › Privacy & Security › Developer Mode")
         request.strategy = .fail
         do {
@@ -278,13 +278,13 @@ import UserNotifications
         continued = task
         task.progress.totalUnitCount = 2
         if case .pin(let pin) = phase {
-            task.updateTitle("Pairing code \(pin)", subtitle: "Enter it on this \(Self.deviceKind) to pair with Madeira")
+            task.updateTitle("Your BCD pairing code: \(pin)", subtitle: "Type it in when Settings on this \(Self.deviceKind) asks for it")
             task.progress.completedUnitCount = 1
         }
         task.expirationHandler = {
             DispatchQueue.main.async {
                 OnDevicePairing.shared.continued = nil
-                OnDevicePairing.shared.cancel(reason: "iOS stopped the pairing in the background. Try again.")
+                OnDevicePairing.shared.cancel(reason: "iOS ended the pairing while BCD was in the background. Please start it again.")
             }
         }
         log("continued-processing running")
@@ -318,57 +318,5 @@ import UserNotifications
         content.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "madeira.pairing.\(UUID().uuidString)",
                                                                      content: content, trigger: nil))
-    }
-}
-
-/// What an on-device pairing is doing: the steps while Madeira waits, the PIN,
-/// and the outcome. Empty when no pairing has been started.
-struct OnDevicePairingPanel: View {
-    @ObservedObject private var pairing = OnDevicePairing.shared
-
-    private var device: String { UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone" }
-
-    var body: some View {
-        switch pairing.phase {
-        case .idle:
-            EmptyView()
-        case .waiting:
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    ProgressView()
-                    Text("Waiting for your \(device)…").font(.headline)
-                }
-                Text("Open Settings › Privacy & Security › Developer Mode, scroll down and tap **Pair with \(OnDevicePairing.hostName)**. Keep Wi-Fi on.")
-                    .font(.subheadline).fixedSize(horizontal: false, vertical: true)
-                if pairing.backgroundLimited {
-                    Text("This installation can only wait about 30 seconds in the background, so go to Settings straight away.")
-                        .font(.footnote).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
-                }
-                cancel
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        case .pin(let pin):
-            VStack(spacing: 8) {
-                Text("Enter this code on your \(device)").font(.subheadline)
-                Text(pin).font(.system(size: 40, weight: .bold, design: .monospaced)).tracking(6)
-                    .textSelection(.enabled)
-                    .accessibilityLabel("Pairing code \(pin.map(String.init).joined(separator: " "))")
-                cancel
-            }
-            .frame(maxWidth: .infinity)
-        case .paired(let name):
-            Label("Paired with \(name)", systemImage: "checkmark.circle.fill")
-                .font(.headline).foregroundStyle(.green)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        case .failed(let message):
-            Label(message, systemImage: "exclamationmark.circle.fill")
-                .font(.subheadline).foregroundStyle(.red)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var cancel: some View {
-        Button("Cancel pairing", role: .cancel) { pairing.cancel() }
-            .font(.subheadline.weight(.semibold))
     }
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""The opt-in D3DKMT adapter (env.MADEIRA_KMT_ADAPTER = 1) in
-build/win32u-unix/d3dkmt_ios.c and sysparams_ios.c; no Wine runs.
+"""The opt-in D3DKMT adapter (env.MADEIRA_KMT_ADAPTER = 1) and the [vkmt] trace
+(build/win32u-unix/d3dkmt_ios.c, sysparams_ios.c) plus DXGI's UMD version
+(tools/patch-dxgi-umd-version.py); no Wine runs.
 
 1. Wiring, read from the files: build.sh compiles d3dkmt_ios.c instead of
    upstream d3dkmt.c; the wrapper renames exactly the entry points it wraps and
@@ -11,18 +12,24 @@ build/win32u-unix/d3dkmt_ios.c and sysparams_ios.c; no Wine runs.
 2. The kmt-test region compiled on the host with the KMTQAITYPE / WDDM enums
    taken from the wine pin's d3dkmthk.h ($WINE_SRC, default ./wine): every
    QueryAdapterInfo answer (values, structure sizes, short buffers, bad
-   indices, types left to upstream), the driver version QWORD and the LUID
-   (DXMT's bit_cast<LUID>(bswap64(registryID))).
+   indices, types left to upstream), the driver version QWORD, the LUID
+   (DXMT's bit_cast<LUID>(bswap64(registryID))) and the type names.
 3. The switch, the Metal LUID lookup (fake MTLCreateSystemDefaultDevice /
    objc_msgSend resolved through dlsym, as on the phone) and the dedicated size
-   (madeira.cfg vram-mb, else 4096 MB) compiled and run.
+   (vram-mb from bcd.cfg / the game file, else 4096 MB) compiled and run.
+4. The DXGI patch on a copy of dxmt/src/dxgi/dxgi_adapter.cpp ($DXMT_SRC,
+   default ./dxmt): applies once, gated by MADEIRA_KMT_ADAPTER, falls back to
+   ~0, refuses moved anchors; with an arm64ec llvm-mingw ($MINGW) it compiles.
+   build-dxgi-dll.sh patches a copy, keeps the plain link on the pristine file,
+   and checks the patch is in the result; the catalog lists the switch off.
 """
 from pathlib import Path
-import os, re, subprocess, sys, tempfile
+import fnmatch, os, re, shutil, struct, subprocess, sys, tempfile
 
 root = Path(__file__).resolve().parents[2]
 u = root / "build/win32u-unix"
 wine = Path(os.environ.get("WINE_SRC", root / "wine"))
+dxmt = Path(os.environ.get("DXMT_SRC", root / "dxmt"))
 ok = True
 
 
@@ -46,25 +53,30 @@ build = (u / "build.sh").read_text()
 check("build.sh compiles d3dkmt_ios.c for upstream d3dkmt.c",
       re.search(r'\n        d3dkmt\)\n(?:            #[^\n]*\n)*            compile_one "\$BUILD_DIR/d3dkmt_ios.c" "d3dkmt"\n            continue', build)
       is not None)
-wrapped = ["OpenAdapterFromHdc", "QueryAdapterInfo", "QueryStatistics", "QueryVideoMemoryInfo"]
+wrapped = ["OpenAdapterFromLuid", "OpenAdapterFromHdc", "CloseAdapter", "CreateDevice", "DestroyDevice",
+           "QueryAdapterInfo", "QueryStatistics", "QueryVideoMemoryInfo", "SetQueuedLimit", "SetVidPnSourceOwner",
+           "CheckOcclusion", "CheckVidPnExclusiveOwnership", "Escape"]
 inc = kmt.index('#include "../../wine/dlls/win32u/d3dkmt.c"')
 renamed = re.findall(r"#define NtGdiDdDDI(\w+)\s+upstream_NtGdiDdDDI(\w+)", kmt[:inc])
 check("the wrapper renames exactly the wrapped entry points", sorted(a for a, b in renamed if a == b) == sorted(wrapped)
       and len(renamed) == len(wrapped))
 check("and undefines every rename after the include",
-      all("#undef NtGdiDdDDI" + n + "\n" in kmt[inc:inc + 600] for n in wrapped))
+      all("#undef NtGdiDdDDI" + n + "\n" in kmt[inc:inc + 1500] for n in wrapped))
 for n in wrapped:
     f = func(kmt, "NTSTATUS WINAPI NtGdiDdDDI%s(" % n)
-    check("NtGdiDdDDI%s calls upstream_NtGdiDdDDI%s" % (n, n), ("upstream_NtGdiDdDDI%s(" % n) in f)
+    check("NtGdiDdDDI%s calls upstream_NtGdiDdDDI%s and is traced" % (n, n),
+          ("upstream_NtGdiDdDDI%s(" % n) in f and "dprintf( 2, \"[vkmt] tid=%04x" in f)
 qai = func(kmt, "NTSTATUS WINAPI NtGdiDdDDIQueryAdapterInfo(")
 check("QueryAdapterInfo answers only with the switch, for a real adapter handle, else upstream",
       "if (madeira_kmt_adapter_enabled() && desc && desc->hAdapter && desc->pPrivateDriverData &&\n"
       "        get_d3dkmt_object( desc->hAdapter, D3DKMT_ADAPTER ))" in qai
-      and "return upstream_NtGdiDdDDIQueryAdapterInfo( desc );" in qai)
+      and "if (!ours) status = upstream_NtGdiDdDDIQueryAdapterInfo( desc );" in qai)
+check("QueryAdapterInfo logs 64 calls and the first call of every type",
+      "n <= 64 || first_of_type" in qai and "madeira_kmt_type_name( desc->Type )" in qai)
 hdc = func(kmt, "NTSTATUS WINAPI NtGdiDdDDIOpenAdapterFromHdc(")
 check("OpenAdapterFromHdc opens the adapter only with the switch, else the upstream stub",
-      "if (!madeira_kmt_adapter_enabled() || !desc || !madeira_kmt_adapter_luid( &luid ))\n"
-      "        return upstream_NtGdiDdDDIOpenAdapterFromHdc( desc );" in hdc)
+      "if (madeira_kmt_adapter_enabled() && desc && madeira_kmt_adapter_luid( &luid ))" in hdc
+      and "else status = upstream_NtGdiDdDDIOpenAdapterFromHdc( desc );" in hdc)
 vmi = func(kmt, "NTSTATUS WINAPI NtGdiDdDDIQueryVideoMemoryInfo(")
 check("QueryVideoMemoryInfo fills only an empty LOCAL budget, only with the switch",
       "if (!status && madeira_kmt_adapter_enabled() && desc->MemorySegmentGroup == D3DKMT_MEMORY_SEGMENT_GROUP_LOCAL &&\n"
@@ -76,9 +88,11 @@ check("madeira_cfg.h comes before Wine's headers (they poison strncpy)",
 
 e2 = func(sp, "NTSTATUS WINAPI NtGdiDdDDIEnumAdapters2(")
 check("EnumAdapters2 lists the adapter only with the switch and no GPU in `gpus`",
-      "if (!count && madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &open_adapter_from_luid.AdapterLuid ))" in e2
-      and "desc->pAdapters[0].AdapterLuid = open_adapter_from_luid.AdapterLuid;" in e2 and "desc->NumAdapters = 1;" in e2
+      "if (!count && madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &kmt_luid ))" in e2
+      and "desc->pAdapters[0].AdapterLuid = kmt_luid;" in e2 and "desc->NumAdapters = 1;" in e2
       and e2.index("madeira_kmt_adapter_enabled()") < e2.index("if (count > desc->NumAdapters)"))
+check("EnumAdapters2 logs the size query and the result with tid",
+      "D3DKMTEnumAdapters2(NULL) -> 0, room for %u adapters" in e2 and "if (logged++ < 8)" in e2)
 dn = func(sp, "NTSTATUS WINAPI NtGdiDdDDIOpenAdapterFromDeviceName(")
 check("OpenAdapterFromDeviceName opens the registry GPU's interface only with the switch",
       "if (!found && madeira_kmt_adapter_enabled())" in dn and "!strcmp( name + 4, kmt_id.path )" in dn)
@@ -198,6 +212,11 @@ int main(void)
             madeira_kmt_driver_version_qword( "99999.1.2.3" ) );
     madeira_kmt_luid_from_registry_id( 0x0000000100000a2bull, &l );
     printf( "luid %08x %08x\n", (unsigned)l.HighPart, (unsigned)l.LowPart );
+    printf( "names %u=%s %u=%s %u=%s %u=%s %u=%s %s\n", KMTQAITYPE_DRIVERVERSION, madeira_kmt_type_name( KMTQAITYPE_DRIVERVERSION ),
+            KMTQAITYPE_UMD_DRIVER_VERSION, madeira_kmt_type_name( KMTQAITYPE_UMD_DRIVER_VERSION ),
+            KMTQAITYPE_WDDM_2_7_CAPS, madeira_kmt_type_name( KMTQAITYPE_WDDM_2_7_CAPS ),
+            KMTQUITYPE_GPUVERSION, madeira_kmt_type_name( KMTQUITYPE_GPUVERSION ),
+            KMTQAITYPE_WDDM_3_1_CAPS, madeira_kmt_type_name( KMTQAITYPE_WDDM_3_1_CAPS ), madeira_kmt_type_name( 500 ) );
     return 0;
 }
 """
@@ -258,9 +277,11 @@ int main(void)
             rid = 0x0000000100000a2b
             v = int.from_bytes(rid.to_bytes(8, "little"), "big")   # bswap64
             check("LUID = bit_cast<LUID>(bswap64(registryID)) as DXMT", out["luid"] == "%08x %08x" % (v >> 32, v & 0xffffffff))
+            check("type names follow the header's values",
+                  out["names"] == "13=DRIVERVERSION 18=UMD_DRIVER_VERSION 70=WDDM_2_7_CAPS 64=GPUVERSION 80=WDDM_3_1_CAPS ?")
 
 # ---------------------------------------------------------------- 3. switch, Metal LUID, dedicated size
-sw = kmt[kmt.index("int madeira_kmt_adapter_enabled(void)"):kmt.index("static int kmt_is_ours(")]
+sw = kmt[kmt.index("int madeira_kmt_adapter_enabled(void)"):kmt.index("/* first 16 calls, failures up to the 64th */")]
 harness3 = r"""
 #include <dlfcn.h>
 #include <pthread.h>
@@ -307,21 +328,25 @@ with tempfile.TemporaryDirectory() as t:
         docs = t / "docs"
         docs.mkdir()
 
-        def run(exe, env, cfg=None):
+        def run(exe, env, cfg=None, game=None):
             e = {k: v for k, v in os.environ.items() if not k.startswith("MADEIRA_")}
             e["MADEIRA_DOCS_DIR"] = str(docs)
             if cfg is None:
-                (docs / "madeira.cfg").unlink(missing_ok=True)
+                (docs / "bcd.cfg").unlink(missing_ok=True)
             else:
-                (docs / "madeira.cfg").write_text(cfg)
+                (docs / "bcd.cfg").write_text(cfg)
+            if game is not None:
+                (t / "game.cfg").write_text(game)
+                e["MADEIRA_CFG_GAME"] = str(t / "game.cfg")
             e.update(env)
             r = subprocess.run([str(exe)], capture_output=True, text=True, env=e)
             return r.stdout.strip(), r.stderr
         out, err = run(fake, {})
-        check("off by default, LUID still computable", out.startswith("on=0 luid=1/1"))
+        check("off by default: no line, LUID still computable", out.startswith("on=0 luid=1/1") and "kmt-adapter=1" not in err)
         for v in ("1", "on", "TRUE", "yes"):
             out, err = run(fake, {"MADEIRA_KMT_ADAPTER": v})
-            check("MADEIRA_KMT_ADAPTER=%s turns it on" % v, out.startswith("on=1"))
+            check("MADEIRA_KMT_ADAPTER=%s turns it on and logs once" % v,
+                  out.startswith("on=1") and err.count("[vkmt] madeira-bcd kmt-adapter=1") == 1)
         out, _ = run(fake, {"MADEIRA_KMT_ADAPTER": "0"})
         check("MADEIRA_KMT_ADAPTER=0 stays off", out.startswith("on=0"))
         rid = 0x0000000100000a2b
@@ -329,21 +354,115 @@ with tempfile.TemporaryDirectory() as t:
         out, err = run(fake, {"MADEIRA_KMT_ADAPTER": "1"})
         check("LUID from MTLCreateSystemDefaultDevice().registryID via dlsym, once, device released",
               "luid=1/1 %08x:%08x created=1 released=1" % (v >> 32, v & 0xffffffff) in out
-              and err.count("[vkmt] MADEIRA_KMT_ADAPTER adapter LUID") == 1)
+              and err.count("[vkmt] adapter LUID") == 1)
         out, err = run(nometal, {"MADEIRA_KMT_ADAPTER": "1"})
         check("no Metal: no LUID, logged, no adapter", "luid=0/0" in out and "no Metal device registryID" in err)
         out, _ = run(fake, {}, cfg=None)
         check("dedicated: 4096 MB without vram-mb", out.endswith("mb=4096"))
         out, _ = run(fake, {}, cfg="vram-mb = 3072\n")
-        check("dedicated: vram-mb from madeira.cfg", out.endswith("mb=3072"))
+        check("dedicated: vram-mb from bcd.cfg", out.endswith("mb=3072"))
+        out, _ = run(fake, {}, cfg="vram-mb = 3072\n", game="vram-mb = 4096\n")
+        check("dedicated: the game file wins", out.endswith("mb=4096"))
         out, _ = run(fake, {}, cfg="vram-mb = 100\n")
         check("dedicated: below 256 MB ignored, as winemetal", out.endswith("mb=4096"))
 
+# ---------------------------------------------------------------- 4. DXGI
+adapter = dxmt / "src/dxgi/dxgi_adapter.cpp"
+
+
+def patch(path):
+    r = subprocess.run([sys.executable, str(root / "tools/patch-dxgi-umd-version.py"), str(path)],
+                       capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+if adapter.exists() and "UINT64 GetUmdDriverVersion()" in adapter.read_text():
+    # willfaust/dxmt#13 (dxmt db546ee) carries the UMD version lookup itself; the
+    # fork's patch is then a no-op. It reports what the D3DKMT adapter answers and
+    # ~0 without one -- with MADEIRA_KMT_ADAPTER unset win32u has no Madeira adapter
+    # to answer, so other games still see ~0 as before.
+    up = adapter.read_text()
+    cis = up[up.index("CheckInterfaceSupport(const GUID &guid, LARGE_INTEGER *umd_version) final {"):]
+    cis = cis[:cis.index("    return hr;\n  }")]
+    check("upstream CheckInterfaceSupport takes the version from the adapter's own KMT handle",
+          "umd_version->QuadPart = GetUmdDriverVersion();" in cis)
+    helper = up[up.index("UINT64 GetUmdDriverVersion() {"):]
+    helper = helper[:helper.index("\n  }\n")]
+    check("upstream: ~0 without a KMT handle or a version", "return ~0ull;" in helper and "local_kmt_" in helper)
+    check("upstream asks KMTQAITYPE_UMD_DRIVER_VERSION", "KMTQAITYPE_UMD_DRIVER_VERSION" in helper)
+    with tempfile.TemporaryDirectory() as t:
+        cpp = Path(t) / "dxgi_adapter.cpp"
+        shutil.copy(adapter, cpp)
+        rc, out = patch(cpp)
+        check("fork patch is a no-op on the upstream lookup", rc == 0 and cpp.read_text() == up)
+elif not adapter.exists():
+    print("note: %s not checked out (set DXMT_SRC); DXGI patch checks skipped" % adapter)
+else:
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t)
+        cpp = t / "dxgi_adapter.cpp"
+        shutil.copy(adapter, cpp)
+        rc, out = patch(cpp)
+        check("DXGI patch applies", rc == 0 and "UMD version from D3DKMT" in out)
+        src = cpp.read_text()
+        once = src
+        rc, out = patch(cpp)
+        check("second run: already patched, unchanged", rc == 0 and "already patched" in out and cpp.read_text() == once)
+        cis = src[src.index("CheckInterfaceSupport(const GUID &guid, LARGE_INTEGER *umd_version) final {"):]
+        cis = cis[:cis.index("    return hr;\n  }")]
+        check("CheckInterfaceSupport takes the version from the adapter's own KMT handle",
+              "umd_version->QuadPart = madeira_dxgi_umd_version(local_kmt_);" in cis and "QuadPart = ~0ull;" not in cis)
+        check("CheckInterfaceSupport logs its first 4 calls", "madeira_calls.fetch_add(1) < 4" in cis)
+        helper = src[src.index("static UINT64 madeira_dxgi_umd_version("):]
+        helper = helper[:helper.index("\n}\n")]
+        check("without MADEIRA_KMT_ADAPTER, or on failure, ~0 as upstream",
+              "if (!madeira_kmt_adapter_switch())\n    return ~0ull;" in helper
+              and "return (status == 0 && version) ? version : ~0ull;" in helper
+              and 'GetEnvironmentVariableA("MADEIRA_KMT_ADAPTER"' in src)
+        check("asks KMTQAITYPE_UMD_DRIVER_VERSION (18) with an 8-byte buffer",
+              "{kmt, 18 /* KMTQAITYPE_UMD_DRIVER_VERSION */,\n                                          &version, sizeof(version)}" in helper)
+        if hdr.exists():
+            check("18 is KMTQAITYPE_UMD_DRIVER_VERSION in the wine header",
+                  re.search(r"KMTQAITYPE_ADAPTERTYPE = 15,\s*KMTQAITYPE_OUTPUTDUPLCONTEXTSCOUNT,\s*KMTQAITYPE_WDDM_1_2_CAPS,"
+                            r"\s*KMTQAITYPE_UMD_DRIVER_VERSION,", hdr.read_text()) is not None)
+        bad = t / "moved.cpp"
+        bad.write_text(adapter.read_text().replace("umd_version->QuadPart = ~0ull;", "umd_version->QuadPart = 0;"))
+        before = bad.read_text()
+        rc, out = patch(bad)
+        check("moved anchor: exit 1, file untouched, anchor named", rc == 1 and bad.read_text() == before and "anchor for" in out)
+        mingw = os.environ.get("MINGW")
+        cxx = Path(mingw) / "arm64ec-w64-mingw32-clang++" if mingw else shutil.which("arm64ec-w64-mingw32-clang++")
+        if not cxx or not Path(cxx).exists():
+            print("note: no arm64ec llvm-mingw ($MINGW); compile step skipped")
+        else:
+            g = dxmt / "src/dxgi"
+            r = subprocess.run([str(cxx), "-std=c++20", "-O2", "-c", "-o", str(t / "a.o"), str(cpp),
+                                "-I%s" % g, "-I%s" % (dxmt / "src/dxmt"), "-I%s" % (dxmt / "src/util"),
+                                "-I%s" % (dxmt / "src/winemetal"), "-I%s" % (dxmt / "src/airconv"),
+                                "-I%s" % (dxmt / "include"), "-I%s" % (dxmt / "libs"), "-DNOMINMAX",
+                                "-D_WIN32_WINNT=0xa00", "-DDXMT_IOS=1", "-DDXMT_PAGE_SIZE=4096", "-fblocks",
+                                "-Wno-microsoft-exception-spec"], capture_output=True, text=True)
+            check("patched dxgi_adapter.cpp compiles for arm64ec", r.returncode == 0 and (t / "a.o").exists())
+            if r.returncode:
+                print(r.stderr[-2000:])
+
+sh = (root / "tools/build-dxgi-dll.sh").read_text()
+check("build-dxgi-dll.sh patches a copy of dxgi_adapter.cpp",
+      'cp "$G/dxgi_adapter.cpp" "$OUT/src/dxgi_adapter.cpp"' in sh
+      and 'tools/patch-dxgi-umd-version.py" "$OUT/src/dxgi_adapter.cpp"' in sh)
+check("the plain (recipe) link keeps the pristine adapter, the shipped one the patched",
+      'compile "$G/dxgi_adapter.cpp" "$OUT/obj/dxgi_adapter_plain.o"' in sh
+      and 'link_dll "$OUT/obj/dxgi_factory_plain.o" "$OUT/plain/dxgi.dll" "$OUT/obj/dxgi_adapter_plain.o"' in sh
+      and 'link_dll "$OUT/obj/dxgi_factory.o" "$OUT/dxgi.dll" "$OUT/obj/dxgi_adapter.o"' in sh)
+check("build-dxgi-dll.sh fails (warns) when the patch is not in the result",
+      'grep -aq "CheckInterfaceSupport: UMD version" "$OUT/dxgi.dll" || fail' in sh)
+check("the new script stays out of the i386 farm's tools/patch-dxmt-*.py cache key",
+      not fnmatch.fnmatch("tools/patch-dxgi-umd-version.py", "tools/patch-dxmt-*.py"))
 cat = (root / "app/Madeira/ConfigCatalog.generated.swift").read_text()
 check("catalog lists env.MADEIRA_KMT_ADAPTER, off by default",
       re.search(r'key: "env.MADEIRA_KMT_ADAPTER".*kind: \.bool, defaultValue: "0"', cat) is not None)
 check("catalog keeps vram-mb in DXMT with its note",
-      re.search(r'key: "vram-mb".*category: "Direct3D 9/10/11 \(DXMT\)", note: "ml1095: madeira.cfg vram-mb = N"', cat)
+      re.search(r'key: "vram-mb".*category: "Direct3D 9/10/11 \(DXMT\)", note: "ml1095: bcd.cfg vram-mb = N"', cat)
       is not None)
 
 print("PASS" if ok else "FAILED")

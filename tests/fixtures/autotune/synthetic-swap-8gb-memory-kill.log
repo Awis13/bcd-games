@@ -1,0 +1,20 @@
+[10:00:00.000] [INFO] [build] v0.1.552 (552)
+[10:00:00.001] [INFO] [device] model=iPhone16,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=7655MB available=6100MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=1 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=6100MB low-power=0
+[phase] wine-start             t+  0.639s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[10:00:30.000] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[10:00:50.000] [OK] Early detach: game presenting and settled
+[footprint] rev=ml358 phys=2000 MB (peak 2000) internal=1700 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=2)
+[footprint] rev=ml358 phys=2537 MB (peak 2537) internal=2237 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=3)
+[footprint] rev=ml358 phys=3074 MB (peak 3074) internal=2774 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=4)
+[footprint] rev=ml358 phys=3611 MB (peak 3611) internal=3311 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=5)
+[footprint] rev=ml358 phys=4148 MB (peak 4148) internal=3848 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=6)
+[footprint] rev=ml358 phys=4685 MB (peak 4685) internal=4385 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=7)
+[footprint] rev=ml358 phys=5222 MB (peak 5222) internal=4922 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=8)
+[footprint] rev=ml358 phys=5759 MB (peak 5759) internal=5459 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=9)
+[footprint] rev=ml358 phys=6296 MB (peak 6296) internal=5996 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=10)
+[footprint] rev=ml358 phys=6296 MB (peak 6296) internal=5996 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=40)
+[freeze] alive t+150s beats=600 gaps=0 iter=600 gen=1 threads=80 resident=6296MB dbg=1

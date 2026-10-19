@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded, read-only code diagnostics with a reserved graphics-jump budget.
-
-The [ec-hook] report is opt-in: MADEIRA_EC_HOOK_TRACE=1 turns it on; unset or 0 prints nothing.
-"""
+"""Bounded, read-only code diagnostics with a reserved graphics-jump budget."""
 from pathlib import Path
 import os
 import subprocess
@@ -156,8 +153,7 @@ with tempfile.TemporaryDirectory() as tmp:
     r = subprocess.run([cc, '-Wall', '-Werror', '-Wno-unused-function', '-o', exe, src], capture_output=True, text=True)
     check(r.returncode == 0, 'report compiles against stubs' + ('' if r.returncode == 0 else ': ' + r.stderr[:400]))
     if r.returncode == 0:
-        on = dict(os.environ, MADEIRA_EC_HOOK_TRACE='1')
-        result = subprocess.run([exe], capture_output=True, text=True, env=on)
+        result = subprocess.run([exe], capture_output=True, text=True)
         check(result.returncode == 0, 'production decoder and reporting harness completes')
         out = result.stderr.splitlines()
         check(len(out) == 4, 'four patches reported, the unpatched range silent (%d lines)' % len(out))
@@ -173,22 +169,19 @@ with tempfile.TemporaryDirectory() as tmp:
             expected = result.stdout.strip().split('=', 1)[1]
             check('rva 0x900' in out[3] and 'view=pool' in out[3] and f'jump -> {expected} ' in out[3],
                   'pool-relative jump uses the RX address, not the PE or RW view')
-        unset = {k: v for k, v in os.environ.items() if k != 'MADEIRA_EC_HOOK_TRACE'}
-        out = subprocess.run([exe], capture_output=True, text=True, env=unset).stderr.splitlines()
-        check(out == [], 'off by default: without MADEIRA_EC_HOOK_TRACE nothing is printed')
         env = dict(os.environ, MADEIRA_EC_HOOK_TRACE='0')
         out = subprocess.run([exe], capture_output=True, text=True, env=env).stderr.splitlines()
         check(out == [], 'MADEIRA_EC_HOOK_TRACE=0 prints nothing')
-        out = subprocess.run([exe, 'reserved'], capture_output=True, text=True, env=on).stderr.splitlines()
+        out = subprocess.run([exe, 'reserved'], capture_output=True, text=True).stderr.splitlines()
         check(sum('scope=difference' in l for l in out) == 8, 'ordinary differences stop after 8 lines')
         check(sum('scope=other-jump' in l for l in out) == 16, 'other jumps have their own 16-line budget')
         check(sum('scope=graphics-jump' in l for l in out) == 32,
               '32 graphics-jump records survive after startup consumes both other budgets')
-        r = subprocess.run([exe, 'end'], capture_output=True, text=True, env=on)
+        r = subprocess.run([exe, 'end'], capture_output=True, text=True)
         check(r.returncode == 0, 'truncated jumps at an unreadable page boundary do not overread')
         # Ghost of Tsushima, build 515: a protector's random "jumps" pointed at
         # unreadable memory and the guarded read ended the game at start.
-        r = subprocess.run([exe, 'unreadable'], capture_output=True, text=True, env=on)
+        r = subprocess.run([exe, 'unreadable'], capture_output=True, text=True)
         out = r.stderr.splitlines()
         check(r.returncode == 0, 'jump slots and targets in unreadable memory do not fault (exit %d)' % r.returncode)
         check(len(out) == 3 and all(l.endswith('bytes there: -') for l in out),
@@ -199,6 +192,8 @@ with tempfile.TemporaryDirectory() as tmp:
             check('jump -> 0 ' in out[1], 'jmp [rip+x] through an unreadable slot: no target')
             check(f'jump -> {far + 0xc0:#x} ' in out[2], 'jmp [rip+0] to an unreadable target: the target is named')
 
+wf = (root / '.github/workflows/build-ipa.yml').read_text()
+check('python3 tests/host/check-ec-hook.py' in wf, 'the CI workflow runs this check')
 
 print('%d failure(s)' % len(failures))
 sys.exit(1 if failures else 0)

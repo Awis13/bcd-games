@@ -1,0 +1,11 @@
+[10:00:00.000] [INFO] [build] v0.1.571 (571)
+[10:00:00.001] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6634MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=8059MB low-power=0
+[phase] wine-start             t+  0.639s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=601 MB (peak 601) internal=523 MB compressed=0 MB external=72 MB reusable=12 MB (cycle=1)
+[10:00:12.000] [INFO] Game is presenting (#1, splash) — early detach in 20s
+err:   Device error at frame 4410: Error Domain=MTLCommandBufferErrorDomain Code=7 "Insufficient Permission (to submit GPU work from background) (00000006:kIOGPUCommandBufferCallbackErrorBackgroundExecutionNotPermitted)" UserInfo={NSLocalizedDescription=Insufficient Permission (to submit GPU work from background) (00000006:kIOGPUCommandBufferCallbackErrorBackgroundExecutionNotPermitted)}
+err:   Device error at frame 4411: Error Domain=MTLCommandBufferErrorDomain Code=7 "Insufficient Permission (to submit GPU work from background) (00000006:kIOGPUCommandBufferCallbackErrorBackgroundExecutionNotPermitted)" UserInfo={NSLocalizedDescription=Insufficient Permission (to submit GPU work from background) (00000006:kIOGPUCommandBufferCallbackErrorBackgroundExecutionNotPermitted)}

@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "ec-hook-trace-off"
+ ],
+ "next": [
+  "env.MADEIRA_EC_HOOK_TRACE = 0"
+ ],
+ "note": "synthetic: built from [ec-hook] and NtTerminateProcess's formats; GoT 515",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

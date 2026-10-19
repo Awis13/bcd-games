@@ -72,7 +72,7 @@ int main(void) {
     assert(ios_gamepad_query(0, 1, &caps) && caps.flags == 0);
     assert(caps.left_motor_speed == 0xff && caps.right_motor_speed == 0xff);
     winios_gamepad_set_rumble_caps(0);
-    /* ml2106: op 2 (NtUserGamepadOp_SetVibration) takes XINPUT_VIBRATION in; each change notifies once. */
+    /* ml2106: op 2 takes XINPUT_VIBRATION in; each change notifies once. */
     {
         WORD motors[2] = { 0xffff, 0x1234 };
         struct winios_gamepad_vibration v;

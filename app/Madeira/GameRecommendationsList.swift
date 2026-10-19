@@ -1,0 +1,569 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright 2026 thebcd69 (BCD)
+// BCD Material: additional terms under GPL-3.0 section 7 apply; see LICENSE-BCD.md.
+//
+//  GameRecommendationsList.swift
+//  Madeira
+//
+//  BCD: the recommended settings as data (owner's decision, 2026-10-18). The lists live in
+//  recommended/recommendations.json. Every build bundles that file; BCD's public repository
+//  serves the newest one with an Ed25519 signature, and GameRecommendationsSource.swift fetches
+//  it, checks it and keeps it. This file reads the format, checks it and turns it into the
+//  GameRecommendation values GameRecommendationsApply.swift writes into a game's settings.
+//  Foundation only: tests/host/check-remote-recommendations.py, check-game-recommendations.py
+//  and tools/publish-recommendations.py compile it.
+//
+//  The file (format 1):
+//
+//    "format": 1                 the layout below; an app reads only the formats it knows
+//    "version": 7                the whole list's version, raised with every change; an app
+//                                uses the newer of its built-in list and the last good download
+//    "generated": "2026-10-18"   the day it was made
+//    "rules": [ ... ]            in order: the first rule that matches a game is its list
+//
+//  A rule:
+//
+//    "id": "rdr2-steam"          stable: the record of what was applied keys on it
+//    "title": "..."              shown under Reset to Recommended
+//    "version": 10               raised whenever its lines, switches or match change
+//    "minBuild": 575             optional: builds before 575 do not know the rule
+//    "match": {                  how the game is recognised; every rule but "standard" has one
+//      "steamAppIDs": [1174180]              a library Steam game's App ID
+//      "steamFolders": ["red dead redemption 2"]
+//                                            its folder right under steamapps\common, lowercased
+//      "programs": [{"name": "rdr2.exe", "steam": true, "beside": "X.exe", "notBeside": "Y.exe"}]
+//                                            a program by its lowercased file name, wherever it is;
+//                                            "steam" true: only inside a Steam library (or with an
+//                                            App ID), false: only outside one, left out: anywhere;
+//                                            "beside" / "notBeside": a file that must / must not be
+//                                            in the program's folder
+//    }
+//    "config": ["# comment", "key = value", {"line": "key = value", "minBuild": 575, "maxBuild": 590}]
+//                                the game's config file, line by line; a line as an object goes
+//                                only to the builds it names (both ends included)
+//    "smallRAMConfig": [...]     optional: lines after config on a device with less than 12 GB
+//    "switches": {"avx", "nvidia", "wineVCRT", "fastSync", "semaphoreFastPath": true/false,
+//                 "fpsMode": 0-4, "resolution": "WxH" or "screen@720", "display": "fit"...}
+//    "notes": ["..."]            why, from which build and log; never shown, never applied
+//
+//  The rule "standard" has no match: every game without a rule of its own gets it (the
+//  Desktop none). An unknown field anywhere makes the whole file invalid: a field this build
+//  does not understand is never half-applied. A downloaded file may set only the keys
+//  RecommendationsPolicy allows (the settings catalog's game settings and the environment
+//  names below); the built-in file is checked against the same policy by the host checks.
+//
+
+import Foundation
+
+// MARK: - The format
+
+/// One line of a game's config file as a list writes it, and the builds that get it.
+struct RecommendationLine: Equatable {
+    var text: String
+    var minBuild: Int? = nil
+    var maxBuild: Int? = nil
+
+    var isComment: Bool { text.hasPrefix("#") }
+
+    /// "key" of "key = value" ("env.NAME" for an environment line); nil for a comment.
+    var key: String? {
+        guard !isComment, let range = text.range(of: " = ") else { return nil }
+        return String(text[..<range.lowerBound])
+    }
+
+    var value: String? {
+        guard !isComment, let range = text.range(of: " = ") else { return nil }
+        return String(text[range.upperBound...])
+    }
+
+    /// Whether a build gets the line. A line limited to some builds goes to none when the
+    /// app's own build number is unknown.
+    func applies(build: Int?) -> Bool {
+        guard minBuild != nil || maxBuild != nil else { return true }
+        guard let build else { return false }
+        if let lower = minBuild, build < lower { return false }
+        if let upper = maxBuild, build > upper { return false }
+        return true
+    }
+}
+
+/// How a rule recognises its game (GameRecommendations.swift, GameRecommendationList.match).
+struct GameRecommendationMatch: Equatable {
+    struct Program: Equatable {
+        var name: String
+        var steam: Bool? = nil
+        var beside: String? = nil
+        var notBeside: String? = nil
+    }
+    var steamAppIDs: [Int] = []
+    var steamFolders: [String] = []
+    var programs: [Program] = []
+}
+
+/// The switches a game's settings keep outside its config file (GameRecommendation).
+struct GameRecommendationSwitches: Equatable {
+    var avx: Bool? = nil
+    var nvidia: Bool? = nil
+    var wineVCRT: Bool? = nil
+    var fastSync: Bool? = nil
+    var semaphoreFastPath: Bool? = nil
+    var fpsMode: Int? = nil
+    var resolution: String? = nil
+    var display: String? = nil
+}
+
+/// A rule as the file writes it.
+struct RecommendationRule: Equatable {
+    var id: String
+    var title: String
+    var version: Int
+    var minBuild: Int? = nil
+    var match: GameRecommendationMatch? = nil
+    var config: [RecommendationLine]
+    var smallRAMConfig: [RecommendationLine]? = nil
+    var switches = GameRecommendationSwitches()
+    var notes: [String] = []
+
+    /// Builds before `minBuild` (or of an unknown number) do not know the rule.
+    func applies(build: Int?) -> Bool {
+        guard let minBuild else { return true }
+        guard let build else { return false }
+        return build >= minBuild
+    }
+
+    /// What the app applies on `build`: the lines that build gets, in the file's order.
+    func recommendation(build: Int?) -> GameRecommendation {
+        let small = smallRAMConfig?.filter { $0.applies(build: build) }.map(\.text)
+        return GameRecommendation(
+            id: id, title: title, version: version,
+            config: config.filter { $0.applies(build: build) }.map(\.text).joined(separator: "\n"),
+            avx: switches.avx, nvidia: switches.nvidia, wineVCRT: switches.wineVCRT, fastSync: switches.fastSync,
+            semaphoreFastPath: switches.semaphoreFastPath, fpsMode: switches.fpsMode,
+            resolution: switches.resolution, display: switches.display,
+            smallRAMConfig: (small?.isEmpty ?? true) ? nil : small!.joined(separator: "\n"))
+    }
+}
+
+enum RecommendationsError: Error, Equatable, CustomStringConvertible {
+    /// Not JSON, or not this layout.
+    case format(String)
+    /// A key or value a downloaded list may not set.
+    case policy(String)
+    /// The list would take a game's rule away or lower its version.
+    case regression(String)
+    /// A download whose signature is missing or not BCD's.
+    case signature(String)
+
+    var description: String {
+        switch self {
+        case .format(let why): return "not a valid list: \(why)"
+        case .policy(let why): return "a line BCD does not take from a download: \(why)"
+        case .regression(let why): return "older than the list in use: \(why)"
+        case .signature(let why): return why
+        }
+    }
+}
+
+struct RecommendationsFile: Equatable {
+    static let supportedFormat = 1
+    var format: Int
+    var version: Int
+    var generated: String
+    var rules: [RecommendationRule]
+
+    /// Reads the file. Throws `.format` for anything that is not exactly this layout.
+    static func parse(_ data: Data) throws -> RecommendationsFile {
+        let root: Any
+        do {
+            root = try JSONSerialization.jsonObject(with: data, options: [])
+        } catch {
+            throw RecommendationsError.format("not JSON")
+        }
+        let top = try JSONRead.object(root, "the file", required: ["format", "version", "generated", "rules"])
+        let format = try JSONRead.int(top["format"], "format")
+        guard format == supportedFormat else {
+            throw RecommendationsError.format("format \(format) (this build reads format \(supportedFormat))")
+        }
+        let rules = try JSONRead.array(top["rules"], "rules").enumerated().map { i, value in
+            try rule(value, "rules[\(i)]")
+        }
+        let file = RecommendationsFile(format: format, version: try JSONRead.int(top["version"], "version"),
+                                       generated: try JSONRead.string(top["generated"], "generated"), rules: rules)
+        try file.checkLayout()
+        return file
+    }
+
+    private static func rule(_ value: Any, _ path: String) throws -> RecommendationRule {
+        let o = try JSONRead.object(value, path, required: ["id", "title", "version", "config"],
+                                    optional: ["minBuild", "match", "smallRAMConfig", "switches", "notes"])
+        var rule = RecommendationRule(id: try JSONRead.string(o["id"], path + ".id"),
+                                      title: try JSONRead.string(o["title"], path + ".title"),
+                                      version: try JSONRead.int(o["version"], path + ".version"),
+                                      config: try lines(o["config"], path + ".config"))
+        if o["minBuild"] != nil { rule.minBuild = try JSONRead.int(o["minBuild"], path + ".minBuild") }
+        if o["smallRAMConfig"] != nil { rule.smallRAMConfig = try lines(o["smallRAMConfig"], path + ".smallRAMConfig") }
+        if let m = o["match"] {
+            let mo = try JSONRead.object(m, path + ".match", optional: ["steamAppIDs", "steamFolders", "programs"])
+            var match = GameRecommendationMatch()
+            if mo["steamAppIDs"] != nil {
+                match.steamAppIDs = try JSONRead.array(mo["steamAppIDs"], path + ".match.steamAppIDs").enumerated().map {
+                    try JSONRead.int($1, path + ".match.steamAppIDs[\($0)]")
+                }
+            }
+            if mo["steamFolders"] != nil {
+                match.steamFolders = try JSONRead.array(mo["steamFolders"], path + ".match.steamFolders").enumerated().map {
+                    try JSONRead.string($1, path + ".match.steamFolders[\($0)]")
+                }
+            }
+            if mo["programs"] != nil {
+                match.programs = try JSONRead.array(mo["programs"], path + ".match.programs").enumerated().map { i, p in
+                    let pp = path + ".match.programs[\(i)]"
+                    let po = try JSONRead.object(p, pp, required: ["name"], optional: ["steam", "beside", "notBeside"])
+                    var program = GameRecommendationMatch.Program(name: try JSONRead.string(po["name"], pp + ".name"))
+                    if po["steam"] != nil { program.steam = try JSONRead.bool(po["steam"], pp + ".steam") }
+                    if po["beside"] != nil { program.beside = try JSONRead.string(po["beside"], pp + ".beside") }
+                    if po["notBeside"] != nil { program.notBeside = try JSONRead.string(po["notBeside"], pp + ".notBeside") }
+                    return program
+                }
+            }
+            rule.match = match
+        }
+        if let s = o["switches"] {
+            let sp = path + ".switches"
+            let so = try JSONRead.object(s, sp, optional: ["avx", "nvidia", "wineVCRT", "fastSync", "semaphoreFastPath",
+                                                          "fpsMode", "resolution", "display"])
+            var sw = GameRecommendationSwitches()
+            if so["avx"] != nil { sw.avx = try JSONRead.bool(so["avx"], sp + ".avx") }
+            if so["nvidia"] != nil { sw.nvidia = try JSONRead.bool(so["nvidia"], sp + ".nvidia") }
+            if so["wineVCRT"] != nil { sw.wineVCRT = try JSONRead.bool(so["wineVCRT"], sp + ".wineVCRT") }
+            if so["fastSync"] != nil { sw.fastSync = try JSONRead.bool(so["fastSync"], sp + ".fastSync") }
+            if so["semaphoreFastPath"] != nil { sw.semaphoreFastPath = try JSONRead.bool(so["semaphoreFastPath"], sp + ".semaphoreFastPath") }
+            if so["fpsMode"] != nil { sw.fpsMode = try JSONRead.int(so["fpsMode"], sp + ".fpsMode") }
+            if so["resolution"] != nil { sw.resolution = try JSONRead.string(so["resolution"], sp + ".resolution") }
+            if so["display"] != nil { sw.display = try JSONRead.string(so["display"], sp + ".display") }
+            rule.switches = sw
+        }
+        if o["notes"] != nil {
+            rule.notes = try JSONRead.array(o["notes"], path + ".notes").enumerated().map {
+                try JSONRead.string($1, path + ".notes[\($0)]")
+            }
+        }
+        return rule
+    }
+
+    private static func lines(_ value: Any?, _ path: String) throws -> [RecommendationLine] {
+        try JSONRead.array(value, path).enumerated().map { i, item in
+            let lp = "\(path)[\(i)]"
+            if let text = item as? String { return RecommendationLine(text: text) }
+            let o = try JSONRead.object(item, lp, required: ["line"], optional: ["minBuild", "maxBuild"])
+            var line = RecommendationLine(text: try JSONRead.string(o["line"], lp + ".line"))
+            if o["minBuild"] != nil { line.minBuild = try JSONRead.int(o["minBuild"], lp + ".minBuild") }
+            if o["maxBuild"] != nil { line.maxBuild = try JSONRead.int(o["maxBuild"], lp + ".maxBuild") }
+            guard line.minBuild != nil || line.maxBuild != nil else {
+                throw RecommendationsError.format("\(lp): a line object names no build (write the line as a plain string)")
+            }
+            return line
+        }
+    }
+
+    // MARK: Checks
+
+    /// The layout's own rules, whoever wrote the file (the built-in one too).
+    func checkLayout() throws {
+        func fail(_ why: String) -> RecommendationsError { .format(why) }
+        guard version >= 1 else { throw fail("version \(version)") }
+        guard generated.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else {
+            throw fail("generated \"\(generated)\" is not a date (YYYY-MM-DD)")
+        }
+        guard !rules.isEmpty else { throw fail("no rules") }
+        var ids = Set<String>()
+        for (i, rule) in rules.enumerated() {
+            let path = "rules[\(i)] (\(rule.id))"
+            guard rule.id.range(of: #"^[a-z0-9][a-z0-9-]{0,63}$"#, options: .regularExpression) != nil else {
+                throw fail("\(path): the id is not lowercase letters, digits and dashes")
+            }
+            guard ids.insert(rule.id).inserted else { throw fail("\(path): the id comes twice") }
+            guard !rule.title.isEmpty, rule.title.count <= 120, JSONRead.printable(rule.title) else {
+                throw fail("\(path): the title is empty, too long or has control characters")
+            }
+            guard rule.version >= 1 else { throw fail("\(path): version \(rule.version)") }
+            if let minBuild = rule.minBuild, minBuild < 0 { throw fail("\(path): minBuild \(minBuild)") }
+            if rule.id == GameRecommendations.standardID {
+                guard rule.match == nil, rule.minBuild == nil else {
+                    throw fail("\(path): the standard rule has no match and no minBuild (every game without a rule gets it)")
+                }
+            } else {
+                guard let match = rule.match else { throw fail("\(path): no match") }
+                try Self.checkMatch(match, path)
+            }
+            guard !rule.config.isEmpty else { throw fail("\(path): config is empty") }
+            try Self.checkLines(rule.config, path + ".config")
+            if let small = rule.smallRAMConfig {
+                guard !small.isEmpty else { throw fail("\(path): smallRAMConfig is empty (leave it out)") }
+                try Self.checkLines(small, path + ".smallRAMConfig")
+            }
+            try Self.checkSwitches(rule.switches, path + ".switches")
+            guard rule.notes.allSatisfy({ JSONRead.printable($0) }) else { throw fail("\(path): a note has control characters") }
+        }
+        guard ids.contains(GameRecommendations.standardID) else { throw fail("no rule \"\(GameRecommendations.standardID)\"") }
+    }
+
+    private static func checkMatch(_ match: GameRecommendationMatch, _ path: String) throws {
+        func fail(_ why: String) -> RecommendationsError { .format("\(path).match: \(why)") }
+        guard !match.steamAppIDs.isEmpty || !match.steamFolders.isEmpty || !match.programs.isEmpty else {
+            throw fail("matches nothing")
+        }
+        guard match.steamAppIDs.allSatisfy({ $0 > 0 }), Set(match.steamAppIDs).count == match.steamAppIDs.count else {
+            throw fail("a Steam App ID is not a positive number, or comes twice")
+        }
+        for folder in match.steamFolders {
+            guard isName(folder), folder == folder.lowercased() else {
+                throw fail("the Steam folder \"\(folder)\" is not one lowercased folder name")
+            }
+        }
+        for program in match.programs {
+            guard isName(program.name), program.name == program.name.lowercased(), program.name.hasSuffix(".exe") else {
+                throw fail("the program \"\(program.name)\" is not a lowercased .exe file name")
+            }
+            for file in [program.beside, program.notBeside].compactMap({ $0 }) where !isName(file) {
+                throw fail("\"\(file)\" is not a file name")
+            }
+        }
+    }
+
+    /// One name, no folder: no separators, not "." or "..", no control characters.
+    private static func isName(_ s: String) -> Bool {
+        !s.isEmpty && s.count <= 260 && !s.contains("\\") && !s.contains("/") && s != "." && s != ".."
+            && s.trimmingCharacters(in: .whitespaces) == s && JSONRead.printable(s)
+    }
+
+    private static func checkLines(_ lines: [RecommendationLine], _ path: String) throws {
+        for (i, line) in lines.enumerated() {
+            let lp = "\(path)[\(i)]"
+            let text = line.text
+            guard !text.isEmpty, text.count <= 1024, text.trimmingCharacters(in: .whitespaces) == text,
+                  JSONRead.printable(text) else {
+                throw RecommendationsError.format("\(lp): an empty line, spaces at an end, or a control character")
+            }
+            if let lower = line.minBuild, lower < 0 { throw RecommendationsError.format("\(lp): minBuild \(lower)") }
+            if let upper = line.maxBuild, upper < (line.minBuild ?? 0) {
+                throw RecommendationsError.format("\(lp): maxBuild below minBuild")
+            }
+            if line.isComment { continue }
+            // "key = value": the first "=" is the one in " = ", as GameProfile.parse reads it.
+            guard let key = line.key, let value = line.value, !value.isEmpty, !key.contains("="),
+                  key.range(of: #"^(env\.[A-Za-z_][A-Za-z0-9_]*|[a-z0-9][a-z0-9.-]*)$"#, options: .regularExpression) != nil else {
+                throw RecommendationsError.format("\(lp): \"\(text)\" is not a comment or \"key = value\"")
+            }
+        }
+        // A key twice would leave the earlier line dead (the last one wins): only where the two
+        // lines go to different builds.
+        for (i, a) in lines.enumerated() {
+            guard let key = a.key else { continue }
+            for b in lines[(i + 1)...] where b.key == key {
+                let aLower = a.minBuild ?? Int.min, aUpper = a.maxBuild ?? Int.max
+                let bLower = b.minBuild ?? Int.min, bUpper = b.maxBuild ?? Int.max
+                if aLower <= bUpper && bLower <= aUpper {
+                    throw RecommendationsError.format("\(path): \(key) twice for the same builds")
+                }
+            }
+        }
+    }
+
+    /// DisplayMode's raw values (GuestDisplay.swift).
+    static let displayModes: Set<String> = ["fit", "fill", "stretch", "aspect"]
+
+    private static func checkSwitches(_ s: GameRecommendationSwitches, _ path: String) throws {
+        if let mode = s.fpsMode, !(0...4).contains(mode) { throw RecommendationsError.format("\(path).fpsMode \(mode)") }
+        if let size = s.resolution, size != GameRecommendation.screen720,
+           size.range(of: #"^[1-9][0-9]{2,3}x[1-9][0-9]{2,3}$"#, options: .regularExpression) == nil {
+            throw RecommendationsError.format("\(path).resolution \"\(size)\"")
+        }
+        if let mode = s.display, !displayModes.contains(mode) {
+            throw RecommendationsError.format("\(path).display \"\(mode)\"")
+        }
+    }
+
+    /// The lines a downloaded list may set (RecommendationsPolicy). `build`: only the lines and
+    /// rules that build gets are checked (a line for a later build may use a key this build
+    /// does not know); `everyLine`: all of them (tools/publish-recommendations.py).
+    func checkPolicy(_ policy: RecommendationsPolicy, build: Int?, everyLine: Bool = false) throws {
+        for (i, rule) in rules.enumerated() where everyLine || rule.applies(build: build) {
+            for (name, lines) in [("config", rule.config), ("smallRAMConfig", rule.smallRAMConfig ?? [])] {
+                for (j, line) in lines.enumerated() where everyLine || line.applies(build: build) {
+                    try policy.check(line, at: "rules[\(i)] (\(rule.id)).\(name)[\(j)]")
+                }
+            }
+        }
+    }
+
+    /// The list a build applies.
+    func list(build: Int?, origin: GameRecommendationList.Origin) -> GameRecommendationList {
+        GameRecommendationList(version: version, generated: generated, origin: origin,
+                               rules: rules.filter { $0.applies(build: build) }.map {
+                                   GameRecommendationList.Rule(recommendation: $0.recommendation(build: build), match: $0.match)
+                               })
+    }
+}
+
+// MARK: - What a downloaded list may set
+
+struct RecommendationsPolicy {
+    /// Plain keys: the settings catalog's (ConfigCatalog.generated.swift), but not its app-level
+    /// category, which holds the app's own experiments and switches (a remote Metal host, launch
+    /// arguments, fault injection); of those, only the two game settings below.
+    static let appLevelCategory = "App & front end"
+    static let appLevelGameKeys: Set<String> = ["dxmt", "swap-min-kb"]
+
+    /// Environment lines: the names the built-in lists use and auto-tune's known fixes add
+    /// (build/tools/autotune_rules.py), nothing else. A new name joins this list in the build
+    /// that reads it; a downloaded line that uses it carries that build as its minBuild.
+    static let allowedEnvNames: Set<String> = [
+        "DXMT_SMALL_RINGS", "DXMT_WSI_MODE_TABLE", "DXMT_WSI_MONITOR_IDENTITY", "FEX_VECTORTSOENABLED", "LC_ALL",
+        "MADEIRA_ALIAS_RELEASE", "MADEIRA_APP_DLL_SHADOW", "MADEIRA_BAND_CENSUS", "MADEIRA_CAGE_RELEASE",
+        "MADEIRA_CHILD_ARGS", "MADEIRA_D3D11_SRC", "MADEIRA_DEVICE_STATS", "MADEIRA_DOCK_GAME_SCM",
+        "MADEIRA_DOCK_KEEP_ALIVE", "MADEIRA_DXGI_BUDGET_EVENTS", "MADEIRA_DXGI_SRC", "MADEIRA_EC_HOOK_TRACE",
+        "MADEIRA_EXECREQ_LEAVE", "MADEIRA_FASTSYNC_SEM", "MADEIRA_FEX_AVX", "MADEIRA_FREE_DELAY_MS",
+        "MADEIRA_INPUT_FOREGROUND", "MADEIRA_JUMBO_HALF", "MADEIRA_KMT_ADAPTER", "MADEIRA_LD_BOUNDS",
+        "MADEIRA_LEAN_DIAG", "MADEIRA_LOCK_ORPHAN", "MADEIRA_METAL_HUD_MAIN", "MADEIRA_PAD_MODE",
+        "MADEIRA_PIN_GRAPHICS_DLLS", "MADEIRA_POOL_HEAD_RESERVE_MB", "MADEIRA_POOL_LOW_IMAGES",
+        "MADEIRA_POOL_RECYCLE_IMAGES", "MADEIRA_PRELOAD_DLLS", "MADEIRA_RDR2_VA_HOLD", "MADEIRA_SC_PA_POOLS",
+        "MADEIRA_SMALL_STACK_EXES", "MADEIRA_SPAWN_BLOCK", "MADEIRA_SRV_FGETPATH", "MADEIRA_SWAP_MIN_KB",
+        "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TOUCH_MOUSE",
+        "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WOW_MIN_FREE_GB", "MADEIRA_WOW_RWX_PLAIN",
+        "MADEIRA_X64_GRAPHICS_ENTRY", "MADEIRA_X64_IMAGE_NOCOPY", "SteamDeck", "WINEDEBUG", "WINEDLLOVERRIDES",
+        "WINE_D3D_CONFIG",
+    ]
+
+    var configKeys: Set<String>
+    var envNames: Set<String>
+
+    /// `catalog`: the settings catalog's keys and categories.
+    init(catalog: [(key: String, category: String)], envNames: Set<String> = RecommendationsPolicy.allowedEnvNames) {
+        configKeys = Set(catalog.filter {
+            !$0.key.hasPrefix("env.") && ($0.category != Self.appLevelCategory || Self.appLevelGameKeys.contains($0.key))
+        }.map(\.key))
+        self.envNames = envNames
+    }
+
+    func check(_ line: RecommendationLine, at path: String) throws {
+        guard let key = line.key, let value = line.value else { return }   // a comment
+        if key.hasPrefix("env.") {
+            let name = String(key.dropFirst(4))
+            guard envNames.contains(name) else {
+                throw RecommendationsError.policy("\(path): \(key) is not on the list of environment lines a download may set")
+            }
+            switch name {
+            case "WINEDLLOVERRIDES":
+                // Only switching a DLL off, or to Wine's own: never a native DLL from a game's folder.
+                guard value.range(of: #"^[A-Za-z0-9_.,-]+=b?(;[A-Za-z0-9_.,-]+=b?)*$"#, options: .regularExpression) != nil else {
+                    throw RecommendationsError.policy("\(path): WINEDLLOVERRIDES may only switch DLLs off or to Wine's own")
+                }
+            case "MADEIRA_PRELOAD_DLLS", "MADEIRA_APP_DLL_SHADOW":
+                guard value.range(of: #"^[A-Za-z0-9_.-]+(;[A-Za-z0-9_.-]+)*$"#, options: .regularExpression) != nil else {
+                    throw RecommendationsError.policy("\(path): \(name) takes DLL names only")
+                }
+            default:
+                break
+            }
+        } else {
+            guard configKeys.contains(key) else {
+                throw RecommendationsError.policy("\(path): \(key) is not a game setting in the settings catalog")
+            }
+        }
+        guard value.count <= 512 else { throw RecommendationsError.policy("\(path): the value is longer than 512 characters") }
+    }
+}
+
+// MARK: - The list in use
+
+/// The rules a build applies, in order (GameRecommendations.active).
+struct GameRecommendationList {
+    enum Origin: String { case builtIn = "built-in", downloaded }
+    struct Rule: Equatable {
+        var recommendation: GameRecommendation
+        var match: GameRecommendationMatch?
+    }
+
+    var version: Int
+    var generated: String
+    var origin: Origin
+    var rules: [Rule]
+
+    /// No list at all (a build without its file, which the host checks rule out): nothing matches
+    /// and nothing is written.
+    static let empty = GameRecommendationList(version: 0, generated: "", origin: .builtIn, rules: [])
+
+    var recommendations: [GameRecommendation] { rules.map(\.recommendation) }
+    var standard: GameRecommendation? { rules.first { $0.recommendation.id == GameRecommendations.standardID }?.recommendation }
+
+    /// Why this list may not replace `old`, or nil: it must keep every rule `old` has, at the same
+    /// version or a higher one. A game whose rule went away would get the standard list over its own.
+    func regression(from old: GameRecommendationList) -> String? {
+        let mine = Dictionary(rules.map { ($0.recommendation.id, $0.recommendation.version) }, uniquingKeysWith: { a, _ in a })
+        for rule in old.rules {
+            let id = rule.recommendation.id
+            guard let version = mine[id] else { return "it has no rule \(id)" }
+            if version < rule.recommendation.version { return "\(id) v\(version) is older than v\(rule.recommendation.version)" }
+        }
+        return nil
+    }
+
+    /// The rules that are new or different from `old`'s.
+    func changes(from old: GameRecommendationList) -> [GameRecommendation] {
+        let before = Dictionary(old.rules.map { ($0.recommendation.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return rules.filter { before[$0.recommendation.id] != $0 }.map(\.recommendation)
+    }
+}
+
+// MARK: - Reading JSON exactly
+
+/// JSONSerialization's values, read without Foundation's lenient bridging: true is not 1, 4.0
+/// is not 4, and a field nobody asked for is an error.
+enum JSONRead {
+    static func object(_ value: Any?, _ path: String, required: Set<String> = [], optional: Set<String> = []) throws -> [String: Any] {
+        guard let object = value as? [String: Any] else { throw RecommendationsError.format("\(path) is not an object") }
+        if let unknown = Set(object.keys).subtracting(required).subtracting(optional).sorted().first {
+            throw RecommendationsError.format("\(path): unknown field \"\(unknown)\"")
+        }
+        if let missing = required.subtracting(object.keys).sorted().first {
+            throw RecommendationsError.format("\(path): no \"\(missing)\"")
+        }
+        return object
+    }
+
+    static func array(_ value: Any?, _ path: String) throws -> [Any] {
+        guard let array = value as? [Any] else { throw RecommendationsError.format("\(path) is not a list") }
+        return array
+    }
+
+    static func string(_ value: Any?, _ path: String) throws -> String {
+        guard let string = value as? String else { throw RecommendationsError.format("\(path) is not text") }
+        return string
+    }
+
+    static func bool(_ value: Any?, _ path: String) throws -> Bool {
+        guard let value, CFGetTypeID(value as CFTypeRef) == CFBooleanGetTypeID(), let flag = value as? Bool else {
+            throw RecommendationsError.format("\(path) is not true or false")
+        }
+        return flag
+    }
+
+    static func int(_ value: Any?, _ path: String) throws -> Int {
+        guard let value, CFGetTypeID(value as CFTypeRef) == CFNumberGetTypeID() else {
+            throw RecommendationsError.format("\(path) is not a whole number")
+        }
+        let number = value as! CFNumber
+        var result: Int64 = 0
+        guard !CFNumberIsFloatType(number), CFNumberGetValue(number, .sInt64Type, &result),
+              result >= Int64(Int32.min), result <= Int64(Int32.max) else {
+            throw RecommendationsError.format("\(path) is not a whole number")
+        }
+        return Int(result)
+    }
+
+    /// No control characters (a tab included).
+    static func printable(_ s: String) -> Bool {
+        !s.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7f || (0x80..<0xa0).contains($0.value) }
+    }
+}

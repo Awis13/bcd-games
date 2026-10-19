@@ -57,8 +57,10 @@ if [ -n "${MAD_BUILD_ID:-}" ]; then EXTRA+=(-DMAD_BUILD_ID="\"$MAD_BUILD_ID\"");
 # texture-buffer probe and/or the clear functions when those do not compile,
 # so the other kernels never depend on them.
 echo "=== helper kernels (metallib) ==="
+MAD_KERNELS_FLAGS=""   # the -D flags of the compile that built (the iOS 18 copy below uses them too)
 mad_kernels_metal() {
-    xcrun -sdk iphoneos metal -std=metal3.0 "$@" -o "$OUT/mad_kernels.metallib" "$SRC/mad_kernels.metal" 2> "$OUT/mad_kernels.err"
+    xcrun -sdk iphoneos metal -std=metal3.0 "$@" -o "$OUT/mad_kernels.metallib" "$SRC/mad_kernels.metal" 2> "$OUT/mad_kernels.err" &&
+        MAD_KERNELS_FLAGS="$*"
 }
 if command -v xcrun > /dev/null 2>&1 &&
    { mad_kernels_metal ||
@@ -68,6 +70,18 @@ if command -v xcrun > /dev/null 2>&1 &&
     (cd "$OUT" && xxd -i mad_kernels.metallib > mad_kernels_metallib.h)
     EXTRA+=(-DMAD_HAVE_KERNELS -I"$OUT")
     echo "  $(wc -c < "$OUT/mad_kernels.metallib" | tr -d ' ') bytes"
+    # madeira-bcd (2026-10-18): the same kernels for iOS 18 (AIR 2.7; the library
+    # above takes the SDK's iOS 26.2 target, AIR 2.8, which iOS 18 refuses). The
+    # runtime loads this copy only when the first is refused (madeira_d3d12.c).
+    if xcrun -sdk iphoneos metal -std=metal3.0 --target=air64-apple-ios18.0 $MAD_KERNELS_FLAGS \
+           -o "$OUT/mad_kernels_ios18.metallib" "$SRC/mad_kernels.metal" 2> "$OUT/mad_kernels_ios18.err"; then
+        (cd "$OUT" && xxd -i mad_kernels_ios18.metallib > mad_kernels_ios18_metallib.h)
+        EXTRA+=(-DMAD_HAVE_KERNELS_IOS18)
+        echo "  iOS 18 copy: $(wc -c < "$OUT/mad_kernels_ios18.metallib" | tr -d ' ') bytes"
+    else
+        echo "  the iOS 18 copy did not build -- iOS 18 runs without the helper kernels, as before"
+        head -20 "$OUT/mad_kernels_ios18.err" 2> /dev/null || true
+    fi
 else
     echo "  helper kernels did not build -- what needs them is skipped"
     head -20 "$OUT/mad_kernels.err" 2> /dev/null || true
@@ -86,7 +100,7 @@ cp "$OUT/madeira_d3d12.dll" "$OUT/d3d12.dll"
 echo "  exports: $("$MINGW/llvm-objdump" --private-headers "$OUT/d3d12.dll" 2>/dev/null | grep -cE '^ +[0-9]+ +0x[0-9a-f]+ +D3D12|^ +[0-9]+ .*D3D12')  (ordinal 101/102 pinned by d3d12.def)"
 
 # The Agility SDK half: D3D12SDKVersion plus forwarders to d3d12.dll. It ships
-# next to d3d12.dll; nothing loads it unless madeira.cfg d3d12-core-dll is set.
+# next to d3d12.dll; nothing loads it unless bcd.cfg d3d12-core-dll is set.
 echo "=== d3d12core.dll (arm64ec) ==="
 "$MINGW/arm64ec-w64-mingw32-clang" -shared -O2 -Wall \
     -o "$OUT/d3d12core.dll" "$SRC/d3d12core.c" "$SRC/d3d12core.def"

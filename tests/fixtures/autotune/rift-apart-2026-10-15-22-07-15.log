@@ -1,0 +1,116 @@
+[22:06:25.835] [INFO] [build] v0.1.549 (549)
+[22:06:25.836] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6635MB cores=6
+[22:06:25.836] [INFO] [device] address-map=[0x102b74000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[22:07:15.718] [INFO] [bcd] library launch RiftApart.exe: avx=1 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[22:07:15.738] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x102b74000,0x8000000000) 512GB available=8074MB low-power=0 thermal=nominal
+[phase] wine-start             t+  2.147s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[swap] ml1077 backed 0x71ffe00000+0x200000 (whole reservation, ml1257) (file off 0 MB): 2 MB in 1 extents, peak 2 MB, 0 refused
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\RiftApart.exe" 0x140000000+0x7159000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #1 0x140000000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x140000000+0x2e38000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x142e38000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x142e38000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x142e38000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[swap] ml1077 backed 0x7025030000+0x10000 (whole reservation, ml1257) (file off 103 MB): 103 MB in 9 extents, peak 103 MB, 0 refused
+[footprint] rev=ml358 phys=677 MB (peak 677) internal=670 MB compressed=0 MB external=65 MB reusable=22 MB (cycle=1)
+[swap] ml1077 backed 0x7025170000+0x100000 (whole reservation, ml1257) (file off 103 MB): 104 MB in 10 extents, peak 104 MB, 0 refused
+[swap] ml1077 backed 0x70255e0000+0x24c000 (whole reservation, ml1257) (file off 104 MB): 106 MB in 11 extents, peak 106 MB, 0 refused
+D 24 Load module RiftApart.exe (riftapart.exe-849994dd2c388948): 140000000
+D 24 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FFCD0000
+[swap] ml1077 backed 0x71fe370000+0x40000 (whole reservation, ml1257) (file off 106 MB): 107 MB in 12 extents, peak 107 MB, 0 refused
+D 24 Load module steam_api64.dll (steam_api64.dll-3877de10b036f239): 71FE320000
+D 24 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FE270000
+D 24 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FE1F0000
+D 24 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FE0E0000
+[swap] ml1077 backed 0x7028f30000+0x10000 (whole reservation, ml1257) (file off 162 MB): 162 MB in 64 extents, peak 162 MB, 0 refused
+[win-name] #3 hwnd=0x1002c class='' text="Default IME" rev=ml853
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"C:\\Ratchet & Clank - Rift Apart\\gameoverlayrenderer64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"C:\\Ratchet & Clank - Rift Apart\\gameoverlayrenderer64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"gameoverlayrenderer64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #4 L"gameoverlayrenderer64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #5 L"drvstore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #6 L"devobj.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[madeira-d3d12] command queue: type 0
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\amd_fidelityfx_dx12.dll" 0x71f4f20000+0x630000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\libxess.dll" 0x71f0e90000+0x46b6000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] command queue: type 0
+[win-name] #7 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[win-name] #8 hwnd=0x10036 class='' text="Ratchet & Clank: Rift Apart" rev=ml853
+[win-name] #11 hwnd=0x10036 class='' text="Ratchet & Clank: Rift Apart" rev=ml853
+[win-name] #17 hwnd=0x10036 class='' text="Ratchet & Clank: Rift Apart" rev=ml853
+[launch-view] dismissed reason=surface logs=0
+[footprint] rev=ml358 phys=1124 MB (peak 1124) internal=1116 MB compressed=0 MB external=224 MB reusable=23 MB (cycle=2)
+[swap] ml1077 stats: 4656 MB file-backed now (peak 4656), 125 extents, file used 4656 of 131072 MB, backs 150 releases 25 unbacks 0 refused 0 | coverage broad: disk 236 MB of 8192 cap, reservations 72, holes 27, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[swap] swap-images: 223 MB of image sections in the file (peak 223), 78 sections moved, 0 refused
+[footprint] rev=ml358 phys=1124 MB (peak 1124) internal=1116 MB compressed=0 MB external=224 MB reusable=23 MB (cycle=3)
+[footprint] rev=ml358 phys=1123 MB (peak 1124) internal=1116 MB compressed=0 MB external=224 MB reusable=23 MB (cycle=4)
+[footprint] rev=ml358 phys=1122 MB (peak 1124) internal=1116 MB compressed=0 MB external=224 MB reusable=23 MB (cycle=5)
+[footprint] rev=ml358 phys=1118 MB (peak 1124) internal=1116 MB compressed=0 MB external=224 MB reusable=23 MB (cycle=6)
+[win-name] #19 hwnd=0x1004c class='' text="$DIALOG_CAPTION" rev=ml853
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=42 resident=1379MB dbg=DEBUGGED rev=ml525
+[22:07:48.034] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[win-name] #1192 hwnd=0x2004c class='' text="$DIALOG_CAPTION" rev=ml853
+[win-name] #1196 hwnd=0x200be class='' text="$DOF" rev=ml853
+[win-name] #1197 hwnd=0x200be class='' text="$DOF" rev=ml853
+[win-name] #1198 hwnd=0x2004c class='' text="$DIALOG_CAPTION" rev=ml853
+[win-name] #1408 hwnd=0x2004c class='' text="$DIALOG_CAPTION" rev=ml853
+[win-name] #1536 hwnd=0x2004c class='' text="Ratchet & Clank: ?????? ???? - ?????????" rev=ml853
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\amd_fidelityfx_dx12.dll" 0x71f05d0000+0x630000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\dstorage.dll" 0x71f0550000+0x36000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+0024:err:module:load_dll [dll-missing] rev=ml336 #11 L"dstoragecore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\DStorageCore.dll" 0x71f03d0000+0x17b000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[madeira-d3d12] command queue: type 3
+[madeira-d3d12] command queue: type 3
+0024:err:module:load_dll [dll-missing] rev=ml336 #12 L"hkCompatFormats.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0x2ee00000 align=0x10000 bottom-up tries=59 skips=59 | seen=0x7025040000..0x73ffff0000 views=349 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=356 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[x64-image] L"\\??\\C:\\Ratchet & Clank - Rift Apart\\bink2w64.dll" 0x71efa90000+0x7b000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=360 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+D 24 Load module rtworkq.dll (rtworkq.dll-228d0194647d37d8): 17FCB0000
+D 24 Load module mfreadwrite.dll (mfreadwrite.dll-ba21c9fb7c3151e0): 17FC10000
+D 15C Load module dinput8.dll (dinput8.dll-fa63f814948e9838): 17FB60000
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=361 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=362 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0x40000 align=0x10000 top-down tries=64 skips=64 | seen=0x7025000000..0x73ffff0000 views=362 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(top-down) | firstfail=0x73fffb0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+D 24 Load module xaudio2_8.dll (xaudio2_8.dll-6d69cf073a3abd5f): 7149310000
+0178:err:module:load_dll [dll-missing] rev=ml336 #13 L"MediaDecoders.WindowsDesktop.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D 1AC Load module secur32.dll (secur32.dll-f6ff7e0cf92170a6): 7148D80000
+01ac:err:module:load_dll [dll-missing] rev=ml336 #14 L"Kerberos.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+01ac:err:module:load_dll [dll-missing] rev=ml336 #15 L"MSV1_0.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D 1AC Load module schannel.dll (schannel.dll-b6824dedbc2abf6e): 7148CF0000
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0xfd0000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=384 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0xfd0000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=384 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0xa80000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=384 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0xfd0000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=384 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0xfd0000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=384 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7025000000..0x73ffff0000 size=0xfd0000 align=0x10000 bottom-up tries=64 skips=64 | seen=0x7025040000..0x73ffff0000 views=384 maxgap=0x1ffff0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x7200000000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[22:08:01.216] [INFO] Game is presenting (#1, splash) — early detach in 20s
+0154:err:module:load_dll [dll-missing] rev=ml336 #16 L"WwsAcxAkwQuadDelay.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[22:08:18.048] [INFO] detach-wait: presents=358 running=1 elapsed=60s
+[freeze] alive t+60s beats=2 gaps=0 iter=236 gen=1 threads=102 resident=2095MB dbg=DEBUGGED rev=ml525
+[22:08:21.336] [OK] Early detach: game presenting and settled
+[swap] ml1077 backed 0x7200000000+0x1ffff0000 (whole reservation, ml1257) (file off 16767 MB): 24364 MB in 269 extents, peak 24364 MB, 0 refused
+[swap] ml1077 backed 0x7200000000+0x100000000 (whole reservation, ml1257) (file off 16767 MB): 20268 MB in 269 extents, peak 24364 MB, 0 refused
+[swap] ml1077 backed 0x7600000000+0x200000000 (whole reservation, ml1257) (file off 20863 MB): 28460 MB in 272 extents, peak 28460 MB, 0 refused
+[swap] ml1077 backed 0x7600000000+0x100000000 (whole reservation, ml1257) (file off 20863 MB): 24364 MB in 272 extents, peak 28460 MB, 0 refused
+[swap] ml1077 backed 0x7a00000000+0x200000000 (whole reservation, ml1257) (file off 24959 MB): 32556 MB in 275 extents, peak 32556 MB, 0 refused
+[swap] ml1077 backed 0x7a00000000+0x100000000 (whole reservation, ml1257) (file off 24959 MB): 28460 MB in 275 extents, peak 32556 MB, 0 refused
+[alloc-fail] ml814 #1 status=c0000018 hint=0x3fc00000000 size=0x200000000 type=0x2000 protect=0x1 tid=0178 | STAGE=anon-mmap err=12 at 0x0+0x200010000
+[jumbo] kernel-pick reserve failed (0xc0000017) for size=0x200000000 — top window is full
+[alloc-fail] ml814 #2 status=c0000017 hint=0x0 size=0x200000000 type=0x2000 protect=0x1 tid=0178 | STAGE=anon-mmap err=12 at 0x0+0x200010000
+[alloc-fail] ml814 #3 status=c0000018 hint=0x3fc00000000 size=0x200000000 type=0x2000 protect=0x1 tid=0178 | STAGE=anon-mmap err=12 at 0x0+0x200010000
+[jumbo] kernel-pick reserve failed (0xc0000017) for size=0x200000000 — top window is full
+[alloc-fail] ml814 #4 status=c0000017 hint=0x0 size=0x200000000 type=0x2000 protect=0x1 tid=0178 | STAGE=anon-mmap err=12 at 0x0+0x200010000
+0178:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x0
+0178:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=24548
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=24590
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=24605
+[freeze] alive t+90s beats=3 gaps=0 iter=353 gen=1 threads=48 resident=2728MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=5258 MB (peak 5332) internal=737 MB compressed=1165 MB external=1991 MB reusable=0 MB (cycle=54)
+[footprint] rev=ml358 phys=5258 MB (peak 5332) internal=737 MB compressed=1165 MB external=1991 MB reusable=0 MB (cycle=55)
+[footprint] rev=ml358 phys=5254 MB (peak 5332) internal=704 MB compressed=1194 MB external=1995 MB reusable=0 MB (cycle=56)
+[footprint] rev=ml358 phys=5254 MB (peak 5332) internal=705 MB compressed=1193 MB external=1996 MB reusable=0 MB (cycle=57)
+[footprint] rev=ml358 phys=5254 MB (peak 5332) internal=705 MB compressed=1193 MB external=1996 MB reusable=0 MB (cycle=58)
+[footprint] rev=ml358 phys=5254 MB (peak 5332) internal=705 MB compressed=1193 MB external=1996 MB reusable=0 MB (cycle=59)

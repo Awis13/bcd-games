@@ -1,0 +1,18 @@
+{
+ "dialogs": [
+  "Runtime error!??Program: C:\\Ratchet & Clank - Rift Apart\\RiftApart.exe?Error: R6025??Press OK to exit the program, or Cancel to start the Wine debugger.?"
+ ],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "locale-en-us"
+ ],
+ "next": [
+  "env.LC_ALL = en_US.UTF-8"
+ ],
+ "note": "Ratchet & Clank: Rift Apart, build 553, iPhone18,2 (11695 MB): crashed (R6025) without LC_ALL; cage and jumbo-half worked; owner: with LC_ALL it opened",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "trying"
+}

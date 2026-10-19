@@ -1,0 +1,13 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "i-closed"
+ },
+ "matched": [],
+ "next": [],
+ "note": "Ratchet & Clank: Rift Apart, build 553, iPhone18,2 (11695 MB): played about 5 minutes; 13 alias-tomb refusals but no read-only store, so no rule",
+ "outcome": "inconclusive",
+ "stage": 5,
+ "status": "baseline"
+}

@@ -49,7 +49,7 @@ bridge = (root / 'app/Madeira/WineProcessBridge.m').read_text()
 server = (root / 'build/ntdll-unix/server_ios.c').read_text()
 content = (root / 'app/Madeira/ContentView.swift').read_text()
 gamepad = (root / 'app/Madeira/GamepadInput.swift').read_text()
-fps = (root / 'app/Madeira/FPSOverlay.swift').read_text()
+fps = (root / 'app/Madeira/ProMotionIntent.swift').read_text()
 shim = (root / 'app/Madeira/IOSDisplayShim.m').read_text()
 failures = []
 
@@ -89,7 +89,7 @@ final class PassthroughSubject<Output, Failure: Error> {
 }
 #endif
 enum MadeiraConfig {
-    static var values: [String: String] = [:]   // stands in for madeira.cfg
+    static var values: [String: String] = [:]   // stands in for bcd.cfg
     static func flag(_ name: String, fallback: Bool = true) -> Bool { fallback }
     static func get(_ key: String) -> String? { values[key] }
     static func bool(_ key: String, default dflt: Bool = false) -> Bool { values[key].map { ["1", "on", "true", "yes"].contains($0) } ?? dflt }
@@ -184,7 +184,7 @@ game.applyEnvironment()
 expect(env("FEX_X87REDUCEDPRECISION") == nil, "x87: nothing exported unless chosen")
 expect(env("MADEIRA_CPU_COUNT") == nil && env("DXMT_D9_ANISO_LIMIT") == nil, "no other engine switches are exported")
 expect(env("MADEIRA_FASTSYNC") == "auto" && env("MADEIRA_FASTSYNC_SEM") == nil,
-       "no sync keys (Fastsync, the default): fastsync exported, semaphore waits left to madeira.cfg")
+       "no sync keys (Fastsync, the default): fastsync exported, semaphore waits left to bcd.cfg")
 expect(LogStore.shared.lines.last == "[display-shape] resolution=1280x720 mode=fit", "the profile's display shape is logged")
 // Fastsync's per-game switches: exported only when Settings chose Fastsync.
 MadeiraConfig.values = ["inproc-sync": "0"]
@@ -193,7 +193,7 @@ expect(env("MADEIRA_FASTSYNC") == nil && env("MADEIRA_FASTSYNC_SEM") == nil, "Wi
 MadeiraConfig.values = ["inproc-sync": "0", "env.MADEIRA_FASTSYNC": "auto"]
 game.applyEnvironment()
 expect(env("MADEIRA_FASTSYNC") == "auto" && env("MADEIRA_FASTSYNC_SEM") == nil,
-       "Fastsync: fast synchronization on by default (the chosen mode), semaphore waits left to madeira.cfg")
+       "Fastsync: fast synchronization on by default (the chosen mode), semaphore waits left to bcd.cfg")
 game.fastSync = false; game.semaphoreFastPath = true; game.applyEnvironment()
 expect(env("MADEIRA_FASTSYNC") == "0" && env("MADEIRA_FASTSYNC_SEM") == "1", "Fastsync: the game's own switches are exported")
 MadeiraConfig.values = ["inproc-sync": "1", "env.MADEIRA_FASTSYNC": "auto"]
@@ -226,7 +226,7 @@ expect(vsync == 1, "a saved 40 FPS runs as 60 without the 40 FPS cap")
 ProMotionIntent.has40Cap = true; game.fpsMode = 1; game.applyEnvironment()
 expect(vsync == 1, "60 FPS applied")
 // "XInput and DirectInput": MADEIRA_DINPUT_PAD for that game's launch only; the
-// next launch without the choice clears it unless madeira.cfg sets it.
+// next launch without the choice clears it unless bcd.cfg sets it.
 game.controllerMode = "dinput"; game.applyEnvironment()
 expect(env("MADEIRA_DINPUT_PAD") == "1", "the DirectInput choice exports MADEIRA_DINPUT_PAD=1")
 game.controllerMode = nil; game.applyEnvironment()
@@ -235,7 +235,7 @@ game.controllerMode = "keys"; game.applyEnvironment()
 expect(env("MADEIRA_DINPUT_PAD") == nil, "keyboard-and-mouse mode exports no DirectInput pad")
 setenv("MADEIRA_DINPUT_PAD", "1", 1); MadeiraConfig.values["env.MADEIRA_DINPUT_PAD"] = "1"
 game.controllerMode = nil; game.applyEnvironment()
-expect(env("MADEIRA_DINPUT_PAD") == "1", "madeira.cfg's own MADEIRA_DINPUT_PAD is left alone")
+expect(env("MADEIRA_DINPUT_PAD") == "1", "bcd.cfg's own MADEIRA_DINPUT_PAD is left alone")
 MadeiraConfig.values["env.MADEIRA_DINPUT_PAD"] = nil; unsetenv("MADEIRA_DINPUT_PAD")
 // Library files written before the controller choices decode with none.
 let older = #"{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","title":"Old","relativePath":"a/b.exe","bits":64,"arguments":"","resolution":"944x656","fpsMode":1,"reducedX87":false,"liveLogs":false,"performance":false,"touchControls":false}"#
@@ -279,15 +279,15 @@ let script = svc.servicesScript ?? ""
 expect(script.hasPrefix("@echo off\r\n") && script.contains("start \"\" \"C:\\windows\\system32\\services.exe\"\r\n")
        && script.contains("cd /d \"C:\\Games\\Some Game\"\r\n")
        && script.hasSuffix("start \"\" \"C:\\Games\\Some Game\\bin\\game.exe\" -windowed\r\n"), "services batch: services, cd, start the game")
-expect(svc.launchArguments == "/desktop=shell,1280x720 cmd /c \"C:\\madeira-games\\\(svc.id.uuidString).bat\"",
+expect(svc.launchArguments == "/desktop=shell,1280x720 cmd /c \"C:\\bcd-games\\\(svc.id.uuidString).bat\"",
        "services: the desktop runs the batch, which carries the arguments")
 var svcBat = bat; svcBat.startServices = true; svcBat.launchMode = nil
 expect(svcBat.servicesScript?.hasSuffix("call \"C:\\Games\\Tool\\run game.bat\" fast\r\n") == true
-       && svcBat.launchArguments == "/c \"C:\\madeira-games\\\(svcBat.id.uuidString).bat\"", "services + .bat: CALLed from the batch")
+       && svcBat.launchArguments == "/c \"C:\\bcd-games\\\(svcBat.id.uuidString).bat\"", "services + .bat: CALLed from the batch")
 // cmd expands '%' in a batch file, and CALL expands its line once more.
 var pct = svc; pct.title = "50%~ off"; pct.workingDirectory = "C:\\Games\\100% Juice"; pct.arguments = "-zoom=100%"
 let pctScript = pct.servicesScript ?? ""
-expect(pctScript.contains("rem Generated by Madeira (ml1163) for 50%%~ off;") && pctScript.contains("cd /d \"C:\\Games\\100%% Juice\"\r\n")
+expect(pctScript.contains("rem Generated by BCD (ml1163) for 50%%~ off;") && pctScript.contains("cd /d \"C:\\Games\\100%% Juice\"\r\n")
        && pctScript.hasSuffix("start \"\" \"C:\\Games\\Some Game\\bin\\game.exe\" -zoom=100%%\r\n"), "services batch: every '%' doubled")
 // The details page's command line: upstream's "<program> <arguments>" for a direct
 // start, else what starts the program (explorer.exe, cmd.exe, the services batch).
@@ -296,8 +296,8 @@ expect(direct.commandPreview == "game.exe -windowed", "command line, direct: the
 expect(inDesk.commandPreview == "explorer.exe /desktop=shell,1280x720 \"C:\\Games\\Some Game\\bin\\game.exe\" -windowed",
        "command line, Wine desktop: explorer's whole command (\(inDesk.commandPreview))")
 expect(bat.commandPreview == "explorer.exe /desktop=shell,1280x720 cmd /c \"C:\\Games\\Tool\\run game.bat\" fast"
-       && svcBat.commandPreview.hasPrefix("cmd.exe /c \"C:\\madeira-games\\"), "command line: a batch file through cmd")
-expect(svc.commandPreview.hasSuffix(".bat\"\n(the batch starts services.exe, then game.exe -windowed)"),
+       && svcBat.commandPreview.hasPrefix("cmd.exe /c \"C:\\bcd-games\\"), "command line: a batch file through cmd")
+expect(svc.commandPreview.hasSuffix(".bat\"\n(the batch runs services.exe first, then game.exe -windowed)"),
        "command line, services batch: what the batch starts too (\(svc.commandPreview))")
 var pctBat = svcBat; pctBat.arguments = "100%"
 expect(pctBat.servicesScript?.hasSuffix("call \"C:\\Games\\Tool\\run game.bat\" 100%%%%\r\n") == true, "services + .bat: '%' doubled twice on the CALL line")
@@ -501,29 +501,32 @@ wrapper = block(server, 'void process_exit_wrapper( int status )')
 initial = wrapper[wrapper.index('    else\n    {'):]
 check('wine_launched_process_did_exit( status );' in initial and wrapper.count('wine_launched_process_did_exit( status );') == 1,
       'ntdll reports only the initial (app-launched) process exit, from the no-slot branch')
-check('__attribute__((weak))' in initial and 'ImagePathName' not in wrapper and 'wine_process_did_' not in server,
+check('__attribute__((weak))' in initial and 'ImagePathName' not in server and 'wine_process_did_' not in server,
       'the hook is weak and gets no image name')
 check('madeira_exit_is_helper' not in bridge and '.exe"' not in bridge[bridge.index('static uint64_t g_launch_exit'):bridge.index('static char *g_prefix_path')],
       'no program-name list in the exit report')
 check('MadeiraConfig.flag("MADEIRA_PROMOTE", fallback: false)' in fps,
       'holding the display at its maximum rate is opt-in (MADEIRA_PROMOTE)')
 check('if mode == 1 { return holdMaximum ? panelMaxFPS : 0 }' in fps, 'no display link in the 60 cap by default')
-check('__attribute__((weak)) void madeira_set_display_max_fps' in shim and 'ProMotionIntent.has30Cap' in fps
-      and 'ProMotionIntent.has30Cap || mode == 3' in lib, 'the 30 FPS cap is offered only with DXMT support')
+check('__attribute__((weak)) void madeira_set_display_max_fps' in shim and 'static var has30Cap' in fps
+      and 'ProMotionIntent.has30Cap || entry.fpsMode == 3' in (root / 'app/Madeira/BCDGamePageLive.swift').read_text(),
+      'the 30 FPS cap is offered only with DXMT support (BCD\'s game page; the classic picker is deleted)')
 check('__attribute__((weak)) int madeira_dxmt_has_40_cap(void) {\n    return 0;' in shim
       and 'madeira_dxmt_has_40_cap() != 0 && panelMaxFPS >= 120' in fps
-      and 'ProMotionIntent.has40Cap || mode == 4' in lib, 'the 40 FPS cap is offered only with DXMT support and a 120 Hz panel')
-check('LibraryView(play: launchLibraryEntry' in content, 'ContentView shows the library when it is the chosen interface')
+      and 'ProMotionIntent.has40Cap || entry.fpsMode == 4' in (root / 'app/Madeira/BCDGamePageLive.swift').read_text(),
+      'the 40 FPS cap is offered only with DXMT support and a 120 Hz panel (BCD\'s game page)')
+check('BCDLiveFrontEnd(play: launchLibraryEntry' in content and 'LibraryView(' not in content,
+      "ContentView shows BCD's interface (the library engine's only face since wave 3, 2026-10-19)")
 check('runWineFullSequence(profile: entry)' in content and 'profile.applyEnvironment()' in content,
       'library launches use the shared launch path with the profile applied')
-check('Button("Use New Interface")' in content, 'the developer interface can switch back to the library')
+# (The developer interface and its Switch to the Library button are deleted in wave 3.)
 loop = bridge.index('for (NSString *raw in [text componentsSeparatedByCharactersInSet:')
 snap = bridge.find('game_set[i] = getenv(per_launch[i]) != NULL;')
 bat_add = lib[lib.index('if ["bat", "cmd"].contains(url.pathExtension.lowercased())'):]
 bat_add = bat_add[:bat_add.index('let h = try FileHandle(forReadingFrom: url)')]
 check('launchMode' not in bat_add, 'an added .bat/.cmd starts directly by default, like every entry (upstream has no other mode)')
 check(0 <= snap < loop and 'getenv(per_launch[i])' not in bridge[loop:bridge.index('setenv(k.UTF8String, v.UTF8String, 1);', loop)],
-      "ml1184: the per-launch keys a game set are noted before madeira.cfg's env lines run, so a later cfg line still wins")
+      "ml1184: the per-launch keys a game set are noted before bcd.cfg's env lines run, so a later cfg line still wins")
 # ml1184: every switch a game's page exports is one of those keys, and is cleared when the session ends.
 per_launch = set(re.findall(r'"([A-Z0-9_]+)"', block(bridge, 'static const char *const per_launch[] =')))
 exported = set(re.findall(r'setenv\("([A-Z0-9_]+)"', block(lib, 'func applyEnvironment()')))
@@ -535,53 +538,34 @@ check(exported and exported <= per_launch and per_launch <= ended,
 check('LibraryController.shared' in gamepad and 'library.ownsInput' in gamepad,
       'player 1 pad drives the library and is neutral while the library owns input')
 
-# The options restored from the fork's app.
-detail = block(lib, 'struct LibraryDetail: View')
-hud = block(lib, 'struct LibraryHUD: View')
+# The options restored from the fork's app. Wave 3 (2026-10-19): the classic Game details page (LibraryDetail), the in-game
+# menu (LibraryHUD) and the Settings form are deleted; BCD's game page (BCDGamePageLive.swift) and in-game menu offer the
+# same options, checked below against its code.
+page = (root / 'app/Madeira/BCDGamePageLive.swift').read_text()
 model = block(lib, 'final class LibraryModel: ObservableObject')
-check('Picker("Resolution", selection: $entry.resolution)' in detail and 'Desktop size' not in lib,
-      'game details: one Resolution picker for every entry (not only the Desktop)')
-check('ResolutionChoices.groups()' in detail and 'Section(group.title)' in detail and 'ResolutionChoices.extra(entry.resolution' in detail
+check('BCDGameSetting(id: "resolution", title: "Resolution"' in page and 'Desktop size' not in lib,
+      'game page: one Resolution choice for every entry (not only the Desktop)')
+check('ResolutionChoices.groups()' in page and 'ResolutionChoices.extra(entry.resolution, in: groups, note: "saved")' in page
       and 'presetResolutions' not in lib and 'MADEIRA_SCREEN_SHAPE_RESOLUTION' not in lib,
-      'ml1172: game details list this device\'s Resolution choices, grouped')
-check('ResolutionChoices.metalFX(in: groups)' in detail and 'entry.metalFXUpscale == 1.5 || entry.resolution == shape.value' in detail
-      and 'entry.resolution != metalFX?.value' in detail,
-      'game details: the MetalFX 1.5× screen shape while MetalFX 1.5× is chosen (or saved), not also as "saved"')
+      "ml1172: the game page lists this device's Resolution choices, grouped")
+check('ResolutionChoices.metalFX(in: groups)' in page and 'entry.metalFXUpscale == 1.5 || entry.resolution == shape.value' in page,
+      'game page: the MetalFX 1.5× screen shape while MetalFX 1.5× is chosen (or saved), not also as "saved"')
 reset = block(model, 'private func resetPhoneResolution(')
 check('resetPhoneResolution()' in block(model, 'private init()') and 'ResolutionChoices.fills(1408, 648)' in reset
       and 'madeira.ml1172.resolution-reset' in reset and 'guard persist(next) else { return }' in reset,
       'ml1172: 1408x648 entries are reset once on a screen of another shape')
-check('ResolutionChoices.groups()' in block(content, 'private var resolutionPicker') and 'DesktopResolution' not in content,
-      'ml1172: the developer Resolution menu shows the same choices')
-check('Picker("Aspect & scaling"' in detail and 'entry.display = $0' in detail, 'game details: Aspect & scaling')
-# The Desktop's details page carries every setting a game's page does. What the Desktop
-# entry leaves out names or starts one particular program: its title and cover, how it
-# starts, its launch arguments, a Home Screen link, its executable. A block gated off
-# for the Desktop must be one of those and hold no other control.
-form_body = detail[:detail.index('.navigationTitle("Game details")')]
-desktop_out = ('Section("Library details")', 'Picker("Start"', 'TextField("Launch arguments"',
-               'Text("Home Screen")', 'Section("Executable")')
-desktop_controls = {'Picker("Start"', 'Toggle("Start Windows services first"'}
-hidden = []
-for gate in re.finditer(r'\bif\b[^{\n]*(?:entry\.desktop != true|entry\.usesLaunchOptions)[^{\n]*\{', form_body):
-    depth, end = 1, gate.end()
-    while depth:
-        depth += (form_body[end] == '{') - (form_body[end] == '}')
-        end += 1
-    gated = form_body[gate.end():end]
-    controls = set(re.findall(r'\b(?:Toggle|Picker|Slider|FPSChoice|ControllerModeChoice)\("?[^",)]*"?', gated))
-    controls = {c if c.endswith('"') or '"' not in c else c.rstrip('"') for c in controls}
-    if not any(marker in gated for marker in desktop_out) or {c for c in controls if not any(c.startswith(a) for a in desktop_controls)}:
-        hidden.append(gated.strip().splitlines()[0][:80])
-check(not hidden and 'Picker("MetalFX upscaling"' in form_body,
-      'Desktop details: every setting a game has, only program-specific sections left out (gated: %s)' % hidden)
-check('LabeledContent("Control opacity")' in detail and 'LabeledContent("Control size")' in detail,
-      'game details: control opacity and size sliders')
-check('Picker("Aspect & scaling", selection: $model.displayMode)' in hud and 'MADEIRA_SESSION_TOOLS' in hud,
+check('id: "scaling", title: "Scaling"' in page and 'DisplayMode.allCases' in page, 'game page: Aspect & scaling')
+check('id: "opacity"' in page and 'id: "size"' in page and 'case "opacity":' in page and 'case "size":' in page,
+      'game page: touch-control opacity and size')
+sessionlive = (root / 'app/Madeira/BCDSessionLive.swift').read_text()
+check('MADEIRA_SESSION_TOOLS' in sessionlive and 'DisplayMode' in sessionlive,
       'in-game menu: Aspect & scaling (MADEIRA_SESSION_TOOLS)')
-check('LabeledContent("Opacity")' in hud and 'LabeledContent("Size")' in hud, 'in-game menu: control opacity and size')
-check('Text("Touch").tag("touch")' in lib and 'input.touchMode = value == "touch"' in lib,
-      'pointer settings: Absolute, Relative and Touch')
+check('kind: .custom("touch")' in sessionlive and 'BCDTouchMenuSectionLive(closeMenu:' in sessionlive,
+      'in-game menu: the touch controls (opacity and size) are BCD\'s touch section')
+check('case .absolute: input.mode = .absolute' in (root / 'app/Madeira/BCDSettingsLive.swift').read_text()
+      and 'case .touch: input.mode = .touch' in (root / 'app/Madeira/BCDSettingsLive.swift').read_text()
+      and 'case .relative: input.mode = .relative' in (root / 'app/Madeira/BCDSettingsLive.swift').read_text(),
+      'pointer settings: Absolute, Relative and Touch (BCD\'s Settings › Controls)')
 save = block(model, 'func saveCurrentProfile()')
 check('entry.display = displayMode.rawValue' in save and 'entry.controlOpacity = opacity' in save
       and 'entry.controlSize = controls.sizeScale' in save, 'a session saves display mode, opacity and size to the game')
@@ -590,47 +574,61 @@ check('displayMode = entry.displayMode' in begin and 'controls.sizeScale =' in b
       "a session starts with the game's display mode, opacity and size")
 check('GuestDisplay.configureSessionDefault(' in block(lib, 'func configureLaunch('),
       'every launch sets the virtual monitor from the Resolution')
-# ml1163: a game's launch options in its details page.
-check('Picker("Start"' in detail and 'entry.launchMode = $0 == "desktop"' in detail and 'entry.workingDirectory = ' in detail
-      and 'Toggle("Start Windows services first"' in detail,
-      'game details: start mode, working folder and services')
-check('Text(entry.commandPreview)' in detail and 'lastPathComponent] + (entry.arguments' not in detail,
-      'game details: the command line shows what the next start runs, launch mode included')
-check('programExtensions: Set<String> = ["exe", "bat", "cmd"]' in model
-      and 'LibraryModel.programExtensions.contains(' in block(lib, 'struct ExecutableBrowser: View'),
-      'the executable picker and the launch check accept .bat and .cmd')
+# ml1163: a game's launch options in its page.
+check('id: "start"' in page and 'case "start": change(game) { $0.launchMode = value == "desktop" ? "desktop" : nil }' in page
+      and 'entry.workingDirectory = ' in page.replace('$0.workingDirectory = ', 'entry.workingDirectory = ') and 'Self.toggle("services", "Start Windows services first"' in page,
+      'game page: start mode, working folder and services')
+check('settings.append(BCDGameSetting(id: "command", title: "What starts", kind: .info, value: entry.commandPreview))' in page,
+      'game page: the command line shows what the next start runs, launch mode included')
+check('programExtensions: Set<String> = ["exe", "bat", "cmd"]' in model and 'programExtensions.contains(url.pathExtension.lowercased())' in lib,
+      'the launch check accepts .bat and .cmd')
 check('GameSurfaceLayout.rect(' in content and 'GameSurfaceLayout.map(' in content and 'effectiveDisplayMode()' in content
       and '* 1024 / r.width' not in content, 'the game view lays out and maps touches through GameSurfaceLayout')
 check('if touchPointerMode { touchModeBegan(touches); return }' in content, 'the game view handles the Touch pointer mode')
-check('TouchControlsModel.diameter(control)' in content and 'library.opacity' in content,
-      "touch controls follow the session's size and opacity")
+check('static func diameter(' in content and 'library.opacity' in (root / 'app/Madeira/BCDTouchLive.swift').read_text(),
+      "touch controls follow the session's size and opacity (BCD's controls, BCDTouchLive.swift)")
 
-# Owner requests: the starting screen's glyph row, Settings credits last, no drive_c note.
-launch = block(hud, 'private func launchView(')
-glyph = block(hud, 'private func launchGlyph(')
-row = block(launch, 'HStack(spacing: 14)')
-check('launchGlyph(showLogs ? "Hide live log" : "Show live log", "text.alignleft", on: showLogs)' in row
-      and 'Button(showLogs ?' not in launch,
-      'starting screen: the live-log control is a glyph in one row')
-check('Image(systemName: symbol)' in glyph and '.accessibilityLabel(label)' in glyph and 'Text(' not in glyph
-      and 'Circle()' in glyph, 'starting screen: glyph buttons show no text and keep their words as VoiceOver labels')
-settings = block(lib, 'private var settings: some View')
-form = block(settings, 'Form {')
-last = form[[m.start() for m in re.finditer(r'\bSection\b', form)][-1]:]
-check('header: { Text("Credits") }' in last and form.count('Text("Credits")') == 1,
-      'Settings: Credits is the last section')
+# Owner requests: Settings credits last, no drive_c note. Wave 3 (2026-10-19): the classic starting screen's glyph row
+# (LibraryHUD) is deleted (BCD's starting screen is checked in check-bcd-session.py); the classic Settings form's Credits
+# section is kept as a frozen reference (tests/fixtures/classic-credits.swift.txt, verbatim from the form at 0b287c31) and
+# BCD's Settings › About (BCDSettingsLive.swift) must carry every word of it (check-bcd-settings.py compares them in order).
+live_settings = (root / 'app/Madeira/BCDSettingsLive.swift').read_text()
+last = (root / 'tests/fixtures/classic-credits.swift.txt').read_text()
+check('header: { Text("Credits") }' in last, 'the classic Credits section (frozen) has its header')
 for who in ('name: "Will Faust", handle: "willfaust"', 'name: "Nick", handle: "125hz"',
             'name: "Jfishin", handle: "Jfishin"', 'name: "Jesse", handle: "JesseLovelace"',
             'name: "Dan Perks", handle: "danperks"',
-            'name: "bahacan16", handle: "bahacan16"',
             'name: "spitefulowl", handle: "spitefulowl"',
             'name: "meshoklv", handle: "meshoklv"',
             'name: "TheHadesc", handle: "TheHadesc"'):
-    check('MadeiraCredit(' + who in last, 'Settings credits: ' + who)
+    check('MadeiraCredit(' + who in last and 'MadeiraCredit(' + who in live_settings, 'Settings credits (About): ' + who)
+# The app is BCD, a fork (owner, 2026-10-18). Its credits start with the attribution
+# LICENSE-BCD.md section 4(b) requires, word for word; the owner's real name never.
+bcd = block(lib, 'struct BCDCredit: View')
+lic = (root / 'LICENSE-BCD.md').read_text()
+line = 'Includes work from BCD by thebcd69 (https://github.com/thebcd69/bcd-games)'
+about = block(live_settings, 'struct BCDAboutCreditsLive: View')
+check(line in lic and f'static let attribution = "{line}"' in bcd and 'Link(Self.attribution' in bcd
+      and about.index('BCDCredit()') < about.index('MadeiraCredit('),
+      'Settings credits: BCD first, with the LICENSE-BCD.md 4(b) attribution word for word')
+# The owner's private names (the list stays out of the repository, read only where it exists)
+# never appear in the credits.
+needles_file = Path.home() / 'madeira-local' / 'state' / 'alpha-needles.txt'
+private = ([l.strip().lower() for l in needles_file.read_text().splitlines() if l.strip() and not l.startswith('#')]
+           if needles_file.exists() else [])
+check(not any(n in about.lower() for n in private) and 'NO WARRANTY' in about and 'gnu.org/licenses/gpl-3.0' in about,
+      'Settings credits: no private name; the GPL notice says there is no warranty and where the licence is')
+# Credit where it is due, never renamed by a BCD sweep (legal audit, 2026-10-18): Madeira is
+# Will Faust's, Madeira Dock is 125hz's, and the app says it is a fork of Madeira.
+for words in ('role: "Created Madeira"', 'the game library and Madeira Dock (BCD Dock in this app)',
+              'Madeira Dock starts for games whose Steam launch entries', 'BCD and Madeira are built on Wine',
+              'A fork of Madeira by Will Faust and its contributors'):
+    check(words in lib + live_settings, 'Settings credits keep the original names: ' + words)
+check('Created BCD' not in lib + live_settings and 'BCD and BCD' not in lib + live_settings and 'fork of BCD' not in lib + live_settings,
+      'Settings credits: no original work credited to BCD')
 check('https://github.com/\\(handle)' in block(lib, 'struct MadeiraCredit: View'),
       'a credit links the GitHub account')
-check('complete application folders' not in lib and 'Section("Library")' not in settings,
-      'Settings: the drive_c note is removed')
+check('complete application folders' not in lib + live_settings, 'Settings: the drive_c note is removed')
 
 print('check-frontend:', 'FAIL' if failures else 'PASS')
 sys.exit(1 if failures else 0)

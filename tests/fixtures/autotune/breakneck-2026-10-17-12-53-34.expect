@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "wow-rwx-plain-unaligned-atomic"
+ ],
+ "next": [
+  "env.MADEIRA_WOW_RWX_PLAIN = 1"
+ ],
+ "note": "Breakneck (Steam 432940, old 32-bit Unity with its own mono.dll, through Madeira Dock), build 562, iPhone18,2 (the owner's; Send Log 47GP93, auto-tune on and stuck): an unaligned atomic swap into a pool-aliased 1 MB Mono JIT chunk was refused by the store emulator and faulted until the redelivery guard ended the app",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

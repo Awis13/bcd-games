@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPU-address lookups stop where nothing earlier can reach (madeira.cfg
+"""GPU-address lookups stop where nothing earlier can reach (bcd.cfg
 addr-scan, default 1); no Wine, no Metal.
 
 mad_resolve_address finds the resource behind a GPU address (every

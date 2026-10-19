@@ -97,7 +97,7 @@ static void ms_lock( sigset_t *old )
         /* ml1124: the lock is held for well under a microsecond; a contended
          * pthread_mutex_lock sleeps in the kernel (__psynch_mutexwait, ~20 us
          * measured on average in ph-rdr74, 3.4 k times a second). Spin on
-         * trylock first. madeira.cfg madsync-lock-spin = N tries (default 256,
+         * trylock first. bcd.cfg madsync-lock-spin = N tries (default 256,
          * 0 = off). */
         static int spin = -1;
         int k;
@@ -130,7 +130,7 @@ int madsync_enabled(void)
          * was read and from where (see madeira_cfg__dir for the directory rules). */
         char v[32];
         int set = madeira_cfg_get( "inproc-sync", v, sizeof v );
-        /* On only when madeira.cfg selects it (inproc-sync = 1); fastsync is the default engine. */
+        /* On only when bcd.cfg selects it (inproc-sync = 1); fastsync is the default engine. */
         int on = madeira_cfg_sync_engine() == MADEIRA_SYNC_MADSYNC;
         /* Madeira Dock: the app sets MADEIRA_MADSYNC_SESSION=0 only for a session that runs a
          * game's one-time installers first (Wine's services.exe never answered its RPC clients
@@ -143,7 +143,7 @@ int madsync_enabled(void)
             dprintf( 2, "[madsync] off for this session (MADEIRA_MADSYNC_SESSION=0: one-time installs)\n" );
         }
         state = on;
-        dprintf( 2, "[madsync] ml1058 in-process synchronisation %s (madeira.cfg inproc-sync = 1 enables; fastsync is the default)\n",
+        dprintf( 2, "[madsync] ml1058 in-process synchronisation %s (bcd.cfg inproc-sync = 1 enables; fastsync is the default)\n",
                  on ? "ENABLED" : "disabled" );
         dprintf( 2, "[madsync] config inproc-sync=%s cfg=%s dir=%s (MADEIRA_CFG_EARLY_DOCS=0 restores the old lookup)\n",
                  set ? (v[0] ? v : "(empty)") : "unset",
@@ -466,7 +466,7 @@ static int do_wait( struct ntsync_wait_args *args, int all )
         errno = ETIMEDOUT;
         return -1;
     }
-    if (!g_spin_loaded)   /* ml1122: madeira.cfg madsync-spin-us (default 0 = sleep at once) */
+    if (!g_spin_loaded)   /* ml1122: bcd.cfg madsync-spin-us (default 0 = sleep at once) */
     {
         long long us = madeira_cfg_int( "madsync-spin-us", 0 );
         if (us < 0) us = 0; if (us > 200) us = 200;

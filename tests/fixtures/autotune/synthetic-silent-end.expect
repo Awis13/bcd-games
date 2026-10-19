@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "synthetic: no crash evidence, far from the memory limit: the user is asked",
+ "outcome": "inconclusive",
+ "stage": 4,
+ "status": "baseline"
+}

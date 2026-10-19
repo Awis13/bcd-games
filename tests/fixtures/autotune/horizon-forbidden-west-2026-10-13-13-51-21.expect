@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "quitRequested": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "Horizon Forbidden West, build 526, iPhone18,2 (11695 MB): ran_ok_user_quit",
+ "outcome": "quit",
+ "stage": 5,
+ "status": "ok"
+}

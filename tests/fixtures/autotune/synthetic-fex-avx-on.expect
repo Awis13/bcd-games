@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "fex-avx-on"
+ ],
+ "next": [
+  "env.MADEIRA_FEX_AVX = 1"
+ ],
+ "note": "synthetic: built from [exc] ml811's format; Crysis 2 Remastered 540 (c000001d with AVX off)",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

@@ -1,0 +1,4 @@
+# Known-good builds whose source must stay in this repository whatever happens
+# to the development branch: "<tag> <commit>" per line, # starts a comment.
+# .github/workflows/protect-refs.yml creates each missing tag once and never
+# moves or deletes one.

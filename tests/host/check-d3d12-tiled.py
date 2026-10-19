@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Opt-in tiled resources of the D3D12 runtime; no device.
+"""Opt-in tiled resources of the D3D12 runtime (docs/gta5-d3d12-caps.md); no device.
 
 madeira-d3d12/src/pe/madeira_d3d12.c, block "TILED RESOURCES": with
-madeira.cfg d3d12-tiled-resources = 1 the device reports
+bcd.cfg / game-file d3d12-tiled-resources = 1 the device reports
 TiledResourcesTier 2, 40 address bits per resource and R32G32B32 vertex
 formats, creates reserved resources fully backed and answers
 GetResourceTiling with D3D12's standard tiling. This test
@@ -51,7 +51,7 @@ def cut(sig):
 check("d3d12-tiled-resources defaults to 0", 'int on = mad_cfg_int_pe("d3d12-tiled-resources", 0) ? 1 : 0;' in SRC)
 check("d3d12-reserved-max-mb defaults to 1024", 'long long cap = mad_cfg_int_pe("d3d12-reserved-max-mb", 1024);' in SRC)
 check("logged once, only when on",
-      re.search(r'if \(on\)\s*\n\s*d3d12_log\("\[d3d12-caps\] tiled-resources=1 \(opt-in\)', SRC) is not None)
+      re.search(r'if \(on\)\s*\n\s*d3d12_log\("\[d3d12-caps\] madeira-bcd tiled-resources=1 \(opt-in\)', SRC) is not None)
 for fn, stub in (("device_CreateReservedResource(ID3D12Device10", "return stub_ID3D12Device10_CreateReservedResource(This, desc, state, clear, riid, out);"),
                  ("device_CreateReservedResource1(ID3D12Device10", "return stub_ID3D12Device10_CreateReservedResource1(This, desc, state, clear, session, riid, out);"),
                  ("device_CreateReservedResource2(ID3D12Device10", "return stub_ID3D12Device10_CreateReservedResource2(This, desc, layout, clear, session, ncast, cast, riid, out);"),
@@ -63,14 +63,14 @@ for fn, stub in (("device_CreateReservedResource(ID3D12Device10", "return stub_I
     gate = next(l for l in first if l.strip().startswith("if (!mad_tiled_on())"))
     check(fn.split("(")[0] + ": the stub, unchanged, when the key is off", stub in gate)
 check("OPTIONS: Tier 2 and 40 VA bits only behind the key",
-      "if (mad_tiled_on()) {   /* opt-in, see TILED RESOURCES; 12_0 requires Tier 2 */\n"
+      "if (mad_tiled_on()) {   /* madeira-bcd: opt-in, see TILED RESOURCES; 12_0 requires Tier 2 */\n"
       "            o->TiledResourcesTier = D3D12_TILED_RESOURCES_TIER_2;\n"
       "            o->MaxGPUVirtualAddressBitsPerResource = 40;" in SRC)
 check("OPTIONS: the default answer still leaves both at zero (memset)",
       "D3D12_FEATURE_DATA_D3D12_OPTIONS *o = data;\n        if (size < sizeof *o) return E_INVALIDARG;\n        memset(o, 0, sizeof *o);" in SRC)
 check("FORMAT_SUPPORT: R32G32B32 vertex formats only behind the key, nothing but IA_VERTEX_BUFFER",
       re.search(r"DXGI_FORMAT_R32G32B32_SINT\) &&\s*\n\s*mad_tiled_on\(\)\) \{(?:.|\n)*?f->Support1 = D3D12_FORMAT_SUPPORT1_IA_VERTEX_BUFFER;\n\s*return S_OK;", SRC) is not None)
-for slot in ("g_device_vtbl.CreateReservedResource             = device_CreateReservedResource;   /* d3d12-tiled-resources",
+for slot in ("g_device_vtbl.CreateReservedResource             = device_CreateReservedResource;",
              "g_device_vtbl.CreateReservedResource1            = device_CreateReservedResource1;",
              "g_device_vtbl.CreateReservedResource2            = device_CreateReservedResource2;",
              "g_device_vtbl.GetResourceTiling                  = device_GetResourceTiling;",
@@ -83,8 +83,8 @@ check("reserved resources: refused above the cap with E_OUTOFMEMORY, before anyt
 check("reserved resources: a NULL out is the documented capability test (S_FALSE)", "if (!out) return S_FALSE;" in mk)
 check("reserved resources: backed as a committed resource in a DEFAULT heap",
       "hr = mad_create_resource(d, D3D12_HEAP_TYPE_DEFAULT, desc, riid, out);" in mk)
-check("reserved resources: marked as reserved (GetResourceTiling answers only for them)",
-      "((struct mad_resource *)*out)->reserved_bytes = bytes;" in mk)
+check("the live total is given back when a reserved resource dies",
+      "if (r->reserved_bytes) { InterlockedExchangeAdd64(&g_reserved_live_bytes, -(LONG64)r->reserved_bytes); InterlockedDecrement(&g_reserved_live_n); }" in SRC)
 gt = cut("static void STDMETHODCALLTYPE device_GetResourceTiling(ID3D12Device10 *This, ID3D12Resource *res, UINT *total,")
 check("GetResourceTiling: packed subresources are D3D12_PACKED_TILE with zero size",
       "tilings[n].StartTileIndexInOverallResource = D3D12_PACKED_TILE;" in gt and "tilings[n].WidthInTiles = 0;" in gt)

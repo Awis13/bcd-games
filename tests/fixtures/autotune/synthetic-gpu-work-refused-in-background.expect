@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "gpu-work-refused-in-background"
+ ],
+ "next": [
+  "env.MADEIRA_PAUSE_IN_BACKGROUND = 1"
+ ],
+ "note": "synthetic: built from DXMT's 'Device error at frame' line with iOS's background refusal; the game came back black (gameplay.md 2.2)",
+ "outcome": "hung",
+ "stage": 3,
+ "status": "trying"
+}

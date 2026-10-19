@@ -24,7 +24,7 @@
 # d3d11/dxgi/d3d10core are wined3d frontends and wined3d has no backend in this
 # port (no OpenGL, --without-vulkan), so those are never installed from Wine.
 # d3d9 is DXMT's too: its thin shim ships as d3d9.dll and forwards to the
-# emulated frontend (d3d9-emulated.dll) unless madeira.cfg says d3d9 = native.
+# emulated frontend (d3d9-emulated.dll) unless bcd.cfg says d3d9 = native.
 set -euo pipefail
 
 R="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -141,10 +141,18 @@ cpu_family = 'x86'
 cpu = 'i686'
 endian = 'little'
 EOF
+    # LOCAL (x86_64 Mac): build-osx.txt names bare clang, which here is llvm-mingw's
+    # (first on PATH) and defaults to arm64-apple-darwin -- native on an arm64 runner,
+    # "Bad CPU type" build-machine binaries on an Intel host. Use Apple's clang there.
+    NATIVE=build-osx.txt
+    if [ "$(uname -m)" = x86_64 ]; then
+        NATIVE="$B/dxmt-native-x86_64.txt"
+        printf "[binaries]\nc = '/usr/bin/clang'\ncpp = '/usr/bin/clang++'\n" > "$NATIVE"
+    fi
     cd "$D"
     if [ ! -f build-pe-i386/build.ninja ]; then
         SDKROOT="$(xcrun --sdk macosx --show-sdk-path)" \
-        meson setup --cross-file "$X" --native-file build-osx.txt --buildtype release \
+        meson setup --cross-file "$X" --native-file "$NATIVE" --buildtype release \
             -Dwine_build_path="$B" -Dwine_builtin_dll=true build-pe-i386
     fi
     SDKROOT="$(xcrun --sdk macosx --show-sdk-path)" meson compile -C build-pe-i386

@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "quitRequested": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "Ratchet & Clank: Rift Apart, build 550, iPhone18,2 (11695 MB): ran_ok_user_quit",
+ "outcome": "quit",
+ "stage": 4,
+ "status": "ok"
+}

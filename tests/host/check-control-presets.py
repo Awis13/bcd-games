@@ -208,7 +208,8 @@ def function(source, start):
     return source[i:k]
 
 gamepad = (app / 'GamepadInput.swift').read_text()
-for flag, where in (('MADEIRA_CONTROL_PRESETS', presets), ('MADEIRA_CONTROLS_EDITOR_DONE', content)):
+# (Wave 3, 2026-10-19: MADEIRA_CONTROLS_EDITOR_DONE, the classic bar's kill switch, is deleted with that bar.)
+for flag, where in (('MADEIRA_CONTROL_PRESETS', presets),):
     assert f'.flag("{flag}")' in where, flag + ' is a kill switch'
 # Defaults an existing user would notice are opt-in: the built-in is never applied
 # automatically and player 1 is not reserved unless the switch is set to 1.
@@ -229,31 +230,22 @@ assert 'm.controls.isEmpty' in default and 'm.needsDefaultLayout = false' in def
 assert 'Self.touchPad' in function(presets, 'var defaultPending: Bool {'), 'no controller default without touch XInput'
 overlay = function(content, 'struct TouchControlsOverlay: View {')
 assert 'ControlPresetsModel.enabled && m.visible && !m.editing' in overlay, 'menu only while touch controls are shown'
-assert 'if m.editing && Self.editorDone {' in overlay and 'Text("Done")' in overlay
-assert 'TouchControlsOverlay.showsLayoutMenu(self) ? 3 : 2' in model, 'the menu button is hit-testable'
+# (Wave 3, 2026-10-19: the classic bar's Done button and MADEIRA_CONTROLS_EDITOR_DONE are deleted; BCD's editor has its own Done.)
+assert 'TouchControlsOverlay.showsLayoutMenu(self) ? 4 : 3) + 1' in model, 'the menu button is hit-testable'
 window = function(content, 'final class ControlsWindow: UIWindow {')
-assert window.index('if m.editing {') < window.index('!hit.isDescendant(of: root)') \
+assert window.index('if m.editing || m.sessionPanel {') < window.index('!hit.isDescendant(of: root)') \
     < window.index('guard m.hitsInteractive('), 'menu and dialog presentations take their touches in play mode'
 reserve = function(gamepad, '@MainActor func reserveSessionSlot(touchControls: Bool) {')
 assert reserve.index('guard Self.enabled, Self.optIn("MADEIRA_PAD_EARLY_SLOT")') < reserve.index('touchState.reserved = true')
 run = function(content, 'private func runWineFullSequence(profile: LibraryEntry? = nil) {')
 assert run.index('GamepadInput.shared.reserveSessionSlot(') < run.index('DispatchQueue.global'), 'reserved before Wine starts'
 
-# The built-in reaches a library session: LibraryHUD replaces the overlay's top bar there, so the
-# Session menu carries the same menu, and a game remembers the layout it was loaded from.
+# The built-in reaches a library session through BCD's in-game menu (wave 3, 2026-10-19: LibraryHUD, its layout row and the
+# classic ControlLayoutMenu are deleted; check-bcd-touch.py pins BCD's touch section and layout menu), and a game remembers
+# the layout it was loaded from.
 lib = (app / 'Library.swift').read_text()
-hud = function(lib, 'struct LibraryHUD: View {')
-menu = function(hud, 'private var menu: some View {')
-row = menu.index('ControlLayoutMenu(style: .row)')
-assert 'if session && !m.editing { LibraryHUD() } else { topBar }' in overlay, 'a session shows the HUD instead of the top bar'
-assert menu.index('Toggle("Touch controls"') < row < menu.index('LabeledContent("Opacity")'), \
-    'the Session menu offers the layout menu with the touch-control settings'
-assert 'controls.visible && ControlPresetsModel.enabled' in menu[row - 80:row], \
-    'only while touch controls are on and MADEIRA_CONTROL_PRESETS is not 0'
-assert 'model.saveCurrentProfile()' in menu[row:menu.index('LabeledContent("Opacity")')], 'a chosen layout is saved to the game'
-layout_menu = function(presets, 'struct ControlLayoutMenu: View {')
-assert 'enum Style { case glass, row }' in layout_menu and 'LabeledContent("Controller layout")' in layout_menu
-assert 'ControlLayoutMenu()' in overlay, 'the overlay keeps its top-bar button, unchanged'
+assert 'if session && !m.editing { BCDSessionLiveLayer() } else { topBar }' in overlay, 'a session shows BCD\'s layer instead of the top bar'
+assert 'ControlLayoutMenu' not in lib + presets and 'struct LibraryHUD' not in lib, 'the classic layout menu and HUD are gone'
 entry = function(lib, 'struct LibraryEntry: Codable, Identifiable {')
 assert 'var controlLayout: String?' in entry, 'optional, so older library files decode'
 model_lib = function(lib, 'final class LibraryModel: ObservableObject {')
@@ -264,10 +256,6 @@ assert 'entry.controlLayout = controls.layoutID' in function(model_lib, 'func sa
 fin = function(model_lib, 'private func finish()')
 assert fin.index('saveCurrentProfile()') < fin.index('controls.layoutID = savedLayout'), 'the session restores the shared layout after saving'
 
-# The WASD stick's centre glyph: drawn by the stick face, fed by the action.
-face = function(content, 'struct JoystickFace: View {')
-assert 'var glyph: String?' in face and 'Image(systemName: g)' in face, 'the stick face draws a glyph'
-assert 'glyph: control.action.stickGlyph' in function(content, 'struct TouchControlButton: View {'), 'the overlay stick passes its glyph'
-assert 'JoystickFace(held: s.held, dir: s.dir)' in content and 'JoystickFace(held: false, dir: -1)' in content, 'the portrait pad passes none, drawn as before'
-assert '.opacity(glyph == nil || expanded ? 1 : 0)' in face, 'no glyph: the knob is always drawn'
-print('PASS: switches (opt-in built-in default and session slot), edit write-back, layout menu, session-menu layout choice and stick glyph wiring')
+# The WASD stick's centre glyph: fed by the action (the classic stick face that drew it is deleted; BCD's controls draw their own).
+assert 'var stickGlyph: String?' in content, 'the action still names its stick glyph'
+print('PASS: switches (opt-in built-in default and session slot), edit write-back, the session\'s layout and stick glyph wiring')

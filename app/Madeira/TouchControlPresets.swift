@@ -7,22 +7,19 @@ import UIKit
 //
 // A layout is the landscape editor's `TouchControlsModel.controls`. The user's
 // own layouts ("Custom Layout 1", "Custom Layout 2", ...) are kept app-wide in
-// Documents/madeira-control-presets.json, beside madeira-controls.json, so a
+// Documents/bcd-control-presets.json, beside bcd-controls.json, so a
 // device backup carries them. Built-ins ship in code and can be loaded but
 // never changed: there is one, a full XInput layout named "Xbox controller".
 //
-// madeira-controls.json stays the working copy the overlay draws; it records
+// bcd-controls.json stays the working copy the overlay draws; it records
 // which layout it was loaded from (`TouchControlsModel.layoutID`) so edits made
 // in the editor are written back to that custom layout when editing ends.
 //
-// The layout menu is offered in two places: the landscape overlay's top bar
-// (`ControlLayoutMenu`) and, in a library session, where LibraryHUD replaces
-// that bar, as a "Controller layout" row of the in-game Session menu (the same
-// view, `.row` style). A library game remembers its layout (`LibraryEntry.
-// controlLayout`); other games and the overlay outside the library keep the
-// one shared working copy.
+// BCD's interface offers the layouts in the touch controls' top bar and in the in-game menu
+// (BCDTouchLive.swift). A library game remembers its layout (`LibraryEntry.controlLayout`);
+// other games and the overlay outside the library keep the one shared working copy.
 //
-// Switches (Documents/madeira.cfg `env.NAME = value`, or the environment):
+// Switches (Documents/bcd.cfg `env.NAME = value`, or the environment):
 //   MADEIRA_CONTROL_PRESETS=0        no layout menu, no write-back (default on)
 //   MADEIRA_CONTROLS_XBOX_DEFAULT=1  a user with no controls file gets the
 //                                    built-in once (default OFF: otherwise the
@@ -301,12 +298,12 @@ struct ControlPresetStore: Equatable {
 
 // MARK: - Persistence and overlay actions
 
-/// Owns madeira-control-presets.json and applies layouts to TouchControlsModel.
+/// Owns bcd-control-presets.json and applies layouts to TouchControlsModel.
 /// Main thread only, like the overlay that drives it.
 final class ControlPresetsModel: ObservableObject {
     static let shared = ControlPresetsModel()
     static let enabled = GamepadInput.flag("MADEIRA_CONTROL_PRESETS")
-    /// Opt-in. "No madeira-controls.json" is not a fresh install: the file is
+    /// Opt-in. "No bcd-controls.json" is not a fresh install: the file is
     /// only written once the controls or their visibility change, so an
     /// existing user who never touched them has none either and would get an
     /// 18-button overlay they did not ask for. Nothing on disk tells the two
@@ -321,7 +318,7 @@ final class ControlPresetsModel: ObservableObject {
 
     private static var url: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("madeira-control-presets.json")
+            .appendingPathComponent("bcd-control-presets.json")
     }
 
     private init() {
@@ -350,7 +347,7 @@ final class ControlPresetsModel: ObservableObject {
         return m.layoutID == nil && !m.controls.isEmpty
     }
 
-    /// With MADEIRA_CONTROLS_XBOX_DEFAULT=1, a user with no madeira-controls.json gets the controller layout the
+    /// With MADEIRA_CONTROLS_XBOX_DEFAULT=1, a user with no bcd-controls.json gets the controller layout the
     /// first time the landscape overlay appears.
     var defaultPending: Bool {
         TouchControlsModel.shared.needsDefaultLayout && Self.enabled && Self.xboxDefault && Self.touchPad
@@ -419,7 +416,7 @@ final class ControlPresetsModel: ObservableObject {
         return true
     }
 
-    /// "Create new layout": an empty custom layout, made active, opened in the editor.
+    /// "New layout": an empty custom layout, made active, opened in the editor.
     @discardableResult func createLayout() -> Bool {
         guard !readOnly else { return false }
         var s = store
@@ -472,126 +469,5 @@ final class ControlPresetsModel: ObservableObject {
         store = s
         persist()
         log("saved custom layout controls=\(m.controls.count)")
-    }
-}
-
-// MARK: - Layout menu (landscape overlay, library session menu)
-
-/// The layout menu: the controller built-in, the user's custom layouts,
-/// "Create new layout" (opens the editor on an empty layout) and deleting the
-/// active custom layout. Shown only while touch controls are on. `.glass` is
-/// the overlay's round top-bar button; `.row` is a labelled row of the library
-/// session's Session menu.
-struct ControlLayoutMenu: View {
-    enum Style { case glass, row }
-
-    @ObservedObject private var presets = ControlPresetsModel.shared
-    @ObservedObject private var m = TouchControlsModel.shared
-    private let style: Style
-    /// Called after a layout was loaded, created or deleted, with true when the
-    /// editor was opened (a library session saves the game's profile, and closes
-    /// its menu to show the editor).
-    private let didChoose: ((_ openedEditor: Bool) -> Void)?
-
-    init(style: Style = .glass, didChoose: ((_ openedEditor: Bool) -> Void)? = nil) {
-        self.style = style
-        self.didChoose = didChoose
-    }
-
-    private enum Choice: Equatable { case load(String), create }
-    @State private var pending: Choice?
-    @State private var confirmDelete: ControlPreset?
-
-    var body: some View {
-        Group {
-            if style == .row {
-                LabeledContent("Controller layout") { menu }
-            } else {
-                menu
-            }
-        }
-        .alert("Keep the current controls?", isPresented: shown($pending)) {
-            if !presets.readOnly {
-                Button("Keep as \u{201C}\(presets.store.nextCustomName())\u{201D}") {
-                    let choice = pending
-                    pending = nil
-                    presets.keepCurrent()
-                    perform(choice)
-                }
-            }
-            Button("Replace", role: .destructive) {
-                let choice = pending
-                pending = nil
-                perform(choice)
-            }
-            Button("Cancel", role: .cancel) { pending = nil }
-        } message: {
-            Text("The controls on screen are not saved in a layout.")
-        }
-        .alert("Delete \u{201C}\(confirmDelete?.name ?? "")\u{201D}?", isPresented: shown($confirmDelete)) {
-            Button("Delete", role: .destructive) {
-                if let p = confirmDelete, presets.delete(p.id) { didChoose?(false) }
-                confirmDelete = nil
-            }
-            Button("Cancel", role: .cancel) { confirmDelete = nil }
-        }
-    }
-
-    private var menu: some View {
-        Menu {
-            Section("Controller layout") {
-                ForEach(presets.available) { p in
-                    Button { request(.load(p.id)) } label: {
-                        if m.layoutID == p.id { Label(p.name, systemImage: "checkmark") }
-                        else if ControlPresetStore.isBuiltIn(p.id) { Label(p.name, systemImage: "gamecontroller") }
-                        else { Text(p.name) }
-                    }
-                }
-            }
-            if !presets.readOnly {
-                Button("Create new layout", systemImage: "plus") { request(.create) }
-            }
-            if let a = presets.active, !ControlPresetStore.isBuiltIn(a.id), !presets.readOnly {
-                Button("Delete \u{201C}\(a.name)\u{201D}", systemImage: "trash", role: .destructive) {
-                    confirmDelete = a
-                }
-            }
-        } label: {
-            switch style {
-            case .glass:
-                // Same look as the overlay's glass buttons; stroke glyph only.
-                Image(systemName: "square.stack.3d.up")
-                    .font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(GlassShape(circle: true))
-            case .row:
-                HStack(spacing: 4) {
-                    Text(presets.active?.name ?? "Custom")
-                    Image(systemName: "chevron.up.chevron.down").font(.caption)
-                }
-            }
-        }
-        .accessibilityLabel("Controller layout")
-    }
-
-    private func shown<T>(_ b: Binding<T?>) -> Binding<Bool> {
-        Binding(get: { b.wrappedValue != nil }, set: { if !$0 { b.wrappedValue = nil } })
-    }
-
-    private func request(_ choice: Choice) {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        if presets.currentIsUnsaved { pending = choice } else { perform(choice) }
-    }
-
-    private func perform(_ choice: Choice?) {
-        switch choice {
-        case .load(let id):
-            presets.load(id, screen: ControlPresetsModel.currentScreen())
-            didChoose?(false)
-        case .create:
-            if presets.createLayout() { didChoose?(true) }
-        case nil: break
-        }
     }
 }

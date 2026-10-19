@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright 2026 thebcd69 (BCD)
+// BCD Material: additional terms under GPL-3.0 section 7 apply; see LICENSE-BCD.md.
+//
+// FROZEN REFERENCE for tests/host/check-bcd-settings.py (section 6, "the credits, word for word").
+// The Credits section of the classic Settings form (LibrarySettingsForm in app/Madeira/Library.swift at
+// commit 0b287c31), copied verbatim before wave 3 (2026-10-19) deleted that form. BCD's Settings > About
+// (BCDAboutCreditsLive in BCDSettingsLive.swift) must show the same credits, in the same order, and the same
+// licence notice, word for word. Not compiled into the app.
+
+            // Credits, last on the Settings page.
+            if settingsShow("credits", "thanks", "BCD", "thebcd69", "license", "licence", "GPL", "Will Faust", "Nick", "125hz", "Jfishin", "Jesse", "JesseLovelace", "Dan Perks", "danperks", "spitefulowl", "meshoklv", "TheHadesc") {
+                Section {
+                    // BCD first: the attribution LICENSE-BCD.md section 4(b) requires of any
+                    // app containing BCD's files, in its Appropriate Legal Notices (GPL-3.0
+                    // section 0). The text is LICENSE-BCD.md's, word for word.
+                    BCDCredit()
+                    MadeiraCredit(name: "Will Faust", handle: "willfaust", role: "Created Madeira")
+                    MadeiraCredit(name: "Nick", handle: "125hz", role: "32-bit game support, the game library and Madeira Dock (BCD Dock in this app)")
+                    MadeiraCredit(name: "Jfishin", handle: "Jfishin", role: "The original native Steam sign-in, library and downloads")
+                    MadeiraCredit(name: "Jesse", handle: "JesseLovelace", role: "Steam Cloud saves, faster game launches, and fixes that let more games run")
+                    MadeiraCredit(name: "Dan Perks", handle: "danperks", role: "In-app JIT without StikDebug, and pairing without a computer")
+                    MadeiraCredit(name: "spitefulowl", handle: "spitefulowl", role: "Wine and FEX runtime fixes, DXMT texture and memory fixes, audio, the swap tier, and library launch options")
+                    MadeiraCredit(name: "meshoklv", handle: "meshoklv", role: "Controller fixes for games that ship their own XInput or need focus, touch taps that stay off the mouse, and a crash-guard fix")
+                    MadeiraCredit(name: "TheHadesc", handle: "TheHadesc", role: "Madeira Dock starts for games whose Steam launch entries do not start at zero, and a touch gamepad that survives the in-game keyboard")
+                } header: { Text("Credits") } footer: {
+                    Text("BCD and Madeira are built on Wine, FEX-Emu, DXMT by Feifan He (3Shain) with the Direct3D 9 frontend by David Acevedo (dacevedo12), rpmalloc by Mattias Jansson, StikDebug, StikJIT and idevice. Thank you to everyone who contributes to these projects.\n\nBCD is free software under the GNU General Public License, version 3, with additional terms for BCD's own files (LICENSE-BCD.md), and comes with NO WARRANTY. The licence: gnu.org/licenses/gpl-3.0. The source: github.com/thebcd69/bcd-games.")
+                }
+            }

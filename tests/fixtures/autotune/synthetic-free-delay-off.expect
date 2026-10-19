@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "free-delay-off"
+ ],
+ "next": [
+  "env.MADEIRA_FREE_DELAY_MS = 0"
+ ],
+ "note": "synthetic: built from [alloc-fail]'s format; HFW 517 (presents=0, a c0000018 storm)",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "trying"
+}

@@ -194,10 +194,13 @@ enum JITShortcutFile {
 /// An app can only run a shortcut by opening the Shortcuts app, so each run leaves
 /// Madeira for a moment and comes back through x-callback-url
 /// (madeira://jit-network/...). Off unless Settings › JIT › Madeira JIT shortcut
-/// turns it on (madeira.cfg env.MADEIRA_JIT_SHORTCUT = 1): without the shortcut the
+/// turns it on (bcd.cfg env.MADEIRA_JIT_SHORTCUT = 1): without the shortcut the
 /// Shortcuts app would only report that it is missing.
 @MainActor final class JITNetworkShortcut: ObservableObject {
     static let shared = JITNetworkShortcut()
+    /// The name the shortcut has in Shortcuts, which runs it by name: the bundled file and the
+    /// iCloud link both carry this one, so it stays (an identifier, never shown in the interface,
+    /// which says "the JIT shortcut"; 2026-10-18).
     static let name = "Madeira JIT"
 
     /// Settings › JIT › Madeira JIT shortcut: when LocalDevVPN's loopback does not answer,
@@ -282,7 +285,7 @@ enum JITShortcutFile {
     }
 
     private func run(_ input: String, completion: @escaping (Outcome) -> Void) {
-        finish(.failed("superseded"))
+        finish(.failed("a newer run replaced it"))
         var c = URLComponents()
         c.scheme = "shortcuts"
         c.host = "x-callback-url"
@@ -291,31 +294,31 @@ enum JITShortcutFile {
             URLQueryItem(name: "name", value: Self.name),
             URLQueryItem(name: "input", value: "text"),
             URLQueryItem(name: "text", value: input),
-            URLQueryItem(name: "x-success", value: "madeira://jit-network/success"),
-            URLQueryItem(name: "x-error", value: "madeira://jit-network/error"),
-            URLQueryItem(name: "x-cancel", value: "madeira://jit-network/cancel")
+            URLQueryItem(name: "x-success", value: "bcd://jit-network/success"),
+            URLQueryItem(name: "x-error", value: "bcd://jit-network/error"),
+            URLQueryItem(name: "x-cancel", value: "bcd://jit-network/cancel")
         ]
-        guard let url = c.url else { completion(.failed("bad shortcut URL")); return }
+        guard let url = c.url else { completion(.failed("the Shortcuts link could not be built")); return }
         LogStore.shared.log("[jit-shortcut] run input=\(input)")
         waiting = completion
         timeout = Timer.scheduledTimer(withTimeInterval: 60, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.finish(.failed("the shortcut did not return within 60 s")) }
+            MainActor.assumeIsolated { self?.finish(.failed("no reply from Shortcuts within 60 s")) }
         }
         UIApplication.shared.open(url) { [weak self] opened in
-            if !opened { MainActor.assumeIsolated { self?.finish(.failed("Shortcuts could not be opened")) } }
+            if !opened { MainActor.assumeIsolated { self?.finish(.failed("the Shortcuts app didn't open")) } }
         }
     }
 
     /// madeira://jit-network/{success|error|cancel}, from Shortcuts' x-callback-url.
     @discardableResult
     func handle(_ url: URL) -> Bool {
-        guard url.scheme == "madeira", url.host == "jit-network" else { return false }
+        guard url.scheme == "bcd" || url.scheme == "madeira", url.host == "jit-network" else { return false }
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         let value = { (name: String) in query.first { $0.name == name }?.value ?? "" }
         switch url.path {
         case "/success": finish(.done(value("result")))
-        case "/error":   finish(.failed(value("errorMessage").isEmpty ? "the shortcut failed" : value("errorMessage")))
-        default:         finish(.failed("the shortcut was cancelled"))
+        case "/error":   finish(.failed(value("errorMessage").isEmpty ? "Shortcuts reported an error" : value("errorMessage")))
+        default:         finish(.failed("it was canceled"))
         }
         return true
     }

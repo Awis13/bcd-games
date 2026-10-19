@@ -1,0 +1,46 @@
+[23:27:21.814] [INFO] [build] v0.1.559 (559)
+[23:27:21.815] [INFO] [device] model=iPad16,5 idiom=pad os=iPadOS Version 27.2 (Build 24B5089g) ram=15416MB available=16362MB cores=10
+[23:27:21.815] [INFO] [device] address-map=[0x104ff8000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[23:27:45.036] [INFO] [bcd] library launch Warcraft II BNE.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[23:27:45.060] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ff8000,0x8000000000) 512GB available=16274MB low-power=0 thermal=nominal
+[phase] wine-start             t+  0.768s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=637 MB (peak 637) internal=635 MB compressed=0 MB external=70 MB reusable=14 MB (cycle=1)
+D 24 Load module Warcraft II BNE.exe (warcraft ii bne.exe-b086fa089e806972): 7100400000
+D 24 Load module ntdll.dll (ntdll.dll-3903196a83fae68b): 71FFF40000
+D 24 Load module kernel32.dll (kernel32.dll-3a7c334be1e71252): 717BED0000
+D 24 Load module kernelbase.dll (kernelbase.dll-1bada4728a9f00a2): 717BC40000
+D 24 Load module Storm.dll (storm.dll-12d81d6105173e3d): 7115000000
+D 24 Load module USER32.dll (user32.dll-7d7be97280eb2b4a): 717BA80000
+[win-name] #3 hwnd=0x10034 class='' text="Default IME" rev=ml853
+[win-name] #4 hwnd=0x2002a class='' text="Warcraft II" rev=ml853
+[win-name] #5 hwnd=0x2002a class='' text="Warcraft II" rev=ml853
+[win-name] #11 hwnd=0x2002a class='' text="Warcraft II" rev=ml853
+[win-name] #12 hwnd=0x2002a class='' text="Warcraft II" rev=ml853
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"LC.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D 24 Load module SmoothScroll.w2p (smoothscroll.w2p-8d35d57551579938): 717A140000
+D 24 Load module dsound.dll (dsound.dll-541344d6eb3dd43f): 717A0F0000
+D 24 Load module mmdevapi.dll (mmdevapi.dll-57d37935cbce6809): 717A0B0000
+D 24 Load module oleaut32.dll (oleaut32.dll-ed26e11610ff9575): 7179FF0000
+D 24 Load module smackw32.dll (smackw32.dll-f485fbf5b6c5966d): 710ABD0000
+D 40 Load module dwmapi.dll (dwmapi.dll-7604a268778b6d5b): 7179FD0000
+[store-noalias] #1 rev=ml348 addr=0x71016a00e6 insn=0xb83f6b05 pc=0x165d15f40 NO pool/anon alias | region 0x71016a0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[23:27:47.607] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[store-noalias] #2 rev=ml348 addr=0x71016a00e6 insn=0xb83f6b05 pc=0x165d15f40 NO pool/anon alias | region 0x71016a0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #3 rev=ml348 addr=0x71016b3629 insn=0xb83f6b05 pc=0x165d16518 NO pool/anon alias | region 0x71016b0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #4 rev=ml348 addr=0x71016b3629 insn=0xb83f6b05 pc=0x165d16518 NO pool/anon alias | region 0x71016b0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #5 rev=ml348 addr=0x71016a00e6 insn=0xb83f6b05 pc=0x165d15f40 NO pool/anon alias | region 0x71016a0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #6 rev=ml348 addr=0x71016b3629 insn=0xb83f6b05 pc=0x165d16518 NO pool/anon alias | region 0x71016b0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #7 rev=ml348 addr=0x71016a00e6 insn=0xb83f6b05 pc=0x165d15f40 NO pool/anon alias | region 0x71016a0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #8 rev=ml348 addr=0x71016b3629 insn=0xb83f6b05 pc=0x165d16518 NO pool/anon alias | region 0x71016b0000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[launch-view] dismissed reason=present logs=0
+[footprint] rev=ml358 phys=1101 MB (peak 1101) internal=978 MB compressed=0 MB external=75 MB reusable=15 MB (cycle=2)
+[footprint] rev=ml358 phys=1136 MB (peak 1136) internal=1014 MB compressed=0 MB external=75 MB reusable=15 MB (cycle=3)
+[footprint] rev=ml358 phys=1129 MB (peak 1136) internal=1008 MB compressed=0 MB external=75 MB reusable=15 MB (cycle=4)
+[footprint] rev=ml358 phys=1080 MB (peak 1136) internal=1007 MB compressed=0 MB external=75 MB reusable=15 MB (cycle=5)
+[redeliv] 256 identical redeliveries pc=0x1590d5560 addr=0x71016b1f99 — storm forming rev=ml461
+[footprint] rev=ml358 phys=1124 MB (peak 1136) internal=1010 MB compressed=0 MB external=75 MB reusable=15 MB (cycle=6)
+[redeliv] 2000 identical redeliveries pc=0x1590d5560 addr=0x71016b1f99 — unrecoverable host fault misdelivered to guest rev=ml461
+[redeliv] terminating process rev=ml465

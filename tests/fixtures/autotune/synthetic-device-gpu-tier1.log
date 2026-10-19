@@ -1,0 +1,11 @@
+[10:00:00.000] [INFO] [build] v0.1.571 (571)
+[10:00:00.001] [INFO] [device] model=iPhone11,8 idiom=phone os=iOS Version 18.6 (Build 22G86) ram=2815MB available=1480MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0xfc0000000) 63GB increased-memory=0 extended-va=0
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0xfc0000000) 63GB available=1402MB low-power=0
+[phase] wine-start             t+  0.702s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=512 MB (peak 512) internal=448 MB compressed=0 MB external=64 MB reusable=10 MB (cycle=1)
+err:   Device error at frame 2: Error Domain=MTLCommandBufferErrorDomain Code=3 "Caused GPU Address Fault Error (0000000b:kIOGPUCommandBufferCallbackErrorPageFault)" UserInfo={NSLocalizedDescription=Caused GPU Address Fault Error (0000000b:kIOGPUCommandBufferCallbackErrorPageFault)}
+err:   Device error at frame 3: Error Domain=MTLCommandBufferErrorDomain Code=1 "Discarded (victim of GPU error/recovery) (00000005:kIOGPUCommandBufferCallbackErrorInnocentVictim)" UserInfo={NSLocalizedDescription=Discarded (victim of GPU error/recovery) (00000005:kIOGPUCommandBufferCallbackErrorInnocentVictim)}
+0028:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=4210

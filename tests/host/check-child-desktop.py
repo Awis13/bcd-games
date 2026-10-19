@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """A pseudo-process child gets a desktop window like the session; no Wine runs.
 
-Compiles get_desktop_window and its iOS helpers from
+Compiles get_desktop_window and its madeira-bcd helpers from
 build/win32u-unix/winstation_ios.c against a model of the wineserver
 (window classes are per process; the desktop window is created by the
 process that asks with force=1 and needs the desktop class in THAT process;
 a thread without a desktop gets nothing) and checks:
   - the session process (the one that ran init_user) behaves exactly as
     before: one request, no class registration, no winstation_init;
-  - a child whose launcher never opened a window (GTA V Enhanced:
+  - a child whose launcher never opened a window (GTA V Enhanced, build 296:
     "top_window stays 0" on the game thread) registers the desktop/message
     classes once for its pid+PEB and gets the desktop window on the retry;
   - a child whose thread has no desktop at all is connected with
@@ -106,7 +106,7 @@ static unsigned int wine_server_call( void *req )
 }
 void *ios_win32u_session_peb;
 '''
-start = win.index('#ifdef WINE_IOS\n/* The process whose thread ran init_user')
+start = win.index('#ifdef WINE_IOS\n/* madeira-bcd: the process whose thread ran init_user')
 end = win.index('HWND get_desktop_window(void)')
 code += win[start:end].replace('extern void *ios_win32u_session_peb;', '')
 code += gdw

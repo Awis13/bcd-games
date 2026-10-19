@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ring-share (madeira.cfg ring-share = 1) and the ExecuteIndirect fast-path tallies; no Wine runs.
+"""ring-share (bcd.cfg ring-share = 1) and the ExecuteIndirect fast-path tallies; no Wine runs.
 
 Red Dead Redemption 2 on build 470 (2026-10-09 14:48): the argument-ring chunks
 of madeira-d3d12 grew from 32 MB to 1575 MB within two minutes of play, because

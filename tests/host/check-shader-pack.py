@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Packed shader cache (madeira-d3d12/src/unix/madeira_sc_pack.c), opt-in
-through madeira.cfg d3d12-shader-pack = 1; no device.
+through bcd.cfg d3d12-shader-pack = 1; no device.
 
 1. Compiles madeira_sc_pack.c on the host (-Wall -Werror, AddressSanitizer
    and UndefinedBehaviorSanitizer) with a small harness and runs it:
@@ -21,7 +21,7 @@ through madeira.cfg d3d12-shader-pack = 1; no device.
    the packs only, byte for byte what the loose writer writes; a later launch
    serves everything from the packs; switch off again ignores and leaves the
    packs alone; another build empties them; the game's own file sets the
-   switch like madeira.cfg.
+   switch like bcd.cfg.
 3. Source checks: the switch is read once with default 0, every pack path
    sits behind it and in front of the unchanged loose code, the build
    scripts compile the new file, and the settings catalog lists the key.
@@ -860,7 +860,7 @@ def build_and_run(tmp):
     docs.mkdir()
     ref.mkdir()
     sc = docs / 'shadercache'
-    cfg = docs / 'madeira.cfg'
+    cfg = docs / 'bcd.cfg'
 
     def launch(mode, cfg_text=None, game_text=None, exe='service'):
         if cfg_text is None:
@@ -895,7 +895,7 @@ def build_and_run(tmp):
     check(ok and names == ['.mdsc-build', 'pack', 'pack/dxbc.mdpk', 'pack/dxil.mdpk'],
           'switch on: earlier loose entries move into the packs as they are looked up, new ones go to the packs only, '
           'packed DXBC bytes equal the loose writer\'s; the directory holds two files: ' + ', '.join(names))
-    check('[madeira-ir] packed shader cache ON (madeira.cfg d3d12-shader-pack)' in err
+    check('[madeira-ir] packed shader cache ON (bcd.cfg d3d12-shader-pack)' in err
           and '[madeira-ir] shader pack dxbc: started empty (new file), bound 2048 MB' in err
           and '[madeira-ir] shader pack dxil: started empty (new file), bound 512 MB' in err,
           'switch on: the log names the switch and each pack as it opens (DXIL bound = the DXIL cache\'s 512 MB)')
@@ -918,7 +918,7 @@ def build_and_run(tmp):
                                       ('# d3d12-shader-pack = 1\n', None, 0)):
         ok, out, err = launch('switch', cfg_text, game_text)
         check(ok and out.strip() == f'switch={want}',
-              f'switch: madeira.cfg {cfg_text!r}, game file {game_text!r} -> {want}')
+              f'switch: bcd.cfg {cfg_text!r}, game file {game_text!r} -> {want}')
     (t / 'game.cfg').unlink(missing_ok=True)
 
     ok, out, err = launch('rebuilt', 'd3d12-shader-pack = 1\n', exe='service-rebuilt')
@@ -938,7 +938,7 @@ else:
 # ---------------------------------------------------------------------------
 check(unix.count('madeira_cfg_bool("d3d12-shader-pack", 0)') == 1 and
       re.search(r'"d3d12-shader-pack"', (root / 'madeira-d3d12/src/pe/madeira_d3d12.c').read_text()) is None,
-      'the switch is read once, by the service, with default 0 (madeira.cfg or the game\'s own file)')
+      'the switch is read once, by the service, with default 0 (bcd.cfg or the game\'s own file)')
 for fn in ('static struct mad_pack *mad_sc_pack_dxbc(void)', 'static struct mad_pack *mad_dxc_pack(void)'):
     b = body(unix, fn)
     check(b.split('{', 1)[1].strip().startswith('if (!mad_sc_pack_on()) return NULL;'), fn + ': NULL unless switched on')

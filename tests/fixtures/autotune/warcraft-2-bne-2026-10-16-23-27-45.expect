@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "wow-rwx-plain-smc"
+ ],
+ "next": [
+  "env.MADEIRA_WOW_RWX_PLAIN = 1"
+ ],
+ "note": "Warcraft II BNE (32-bit, self-modifying blitters), build 559, tester iPad16,5: RWX memory neither pool-aliased nor plain (MADEIRA_WOW_RWX_PLAIN unset), so a page FEX untrapped stayed read-only and one store faulted until the redelivery guard ended the app (2000 identical redeliveries)",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

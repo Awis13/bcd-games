@@ -8,12 +8,12 @@ A Dock session starts 64-bit (explorer, then the host) and later starts 32-bit
 programs: one-time installers and 32-bit games. win32u decides once, when the first
 program initialises it, whether the GDI handle table is a section a 32-bit program can
 map inside its guest window (wine dlls/win32u/gdiobj.c gdi_shared_use_section). The
-Dock start now asks for the section; madeira.cfg can still turn it off.
+Dock start now asks for the section; bcd.cfg can still turn it off.
 
 Checks:
   * startDock sets MADEIRA_GDI_SHARED_SECTION=1 once, before the launch request, and
     nothing else in the app sets or clears it (the regular launch path is unchanged);
-  * the bridge exports madeira.cfg env.* entries with setenv(..., 1) when the session
+  * the bridge exports bcd.cfg env.* entries with setenv(..., 1) when the session
     starts, i.e. after startDock, so env.MADEIRA_GDI_SHARED_SECTION = 0 still wins;
   * when the wine submodule is checked out: gdi_shared_use_section(), compiled
     verbatim, returns TRUE for "1", FALSE for "0", and falls back to the session
@@ -56,7 +56,7 @@ bridge = (app / 'WineProcessBridge.m').read_text(encoding='utf-8')
 export = bridge.index('if (![line hasPrefix:@"env."] || eq.location == NSNotFound) continue;')
 # ml1184 grew the export loop (a game's own keys win), so look to the end of it.
 require('setenv(k.UTF8String, v.UTF8String, 1);' in bridge[export:export + 6000],
-        'madeira.cfg env.* entries are exported with overwrite when the session starts')
+        'bcd.cfg env.* entries are exported with overwrite when the session starts')
 
 gdiobj = root / 'wine' / 'dlls' / 'win32u' / 'gdiobj.c'
 if gdiobj.exists():

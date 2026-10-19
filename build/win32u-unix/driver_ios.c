@@ -74,6 +74,12 @@ extern void winios_direct_cursor_set( unsigned int id, int w, int h, int hot_x, 
                                       const void *bgra ) __attribute__((weak));
 extern void winios_direct_cursor_show( int show ) __attribute__((weak));
 extern void winios_direct_cursor_pos( int x, int y ) __attribute__((weak));
+/* madeira-bcd (2026-10-18): the clip rectangle with each position, and a
+ * program's own SetCursorPos as a warp (HardwareInput.swift tells a program that
+ * draws its own cursor at Wine's cursor from one that recentres it to read
+ * motion). Weak like the rest: an app without them gets the reports above. */
+extern void winios_direct_cursor_clip( int left, int top, int right, int bottom ) __attribute__((weak));
+extern void winios_direct_cursor_warp( int x, int y ) __attribute__((weak));
 
 static int winios_desktop_mode(void);
 
@@ -90,19 +96,26 @@ static void winios_report_cursor_pos(void)
     const desktop_shm_t *desktop_shm;
     NTSTATUS status;
     int x = 0, y = 0;
+    struct rectangle clip = { 0, 0, 0, 0 };   /* madeira-bcd: read in the same consistent snapshot */
 
     while ((status = get_shared_desktop( &lock, &desktop_shm )) == STATUS_PENDING)
     {
         x = desktop_shm->cursor.x;
         y = desktop_shm->cursor.y;
+        clip = desktop_shm->cursor.clip;
     }
-    if (!status) winios_direct_cursor_pos( x, y );
+    if (status) return;
+    if (winios_direct_cursor_clip) winios_direct_cursor_clip( clip.left, clip.top, clip.right, clip.bottom );
+    winios_direct_cursor_pos( x, y );
 }
 
-/* A program moved its cursor itself (SetCursorPos). Direct mode only. */
+/* A program moved its cursor itself (SetCursorPos). Direct mode only.
+ * madeira-bcd (2026-10-18): reported as a warp, which the app counts. */
 static BOOL winios_drv_set_cursor_pos( INT x, INT y )
 {
-    if (winios_direct_cursor_on()) winios_direct_cursor_pos( x, y );
+    if (!winios_direct_cursor_on()) return TRUE;
+    if (winios_direct_cursor_warp) winios_direct_cursor_warp( x, y );
+    else winios_direct_cursor_pos( x, y );
     return TRUE;
 }
 
@@ -759,108 +772,6 @@ static const struct window_surface_funcs winios_surface_funcs =
     winios_surface_destroy
 };
 
-/* madeira-bcd: [swap-win] WHAT HAPPENS TO A SWAPCHAIN'S WINDOW. Red Dead
- * Redemption 2 hangs when its Screen Type is switched to Windowed Borderless
- * (owner, 2026-10-08); the switch restyles, moves and re-activates the window
- * its swapchain presents into, and the logs said nothing about that window
- * ([win-pos] stops at its 1200th line and has no style or activation). Winios.m
- * keeps the windows a swapchain made its Metal view for (IOSDisplayShim reports
- * each one); for those windows these hooks log style changes (SetWindowStyle),
- * position changes (pos-begin at WindowPosChanging, pos at WindowPosChanged,
- * with the time between the two on the window's thread) and activations
- * (ActivateWindow). The three hooks did not exist before and do what win32u's
- * null driver does: nothing, or TRUE. Logging only: each window's first 32
- * lines of a kind, then every 100th (Winios.m keeps the counts). */
-extern int winios_swapchain_hwnd( void *hwnd ) __attribute__((weak));
-extern int winios_swapchain_take( int slot, int kind, unsigned int *seq ) __attribute__((weak));
-enum { WINIOS_SWAP_STYLE, WINIOS_SWAP_POS_BEGIN, WINIOS_SWAP_POS, WINIOS_SWAP_ACTIVATE };
-
-/* The window's slot + 1 in Winios.m's table, 0 when no swapchain presents into it. */
-static int winios_swap_win( HWND hwnd )
-{
-    return hwnd && winios_swapchain_hwnd ? winios_swapchain_hwnd( hwnd ) : 0;
-}
-
-static int winios_swap_win_take( int slot, int kind, unsigned int *seq )
-{
-    return slot && winios_swapchain_take && winios_swapchain_take( slot, kind, seq );
-}
-
-static double winios_swap_win_ms(void)
-{
-    struct timespec ts;
-    clock_gettime( CLOCK_MONOTONIC, &ts );
-    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
-}
-
-static __thread HWND winios_swap_pos_hwnd;   /* the swapchain window between pos-begin and pos */
-static __thread double winios_swap_pos_t0;
-
-static void winios_drv_set_window_style( HWND hwnd, INT offset, STYLESTRUCT *style )
-{
-    unsigned int seq;
-    HWND fg;
-
-    if (!winios_swap_win_take( winios_swap_win( hwnd ), WINIOS_SWAP_STYLE, &seq )) return;
-    fg = NtUserGetForegroundWindow();
-    dprintf( 2, "[swap-win] #%u style hwnd=%p %s %08x -> %08x (set %08x, cleared %08x) shown=%d fg=%p%s tid=%04x\n",
-             seq, hwnd, offset == GWL_STYLE ? "GWL_STYLE" : offset == GWL_EXSTYLE ? "GWL_EXSTYLE" : "other",
-             (unsigned)style->styleOld, (unsigned)style->styleNew,
-             (unsigned)(style->styleNew & ~style->styleOld), (unsigned)(style->styleOld & ~style->styleNew),
-             (int)is_window_visible( hwnd ), fg, fg == hwnd ? " (this window)" : "", (int)GetCurrentThreadId() );
-}
-
-static BOOL winios_drv_window_pos_changing( HWND hwnd, UINT swp_flags, BOOL shaped, const struct window_rects *rects )
-{
-    unsigned int seq;
-    int slot = winios_swap_win( hwnd );
-
-    if (slot)
-    {
-        winios_swap_pos_hwnd = hwnd;
-        winios_swap_pos_t0 = winios_swap_win_ms();
-        if (winios_swap_win_take( slot, WINIOS_SWAP_POS_BEGIN, &seq ))
-            dprintf( 2, "[swap-win] #%u pos-begin hwnd=%p flags=%08x window={%d,%d,%d,%d} client={%d,%d,%d,%d} "
-                     "tid=%04x\n", seq, hwnd, swp_flags,
-                     (int)rects->window.left, (int)rects->window.top, (int)rects->window.right, (int)rects->window.bottom,
-                     (int)rects->client.left, (int)rects->client.top, (int)rects->client.right, (int)rects->client.bottom,
-                     (int)GetCurrentThreadId() );
-    }
-    return TRUE;   /* as win32u's null driver: the window may have a surface */
-}
-
-static void winios_drv_activate_window( HWND hwnd, HWND previous )
-{
-    unsigned int seq;
-    int now_swap = winios_swap_win( hwnd ), was_swap = winios_swap_win( previous );
-
-    if (!winios_swap_win_take( now_swap ? now_swap : was_swap, WINIOS_SWAP_ACTIVATE, &seq )) return;
-    dprintf( 2, "[swap-win] #%u activate hwnd=%p%s (now foreground) previous=%p%s tid=%04x\n", seq,
-             hwnd, now_swap ? " (swapchain window)" : "", previous, was_swap ? " (swapchain window)" : "",
-             (int)GetCurrentThreadId() );
-}
-
-/* From the end of winios_drv_window_pos_changed, on the window's thread. */
-static void winios_swap_win_pos( int slot, HWND hwnd, HWND insert_after, UINT swp_flags, const struct window_rects *r )
-{
-    unsigned int seq;
-    double since = winios_swap_pos_hwnd == hwnd ? winios_swap_win_ms() - winios_swap_pos_t0 : -1.0;
-    HWND fg;
-
-    if (winios_swap_pos_hwnd == hwnd) winios_swap_pos_hwnd = 0;
-    if (!winios_swap_win_take( slot, WINIOS_SWAP_POS, &seq )) return;
-    fg = NtUserGetForegroundWindow();
-    dprintf( 2, "[swap-win] #%u pos hwnd=%p after=%p flags=%08x window={%d,%d,%d,%d} client={%d,%d,%d,%d} "
-             "visible={%d,%d,%d,%d} style=%08x exstyle=%08x shown=%d fg=%p%s tid=%04x, %.2f ms after pos-begin%s\n",
-             seq, hwnd, insert_after, swp_flags,
-             (int)r->window.left, (int)r->window.top, (int)r->window.right, (int)r->window.bottom,
-             (int)r->client.left, (int)r->client.top, (int)r->client.right, (int)r->client.bottom,
-             (int)r->visible.left, (int)r->visible.top, (int)r->visible.right, (int)r->visible.bottom,
-             (unsigned)get_window_long( hwnd, GWL_STYLE ), (unsigned)get_window_long( hwnd, GWL_EXSTYLE ),
-             (int)is_window_visible( hwnd ), fg, fg == hwnd ? " (this window)" : "", (int)GetCurrentThreadId(),
-             since < 0 ? 0.0 : since, since < 0 ? " (no pos-begin on this thread)" : "" );
-}
-
 static BOOL winios_CreateWindowSurface( HWND hwnd, BOOL layered, const RECT *surface_rect,
                                         struct window_surface **window_surface )
 {
@@ -987,6 +898,108 @@ static void winios_drv_refresh_children( HWND hwnd, BOOL geometry )
             winios_window_visibility( children[i], is_window_visible( children[i] ) );
     }
     free( children );
+}
+
+/* madeira-bcd: [swap-win] WHAT HAPPENS TO A SWAPCHAIN'S WINDOW. Red Dead
+ * Redemption 2 hangs when its Screen Type is switched to Windowed Borderless
+ * (owner, 2026-10-08); the switch restyles, moves and re-activates the window
+ * its swapchain presents into, and the logs said nothing about that window
+ * ([win-pos] stops at its 1200th line and has no style or activation). Winios.m
+ * keeps the windows a swapchain made its Metal view for (IOSDisplayShim reports
+ * each one); for those windows these hooks log style changes (SetWindowStyle),
+ * position changes (pos-begin at WindowPosChanging, pos at WindowPosChanged,
+ * with the time between the two on the window's thread) and activations
+ * (ActivateWindow). The three hooks did not exist before and do what win32u's
+ * null driver does: nothing, or TRUE. Logging only: each window's first 32
+ * lines of a kind, then every 100th (Winios.m keeps the counts). */
+extern int winios_swapchain_hwnd( void *hwnd ) __attribute__((weak));
+extern int winios_swapchain_take( int slot, int kind, unsigned int *seq ) __attribute__((weak));
+enum { WINIOS_SWAP_STYLE, WINIOS_SWAP_POS_BEGIN, WINIOS_SWAP_POS, WINIOS_SWAP_ACTIVATE };
+
+/* The window's slot + 1 in Winios.m's table, 0 when no swapchain presents into it. */
+static int winios_swap_win( HWND hwnd )
+{
+    return hwnd && winios_swapchain_hwnd ? winios_swapchain_hwnd( hwnd ) : 0;
+}
+
+static int winios_swap_win_take( int slot, int kind, unsigned int *seq )
+{
+    return slot && winios_swapchain_take && winios_swapchain_take( slot, kind, seq );
+}
+
+static double winios_swap_win_ms(void)
+{
+    struct timespec ts;
+    clock_gettime( CLOCK_MONOTONIC, &ts );
+    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
+}
+
+static __thread HWND winios_swap_pos_hwnd;   /* the swapchain window between pos-begin and pos */
+static __thread double winios_swap_pos_t0;
+
+static void winios_drv_set_window_style( HWND hwnd, INT offset, STYLESTRUCT *style )
+{
+    unsigned int seq;
+    HWND fg;
+
+    if (!winios_swap_win_take( winios_swap_win( hwnd ), WINIOS_SWAP_STYLE, &seq )) return;
+    fg = NtUserGetForegroundWindow();
+    dprintf( 2, "[swap-win] #%u style hwnd=%p %s %08x -> %08x (set %08x, cleared %08x) shown=%d fg=%p%s tid=%04x\n",
+             seq, hwnd, offset == GWL_STYLE ? "GWL_STYLE" : offset == GWL_EXSTYLE ? "GWL_EXSTYLE" : "other",
+             (unsigned)style->styleOld, (unsigned)style->styleNew,
+             (unsigned)(style->styleNew & ~style->styleOld), (unsigned)(style->styleOld & ~style->styleNew),
+             (int)is_window_visible( hwnd ), fg, fg == hwnd ? " (this window)" : "", (int)GetCurrentThreadId() );
+}
+
+static BOOL winios_drv_window_pos_changing( HWND hwnd, UINT swp_flags, BOOL shaped, const struct window_rects *rects )
+{
+    unsigned int seq;
+    int slot = winios_swap_win( hwnd );
+
+    if (slot)
+    {
+        winios_swap_pos_hwnd = hwnd;
+        winios_swap_pos_t0 = winios_swap_win_ms();
+        if (winios_swap_win_take( slot, WINIOS_SWAP_POS_BEGIN, &seq ))
+            dprintf( 2, "[swap-win] #%u pos-begin hwnd=%p flags=%08x window={%d,%d,%d,%d} client={%d,%d,%d,%d} "
+                     "tid=%04x\n", seq, hwnd, swp_flags,
+                     (int)rects->window.left, (int)rects->window.top, (int)rects->window.right, (int)rects->window.bottom,
+                     (int)rects->client.left, (int)rects->client.top, (int)rects->client.right, (int)rects->client.bottom,
+                     (int)GetCurrentThreadId() );
+    }
+    return TRUE;   /* as win32u's null driver: the window may have a surface */
+}
+
+static void winios_drv_activate_window( HWND hwnd, HWND previous )
+{
+    unsigned int seq;
+    int now_swap = winios_swap_win( hwnd ), was_swap = winios_swap_win( previous );
+
+    if (!winios_swap_win_take( now_swap ? now_swap : was_swap, WINIOS_SWAP_ACTIVATE, &seq )) return;
+    dprintf( 2, "[swap-win] #%u activate hwnd=%p%s (now foreground) previous=%p%s tid=%04x\n", seq,
+             hwnd, now_swap ? " (swapchain window)" : "", previous, was_swap ? " (swapchain window)" : "",
+             (int)GetCurrentThreadId() );
+}
+
+/* From the end of winios_drv_window_pos_changed, on the window's thread. */
+static void winios_swap_win_pos( int slot, HWND hwnd, HWND insert_after, UINT swp_flags, const struct window_rects *r )
+{
+    unsigned int seq;
+    double since = winios_swap_pos_hwnd == hwnd ? winios_swap_win_ms() - winios_swap_pos_t0 : -1.0;
+    HWND fg;
+
+    if (winios_swap_pos_hwnd == hwnd) winios_swap_pos_hwnd = 0;
+    if (!winios_swap_win_take( slot, WINIOS_SWAP_POS, &seq )) return;
+    fg = NtUserGetForegroundWindow();
+    dprintf( 2, "[swap-win] #%u pos hwnd=%p after=%p flags=%08x window={%d,%d,%d,%d} client={%d,%d,%d,%d} "
+             "visible={%d,%d,%d,%d} style=%08x exstyle=%08x shown=%d fg=%p%s tid=%04x, %.2f ms after pos-begin%s\n",
+             seq, hwnd, insert_after, swp_flags,
+             (int)r->window.left, (int)r->window.top, (int)r->window.right, (int)r->window.bottom,
+             (int)r->client.left, (int)r->client.top, (int)r->client.right, (int)r->client.bottom,
+             (int)r->visible.left, (int)r->visible.top, (int)r->visible.right, (int)r->visible.bottom,
+             (unsigned)get_window_long( hwnd, GWL_STYLE ), (unsigned)get_window_long( hwnd, GWL_EXSTYLE ),
+             (int)is_window_visible( hwnd ), fg, fg == hwnd ? " (this window)" : "", (int)GetCurrentThreadId(),
+             since < 0 ? 0.0 : since, since < 0 ? " (no pos-begin on this thread)" : "" );
 }
 
 /* pWindowPosChanged wrapper: dereference window_rects HERE (Winios.m
@@ -2808,9 +2821,10 @@ static void ios_foreground_check(void)
  * The body of NtUserCallTwoParam_GetGamepadState. `index` is the XInput user
  * index (0-3) and `op` selects the payload; see NtUserGamepadOp_* in
  * wine/include/ntuser.h. Op 2 (ml2106, NtUserGamepadOp_SetVibration) passes
- * the game's XINPUT_VIBRATION in from XInputSetState; an xinput that predates
- * it never sends it. Returns 1 when a pad is connected in that slot and
- * `buffer` was filled (or read), 0 otherwise — which is also what an upstream,
+ * the game's XINPUT_VIBRATION in from XInputSetState (the wine pin's xinput,
+ * or tools/patch-wine-xinput-vibration.py on an older one); an xinput that
+ * predates it never sends it. Returns 1 when a pad is connected in that slot
+ * and `buffer` was filled (or read), 0 otherwise — which is also what an upstream,
  * non-Madeira win32u returns for a code it does not know, so xinput1_3's
  * runtime probe falls back to the existing HID path.
  */

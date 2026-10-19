@@ -1,0 +1,21 @@
+[10:00:00.000] [INFO] [build] v0.1.552 (552)
+[10:00:00.001] [INFO] [device] model=iPad16,5 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=15416MB available=12200MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=1 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=12200MB low-power=0
+[phase] wine-start             t+  0.639s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[10:00:30.000] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[10:00:50.000] [OK] Early detach: game presenting and settled
+[swap] ml1077 backed 0x7600000000+0x40000000 (whole reservation, ml1257) (file off 2900 MB): 3100 MB in 120 extents, peak 3100 MB, 0 refused
+[footprint] rev=ml358 phys=2000 MB (peak 2000) internal=1700 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=2)
+[footprint] rev=ml358 phys=3299 MB (peak 3299) internal=2999 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=3)
+[footprint] rev=ml358 phys=4598 MB (peak 4598) internal=4298 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=4)
+[footprint] rev=ml358 phys=5897 MB (peak 5897) internal=5597 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=5)
+[footprint] rev=ml358 phys=7196 MB (peak 7196) internal=6896 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=6)
+[footprint] rev=ml358 phys=8495 MB (peak 8495) internal=8195 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=7)
+[footprint] rev=ml358 phys=9794 MB (peak 9794) internal=9494 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=8)
+[footprint] rev=ml358 phys=11093 MB (peak 11093) internal=10793 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=9)
+[footprint] rev=ml358 phys=12392 MB (peak 12392) internal=12092 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=10)
+[footprint] rev=ml358 phys=12396 MB (peak 12396) internal=12096 MB compressed=900 MB external=200 MB reusable=0 MB (cycle=40)
+[freeze] alive t+150s beats=600 gaps=0 iter=600 gen=1 threads=80 resident=12396MB dbg=1

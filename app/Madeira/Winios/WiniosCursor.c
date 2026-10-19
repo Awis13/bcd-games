@@ -5,7 +5,10 @@
  *
  * The lock covers small copies only: never a framework call, never a Wine
  * server call. The notification runs after the lock is dropped, at most once
- * until the app takes the state (winios_direct_cursor_get). */
+ * until the app takes the state (winios_direct_cursor_get).
+ *
+ * Modified by BCD (thebcd69), 2026-10-18: the clip rectangle, SetCursorPos
+ * warps and the foreground program's mouse reader (see WiniosCursor.h). */
 #include "WiniosCursor.h"
 #include <pthread.h>
 #include <string.h>
@@ -80,6 +83,56 @@ void winios_direct_cursor_pos(int x, int y)
     cursor_state.x = x;
     cursor_state.y = y;
     if (cursor_tracking || !cursor_state.reports) notify = cursor_mark_changed();
+    pthread_mutex_unlock(&cursor_lock);
+    cursor_notify_unlocked(notify);
+}
+
+/* BCD: stored with every position report, notifying only on a change. */
+void winios_direct_cursor_clip(int left, int top, int right, int bottom)
+{
+    int notify = 0;
+    if (!winios_direct_cursor_wanted()) return;
+    pthread_mutex_lock(&cursor_lock);
+    if (cursor_state.clip_left != left || cursor_state.clip_top != top ||
+        cursor_state.clip_right != right || cursor_state.clip_bottom != bottom)
+    {
+        cursor_state.clip_left = left;
+        cursor_state.clip_top = top;
+        cursor_state.clip_right = right;
+        cursor_state.clip_bottom = bottom;
+        notify = cursor_mark_changed();
+    }
+    pthread_mutex_unlock(&cursor_lock);
+    cursor_notify_unlocked(notify);
+}
+
+/* BCD: a warp always notifies, tracked or not: the app counts them (a program
+ * that recentres its cursor reads motion) and shows the new position. */
+void winios_direct_cursor_warp(int x, int y)
+{
+    int notify;
+    if (!winios_direct_cursor_wanted()) return;
+    pthread_mutex_lock(&cursor_lock);
+    cursor_state.x = x;
+    cursor_state.y = y;
+    cursor_state.warps++;
+    notify = cursor_mark_changed();
+    pthread_mutex_unlock(&cursor_lock);
+    cursor_notify_unlocked(notify);
+}
+
+/* BCD: called by the wineserver for every mouse event; one compare when nothing
+ * changed. */
+void winios_direct_cursor_reader(unsigned int flags)
+{
+    int notify = 0;
+    if (!winios_direct_cursor_wanted()) return;
+    pthread_mutex_lock(&cursor_lock);
+    if (cursor_state.reader != flags)
+    {
+        cursor_state.reader = flags;
+        notify = cursor_mark_changed();
+    }
     pthread_mutex_unlock(&cursor_lock);
     cursor_notify_unlocked(notify);
 }

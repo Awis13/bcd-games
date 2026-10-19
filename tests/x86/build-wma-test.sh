@@ -108,7 +108,7 @@ cp "$NAME.exe" "$APP_BUNDLE/$NAME.exe"
 ls -la "$APP_BUNDLE/$NAME.exe"
 
 echo ""
-echo "Done. Launch it directly with env.MADEIRA_EXE = wma-x86.exe in madeira.cfg"
+echo "Done. Launch it directly with env.MADEIRA_EXE = wma-x86.exe in bcd.cfg"
 echo "(it runs from C:\\windows\\syswow64)."
 echo "Expected log:"
 echo "  [wma] decoder created fmt=wmav2 tag=0x161 44100Hz 2ch block=743 avg=16000B/s bitrate=128000 extradata=10 flags2=0x1 -> pcm s16 ..."

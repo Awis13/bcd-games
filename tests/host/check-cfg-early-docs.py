@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""madeira.cfg is found by native readers that run before the guest starts.
+"""bcd.cfg is found by native readers that run before the guest starts.
 
 Reproduces the app's start-up order on a POSIX host with the production code:
   1. the WineProcessBridge.m constructor (madeira_docs_dir_early, extracted from
@@ -36,7 +36,7 @@ madsync = read("build/madsync/madsync.c")
 bridge = read("app/Madeira/WineProcessBridge.m")
 f_enabled = between(madsync, "int madsync_enabled(void)", "\n}\n", include_end=True)
 f_early = between(bridge, "static const char *g_madeira_docs_early", "__attribute__((constructor))")
-assert "madeira_cfg_sync_engine() == MADEIRA_SYNC_MADSYNC" in f_enabled, "madsync only when madeira.cfg selects it"
+assert "madeira_cfg_sync_engine() == MADEIRA_SYNC_MADSYNC" in f_enabled, "madsync only when bcd.cfg selects it"
 assert "[madsync] config inproc-sync=" in f_enabled
 assert "__attribute__((constructor)) static void madeira_docs_dir_ctor" in bridge
 assert "[config-dir] early MADEIRA_DOCS_DIR=" in bridge
@@ -75,7 +75,7 @@ with tempfile.TemporaryDirectory(prefix="madeira-cfg-early-") as tmp:
         home = tmp / name
         docs = home / "Documents"
         (docs / "wine").mkdir(parents=True)
-        if cfg is not None: (docs / "madeira.cfg").write_bytes(cfg)
+        if cfg is not None: (docs / "bcd.cfg").write_bytes(cfg)
         if legacy is not None: (docs / "madeira-inproc-sync.txt").write_text(legacy)
         return home
 
@@ -104,11 +104,11 @@ with tempfile.TemporaryDirectory(prefix="madeira-cfg-early-") as tmp:
     home = container("absent")
     r = launch(home)
     check(r["early"] == "set" and r["dir"] == "env" and r["madsync"] == 0,
-          "no madeira.cfg: constructor exports MADEIRA_DOCS_DIR, madsync off (fastsync is the default)", r)
+          "no bcd.cfg: constructor exports MADEIRA_DOCS_DIR, madsync off (fastsync is the default)", r)
     check("inproc-sync=unset cfg=absent dir=env" in r["log"], "log names value, file and directory", r)
     home = container("nokey", cfg=b"# user file\npool = 896\n")
     r = launch(home)
-    check(r["madsync"] == 0 and "cfg=present" in r["log"], "madeira.cfg without inproc-sync: madsync off (fastsync is the default)", r)
+    check(r["madsync"] == 0 and "cfg=present" in r["log"], "bcd.cfg without inproc-sync: madsync off (fastsync is the default)", r)
 
     # -- explicit choices are honoured although HOME is the prefix when they are read --
     home = container("off", cfg=b"# user file\ninproc-sync = 0\n")
@@ -118,8 +118,10 @@ with tempfile.TemporaryDirectory(prefix="madeira-cfg-early-") as tmp:
     r = launch(home)
     check(r["madsync"] == 1, "inproc-sync = 1 honoured", r)
     home = container("legacy", legacy="1\n")
+    (home / "Documents" / "madeira.cfg").write_bytes(b"inproc-sync = 1\n")
     r = launch(home)
-    check(r["madsync"] == 1, "no madeira.cfg: legacy madeira-inproc-sync.txt still honoured", r)
+    check(r["madsync"] == 0 and "cfg=absent" in r["log"],
+          "no bcd.cfg: an old madeira.cfg or madeira-inproc-sync.txt is not read (BCD installs fresh)", r)
 
     # -- the bug: the old order (HOME = prefix, no MADEIRA_DOCS_DIR) misses the file --
     home = container("old-order", cfg=b"inproc-sync = 1\n")
@@ -142,7 +144,7 @@ with tempfile.TemporaryDirectory(prefix="madeira-cfg-early-") as tmp:
     home = container("kill-cfg", cfg=b"env.MADEIRA_CFG_EARLY_DOCS = 0\ninproc-sync = 1\n")
     r = launch(home)
     check(r["early"] == "off-cfg" and r["madsync"] == 0 and r["dir"] == "home",
-          "env.MADEIRA_CFG_EARLY_DOCS = 0 in madeira.cfg also restores it", r)
+          "env.MADEIRA_CFG_EARLY_DOCS = 0 in bcd.cfg also restores it", r)
 
     # -- an existing MADEIRA_DOCS_DIR is kept --
     other = container("other", cfg=b"inproc-sync = 1\n")
@@ -170,4 +172,4 @@ with tempfile.TemporaryDirectory(prefix="madeira-cfg-early-") as tmp:
     else:
         print("skip: swiftc not found, Swift/C BOM agreement not checked")
 
-print("PASS: madeira.cfg read from Documents before HOME moves to the prefix")
+print("PASS: bcd.cfg read from Documents before HOME moves to the prefix")

@@ -57,7 +57,7 @@
  *
  * HOW TO RUN IT: tests/x86/build-wma-test.sh copies it into
  * app/Madeira/i386-windows/; launch it directly with
- * env.MADEIRA_EXE = wma-x86.exe in madeira.cfg, which runs it from
+ * env.MADEIRA_EXE = wma-x86.exe in bcd.cfg, which runs it from
  * C:\windows\syswow64 (this needs the WoW64 launch path and an i386 build
  * tree with winegstreamer.dll and wmadmod.dll).
  *

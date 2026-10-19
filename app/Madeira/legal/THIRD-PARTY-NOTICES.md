@@ -1,5 +1,12 @@
 # Third-party components
 
+**BCD** is a fork of **Madeira** by Will Faust and its contributors. Everything
+below about Madeira stays true for BCD. BCD's own files (marked "BCD Material" in
+their headers) are GPL-3.0-only with the Madeira Converter Exception and the
+additional terms under GPL-3.0 section 7 in `LICENSE-BCD.md`; files BCD changed
+keep their authors' licences and notices. BCD's changes to Wine are
+LGPL-2.1-or-later, like Wine.
+
 Madeira is built from several upstream projects plus original work. Each
 component keeps its own license. This file records what is here, what ships in
 the binary, and what is still unresolved.
@@ -20,6 +27,8 @@ dependency license texts are in `LICENSES/`. See "Why GPL-3.0-or-later" below.
 | **GMP** 6.3.0 | **LGPL-3.0-or-later** or GPL-2.0-or-later | Static (`libgmp.a`). |
 | **Nettle / Hogweed** 3.10.1 | **LGPL-3.0-or-later** or GPL-2.0-or-later | Static (`libnettle.a`, `libhogweed.a`). |
 | **GnuTLS** 3.8.9 | LGPL-2.1-or-later | Static (`libgnutls.a`). Used by Wine's bcrypt/secur32/crypt32. |
+| **FreeType** 2.13.3 | FreeType License (FTL), chosen from its FTL / GPL-2.0 dual licence | Static, merged into `libwin32u_unix.a` (`build/freetype-ios/build.sh`) | Wine's font rendering. Portions of this software are copyright © 2024 The FreeType Project (www.freetype.org). All rights reserved. The software is based in part on the work of the FreeType Team. Licence text: `app/Madeira/legal/LICENSES/FTL-FreeType-2.13.3.txt`. |
+| **Libraries inside Wine's modules** | per library, below | Unmodified, built into Wine's Windows modules from Wine's `libs/` | capstone (3-clause BSD-style, with LLVM's licence for its LLVM-derived parts), compiler-rt (University of Illinois/NCSA or MIT), FAudio (zlib), FluidSynth (LGPL-2.1-or-later), GSM 06.10 (its own permissive licence), libjpeg (IJG: this software is based in part on the work of the Independent JPEG Group), jxrlib (BSD-2-Clause), Little CMS (MIT), OpenLDAP (OpenLDAP Public License), mpg123 (LGPL-2.1), musl (MIT), libpng (libpng licence), libtiff (libtiff licence), LibTomCrypt (public domain / WTFPL), vkd3d (LGPL-2.1-or-later), zlib (zlib). Their licence files, as Wine ships them: `app/Madeira/legal/LICENSES/wine-libs/`. |
 | **FFmpeg** 7.1.1 — libavformat, libavcodec, libavutil, libswresample | **LGPL-2.1-or-later** | Static (`libavformat.a`, `libavcodec.a`, `libavutil.a`, `libswresample.a`). Configured `--disable-gpl --disable-nonfree --disable-version3 --disable-everything`, then only: the WMA-family decoders (`wmav1,wmav2,wmapro,wmalossless,xma1,xma2`), the `mp1,mp2,mp3` and `pcm_u8,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le` decoders, the `mp3`, `wav` and `mov` (MP4/MOV/M4A) demuxers and the `mpegaudio` parser. No H.264, HEVC or AAC decoder or parser (those streams are decoded by Apple's VideoToolbox/AudioToolbox), no protocols, no muxers, no zlib. No GPL, version3 or non-free component is enabled, so the result is LGPL-2.1-or-later. Used only by `build/ntdll-unix/winegstreamer_unixlib_ios.c` and `build/ntdll-unix/wg_parser_av_ios.c`, winegstreamer's unix side on this port (the Windows WMA decoder MFT/DMO, and the wg_parser behind quartz's MP3/WAV splitters and Media Foundation's MP4 source); upstream Wine implements both with GStreamer, which does not exist on iOS. |
 | **{fmt}** | MIT | Static (`libfmt.a`), via FEX. |
 | **xxHash** | BSD-2-Clause | Static (`libxxhash.a`). |
@@ -29,8 +38,8 @@ dependency license texts are in `LICENSES/`. See "Why GPL-3.0-or-later" below.
 | **Zstandard educational decoder** | BSD-3-Clause or GPL-2.0 | BSD-3-Clause selected | `app/Madeira/SwiftSteam/zstd_edu.c/.h` (Meta Platforms). Decodes Steam's zstd content chunks. Madeira's error-recovery wrapper (Jfishin's, kept) is serialized across threads. Licence text in `LICENSES/ZSTD-BSD.txt`. |
 | **liblzma** | Public domain / 0BSD | System library | Linked dynamically from the iOS SDK (`liblzma.tbd`) for Steam's LZMA content chunks; nothing is bundled. |
 | **Madeira Dock (`madeira-dock`, built into `arm64ec-windows/dockhost.exe`)** | original work, Copyright 2026 125hz | GPL-3.0-or-later + Converter Exception | Headless host for Valve's Steam client, a separate Windows program started in the Wine session. Built from the submodule by `build/madeira-dock/build.sh`; not committed as a binary. Its statically linked LLVM/MinGW-w64 runtime notices ship in `dock-notices.txt`. Valve's client files are downloaded by the user from Valve and are not covered by Madeira's licence. See `docs/MADEIRA_DOCK.md`. |
-| **StikJIT** 1.9.0 | MPL-2.0 | Bundled XCFramework in the iOS 26 JIT helper | Enables JIT for Madeira through the device's RSD tunnel. Exact corresponding source: [`StikDebug/StikJIT` tag `1.9.0`](https://github.com/StikDebug/StikJIT/tree/1.9.0); bundled license text: `LICENSE-StikJIT-MPL-2.0.txt`. The framework contains **idevice**, Copyright 2026 Jackson Coxson, under MIT; source: [`jkcoxson/idevice`](https://github.com/jkcoxson/idevice), bundled license text: `LICENSE-idevice-MIT.txt`. |
-| **On-device pairing** (`libmadeira_rppairing.a`) | **idevice** 0.1.68, Copyright 2026 Jackson Coxson, MIT; its Rust dependencies under MIT, Apache-2.0, BSD-3-Clause or ISC | Madeira's wrapper (`build/rppairing-ios`) **GPL-3.0-or-later**; dependencies unmodified, static in the app | iOS 27 on-device remote pairing for Built-in StikJIT (`app/Madeira/JITPairing.swift`, docs/JIT.md). Built from crates.io at the versions pinned in `build/rppairing-ios/Cargo.lock`. Every crate in the binary, with its licence files, is listed in `LICENSES-rppairing-crates.txt`, regenerated by `build/rppairing-ios/build.sh`. idevice's licence text: `LICENSE-idevice-MIT.txt`. |
+| **StikJIT** 1.9.0 | MPL-2.0 | Bundled XCFramework in the iOS 26 JIT helper | Enables JIT for Madeira through the device's RSD tunnel. Exact corresponding source: [`StikDebug/StikJIT` tag `1.9.0`](https://github.com/StikDebug/StikJIT/tree/1.9.0); license text: `LICENSES/MPL-2.0.txt`. The framework contains **idevice**, Copyright 2026 Jackson Coxson, under MIT; source: [`jkcoxson/idevice`](https://github.com/jkcoxson/idevice), license text: `LICENSES/MIT-idevice.txt`. |
+| **On-device pairing** (`libmadeira_rppairing.a`) | **idevice** 0.1.68, Copyright 2026 Jackson Coxson, MIT; its Rust dependencies under MIT, Apache-2.0, BSD-3-Clause or ISC | Madeira's wrapper (`build/rppairing-ios`) **GPL-3.0-or-later**; dependencies unmodified, static in the app | iOS 27 on-device remote pairing for Built-in StikJIT (`app/Madeira/JITPairing.swift`, docs/JIT.md). Built from crates.io at the versions pinned in `build/rppairing-ios/Cargo.lock`. Every crate in the binary, with its licence files, is listed in `app/Madeira/legal/LICENSES-rppairing-crates.txt` (bundled as `legal/LICENSES-rppairing-crates.txt`), regenerated by `build/rppairing-ios/build.sh`. idevice's licence text: `LICENSES/MIT-idevice.txt`. |
 | **libxml2** 2.12.10 and **libxslt** 1.1.45 | MIT (Daniel Veillard and contributors) | Unmodified, statically linked into Wine's `msxml3.dll` (`arm64ec-windows`) | Wine's bundled copies (`wine/libs/xml2`, `wine/libs/xslt`), built with the module by `build/wine-pe/build-modules.sh`. Licence texts in `LICENSES/MIT-libxml2.txt` and `LICENSES/MIT-libxslt.txt`. |
 | **NVAPI SDK headers** | MIT (NVIDIA Corporation & affiliates) | Unmodified headers, compiled into DXMT's `nvapi64.dll` (`arm64ec-windows`) | `dxmt/external/nvapi`. DXMT's own NVAPI implementation answers only with Madeira's opt-in "Report an NVIDIA GPU" switch; no NVIDIA binary is shipped. Licence text in `LICENSES/MIT-NVAPI.txt`. |
 | **Wine Mono** 11.0.0 | Mono: LGPL or MIT X11 per part; FNA: Ms-PL and MIT; FAudio, FNA3D, MojoShader, SDL3: zlib; winforms, wpf, monoDX, System.Speech and Wine Mono's own code: MIT (`build/wine-mono/COPYING`) | Prebuilt runtime, unmodified except `lib/mono/4.5/mscorlib.dll` (4 IL bytes in `GC.Collect`, `build/wine-mono/bundle.sh`), bundled as `wine-mono/` with that COPYING only in a development build made after `build/wine-mono/fetch.sh`; **release builds do not include it** (the packaging step removes `wine-mono/`). Instead the app downloads it from WineHQ when the user asks (setup or Settings › .NET Framework, `app/Madeira/WineMono.swift`), checks it against the same SHA-256, unpacks it without `lib/mono/*-api` and applies the same mscorlib patch on the device | Runs .NET Framework programs; Wine's mscoree loads it. The x86 tarball from `dl.winehq.org`, SHA-256 pinned in `build/wine-mono/pin.sh`. The compile-time reference assemblies (`lib/mono/*-api`, which include the GPL-licensed ICSharpCode.SharpZipLib) are not bundled. Exact corresponding source: `wine-mono-11.0.0-src.tar.xz` from the same folder; see "Corresponding source" below. |
@@ -158,6 +167,23 @@ and the exact source they are built from is tracked here in the same way:
   every run of the build script verifies before extracting
 - `build/ffmpeg/build.sh` -- the exact build machinery and configure flags. No
   patches are applied, and the script needs no network.
+
+Wine Mono is not linked into anything: `build/wine-mono/bundle.sh` copies the
+prebuilt runtime into the bundle as files. Its source release is 372 MB, too
+large for the repository, so it is pinned rather than tracked:
+
+- `build/wine-mono/pin.sh` -- the version, and the SHA-256 of both the x86
+  tarball that is bundled and `wine-mono-11.0.0-src.tar.xz`, its source
+  (`c504cb0b91ce09b72869e063844ce114564d4ac340479a82aa6789f51510e520`)
+- `build/wine-mono/fetch.sh --source` -- downloads both from
+  `https://dl.winehq.org/wine/wine-mono/11.0.0/` and verifies them
+
+Release builds do not ship Wine Mono (decided 2026-10-06): the packaging step
+removes `wine-mono/` from the app, and Madeira fetches it from WineHQ on first
+use instead (`app/Madeira/WineMono.swift`), so the copy on a device comes from
+WineHQ, not from Madeira. A release that did ship it would have to attach that source
+tarball next to the package and add the licence texts COPYING lists to
+`LICENSES/`.
 
 ## Relinking and static linking
 

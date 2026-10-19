@@ -30,7 +30,8 @@ swift = (root / 'app/Madeira/WineMono.swift').read_text()
 pin = (root / 'build/wine-mono/pin.sh').read_text()
 fetch = (root / 'build/wine-mono/fetch.sh').read_text()
 bridge = (root / 'app/Madeira/WineProcessBridge.m').read_text()
-onboarding = (root / 'app/Madeira/Onboarding.swift').read_text()
+# The setup screens moved to BCDSetupView.swift (2026-10-18); Onboarding.swift keeps the rules.
+onboarding = (root / 'app/Madeira/Onboarding.swift').read_text() + (root / 'app/Madeira/BCDSetupView.swift').read_text()
 library = (root / 'app/Madeira/Library.swift').read_text()
 project = (root / 'app/Madeira.xcodeproj/project.pbxproj').read_text()
 failures = 0
@@ -185,7 +186,9 @@ check('guard try WineMonoInstaller.sha256(of: archive) == WineMonoPin.tarSHA256'
       'the download is checked before it is unpacked, and installed by one rename')
 check('case .wineMono: wineMonoPage' in onboarding and 'mono.install()' in onboarding,
       'setup: the Wine Mono page downloads it')
-check('WineMonoSettingsSection()' in library, 'Settings: .NET Framework')
+# Wave 3 (2026-10-19): the classic WineMonoSettingsSection is deleted; Settings › .NET Framework is BCD's (BCDDotNetLive).
+check('mono.install()' in (root / 'app/Madeira/BCDSettingsLive.swift').read_text() and 'WineMonoSettingsSection' not in library,
+      'Settings: .NET Framework')
 check('A1000711 /* WineMono.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000711' in project
       and 'path = "WineMono.swift"' in project and project.count('A2000711 /* WineMono.swift */,') == 1
       and project.count('A1000711 /* WineMono.swift in Sources */,') == 1,

@@ -1,4 +1,4 @@
-/* madeira-bcd: the packed shader cache (madeira.cfg d3d12-shader-pack = 1);
+/* madeira-bcd: the packed shader cache (bcd.cfg d3d12-shader-pack = 1);
  * what it is for and the interface are in madeira_sc_pack.h.
  *
  * FILE (native byte order: the file never leaves the device)

@@ -1,0 +1,19 @@
+{
+ "dialogs": [
+  "Runtime error!??Program: C:\\Ratchet & Clank - Rift Apart\\RiftApart.exe?Error: R6025??Press OK to exit the program, or Cancel to start the Wine debugger.?"
+ ],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "cage-release-band-exhausted",
+  "thread-stack-spill"
+ ],
+ "next": [
+  "env.MADEIRA_CAGE_RELEASE = 1"
+ ],
+ "note": "Ratchet & Clank: Rift Apart, build 550, iPhone18,2 (11695 MB): crashed",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

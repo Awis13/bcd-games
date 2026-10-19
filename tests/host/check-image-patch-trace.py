@@ -85,7 +85,8 @@ static int mach_vm_read_overwrite(int task, mach_vm_address_t address, mach_vm_s
 ''' + mapping + r'''
 static struct ios_jit_mapping ios_jit_mappings[IOS_JIT_MAX_MAPPINGS];
 static int ios_jit_mapping_count;
-''' + function("static int ios_iat_sync_pick_mapping(") + trace + r'''
+''' + function("static int ios_iat_sync_owner_aware( void )") + function(
+    "int ios_iat_sync_pick_mapping(") + trace + r'''
 static void record(void *addr, size_t len, unsigned int prot, unsigned int status)
 {
     errno = 1234;

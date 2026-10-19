@@ -34,12 +34,14 @@ struct EntitlementStatus {
     let jitAllowed: Bool
     let increasedMemory: Bool
     let extendedVA: Bool
+    let increasedDebugMemory: Bool
 
     static func check() -> EntitlementStatus {
         EntitlementStatus(
             jitAllowed: checkAppEntitlement("com.apple.security.cs.allow-jit"),
             increasedMemory: checkAppEntitlement("com.apple.developer.kernel.increased-memory-limit"),
-            extendedVA: checkAppEntitlement("com.apple.developer.kernel.extended-virtual-addressing")
+            extendedVA: checkAppEntitlement("com.apple.developer.kernel.extended-virtual-addressing"),
+            increasedDebugMemory: checkAppEntitlement("com.apple.developer.kernel.increased-debugging-memory-limit")
         )
     }
 }
@@ -48,8 +50,32 @@ struct EntitlementStatus {
  * This is the signal StikDebug JIT actually rides on — CS_DEBUGGED gets
  * set while traced, enabling JIT-region execution. The allow-jit
  * ENTITLEMENT is macOS-only and never granted on iOS, so the old badge
- * built on it was permanently ✗ no matter what StikDebug did. */
+ * built on it was permanently ✗ no matter what StikDebug did.
+ *
+ * madeira-bcd ios18-jit (2026-10-18): this is the BADGE's question (and the
+ * diagnostics'), not readiness. StikJITHelper.ready asks isDebuggerTraced():
+ * only an attached debugger can answer the pool request's BRK, and CS_DEBUGGED
+ * outlives the debugger (docs/research/ios18-2026-10-18/runtime.md §2.3). */
 func isDebuggerAttached() -> Bool {
+    // CS_DEBUGGED first, because that is what JIT actually rides on.
+    // StikDebug attaches, sets CS_DEBUGGED, and then DETACHES; P_TRACED
+    // goes back to false at that moment while CS_DEBUGGED persists, and
+    // CS_DEBUGGED is the flag the kernel consults before allowing an RX
+    // mapping. Asking P_TRACED alone made the badge sit orange through a
+    // run where JIT was demonstrably working -- the 896MB pool allocated,
+    // Wine up, desktop drawing -- which is worse than no badge, since it
+    // says "broken" about the one thing the user came to check.
+    if jit_is_debugged_quiet() { return true }
+    // Keep P_TRACED as the second term: it is true during the brief window
+    // while the debugger is still attached, before CS_DEBUGGED is set.
+    return isDebuggerTraced()
+}
+
+/// P_TRACED alone: a debugger is attached right now (XNU sets it at ptrace attach,
+/// before cs_allow_invalid sets CS_DEBUGGED, and clears it at detach, after which
+/// CS_DEBUGGED stays). Upstream's meaning of "attached" (9584f0e). False when the
+/// kernel does not answer.
+func isDebuggerTraced() -> Bool {
     var info = kinfo_proc()
     var size = MemoryLayout<kinfo_proc>.stride
     var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
@@ -73,9 +99,9 @@ struct SigningStatus {
         let known = jit_cs_status(&flags)
         return SigningStatus(known: known, flags: flags)
     }
-    static let notDebuggableMessage = "JIT cannot be enabled on this copy of Madeira: it was signed without get-task-allow "
-        + "(a distribution or enterprise certificate), so no debugger can attach to it. Install Madeira with a development "
-        + "certificate (for example SideStore, AltStore or Xcode), then enable JIT again."
+    static let notDebuggableMessage = "This copy of BCD can't use JIT. It was signed without get-task-allow (a distribution or "
+        + "enterprise certificate), which keeps any debugger from attaching. Reinstall BCD signed with a development "
+        + "certificate, for example through SideStore, AltStore or Xcode, and then enable JIT."
 }
 
 /// The device, system, address map, signing and settings a session depends on,
@@ -133,11 +159,14 @@ enum DeviceDiagnostics {
             + " profile-increased-memory=\(grants("com.apple.developer.kernel.increased-memory-limit"))"
             + " profile-extended-va=\(grants("com.apple.developer.kernel.extended-virtual-addressing"))"
     }
+    /// debugger-attached is the badge's reading (CS_DEBUGGED or P_TRACED); traced is
+    /// P_TRACED alone, what JIT readiness asks (madeira-bcd ios18-jit).
     private static func signing() -> String {
         let status = SigningStatus.current
-        guard status.known else { return "cs-flags=unknown debugger-attached=\(isDebuggerAttached() ? 1 : 0)" }
-        return String(format: "cs-flags=0x%x get-task-allow=%d cs-debugged=%d debugger-attached=%d",
-                      status.flags, status.debuggable ? 1 : 0, status.debugged ? 1 : 0, isDebuggerAttached() ? 1 : 0)
+        let traced = isDebuggerTraced() ? 1 : 0
+        guard status.known else { return "cs-flags=unknown debugger-attached=\(isDebuggerAttached() ? 1 : 0) traced=\(traced)" }
+        return String(format: "cs-flags=0x%x get-task-allow=%d cs-debugged=%d debugger-attached=%d traced=%d",
+                      status.flags, status.debuggable ? 1 : 0, status.debugged ? 1 : 0, isDebuggerAttached() ? 1 : 0, traced)
     }
     private static func power() -> String {
         "low-power=\(ProcessInfo.processInfo.isLowPowerModeEnabled ? 1 : 0) thermal=\(thermal())"
@@ -157,11 +186,12 @@ enum DeviceDiagnostics {
         log.log("[device] signing: \(signing()) \(profile())")
         if !SigningStatus.current.debuggable {
             log.log("[device] this copy is signed without get-task-allow: no debugger can attach to it, so JIT cannot be "
-                + "enabled. Reinstall Madeira with a development certificate.", level: .error)
+                + "enabled. Reinstall BCD with a development certificate.", level: .error)
         }
+        log.log("[jit-nodebug] \(JITNoDebuggerPool.startupLine)")
         if StikJITHelper.flaggedWithoutDebugger {
             log.log("[jit-debugger] CS_DEBUGGED is set but no debugger is attached at start-up: JIT was enabled "
-                + "outside Madeira (StikDebug's app list attaches and leaves). Enable JIT in Madeira before playing.",
+                + "outside BCD (StikDebug's app list attaches and leaves). Enable JIT in BCD before playing.",
                 level: .error)
         }
         let screen = UIScreen.main

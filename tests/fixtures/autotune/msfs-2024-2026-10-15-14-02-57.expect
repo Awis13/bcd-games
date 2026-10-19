@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "Microsoft Flight Simulator 2024, build 547, iPhone18,2 (11695 MB): crashed",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "stuck"
+}

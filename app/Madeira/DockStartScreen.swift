@@ -205,43 +205,43 @@ enum DockStartStatus {
     static func text(_ fields: [String: String], installers: Bool, installerProgress: String?,
                      installsFinished: Bool, waited: Double, restartHint: String? = nil) -> String {
         if fields["launch-option-missing"] != nil || fields["launch-option-invalid"] != nil {
-            return "Steam rejected this game's launch option."
+            return "Steam won't accept this game's launch option."
         }
         if fields["launch-update-wait"] != nil && fields["launch-update-ready"] == nil {
-            return "Steam is installing content this game needs. The game starts when it finishes…"
+            return "Waiting for Steam to install content this game needs. The game will start after that…"
         }
         // Steam still counts an earlier session as playing (error 35); the Dock asks again.
         if fields["launch-session-wait"] != nil && fields["launch-client-error"] == "35" {
-            return "Steam says this account is still playing in another session. Waiting for Steam to end it (up to 3 minutes)…"
+            return "Steam still counts this account as playing in another session. Waiting up to 3 minutes for Steam to end it…"
         }
         // Right after sign-in Steam may not have the game's configuration yet (22, 23); the Dock asks again.
         if fields["launch-config-wait"] != nil && (fields["launch-client-error"] == "22" || fields["launch-client-error"] == "23") {
-            return "Steam is still loading this game's configuration. Waiting for it…"
+            return "Waiting for Steam to finish loading this game's configuration…"
         }
-        if fields["launch-client-error"] == "0" { return "The game is starting. Waiting for its window…" }
+        if fields["launch-client-error"] == "0" { return "Launching the game. Waiting for its window to appear…" }
         if ["ceg-scm", "ceg-request-busy", "ceg-request"].contains(where: { fields[$0] != nil }) && fields["ceg-result"] == nil {
-            return "Steam is preparing this game's executable…"
+            return "Steam is getting this game's executable ready…"
         }
         // Offline start: Valve's client signs in from what it saved while online.
-        if fields["session-offline-listed"] == "1" { return "Offline: Steam found this game's license in what it saved. Starting the game…" }
+        if fields["session-offline-listed"] == "1" { return "No connection, but Steam's saved data includes this game's license. Starting the game…" }
         if fields["session-offline-logon-result"] == "1" || fields["session-offline-logon-retry"] == "1" {
-            return "Offline: Steam signed in from its saved sign-in. Checking this game's license…"
+            return "Signed in offline with Steam's saved sign-in. Checking this game's license…"
         }
         if fields["session-offline-requested"] != nil || fields["session-offline-fallback"] != nil {
-            return "No connection. Asking Steam to sign in offline…"
+            return "You're offline. Asking Steam for an offline sign-in…"
         }
-        if fields["session-requested-app-listed"] == "1" { return "License confirmed. Steam is starting the game…" }
-        if fields["session-authenticated-online"] == "1" { return "Signed in. Waiting for Steam to confirm this game's license…" }
+        if fields["session-requested-app-listed"] == "1" { return "Steam confirmed the license and is starting the game…" }
+        if fields["session-authenticated-online"] == "1" { return "Steam sign-in done. Waiting for the license check on this game…" }
         if fields["session-native-token-submitted"] != nil || fields["session-logon-start-result"] != nil {
-            return "Signing in to Steam…"
+            return "Signing you in to Steam…"
         }
-        if hostStarted(fields) { return "Loading Steam…" }
+        if hostStarted(fields) { return "Loading Valve's Steam client…" }
         // Before the host's first field: the one-time installs run first, then the host starts.
-        let starting = waited >= slowAfter ? "Still starting Madeira Dock…" : "Starting Madeira Dock…"
+        let starting = waited >= slowAfter ? "BCD Dock is still starting…" : "BCD Dock is starting…"
         guard installers else { return starting }
-        guard installsFinished else { return installerProgress ?? "Running this game's one-time installs…" }
-        if let restartHint { return (installerProgress ?? "One-time installs finished.") + "\n" + restartHint }
-        return (installerProgress ?? "One-time installs finished.") + "\n" + starting
+        guard installsFinished else { return installerProgress ?? "This game's one-time installs are running…" }
+        if let restartHint { return (installerProgress ?? "Done with the one-time installs.") + "\n" + restartHint }
+        return (installerProgress ?? "Done with the one-time installs.") + "\n" + starting
     }
 
     /// The host has started (its first report field): the one-time installs are over.
@@ -252,7 +252,7 @@ enum DockStartStatus {
     /// non-zero result is a failure too. nil when the start goes on.
     static func failure(result: Int?, words: String?, launching: Bool) -> String? {
         guard let result, launching || result != 0 else { return nil }
-        return words ?? "Madeira Dock exited before a game window appeared. Export the diagnostic log."
+        return words ?? "BCD Dock ended before any game window showed up. Export the diagnostic log to see why."
     }
 }
 
@@ -264,7 +264,7 @@ extension SteamLaunchScene.Places {
 }
 
 /// A Dock start's starting screen: LibraryModel calls begin, poll and finish, and
-/// LibraryHUD shows what it publishes. Like LibraryModel, it is used on the main
+/// BCD's starting screen (BCDStartingHost) shows what it publishes. Like LibraryModel, it is used on the main
 /// thread only (the session timer and the views).
 final class DockStartScreen: ObservableObject {
     static let shared = DockStartScreen()
@@ -392,37 +392,5 @@ final class DockStartScreen: ObservableObject {
             return SteamLaunchWindow(image: image, width: Int(window.w), height: Int(window.h), visible: window.visible != 0,
                                      drawn: window.presents > 0 || window.metal != 0, pid: window.pid, hwnd: window.hwnd)
         }
-    }
-}
-
-/// The started game's Steam artwork as the starting screen's backdrop: the wide
-/// library hero, else the cover (public store artwork by App ID, no account data).
-struct SteamLaunchBackdrop: View {
-    let appID: Int
-    @State private var useCover = false
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                AsyncImage(url: useCover ? SteamGamesRules.cover(appID) : Self.hero(appID)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                            .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                    case .failure:
-                        Color.clear.onAppear { useCover = true }
-                    default:
-                        Color.clear
-                    }
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-        }
-        .accessibilityHidden(true)
-    }
-
-    static func hero(_ appID: Int) -> URL? {
-        guard appID > 0 else { return nil }
-        return URL(string: "https://cdn.cloudflare.steamstatic.com/steam/apps/\(appID)/library_hero.jpg")
     }
 }

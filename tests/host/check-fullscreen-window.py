@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full screen moves the game's window over the monitor (madeira.cfg
+"""Full screen moves the game's window over the monitor (bcd.cfg
 fullscreen-window = 1); no Wine, no Metal.
 
 Cuts mad_swap_fullscreen_window and swap_SetFullscreenState out of

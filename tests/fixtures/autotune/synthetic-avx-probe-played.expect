@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "quitRequested": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "synthetic: a c000001d a game caught (an AVX probe) and then played: no rule",
+ "outcome": "quit",
+ "stage": 5,
+ "status": "ok"
+}

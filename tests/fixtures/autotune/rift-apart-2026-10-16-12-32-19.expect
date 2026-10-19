@@ -1,0 +1,13 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "i-closed"
+ },
+ "matched": [],
+ "next": [],
+ "note": "Ratchet & Clank: Rift Apart, build 555, iPhone18,2 (11695 MB), with ALIAS_RELEASE: the save loaded and played (15 aliases dropped); the rule does not fire again",
+ "outcome": "inconclusive",
+ "stage": 4,
+ "status": "baseline"
+}

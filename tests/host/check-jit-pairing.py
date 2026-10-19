@@ -48,7 +48,8 @@ rust = (crate / 'src/lib.rs').read_text()
 header = (app / 'MadeiraRPPairing.h').read_text()
 pairing = (app / 'JITPairing.swift').read_text()
 setup = (app / 'JITSetup.swift').read_text()
-onboarding = (app / 'Onboarding.swift').read_text()
+# The setup screens moved to BCDSetupView.swift (2026-10-18); Onboarding.swift keeps the rules.
+onboarding = (app / 'Onboarding.swift').read_text() + (app / 'BCDSetupView.swift').read_text()
 bridging = (app / 'Madeira-Bridging-Header.h').read_text()
 project = (root / 'app/Madeira.xcodeproj/project.pbxproj').read_text()
 gitignore = (root / '.gitignore').read_text()
@@ -119,13 +120,15 @@ require('$(PRODUCT_BUNDLE_IDENTIFIER).pairing.*' in plist.get('BGTaskSchedulerPe
 
 # ------------------------------------------------------------------ the three choices
 choices = block(onboarding, 'private var jitChoices')
-require(all(f'jitChoice("{title}"' in choices for title in ['In-app', 'In-app with pairing file', 'StikDebug'])
+require(all(f'jitChoice("{title}"' in choices for title in ['Built-in', 'Built-in, with a pairing file', 'StikDebug'])
         and 'enabled: OnDevicePairing.isSupported' in choices,
-        'setup: In-app (iOS 27), In-app with pairing file, StikDebug')
-require('OnDevicePairingPanel()' in block(onboarding, 'private var onDeviceGuide')
+        'setup: Built-in (iOS 27), Built-in with a pairing file, StikDebug')
+require('BCDJITPairingPanel(run: BCDJITLive.pairingRun()' in block(onboarding, 'private var onDeviceGuide')
         and 'pairing.start()' in block(onboarding, 'private func startPairing'),
         'setup: the on-device guide pairs and shows its progress')
-require('pairing.start()' in block(setup, 'struct JITSetupView: View'), 'Settings › JIT setup can pair on the device')
+# Wave 3 (2026-10-19): the classic JITSetupView is deleted; Settings › JIT (BCDJITLiveSection) pairs on the device.
+require('func startPairing() { OnDevicePairing.shared.start() }' in (app / 'BCDJITLive.swift').read_text()
+        and 'backend.startPairing()' in (app / 'BCDJIT.swift').read_text(), 'Settings › JIT can pair on the device')
 
 # ------------------------------------------------------------------ packaging
 for marker in ['JITPairing.swift in Sources', 'libmadeira_rppairing.a in Frameworks', 'MadeiraRPPairing.h */ = {isa = PBXFileReference']:

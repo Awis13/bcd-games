@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "thread-stack-spill"
+ ],
+ "next": [
+  "env.MADEIRA_THREAD_STACK_SPILL = 1"
+ ],
+ "note": "synthetic: built from [thr-create]'s format (virtual_ios.c); GoT 515, RDR2 460",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

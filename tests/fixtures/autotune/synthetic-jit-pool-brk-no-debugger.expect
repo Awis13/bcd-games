@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [
+  "jit-pool-brk-no-debugger"
+ ],
+ "next": [],
+ "note": "synthetic: build 569 started already debugged (StikDebug's app list), the debugger gone before Play: no SIGTRAP fallback, the pool request's BRK ended the app after the census (runtime.md §2.3 b); ios18-jit",
+ "outcome": "killed",
+ "stage": 0,
+ "status": "known"
+}

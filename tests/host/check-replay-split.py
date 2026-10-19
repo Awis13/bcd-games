@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[perf] replay split (madeira_d3d12.c, madeira.cfg replay-split = 1); no Wine runs.
+"""[perf] replay split (madeira_d3d12.c, bcd.cfg replay-split = 1); no Wine runs.
 
 Red Dead Redemption 2 (build 460, log 2026-10-08 23:59:11) spent 31-60 ms of
 a 38-72 ms open-world frame in ExecuteCommandLists with the GPU 24-34 % busy,

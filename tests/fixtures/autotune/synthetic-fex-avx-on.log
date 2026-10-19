@@ -1,0 +1,11 @@
+[10:00:00.000] [INFO] [build] v0.1.552 (552)
+[10:00:00.001] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6634MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=0 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=8059MB low-power=0
+[phase] wine-start             t+  0.639s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=601 MB (peak 601) internal=523 MB compressed=0 MB external=72 MB reusable=12 MB (cycle=1)
+0024:err:seh:call_seh_handlers [exc] ml811 code=c000001d addr=000000012B0855F6 flags=0 nparams=0 tid=0024 hit=1
+0024:err:seh:NtRaiseException Unhandled exception code c000001d flags 0 addr 0x12b0855f6

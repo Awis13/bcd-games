@@ -367,7 +367,7 @@ class SteamSession {
             messageHandlers[EMsg.clientLoggedOff.rawValue] = { _ in
                 cleanupHandlers()
                 SteamLog.trace("Got ClientLoggedOff during logon")
-                resumeThrowing(SteamError.authenticationFailed("Server sent ClientLoggedOff during logon"))
+                resumeThrowing(SteamError.authenticationFailed("Steam signed this session out while it was signing in."))
             }
 
             Task {

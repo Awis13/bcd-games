@@ -46,7 +46,7 @@ semaphore_t ios_srv_wake_sem = 0;
 /* madeira-bcd: coalesced wake. A semaphore count per request never drained:
  * past the loop's own rate every wait returned at once and the loop ran
  * pass after pass, each one a read() on every client thread's request fd.
- * GTA V Enhanced with the Rockstar launcher, Chromium and Steam
+ * Licensed GTA V Enhanced with the Rockstar launcher, Chromium and Steam
  * alive (352 Wine threads, log 2026-10-07 22:06, build 435) kept the
  * wineserver thread ~90% busy at ~10k requests/s, ~90 us of server CPU a
  * request, while the game alone (122 threads) needed ~22 us. Now a client
@@ -57,7 +57,7 @@ semaphore_t ios_srv_wake_sem = 0;
 static volatile int ios_srv_wake_pending;
 static int ios_srv_wake_coalesce = -1;
 
-/* A switch the app exports as env.NAME: madeira.cfg's line (with the game's own lines,
+/* A switch the app exports as env.NAME: bcd.cfg's line (with the game's own lines,
  * which win), else the process environment. The server starts before the bridge exports
  * the env.* lines (ml1236), so getenv alone would miss them in the first session. */
 static const char *ios_srv_switch( const char *name, char *buf, size_t cap )
@@ -131,7 +131,7 @@ int ios_srv_log_sample( unsigned long *count )
  * for seconds) while ECO is on, and user-interactive again when ECO goes off or the
  * session ends. ECO changes come from ntdll's generation counter (sync.c ios_eco_gen: the
  * ECO pill, the power governor), looked at once per loop pass. madeira_get_eco() reads
- * madeira.cfg the first time it runs and keeps the answer, so it is called only once the
+ * bcd.cfg the first time it runs and keeps the answer, so it is called only once the
  * bridge has set the switch, which is after the game's configuration is in place. */
 extern volatile int ios_eco_gen;      /* wine/dlls/ntdll/unix/sync.c */
 extern int madeira_get_eco( void );   /* same */

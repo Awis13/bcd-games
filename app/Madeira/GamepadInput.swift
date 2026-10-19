@@ -56,16 +56,15 @@ final class GamepadInput: @unchecked Sendable {
         LogStore.shared.log("[xinput] ml1990 slot=0 reserved for the session touch=\(touch ? 1 : 0) paired=\(paired ? 1 : 0)")
     }
 
-    /// ml2100: how player 1 reaches Windows, `env.MADEIRA_PAD_MODE` from
-    /// madeira.cfg, else the process environment. Unset or "xinput": the XInput
-    /// path above, unchanged (the default). "hid": player 1 becomes a HID game
-    /// controller served by the wineserver (build/wineserver/hidpad_ios.c) -- a
-    /// DualSense when the pad is a PlayStation one, a generic HID gamepad
-    /// otherwise -- and leaves XInput. "dualsense" / "generic" force that
-    /// identity. Read once, at session start (beginPadSession): the device
-    /// exists before the game enumerates, so a change applies at the next start.
-    /// The game's own lines come first (MadeiraConfig.gameValue), so a game's
-    /// config or its recommended settings choose its mode.
+    /// ml2100: how player 1 reaches Windows, `env.MADEIRA_PAD_MODE` from the
+    /// game's own file (GameProfiles.swift), else bcd.cfg, else the process
+    /// environment. Unset or "xinput": the XInput path above, unchanged (the
+    /// default). "hid": player 1 becomes a HID game controller served by the
+    /// wineserver (build/wineserver/hidpad_ios.c) -- a DualSense when the pad
+    /// is a PlayStation one, a generic HID gamepad otherwise -- and leaves
+    /// XInput. "dualsense" / "generic" force that identity. Read once, at
+    /// session start (beginPadSession): the device exists before the game
+    /// enumerates, so a change applies at the game's next start.
     static let padModeKey = "env.MADEIRA_PAD_MODE"
     static func configuredPadMode() -> (value: String, source: String) {
         if let v = MadeiraConfig.gameValue(padModeKey) { return (v.lowercased(), "game") }
@@ -75,13 +74,14 @@ final class GamepadInput: @unchecked Sendable {
     }
 
     /// ml2106: what of a game's controller output reaches the physical pad
-    /// (app/Madeira/PadOutput.m): XInputSetState rumble on any XInput pad, and
-    /// the virtual DualSense's output reports (rumble, adaptive triggers,
-    /// lightbar, player LEDs) on player 1's pad. `env.MADEIRA_PAD_OUTPUT`:
-    /// unset or 1 both, 0 none, hid only the DualSense's, xinput only XInput rumble.
-    /// The game's own lines come first, as for the pad mode.
+    /// (app/Madeira/PadOutput.m, docs/CONTROLLERS.md): XInputSetState rumble on
+    /// any XInput pad, and the virtual DualSense's output reports (rumble,
+    /// adaptive triggers, lightbar, player LEDs) on player 1's pad.
+    /// `env.MADEIRA_PAD_OUTPUT`, the game's file first: unset or 1 both, 0
+    /// none, hid only the DualSense's, xinput only XInput rumble.
+    static let padOutputKey = "env.MADEIRA_PAD_OUTPUT"
     static func configuredPadOutput() -> (xinput: Bool, hid: Bool, value: String) {
-        let value = (MadeiraConfig.gameValue("env.MADEIRA_PAD_OUTPUT")
+        let value = (MadeiraConfig.gameValue(padOutputKey)
             ?? MadeiraConfig.get("env.MADEIRA_PAD_OUTPUT")
             ?? ProcessInfo.processInfo.environment["MADEIRA_PAD_OUTPUT"]
             ?? "1").lowercased()
@@ -93,6 +93,9 @@ final class GamepadInput: @unchecked Sendable {
         }
     }
 
+    /// The identity this session's HID controller was created with (nil: XInput mode).
+    @MainActor private(set) static var sessionHIDKind: String?
+
     /// ml2100: decide this session's controller path. Called once, before the
     /// wineserver starts (ContentView.runWineFullSequence): the wineserver and
     /// the first Wine process read MADEIRA_HIDPAD to create the device and its
@@ -100,9 +103,11 @@ final class GamepadInput: @unchecked Sendable {
     @MainActor func beginPadSession() {
         let mode = Self.configuredPadMode()
         let output = Self.configuredPadOutput()
+        SystemGestures.beginSession(enabled: Self.enabled)   // madeira-bcd: env.MADEIRA_PAD_SYSTEM_GESTURES (opt-in)
         unsetenv("MADEIRA_HIDPAD"); unsetenv("MADEIRA_HIDPAD_NAME")
         // An earlier session in this app run may have taken player 1 off XInput.
         queue.async { [self] in hidActive = false; hidKeepsXInput = false }
+        Self.sessionHIDKind = nil
         guard ["hid", "dualsense", "generic"].contains(mode.value) else {
             LogStore.shared.log("[hid-pad] ml2100 session mode=xinput source=\(mode.source)")
             beginPadOutput(xinput: output.xinput && Self.enabled, hid: false, value: output.value)
@@ -124,6 +129,7 @@ final class GamepadInput: @unchecked Sendable {
         }
         setenv("MADEIRA_HIDPAD", kind, 1)
         if kind == "generic", let name = first?.vendorName { setenv("MADEIRA_HIDPAD_NAME", name, 1) }
+        Self.sessionHIDKind = kind
         let keepXInput = Self.optIn("MADEIRA_HIDPAD_XINPUT")
         queue.async { [self] in hidActive = true; hidKeepsXInput = keepXInput; sample() }
         LogStore.shared.log("[hid-pad] ml2100 session mode=\(mode.value) source=\(mode.source) kind=\(kind) "
@@ -140,7 +146,7 @@ final class GamepadInput: @unchecked Sendable {
                             + "xinput-rumble=\(xinput ? 1 : 0) dualsense-output=\(hid ? 1 : 0)")
     }
 
-    /// Documents/madeira.cfg `env.NAME`, else the process environment; only "0" disables.
+    /// Documents/bcd.cfg `env.NAME`, else the process environment; only "0" disables.
     static func flag(_ name: String) -> Bool {
         (MadeiraConfig.get("env.\(name)") ?? ProcessInfo.processInfo.environment[name]) != "0"
     }
@@ -237,6 +243,7 @@ final class GamepadInput: @unchecked Sendable {
             controller.handlerQueue = queue
             return (controller, profile)
         }
+        SystemGestures.apply(live.map { $0.0 })   // madeira-bcd: env.MADEIRA_PAD_SYSTEM_GESTURES; without it nothing is touched
         queue.async { [self] in
             for i in controllers.indices {
                 guard let old = controllers[i], !live.contains(where: { $0.0 === old }) else { continue }

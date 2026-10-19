@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "cage-release-band-exhausted",
+  "jumbo-half-probe"
+ ],
+ "next": [
+  "env.MADEIRA_CAGE_RELEASE = 1"
+ ],
+ "note": "Ratchet & Clank: Rift Apart, build 549, iPhone18,2 (11695 MB): crashed",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "trying"
+}

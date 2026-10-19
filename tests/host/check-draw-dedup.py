@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Redundant render state left out of draws (madeira.cfg draw-dedup, default 1);
+"""Redundant render state left out of draws (bcd.cfg draw-dedup, default 1);
 no Wine, no Metal.
 
 exec_draw handed Metal a draw's whole state every time: pipeline, viewport,

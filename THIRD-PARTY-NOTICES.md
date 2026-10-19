@@ -1,5 +1,12 @@
 # Third-party components
 
+**BCD** is a fork of **Madeira** by Will Faust and its contributors. Everything
+below about Madeira stays true for BCD. BCD's own files (marked "BCD Material" in
+their headers) are GPL-3.0-only with the Madeira Converter Exception and the
+additional terms under GPL-3.0 section 7 in `LICENSE-BCD.md`; files BCD changed
+keep their authors' licences and notices. BCD's changes to Wine are
+LGPL-2.1-or-later, like Wine.
+
 Madeira is built from several upstream projects plus original work. Each
 component keeps its own license. This file records what is here, what ships in
 the binary, and what is still unresolved.
@@ -20,6 +27,8 @@ dependency license texts are in `LICENSES/`. See "Why GPL-3.0-or-later" below.
 | **GMP** 6.3.0 | **LGPL-3.0-or-later** or GPL-2.0-or-later | Static (`libgmp.a`). |
 | **Nettle / Hogweed** 3.10.1 | **LGPL-3.0-or-later** or GPL-2.0-or-later | Static (`libnettle.a`, `libhogweed.a`). |
 | **GnuTLS** 3.8.9 | LGPL-2.1-or-later | Static (`libgnutls.a`). Used by Wine's bcrypt/secur32/crypt32. |
+| **FreeType** 2.13.3 | FreeType License (FTL), chosen from its FTL / GPL-2.0 dual licence | Static, merged into `libwin32u_unix.a` (`build/freetype-ios/build.sh`) | Wine's font rendering. Portions of this software are copyright © 2024 The FreeType Project (www.freetype.org). All rights reserved. The software is based in part on the work of the FreeType Team. Licence text: `app/Madeira/legal/LICENSES/FTL-FreeType-2.13.3.txt`. |
+| **Libraries inside Wine's modules** | per library, below | Unmodified, built into Wine's Windows modules from Wine's `libs/` | capstone (3-clause BSD-style, with LLVM's licence for its LLVM-derived parts), compiler-rt (University of Illinois/NCSA or MIT), FAudio (zlib), FluidSynth (LGPL-2.1-or-later), GSM 06.10 (its own permissive licence), libjpeg (IJG: this software is based in part on the work of the Independent JPEG Group), jxrlib (BSD-2-Clause), Little CMS (MIT), OpenLDAP (OpenLDAP Public License), mpg123 (LGPL-2.1), musl (MIT), libpng (libpng licence), libtiff (libtiff licence), LibTomCrypt (public domain / WTFPL), vkd3d (LGPL-2.1-or-later), zlib (zlib). Their licence files, as Wine ships them: `app/Madeira/legal/LICENSES/wine-libs/`. |
 | **FFmpeg** 7.1.1 — libavformat, libavcodec, libavutil, libswresample | **LGPL-2.1-or-later** | Static (`libavformat.a`, `libavcodec.a`, `libavutil.a`, `libswresample.a`). Configured `--disable-gpl --disable-nonfree --disable-version3 --disable-everything`, then only: the WMA-family decoders (`wmav1,wmav2,wmapro,wmalossless,xma1,xma2`), the `mp1,mp2,mp3` and `pcm_u8,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le` decoders, the `mp3`, `wav` and `mov` (MP4/MOV/M4A) demuxers and the `mpegaudio` parser. No H.264, HEVC or AAC decoder or parser (those streams are decoded by Apple's VideoToolbox/AudioToolbox), no protocols, no muxers, no zlib. No GPL, version3 or non-free component is enabled, so the result is LGPL-2.1-or-later. Used only by `build/ntdll-unix/winegstreamer_unixlib_ios.c` and `build/ntdll-unix/wg_parser_av_ios.c`, winegstreamer's unix side on this port (the Windows WMA decoder MFT/DMO, and the wg_parser behind quartz's MP3/WAV splitters and Media Foundation's MP4 source); upstream Wine implements both with GStreamer, which does not exist on iOS. |
 | **{fmt}** | MIT | Static (`libfmt.a`), via FEX. |
 | **xxHash** | BSD-2-Clause | Static (`libxxhash.a`). |

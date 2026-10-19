@@ -1,16 +1,15 @@
 /* madeira_cfg.h -- ONE configuration file for every runtime switch (ml1095).
  *
- *   Documents/madeira.cfg
+ *   Documents/bcd.cfg
  *     # comments start with #
  *     key = value            (whitespace around key and value is trimmed;
  *                             the value runs to the end of the line, so it
  *                             may itself contain '='; the last line wins)
  *
- * Keys are the old per-file names without the "madeira-" prefix and ".txt"
- * suffix: swap-mb, vram-mb, pool, totalphys, inproc-sync, wx, ...
- * Environment exports are "env.NAME = value" (see madeira_cfg_env_export).
+ * Keys: swap-mb, vram-mb, pool, totalphys, inproc-sync, wx, ...
+ * Environment exports are "env.NAME = value" (WineProcessBridge.m exports them).
  * A library game's own lines ($MADEIRA_CFG_GAME, same syntax) are read after
- * madeira.cfg, so its keys win (madeira_cfg_get).
+ * bcd.cfg, so its keys win (madeira_cfg_get).
  *
  * Header-only and dependency-free on purpose: it is included from six
  * separately built libraries (ntdll unix, wineserver, madsync, the winemetal
@@ -18,10 +17,10 @@
  * re-reads the file; every caller runs once at start-up and caches its own
  * answer, and a file this small costs nothing.
  *
- * COMPATIBILITY: when madeira.cfg is ABSENT, the legacy Documents/madeira-<key>.txt
- * is consulted, so a device without the new file keeps behaving exactly as
- * before. When madeira.cfg is PRESENT the legacy files are ignored entirely,
- * which is what makes a single file the single source of truth. */
+ * bcd.cfg is the only file read. It was madeira.cfg (and before ml1095 one
+ * file per switch, madeira-<key>.txt) until BCD took its own name on
+ * 2026-10-18; every device installs BCD fresh, so neither old name is read.
+ * Without bcd.cfg every key is unset. */
 #ifndef MADEIRA_CFG_H
 #define MADEIRA_CFG_H
 
@@ -30,7 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MADEIRA_CFG_FILE "madeira.cfg"
+#define MADEIRA_CFG_FILE "bcd.cfg"
 #define MADEIRA_CFG_MAX  (64 * 1024)
 
 static int madeira_cfg__read_file(const char *path, char *buf, size_t cap)
@@ -58,7 +57,7 @@ static void madeira_cfg__trim(char *s)
  * The in-app wineserver thread sets HOME to the Wine prefix (Documents/wine)
  * before it creates its first object. A reader that runs inside the server in
  * that window (madsync's inproc-sync switch is read there and kept for the
- * whole app run) used to look for Documents/wine/Documents/madeira.cfg, find
+ * whole app run) used to look for Documents/wine/Documents/bcd.cfg, find
  * nothing and return the default. The app now exports MADEIRA_DOCS_DIR before
  * main() (WineProcessBridge.m); CFFIXED_USER_HOME is the sandbox home the
  * system sets and nothing in the app rewrites it, so it is a second,
@@ -96,7 +95,7 @@ static int madeira_cfg__dir(char *out, size_t cap)
     return 1;
 }
 
-/* 1 = madeira.cfg exists (legacy files are then ignored). */
+/* 1 = bcd.cfg exists. */
 static int madeira_cfg_present(void)
 {
     char path[1024];
@@ -142,15 +141,14 @@ static int madeira_cfg__scan(const char *path, const char *key, char *out, size_
  *
  * $MADEIRA_CFG_GAME names the running game's own file (the library's Game
  * details > This game's config, same syntax, written by the app for each
- * launch). A key set there wins over madeira.cfg and the legacy files, so one
- * game can change a switch without touching the others. */
+ * launch). A key set there wins over bcd.cfg, so one game can change a switch
+ * without touching the others. */
 static int madeira_cfg_get(const char *key, char *out, size_t cap)
 {
     char path[1024];
     char *buf;
     const char *game;
-    int found = 0, r;
-    size_t klen = strlen(key);
+    int found = 0;
 
     if (cap) out[0] = '\0';
     if (!madeira_cfg__dir(path, sizeof path - 64)) return 0;
@@ -158,28 +156,8 @@ static int madeira_cfg_get(const char *key, char *out, size_t cap)
     buf = (char *)malloc(MADEIRA_CFG_MAX);
     if (!buf) return 0;
     strcat(path, "/" MADEIRA_CFG_FILE);
-    r = madeira_cfg__scan(path, key, out, cap, buf);
-    if (r >= 0) found = r;
-    else
-    {
-        /* No madeira.cfg: the legacy one-value-per-file layout. */
-        path[strlen(path) - strlen(MADEIRA_CFG_FILE)] = '\0';
-        if (strlen(path) + 9 + klen + 4 < sizeof path)
-        {
-            strcat(path, "madeira-"); strcat(path, key); strcat(path, ".txt");
-            if (madeira_cfg__read_file(path, buf, MADEIRA_CFG_MAX) >= 0)
-            {
-                char *nl = strchr(buf, '\n');
-                /* a legacy file is ONE value; multi-line ones (env, dxmt) have their
-                 * own readers and never come through here */
-                if (nl) *nl = '\0';
-                madeira_cfg__trim(buf);
-                if (cap) { strncpy(out, buf, cap - 1); out[cap - 1] = '\0'; }
-                found = 1;
-            }
-        }
-    }
-    game = getenv("MADEIRA_CFG_GAME");   /* set by the app for a library game's own lines; not a madeira.cfg option */
+    if (madeira_cfg__scan(path, key, out, cap, buf) == 1) found = 1;   /* -1: no bcd.cfg, every key unset */
+    game = getenv("MADEIRA_CFG_GAME");   /* set by the app for a library game's own lines; not a bcd.cfg option */
     if (game && *game && madeira_cfg__scan(game, key, out, cap, buf) == 1) found = 1;
     free(buf);
     return found;
@@ -204,7 +182,7 @@ static int madeira_cfg_bool(const char *key, int dflt)
     return (!strcmp(v, "1") || !strcmp(v, "on") || !strcmp(v, "true") || !strcmp(v, "yes")) ? 1 : 0;
 }
 
-/* The synchronisation engine madeira.cfg selects (Settings > Sync engine). Madsync
+/* The synchronisation engine bcd.cfg selects (Settings > Sync engine). Madsync
  * only when inproc-sync is on; otherwise env.MADEIRA_FASTSYNC decides (the values
  * Wine treats as on: fastsync; anything else: Wine's own sync). With neither key
  * set it is fastsync, the default. inproc-sync = 0 without env.MADEIRA_FASTSYNC

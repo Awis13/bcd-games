@@ -859,8 +859,8 @@ static inline TEB64 *NtCurrentTeb64(void) { return (TEB64 *)NtCurrentTeb()->GdiB
 #endif
 
 #ifdef WINE_IOS
-/* The process whose thread ran init_user (class_ios.c), i.e. the session's
- * first pseudo-process. NULL until init_user has finished. */
+/* madeira-bcd: the process whose thread ran init_user (class_ios.c), i.e. the
+ * session's first pseudo-process. NULL until init_user has finished. */
 extern void *ios_win32u_session_peb;
 
 static unsigned int ios_request_desktop_window( struct ntuser_thread_info *thread_info, BOOL force )

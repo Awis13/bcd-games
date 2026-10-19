@@ -9,7 +9,7 @@
 //    pair, both adaptive trigger effects, lightbar colour, player LEDs, mic LED;
 //  - XInputSetState's two motor speeds per XInput slot (win32u op 2,
 //    NtUserGamepadOp_SetVibration, build/win32u-unix/driver_ios.c; needs the
-//    paired Wine xinput change).
+//    paired Wine xinput change, tools/patch-wine-xinput-vibration.py in this fork).
 // The writers call winios_pad_output_set_notify's hook when something changed;
 // the hook schedules one main-thread pass (never more than one in flight),
 // which reads the newest state and applies what differs from what it applied

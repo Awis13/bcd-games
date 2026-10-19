@@ -106,8 +106,9 @@ for src in $WINE_SRC/dlls/win32u/*.c $WINE_SRC/dlls/win32u/dibdrv/*.c; do
             continue
             ;;
         d3dkmt)
-            # Wraps upstream d3dkmt.c: the opt-in MADEIRA_KMT_ADAPTER adapter
-            # (see the header comment in d3dkmt_ios.c).
+            # madeira-bcd: wraps upstream d3dkmt.c -- [vkmt] trace of the
+            # adapter entry points and the opt-in MADEIRA_KMT_ADAPTER adapter
+            # (header comment in d3dkmt_ios.c).
             compile_one "$BUILD_DIR/d3dkmt_ios.c" "d3dkmt"
             continue
             ;;

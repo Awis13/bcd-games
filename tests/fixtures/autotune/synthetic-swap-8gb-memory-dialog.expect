@@ -1,0 +1,18 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "swap-8gb-memory-dialog"
+ ],
+ "next": [
+  "swap-mb = 3072",
+  "swap-mode = 2",
+  "swap-min-mb = 1"
+ ],
+ "note": "synthetic: a 8 GB device; the game's own box said 'Out of memory'",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

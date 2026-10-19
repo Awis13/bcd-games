@@ -1,0 +1,455 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright 2026 thebcd69 (BCD)
+// BCD Material: additional terms under GPL-3.0 section 7 apply; see LICENSE-BCD.md.
+// BCD's game page: its rules, compiled on the host by tests/host/check-bcd-game-page.py with
+// app/Madeira/BCDStore.swift and the rules part of app/Madeira/BCDGamePage.swift, then run.
+
+import Foundation
+import SwiftUI
+
+@MainActor final class Recorder: BCDActions {
+    var calls: [String] = []
+    func play(_ game: BCDGame) { calls.append("play \(game.id)") }
+    func install(_ game: BCDGame, place: BCDInstallPlace) { calls.append("install \(game.id) \(place)") }
+    func update(_ game: BCDGame) { calls.append("update \(game.id)") }
+    func uninstall(_ game: BCDGame) { calls.append("uninstall \(game.id)") }
+    func verify(_ game: BCDGame) { calls.append("verify \(game.id)") }
+    func pauseDownload(_ id: String) { calls.append("pause \(id)") }
+    func resumeDownload(_ id: String) { calls.append("resume \(id)") }
+    func cancelDownload(_ id: String) { calls.append("cancel \(id)") }
+    func enableJIT() { calls.append("jit") }
+    func signIn(_ store: BCDStoreFront) { calls.append("signin \(store)") }
+    func signOut(_ store: BCDStoreFront) { calls.append("signout") }
+    func addGameFromFiles() { calls.append("add") }
+    func refreshLibrary() { calls.append("refresh") }
+}
+
+@MainActor final class Backend: BCDGameDetailBackend {
+    var onChange: (() -> Void)?
+    var onNotice: (() -> Void)?
+    var calls: [String] = []
+    var shown = BCDGameDetails()
+    var log: BCDGameLog?
+    var refresh = BCDRecommendedRefresh.upToDate
+    var askedSettings: [Bool] = []
+    func details(for game: BCDGame, settings: Bool) -> BCDGameDetails {
+        askedSettings.append(settings)
+        var d = shown
+        if !settings { d.groups = [] }
+        return d
+    }
+    func opened(_ game: BCDGame) { calls.append("opened \(game.id)") }
+    func set(_ setting: String, to value: String, for game: BCDGame) { calls.append("set \(setting)=\(value)") }
+    func syncCloud(_ game: BCDGame) { calls.append("sync") }
+    func keepCloudSaves(_ game: BCDGame, fromCloud: Bool) { calls.append("keep \(fromCloud)") }
+    func resetToRecommended(_ game: BCDGame) { calls.append("reset") }
+    func refreshRecommendedSettings(for game: BCDGame) async -> BCDRecommendedRefresh { calls.append("latest"); return refresh }
+    func applyRecommendedSettings(_ game: BCDGame) { calls.append("apply") }
+    func setTuning(_ on: Bool, for game: BCDGame) { calls.append("tuning \(on)") }
+    func undoTuning(_ game: BCDGame) { calls.append("untune") }
+    func writeTuningLines(_ game: BCDGame) { calls.append("write") }
+    func tuningReport(for game: BCDGame) -> String? { "report" }
+    func shortcutLink(for game: BCDGame) -> String? { "bcd://play" }
+    func backUpSaves() async throws -> BCDSavesBackup {
+        BCDSavesBackup(file: URL(fileURLWithPath: "/tmp/x.zip"), files: 2, bytes: 2048, leftOut: 0)
+    }
+    func restoreSaves(from file: URL) async throws -> Int { calls.append("restore"); return 3 }
+    func lastLog(of game: BCDGame) async -> BCDGameLog? { log }
+    func send(_ log: BCDGameLog, of game: BCDGame, progress: @escaping (String) -> Void) async throws -> String {
+        calls.append("send \(log.name)"); progress("Sending…"); return "K7Q2XM"
+    }
+    var config = "fence-chain = 6\n"
+    var coverFails = false
+    func configText(for game: BCDGame) -> String? { config }
+    func saveConfig(_ text: String, for game: BCDGame) { calls.append("config"); config = text }
+    func searchStore(_ text: String) async throws -> [BCDStoreMatch] { calls.append("search \(text)"); return [BCDStoreMatch(id: 7, name: "Seven")] }
+    func useStoreMatch(_ match: BCDStoreMatch, for game: BCDGame) { calls.append("match \(match.id)") }
+    func setCover(from file: URL, for game: BCDGame) async throws {
+        calls.append("cover \(file.lastPathComponent)")
+        if coverFails { throw BCDGameError("Choose a picture under 20 MB.") }
+    }
+}
+
+var failures = 0
+func check(_ what: String, _ ok: Bool, _ detail: Any = "") {
+    print((ok ? "ok   " : "FAIL ") + what + (ok ? "" : "\n     \(detail)"))
+    if !ok { failures += 1 }
+}
+
+@MainActor func settle() async { for _ in 0..<20 { try? await Task.sleep(nanoseconds: 50_000_000) } }
+
+@main struct Main {
+    @MainActor static func main() async {
+        var system = BCDSystemStatus()
+        system.jit = .on
+        system.memoryLimitBytes = 6_000_000_000
+        system.increasedMemoryLimit = true
+        system.controllerName = "DualSense"
+        system.freeDeviceBytes = 50_000_000_000
+        let none = BCDGameDetails()
+        func plan(_ game: BCDGame?, _ download: BCDDownload? = nil, _ sys: BCDSystemStatus? = nil, accounts: [BCDAccount] = [],
+                  others: Bool = false, _ details: BCDGameDetails = BCDGameDetails()) -> BCDGamePagePlan {
+            BCDGamePagePlan(game: game, download: download, system: sys ?? system, accounts: accounts, otherDownloads: others,
+                            details: details)
+        }
+        let ready = BCDGame(id: "steam.620", title: "Portal 2", store: .steam, state: .ready, size: 12_800_000_000)
+
+        // The main action for each state.
+        var p = plan(ready)
+        check("ready: Play, nothing in the way", p.main?.action == .play && p.others.isEmpty && p.notes.isEmpty && p.progress == nil, p)
+        p = plan(BCDGame(id: "u", title: "U", store: .steam, state: .updateAvailable(bytes: 120_000_000)))
+        check("an update: Play, and Update with its size beside it",
+              p.main?.action == .play && p.others.first?.action == .update && p.others.first?.title.contains("MB") == true, p)
+        p = plan(BCDGame(id: "u", title: "U", store: .steam, state: .updateAvailable(bytes: 0)))
+        check("an update of unknown size: Update alone", p.others.first?.title == "Update", p)
+        var repairable = none
+        repairable.canRepair = true
+        p = plan(BCDGame(id: "b", title: "B", store: .steam, state: .broken(reason: "Files are missing.")), nil, nil, repairable)
+        check("broken, repairable: Repair, and why", p.main?.action == .repair && p.notes.first?.text == "Files are missing.", p)
+        p = plan(BCDGame(id: "b", title: "B", store: .local, state: .broken(reason: "Gone.")))
+        check("broken, nothing to repair: Play anyway", p.main?.action == .play, p)
+        let big = BCDGame(id: "h", title: "H", store: .steam, state: .notInstalled, size: 98_000_000_000)
+        p = plan(big)
+        check("not installed: Install on this device, its size and the room left",
+              p.main?.action == .install(.device)
+              && p.installLine == "\(BCDFormat.bytes(98_000_000_000)) on this device, \(BCDFormat.bytes(50_000_000_000)) free"
+              && p.notes.contains { $0.text.contains("It needs") && $0.warning }, p)
+        var external = system
+        external.freeExternalBytes = 400_000_000_000
+        p = plan(big, nil, external)
+        check("not installed, an external drive: the drive beside Install", p.others.contains { $0.action == .install(.externalDrive) }, p)
+        p = plan(big, accounts: [BCDAccount(store: .steam, name: nil, available: true)])
+        check("not installed, signed out: the line says so first and offers the sign-in",
+              p.notes.first?.fix?.action == .signIn(.steam), p)
+        let downloading = BCDGame(id: "d", title: "D", store: .steam, state: .downloading(progress: 0.34), size: 2_400_000_000)
+        let running = BCDDownload(id: "d", title: "D", store: .steam, doneBytes: 816_000_000, totalBytes: 2_400_000_000,
+                                  bytesPerSecond: 23_600_000)
+        p = plan(downloading, running)
+        check("downloading: Pause, Stop beside it, the progress with its numbers",
+              p.main?.action == .pause && p.others.contains { $0.action == .cancelDownload }
+              && p.progress?.title == "Downloading · 34%"
+              && p.progress?.detail.contains("\(BCDFormat.bytes(816_000_000)) of \(BCDFormat.bytes(2_400_000_000))") == true, p)
+        var paused = running
+        paused.paused = true
+        p = plan(downloading, paused)
+        check("paused: Resume", p.main?.action == .resume && p.main?.title == "Resume" && p.progress?.title.hasPrefix("Paused") == true, p)
+        var failed = running
+        failed.failed = "The connection dropped."
+        p = plan(downloading, failed)
+        check("a failed download: Try again, and why", p.main?.title == "Try again" && p.progress?.failed == "The connection dropped.", p)
+        p = plan(BCDGame(id: "q", title: "Q", store: .steam, state: .queued))
+        check("queued: Pause, waiting", p.main?.action == .pause && p.progress?.title == "Waiting to download", p)
+        p = plan(nil)
+        check("a game no longer in the library: no action", p.main == nil && p.others.isEmpty && p.notes.isEmpty, p)
+
+        // What stands in the way: the engine's reasons first, at most two lines, only for a game that can play.
+        var off = system
+        off.jit = .off
+        p = plan(ready, nil, off)
+        check("JIT off: the line offers to turn it on", p.notes.first?.fix?.action == .enableJIT, p)
+        p = plan(big, nil, off)
+        check("JIT off does not concern a game that is not installed", !p.notes.contains { $0.fix?.action == .enableJIT }, p)
+        var worst = off
+        worst.increasedMemoryLimit = false
+        worst.controllerName = nil
+        var blocked = none
+        blocked.blockers = ["You're not signed in to Steam."]
+        p = plan(ready, nil, worst, others: true, blocked)
+        check("at most two lines, the engine's reason first", p.notes.count == 2 && p.notes[0].text == "You're not signed in to Steam.", p)
+        p = plan(ready, nil, system, others: true)
+        check("a running download will pause", p.notes.first?.text.contains("Downloads pause") == true, p)
+        p = plan(downloading, running, worst, others: true, blocked)
+        check("nothing about Play while the game downloads", p.notes.isEmpty, p)
+
+        // Settings read "Default · …" until changed; a section says what changed.
+        let fps = BCDGameSetting(id: "fps", title: "Frame-rate limit",
+                                 kind: .choice([BCDGameChoice(value: "1", label: "60 FPS"), BCDGameChoice(value: "3", label: "30 FPS")]),
+                                 value: "1", defaultValue: "1")
+        var thirty = fps
+        thirty.value = "3"
+        let sync = BCDGameSetting(id: "fence-chain", title: "GPU sync", kind: .choice([BCDGameChoice(value: "", label: "Every pass (default)")]))
+        let avx = BCDGameSetting(id: "avx", title: "AVX", kind: .toggle, value: "1", defaultValue: "0")
+        check("a setting at its default says so once", fps.summary == "Default · 60 FPS" && sync.summary == "Every pass (default)")
+        check("a changed setting shows its choice, and is marked", thirty.summary == "30 FPS" && thirty.changed && !fps.changed)
+        check("a switch reads On or Off", avx.summary == "On" && avx.changed)
+        let display = BCDGameSettingGroup(id: "display", title: "Display", symbol: "display", settings: [fps, avx])
+        check("a section's line: its changed settings, else BCD's own", display.summary == "AVX on"
+              && BCDGameSettingGroup(id: "x", title: "X", symbol: "x", settings: [fps]).summary == "As BCD sets it", display.summary)
+        check("Steam Cloud in a word or two", BCDCloudSaves.differ(2).summary == "2 differ" && BCDCloudSaves.synced(matching: 0).summary == "No saves yet")
+
+        // The facts.
+        var facts = BCDGameFact.list(ready, none).map { "\($0.label): \($0.value)" }
+        check("facts of an installed game", facts.contains("Last played: Not yet") && facts.contains("Installed on: This device")
+              && facts.contains("Store: Steam") && facts.contains("Size: \(BCDFormat.bytes(12_800_000_000))"), facts)
+        var detailed = none
+        detailed.program = "32-bit · Direct3D 9"
+        detailed.settings = "Recommended"
+        facts = BCDGameFact.list(big, detailed).map { "\($0.label): \($0.value)" }
+        check("facts of a game to download", facts.contains("Download: \(BCDFormat.bytes(98_000_000_000))") && !facts.contains { $0.hasPrefix("Installed on") }
+              && facts.contains("Program: 32-bit · Direct3D 9") && facts.contains("Settings: Recommended"), facts)
+
+        // The questions.
+        let log = BCDGameLog(file: URL(fileURLWithPath: "/tmp/war3.exe-2026-10-18_21-04-11.txt"), name: "war3.exe-2026-10-18_21-04-11.txt",
+                             date: Date(), bytes: 1000)
+        let reset = BCDGameQuestion(title: "Take out the installs?", message: "…", confirm: "At the next start", destructive: true)
+        let request = BCDGameSetting(id: "installrequest", title: "At the next start", kind: .choice([
+            BCDGameChoice(value: "", label: "Nothing more"), BCDGameChoice(value: "reset", label: "Take them out", question: reset)]))
+        let art = BCDGameSetting(id: "storeart", title: "Use Steam's art again", kind: .action,
+                                 question: BCDGameQuestion(title: "Use it?", message: "", confirm: "Use", destructive: false))
+        var removable = none
+        removable.removal = .uninstall(frees: 9_100_000_000)
+        removable.tuning = BCDGameTuning(on: true, status: nil, canUndo: true, found: ["dxmt = x"])
+        removable.groups = [BCDGameSettingGroup(id: "steam", title: "Steam", symbol: "s", settings: [request, art, fps,
+                            BCDGameSetting(id: "fastsync", title: "Fast sync", kind: .toggle, value: "1", defaultValue: "1", locked: "Fastsync only")])]
+        let asks: [BCDGameAction] = [.uninstall, .removeFromLibrary, .cancelDownload, .resetToRecommended, .applyRecommended(changes: 3),
+                                     .keepCloud(fromCloud: true), .keepCloud(fromCloud: false), .undoTuning, .writeTuningLines,
+                                     .restoreSaves(URL(fileURLWithPath: "/tmp/s.zip")), .sendLog(log), .set("installrequest", "reset"),
+                                     .set("storeart", "run")]
+        let gentle: [BCDGameAction] = [.sendLog(log), .writeTuningLines, .set("storeart", "run")]
+        for action in asks {
+            let q = action.question(for: ready, details: removable)
+            check("asks before \(action)", q != nil && (q?.destructive == true) == !gentle.contains(action), q as Any)
+        }
+        check("Uninstall says what it frees",
+              BCDGameAction.uninstall.question(for: ready, details: removable)?.message.contains(BCDFormat.bytes(9_100_000_000)) == true)
+        var update = none
+        update.updating = true
+        check("Stop says what it deletes: a first download's files, never an installed game's",
+              BCDGameAction.cancelDownload.question(for: downloading, details: none)?.message.contains("deleted") == true
+              && BCDGameAction.cancelDownload.question(for: downloading, details: update)?.message.contains("stays as it is") == true)
+        let plain: [BCDGameAction] = [.play, .install(.device), .update, .pause, .resume, .repair, .enableJIT, .syncCloud, .setTuning(true),
+                                      .signIn(.steam), .set("installrequest", ""), .set("fps", "3")]
+        check("asks nothing before the rest", plain.allSatisfy { $0.question(for: ready, details: removable) == nil })
+
+        // The model: what reaches BCDActions and the backend, and in which order.
+        let recorder = Recorder()
+        let store = BCDStore(actions: recorder)
+        store.games = [ready, downloading]
+        store.downloads = [running]
+        store.system = system
+        let backend = Backend()
+        backend.shown = removable
+        let model = BCDGamePageModel(gameID: "steam.620", backend: backend)
+        model.close = { recorder.calls.append("close") }
+        model.open(store)
+        check("opening tells the backend and reads the details, without the settings",
+              backend.calls == ["opened steam.620"] && model.details.removal == removable.removal && model.details.groups.isEmpty
+              && backend.askedSettings.allSatisfy { !$0 }, backend.calls)
+        model.showSettings(true)
+        check("Options open: the settings are read", model.details.groups.count == 1 && backend.askedSettings.last == true)
+        model.request(.uninstall)
+        check("Uninstall waits for the answer", recorder.calls.isEmpty && model.pending?.action == .uninstall, recorder.calls)
+        model.answer(false)
+        check("refused, nothing happens", recorder.calls.isEmpty && model.pending == nil, recorder.calls)
+        model.request(.uninstall)
+        model.answer(true)
+        check("confirmed, the page closes, then Uninstall reaches BCDActions", recorder.calls == ["close", "uninstall steam.620"], recorder.calls)
+        recorder.calls = []
+        model.request(.play)
+        model.request(.install(.externalDrive))
+        model.request(.repair)
+        model.request(.enableJIT)
+        model.request(.signIn(.steam))
+        check("Play, Install, Repair, JIT and sign-in close the page first (BCD's live store shows them on the main screen)",
+              recorder.calls == ["close", "play steam.620", "close", "install steam.620 externalDrive", "close", "verify steam.620",
+                                 "close", "jit", "close", "signin steam"], recorder.calls)
+        recorder.calls = []
+        model.request(.update)
+        model.request(.pause)
+        model.request(.resume)
+        model.request(.cancelDownload)
+        model.answer(true)
+        check("Update, Pause, Resume and Stop keep the page, which shows the download",
+              recorder.calls == ["update steam.620", "pause steam.620", "resume steam.620", "cancel steam.620"], recorder.calls)
+        recorder.calls = []
+        model.request(.removeFromLibrary)
+        model.answer(true)
+        check("Remove from library asks, closes the page, and goes through the store's uninstall (its files stay)",
+              recorder.calls == ["close", "uninstall steam.620"], recorder.calls)
+        backend.calls = []
+        model.request(.syncCloud)
+        model.request(.keepCloud(fromCloud: true))
+        model.answer(true)
+        model.request(.resetToRecommended)
+        model.answer(true)
+        model.request(.setTuning(true))
+        model.request(.undoTuning)
+        model.answer(true)
+        model.request(.writeTuningLines)
+        model.answer(true)
+        model.request(.set("fps", "3"))
+        model.request(.set("fps", "1"))
+        model.request(.set("fastsync", "0"))
+        model.request(.set("nothing", "1"))
+        check("cloud, reset, auto-tune and settings go to the backend; an unchanged value, a locked or unknown setting do nothing",
+              backend.calls == ["sync", "keep true", "reset", "tuning true", "untune", "write", "set fps=3"], backend.calls)
+        backend.calls = []
+        model.request(.set("installrequest", "reset"))
+        check("a choice that removes something asks first", backend.calls.isEmpty && model.pending?.question == reset)
+        model.answer(true)
+        model.request(.set("storeart", "run"))
+        model.answer(true)
+        check("... and runs once confirmed; a section's action too", backend.calls == ["set installrequest=reset", "set storeart=run"], backend.calls)
+        backend.calls = []
+        model.refreshRecommended()
+        await settle()
+        check("Get the latest recommended settings: up to date", backend.calls == ["latest"] && model.messages["recommended"] == "Up to date",
+              model.messages)
+        backend.refresh = .offline(builtIn: true, nothingOnline: false)
+        model.refreshRecommended()
+        await settle()
+        check("... offline: the built-in list", model.messages["recommended"] == "Offline: using the built-in list", model.messages)
+        backend.refresh = .available(changes: 3)
+        model.refreshRecommended()
+        await settle()
+        check("... newer settings: offered with what they change", model.pending?.action == .applyRecommended(changes: 3), model.pending as Any)
+        model.answer(false)
+        check("... left: nothing applied, and the line says so", !backend.calls.contains("apply")
+              && model.messages["recommended"] == "Not applied: 3 changes waiting", model.messages)
+        model.refreshRecommended()
+        await settle()
+        model.answer(true)
+        check("... applied: Updated, with the count", backend.calls.last == "apply" && model.messages["recommended"] == "Updated: 3 changes",
+              model.messages)
+        model.request(.restoreSaves(URL(fileURLWithPath: "/tmp/s.zip")))
+        model.answer(true)
+        await settle()
+        check("Restore saves asks, restores and says how many", backend.calls.last == "restore" && model.messages["restore"] == "Put back 3 files.",
+              model.messages)
+        model.report()
+        await settle()
+        check("Report a problem without a log says so", model.pending == nil && model.messages["report"]?.contains("no log") == true, model.messages)
+        backend.log = log
+        model.report()
+        await settle()
+        check("Report a problem asks before sending the game's log", model.pending?.action == .sendLog(log), model.pending as Any)
+        model.answer(true)
+        await settle()
+        check("sent, the code to quote", backend.calls.last == "send \(log.name)" && model.messages["report"] == "Sent. Quote this code: K7Q2XM",
+              model.messages)
+        let file = await model.backUpSaves()
+        check("Back up saves hands over the zip and says what is in it",
+              file?.lastPathComponent == "x.zip" && model.messages["saves"] == "2 files, \(BCDFormat.bytes(2048)).", model.messages)
+        // GOG: no Update and no file check yet (a later version of BCD), and its note about runtimes.
+        var gogGame = BCDGame(id: "gog.1207658924", title: "The Witcher", store: .gog, state: .updateAvailable(bytes: 0), size: 1_000)
+        var gogDetails = BCDGameDetails()
+        gogDetails.storeNote = "May need: Visual C++ 2017, DirectX (June 2010)."
+        gogDetails.canRepair = true
+        let gogPlan = BCDGamePagePlan(game: gogGame, download: nil, system: system, otherDownloads: false, details: gogDetails)
+        check("GOG: no Update, and the store's note under Play", gogPlan.main?.action == .play && gogPlan.others.isEmpty
+              && gogPlan.notes.contains { $0.text.hasPrefix("May need") && !$0.warning }, gogPlan)
+        gogGame.state = .broken(reason: "No program to start.")
+        let gogBroken = BCDGamePagePlan(game: gogGame, download: nil, system: system, otherDownloads: false, details: gogDetails)
+        check("GOG: no Repair either", gogBroken.main?.action == .play, gogBroken.main as Any)
+        check("GOG: Options offer no Check and repair files", !gogDetails.offersRepair(gogGame)
+              && gogDetails.offersRepair(BCDGame(id: "steam.1", title: "S", store: .steam, state: .ready, size: nil)))
+
+        // The online list's other answers, word for word.
+        check("refresh lines: updated, downloaded list offline, nothing online yet, a list refused",
+              BCDRecommendedRefresh.updated(changes: 1).line == "Updated: 1 change"
+                  && BCDRecommendedRefresh.offline(builtIn: false, nothingOnline: false).line == "Offline: using the downloaded list"
+                  && BCDRecommendedRefresh.offline(builtIn: true, nothingOnline: true).line == "No list online yet: using the built-in list"
+                  && BCDRecommendedRefresh.rejected.line?.contains("the one in use stays") == true
+                  && BCDRecommendedRefresh.available(changes: 2).line == nil)
+        backend.refresh = .updated(changes: 2)
+        model.refreshRecommended()
+        await settle()
+        check("... a newer list the game took: Updated, without a question", model.pending == nil && model.messages["recommended"] == "Updated: 2 changes",
+              model.messages)
+        check("the list's source line", BCDGameRecommendation(title: nil, version: 3).source == "List 3, built into this version of BCD."
+              && BCDGameRecommendation(title: nil, version: 4, downloaded: true).source == "List 4, downloaded.")
+
+        // Game config: saved as typed, and the count of its settings.
+        check("a config's settings: one per key, notes and blank lines left out",
+              BCDGameText.configCount("a = 1\n# b = 2\n\n c=3\na = 4\nnot a setting\n") == 2 && BCDGameText.configCount("") == 0)
+        backend.calls = []
+        model.request(.saveConfig("fence-chain = 6\nmetalfx-upscale = 2\n"))
+        check("Save writes the game's config and says how many settings it holds",
+              backend.calls == ["config"] && backend.config == "fence-chain = 6\nmetalfx-upscale = 2\n" && model.messages["config"] == "Saved: 2 settings",
+              (backend.calls, model.messages))
+        model.request(.saveConfig("# nothing\n"))
+        check("... an empty config: no settings", model.messages["config"] == "Saved: no settings", model.messages)
+        check("BCDGameText.settings", BCDGameText.settings(0) == "None" && BCDGameText.settings(1) == "1 setting" && BCDGameText.settings(5) == "5 settings")
+
+        // Find on Steam and the cover picture.
+        backend.calls = []
+        model.request(.useStoreMatch(BCDStoreMatch(id: 2800, name: "Warcraft III: Reign of Chaos")))
+        check("a store match is used at once, and the row says what changed",
+              backend.calls == ["match 2800"] && model.pending == nil && model.messages["findstore"]?.contains("Warcraft III: Reign of Chaos") == true,
+              (backend.calls, model.messages))
+        model.request(.setCover(URL(fileURLWithPath: "/tmp/cover.png")))
+        await settle()
+        check("a cover picture is set without a question, and the row says so",
+              backend.calls.last == "cover cover.png" && model.messages["cover"] == "Your picture is the cover now.", model.messages)
+        backend.coverFails = true
+        model.request(.setCover(URL(fileURLWithPath: "/tmp/huge.png")))
+        await settle()
+        check("... a picture refused: the reason in BCD's words", model.messages["cover"] == "Choose a picture under 20 MB.", model.messages)
+        check("store search, config, match and cover never close the page",
+              !BCDGameAction.saveConfig("").closesPage && !BCDGameAction.useStoreMatch(BCDStoreMatch(id: 1, name: "x")).closesPage
+                  && !BCDGameAction.setCover(URL(fileURLWithPath: "/x")).closesPage)
+
+        // A row that opens a screen.
+        let binds = BCDGameSetting(id: "binds", title: "Controller binds", kind: .opens(.section("binds")), value: "2 changed", defaultValue: "BCD's layout")
+        check("a row that opens a screen says what it holds, and is marked when it is not the default",
+              binds.summary == "2 changed" && binds.changed
+                  && !BCDGameSetting(id: "c", title: "c", kind: .opens(.coverPicture)).changed)
+
+        // Launch arguments' flags.
+        check("flags: found whole and in any case", BCDLaunchFlags.has("-DX11 -windowed", "-dx11") && !BCDLaunchFlags.has("-dx110", "-dx11"))
+        check("flags: one Direct3D flag at a time", BCDLaunchFlags.toggled("-dx11 -windowed", "-dx12") == "-windowed -dx12",
+              BCDLaunchFlags.toggled("-dx11 -windowed", "-dx12"))
+        check("flags: -windowed and -fullscreen rule each other out", BCDLaunchFlags.toggled("-windowed -nosplash", "-fullscreen") == "-nosplash -fullscreen")
+        check("flags: a second press takes the flag out", BCDLaunchFlags.toggled("-nosplash -dx9", "-dx9") == "-nosplash")
+        check("flags: words in quotes stay whole",
+              BCDLaunchFlags.words("\"C:\\My Games\\x\" -dx9") == ["\"C:\\My Games\\x\"", "-dx9"]
+                  && BCDLaunchFlags.toggled("+set \"name with space\"", "-nosplash") == "+set \"name with space\" -nosplash",
+              BCDLaunchFlags.words("\"C:\\My Games\\x\" -dx9"))
+
+        // Controller binds.
+        check("binds: inputs by their names", BCDPadBinds.inputName("Menu") == "Start" && BCDPadBinds.inputName("View") == "Select"
+              && BCDPadBinds.inputName("D↑") == "D-pad up" && BCDPadBinds.inputName("LT") == "Left trigger (LT)"
+              && BCDPadBinds.inputName("A") == "A button"
+              && BCDPadBinds.sections.flatMap(\.inputs).count == 18)
+        check("binds: what each value does", BCDPadBinds.label("key.32", input: "A") == "Space" && BCDPadBinds.label("none", input: "RS") == "Mouse"
+              && BCDPadBinds.label("none", input: "LS") == "Nothing" && BCDPadBinds.label("key.112", input: "A") == "F1"
+              && BCDPadBinds.label("key.96", input: "A") == "Numpad 0" && BCDPadBinds.keyName(0x99) == "Key 99"
+              && BCDPadBinds.label("pad.Jump", input: "A") == "Jump" && BCDPadBinds.label("keyboard", input: "A") == "Show the keyboard")
+        let buttonChoices = BCDPadBinds.choices(for: "A", current: "", standard: "Space")
+        check("binds: a button's choices: the default, the mouse, 93 keys, the keyboard and nothing",
+              buttonChoices.count == 98 && buttonChoices.first?.label == "Default (Space)" && buttonChoices.first?.value == ""
+                  && Set(buttonChoices.map(\.value)).count == 98 && buttonChoices.last?.value == "none",
+              buttonChoices.count)
+        let stick = BCDPadBinds.choices(for: "RS", current: "stick.arrows", standard: "Mouse")
+        check("binds: a stick's choices", stick.map(\.value) == ["", "none", "stick.wasd", "stick.arrows"] && stick[1].label == "Mouse")
+        check("binds: a value saved elsewhere stays listed", BCDPadBinds.choices(for: "B", current: "pad.Jump", standard: "Ctrl").last?.label == "Jump")
+        check("binds: numpad keys carry short caps", buttonChoices.first { $0.value == "key.106" }?.cap == "*")
+        let speeds = BCDPadBinds.speeds(current: 1)
+        check("binds: up and down speed from 25% to 150% in fives", speeds.count == 26 && speeds.first?.label == "25%" && speeds.last?.label == "150%"
+              && speeds.contains { $0.value == "1.00" } && BCDPadBinds.speeds(current: 0.33).count == 27)
+
+        // Steam Cloud's differing saves.
+        let day = Date(timeIntervalSince1970: 1_790_000_000)
+        let newer = BCDCloudConflict(name: "save.sav", cloudDate: day, cloudBytes: 2048, deviceDate: day - 3600, deviceBytes: 1024)
+        check("a differing save: each side's copy, the newer one marked",
+              newer.lines.cloud.hasPrefix("Steam Cloud: ") && newer.lines.cloud.hasSuffix(" · newer") && !newer.lines.device.hasSuffix("newer")
+                  && newer.lines.device.hasPrefix("This device: "), newer.lines)
+        let missing = BCDCloudConflict(name: "p.dat", cloudDate: day, cloudBytes: 10, deviceDate: nil)
+        check("... missing on this device", missing.lines.device == "This device: missing, though it was synced here before"
+              && !missing.lines.cloud.hasSuffix("newer"), missing.lines)
+
+        model.showSettings(false)
+        check("Options closed: the settings are let go", model.details.groups.isEmpty)
+        recorder.calls = []
+        backend.onNotice?()
+        check("the engine's notice closes the page", recorder.calls == ["close"])
+        model.leave()
+        check("leaving lets the backend go and keeps nothing", backend.onChange == nil && backend.onNotice == nil && model.details == BCDGameDetails())
+        let gone = BCDGamePageModel(gameID: "nothing", backend: backend)
+        gone.open(store)
+        gone.request(.play)
+        check("a game no longer in the library: nothing runs", gone.game == nil && !recorder.calls.contains("play nothing"))
+        print(failures == 0 ? "page rules: all passed" : "page rules: \(failures) failed")
+        exit(failures == 0 ? 0 : 1)
+    }
+}

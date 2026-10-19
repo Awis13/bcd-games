@@ -1,16 +1,16 @@
 [submodule "FEX"]
 	path = FEX
-	url = https://github.com/willfaust/FEX.git
+	url = https://github.com/thebcd69/bcd-fex.git
 	branch = ios-port-2607
 [submodule "wine"]
 	path = wine
-	url = https://github.com/willfaust/wine.git
+	url = https://github.com/thebcd69/bcd-wine.git
 	branch = madeira-lgpl
 [submodule "dxmt"]
 	path = dxmt
-	url = https://github.com/willfaust/dxmt.git
+	url = https://github.com/thebcd69/bcd-dxmt.git
 	branch = ios-port
 [submodule "madeira-dock"]
 	path = madeira-dock
-	url = https://github.com/willfaust/madeira-dock.git
+	url = https://github.com/thebcd69/bcd-dock.git
 	branch = main

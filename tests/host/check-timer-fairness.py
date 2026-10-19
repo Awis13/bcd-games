@@ -20,7 +20,8 @@ Checks:
      pending and a 50 ms timer, 2 simulated seconds deliver a timer about every
      150 ms (due again within 50 ms, then 100 ms of waiting); with
      MADEIRA_TIMER_FAIRNESS=0 none, as before; with no paint pending every
-     expired timer goes out at once, as before.
+     expired timer goes out at once, as before;
+  4. CI runs this check.
 Needs `cc` on PATH.
 """
 from pathlib import Path
@@ -33,6 +34,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[2]
 src = (root / 'build/wineserver/queue_ios.c').read_text()
+workflow = (root / '.github/workflows/build-ipa.yml').read_text()
 cc = os.environ.get('CC') or shutil.which('cc') or shutil.which('clang') or shutil.which('gcc')
 failures = []
 
@@ -67,6 +69,9 @@ check('queue->paint_count &&' in block and
       'only with a paint pending; the timer goes out as the stock branch hands it over (same filter, PM_REMOVE restarts it)')
 check('[timer-fair]' in block and '<= 8 ||' in block and '% 1000' in block, 'logged: the first 8 times, then every 1000th')
 check(src.count('madeira_timer_starved(') == 2, 'one helper, one caller')
+check('python3 tests/host/check-timer-fairness.py' in workflow and
+      workflow.index('python3 tests/host/check-timer-fairness.py') < workflow.index('- name: Build wineserver'),
+      'CI runs this check before the wineserver is built')
 
 # ------------------------------------------------------------------ 2.+3. compiled
 struct_timer = src[src.index('struct timer\n{'):src.index('};', src.index('struct timer\n{')) + 3]

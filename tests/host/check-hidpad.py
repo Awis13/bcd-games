@@ -388,11 +388,8 @@ server = (root / 'build/ntdll-unix/server_ios.c').read_text()
 a = server.index('#include "../hidpad/hidpad_ids.h"')
 b = server.index('\n}\n', server.index('static void ios_hidpad_publish(void)')) + 3
 publish = server[a:b].replace('#include "../hidpad/hidpad_ids.h"', '#include "hidpad_ids.h"')
-# The key helper is the hardware description keys' ios_hw_key (ios_hidpad_key
-# names it); it is defined above the HID block, so it is taken separately.
-k = server.index('static HANDLE ios_hw_key(')
-helper = server[k:server.index('\n}\n', k) + 3]
-publish = helper + '\n' + publish
+# (upstream 06ceaac also slices ios_hw_key here; the fork keeps its own key
+# helper inside the HID block, so only its -fno-builtin build flag is taken.)
 
 registry = r'''
 #include <assert.h>
@@ -623,7 +620,7 @@ int main( void )
     strcpy( live_link, "\\??\\HID#VID_1209&PID_4D47#9&4d616465&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}" );
     ios_hidpad_publish();
     n = find( CCS "\\Enum\\HID\\VID_1209&PID_4D47\\9&4d616465&0&0000" );
-    assert( n && strstr( n->values, "Mfg=sz:Madeira;" ) );
+    assert( n && strstr( n->values, "Mfg=sz:BCD;" ) );
     assert( find( CCS "\\Control\\DeviceClasses\\{4d1e55b2-f16f-11cf-88cb-001111000030}\\##?#HID#VID_1209&PID_4D47"
                   "#9&4d616465&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}\\#\\Control" ) );
     return 0;

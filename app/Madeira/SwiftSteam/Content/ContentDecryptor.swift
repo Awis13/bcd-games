@@ -29,10 +29,10 @@ struct ContentDecryptor {
     /// that IV.
     static func decryptChunk(encryptedData: Data, depotKey: Data) throws -> Data {
         guard depotKey.count == 32 else {
-            throw SteamError.decryptionFailed("Invalid depot key size: \(depotKey.count), expected 32")
+            throw SteamError.decryptionFailed("The depot key is \(depotKey.count) bytes instead of 32.")
         }
         guard encryptedData.count > 16 else {
-            throw SteamError.decryptionFailed("Encrypted data too small")
+            throw SteamError.decryptionFailed("The encrypted data is too short.")
         }
 
         let ivCipher = encryptedData.prefix(16)
@@ -50,7 +50,7 @@ struct ContentDecryptor {
             }
         }
         guard ivStatus == kCCSuccess, ivLen == 16 else {
-            throw SteamError.decryptionFailed("IV derivation failed: \(ivStatus)")
+            throw SteamError.decryptionFailed("The decryption IV couldn't be set up (status \(ivStatus)).")
         }
 
         let outputBufferSize = ciphertext.count + kCCBlockSizeAES128
@@ -77,7 +77,7 @@ struct ContentDecryptor {
         }
 
         guard status == kCCSuccess else {
-            throw SteamError.decryptionFailed("AES decryption failed with status: \(status)")
+            throw SteamError.decryptionFailed("AES returned status \(status).")
         }
 
         decryptedData.count = decryptedLength

@@ -1,0 +1,19 @@
+{
+ "dialogs": [
+  "Runtime error!??Program: C:\\Ratchet & Clank - Rift Apart\\RiftApart.exe?Error: R6025??Press OK to exit the program, or Cancel to start the Wine debugger.?"
+ ],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "cage-release-band-exhausted",
+  "locale-en-us"
+ ],
+ "next": [
+  "env.MADEIRA_CAGE_RELEASE = 1"
+ ],
+ "note": "Ratchet & Clank: Rift Apart, build 550, iPhone18,2 (11695 MB): crashed; two causes: the VA band (cage) and the Turkish locale (857 before the throw)",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "trying"
+}

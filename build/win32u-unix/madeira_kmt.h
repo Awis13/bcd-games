@@ -1,17 +1,19 @@
-/* iOS-Madeira: ONE D3DKMT adapter for the GPU that DXGI, NVAPI and
- * madeira_d3d12 report -- opt-in, MADEIRA_KMT_ADAPTER=1 (env.MADEIRA_KMT_ADAPTER
- * in madeira.cfg).
+/* madeira-bcd: ONE D3DKMT adapter for the GPU that DXGI, NVAPI and
+ * madeira_d3d12 report -- opt-in, env.MADEIRA_KMT_ADAPTER = 1 in bcd.cfg
+ * (docs/gta5-d3d12-caps.md, section "D3DKMT adapter").
  *
- * Shared by two iOS overrides of win32u:
+ * Shared by the two iOS overrides of win32u:
  *   d3dkmt_ios.c    (wraps upstream d3dkmt.c) -- the switch, the adapter LUID,
- *                   the dedicated size and the QueryAdapterInfo /
- *                   QueryStatistics / QueryVideoMemoryInfo answers;
+ *                   the video budget (dedicated size), the QueryAdapterInfo /
+ *                   QueryStatistics / QueryVideoMemoryInfo answers and the
+ *                   [vkmt] trace of every D3DKMT entry point implemented there;
  *   sysparams_ios.c -- EnumAdapters2 / OpenAdapterFromDeviceName /
  *                   OpenAdapterFromGdiDisplayName list and open that adapter,
  *                   the registry GPU gets its LUID, and madeira_kmt_identity()
  *                   says what the registry GPU is.
  *
- * Without the switch both files answer exactly what they answered before. */
+ * Without the switch every function here only reports "off" and both files
+ * answer exactly what they answered before. */
 #ifndef MADEIRA_KMT_H
 #define MADEIRA_KMT_H
 

@@ -10,7 +10,7 @@
 #include "config.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"   /* header-only: this file uses madeira_cfg_get alone */
-#include "../madeira_cfg.h"   /* env.MADEIRA_STORAGE_DEVICE from madeira.cfg: the server starts before the bridge exports env. lines (ml1236) */
+#include "../madeira_cfg.h"   /* env.MADEIRA_STORAGE_DEVICE from bcd.cfg: the server starts before the bridge exports env. lines (ml1236) */
 #pragma GCC diagnostic pop
 #include <stdarg.h>
 #include <stdio.h>

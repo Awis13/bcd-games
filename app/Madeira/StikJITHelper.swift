@@ -12,17 +12,22 @@ enum StikJITHelper {
         case invalidRequest
         case unavailable
         case timedOut
+        /// madeira-bcd ios18-jit: a debugger attached and left without BCD's script, and this
+        /// device cannot build the pool without one (JITNoDebuggerPool).
+        case attachedAndLeft
 
         var errorDescription: String? {
             switch self {
             case .scriptMissing:
-                return "Madeira's JIT script is missing from this installation. Reinstall Madeira."
+                return "This copy of BCD is missing its JIT script. Install BCD again to restore it."
             case .invalidRequest:
-                return "Madeira could not create the StikDebug request."
+                return "BCD couldn't build the link that opens StikDebug."
             case .unavailable:
-                return "StikDebug is not installed. Install it, or configure Built-in StikJIT."
+                return "StikDebug couldn't be opened. Install it, or set up Built-in StikJIT instead."
             case .timedOut:
-                return "StikDebug did not attach to Madeira within 90 seconds. Check its pairing file and LocalDevVPN, then try again."
+                return "After 90 seconds, StikDebug still hadn't attached to BCD. Make sure StikDebug has a pairing file and LocalDevVPN is connected, then try again."
+            case .attachedAndLeft:
+                return JITNoDebuggerPool.leftAdvice
             }
         }
     }
@@ -36,8 +41,13 @@ enum StikJITHelper {
 
     /// Check whether StikDebug is installed. `stikdebug` is its canonical scheme;
     /// the older `stikjit` alias remains declared for compatibility.
+    /// madeira-bcd ios18-jit: inside LiveContainer (LC_HOME_PATH set) canOpenURL is
+    /// LiveContainer's, whose LSApplicationQueriesSchemes lack stikdebug, so it always
+    /// said no. There the open itself decides: enableJIT maps a failed open to
+    /// `.unavailable` (docs/research/ios18-2026-10-18/runtime.md §2.5.6).
     static var isAvailable: Bool {
         guard let url = URL(string: "stikdebug://enable-jit") else { return false }
+        if getenv("LC_HOME_PATH") != nil { return true }
         return UIApplication.shared.canOpenURL(url)
     }
 
@@ -82,23 +92,62 @@ enum StikJITHelper {
     /// flagged-without-debugger state. `ready` reads the flag silently (below).
     /// Opening a URL only proves iOS accepted it. Readiness requires both the
     /// sticky CS_DEBUGGED flag and a live debugger that can answer Madeira's BRK.
+    /// madeira-bcd ios18-jit: a debugger that attaches and leaves (StikDebug without BCD's
+    /// script) ends the wait with what to do, not with the 90 s timeout: after 3 s of
+    /// CS_DEBUGGED with no debugger attached, when CS_DEBUGGED appeared during this wait or a
+    /// debugger was seen attached in it. Where BCD builds the pool without a debugger
+    /// (JITNoDebuggerPool) `ready` is already true by then.
     @discardableResult
     static func waitForDebugger(timeout: TimeInterval = 90,
                                 completion: @escaping (Result<Void, Error>) -> Void) -> Timer {
         let deadline = Date().addingTimeInterval(timeout)
+        let flaggedAtStart = SigningStatus.current.debugged
+        var sawTraced = false
+        var leftSince: Date?
         let timer = Timer(timeInterval: 0.5, repeats: true) { timer in
-            if ready {
+            let traced = isDebuggerTraced()
+            sawTraced = sawTraced || traced
+            let poll = attachPoll(ready: ready, flaggedAtStart: flaggedAtStart,
+                                  flagged: SigningStatus.current.debugged, traced: traced, sawTraced: sawTraced)
+            if poll == .ready {
                 timer.invalidate()
-                LogStore.shared.log("JIT enabled and debugger attached.", level: .success)
+                LogStore.shared.log(traced || !JITNoDebuggerPool.usable ? "JIT enabled and debugger attached."
+                                    : "JIT enabled: CS_DEBUGGED is set and BCD builds its JIT memory without a debugger "
+                                      + "(\(JITNoDebuggerPool.current.reason)).", level: .success)
                 completion(.success(()))
+                return
+            }
+            leftSince = poll == .attachedAndLeft ? (leftSince ?? Date()) : nil
+            if let since = leftSince, Date().timeIntervalSince(since) >= 3 {
+                timer.invalidate()
+                LogStore.shared.log("[jit-debugger] a debugger attached and left without BCD's script, and this device "
+                    + "cannot build the JIT memory without one (\(JITNoDebuggerPool.current.reason)). "
+                    + RequestError.attachedAndLeft.localizedDescription, level: .error)
+                completion(.failure(RequestError.attachedAndLeft))
             } else if Date() >= deadline {
                 timer.invalidate()
-                LogStore.shared.log(RequestError.timedOut.localizedDescription, level: .error)
-                completion(.failure(RequestError.timedOut))
+                // JIT came on at some point but nothing is attached now: most likely StikDebug ran
+                // without the script (an attach this short can fall between two polls).
+                let failure: RequestError = SigningStatus.current.debugged && !isDebuggerTraced() ? .attachedAndLeft : .timedOut
+                LogStore.shared.log(failure.localizedDescription, level: .error)
+                completion(.failure(failure))
             }
         }
         RunLoop.main.add(timer, forMode: .common)
         return timer
+    }
+
+    /// One poll of waitForDebugger (pure; tests/host/check-jit-no-debugger.py). XNU sets
+    /// P_TRACED at ptrace attach before cs_allow_invalid sets CS_DEBUGGED and clears it at
+    /// detach, so CS_DEBUGGED without P_TRACED means a debugger has left. It counts only when
+    /// CS_DEBUGGED appeared during this wait or a debugger was seen attached in it: a flag from
+    /// before the wait (JIT once enabled from StikDebug's app list) is no news while StikDebug
+    /// is still on its way.
+    enum AttachPoll: Equatable { case ready, waiting, attachedAndLeft }
+    static func attachPoll(ready: Bool, flaggedAtStart: Bool, flagged: Bool, traced: Bool, sawTraced: Bool) -> AttachPoll {
+        if ready { return .ready }
+        if flagged && !traced && (!flaggedAtStart || sawTraced) { return .attachedAndLeft }
+        return .waiting
     }
 
     /// Allocate a JIT memory pool via BRK #0xf00d, then detach the debugger.
@@ -114,13 +163,28 @@ enum StikJITHelper {
     /// Why the last allocatePool() returned nil, in words for the person playing
     /// (the library shows it); nil after a success.
     private(set) static var poolFailure: String?
-    static let noDebuggerMessage = "JIT is switched on, but StikDebug is not attached to Madeira, so the JIT memory cannot "
-        + "be set up. This happens when JIT is enabled from StikDebug's own app list. Tap Enable JIT: StikDebug then "
-        + "reopens Madeira with Madeira's script, ready to play."
+    /// JIT is on (CS_DEBUGGED) but nothing can make the pool: what to do on this device
+    /// (madeira-bcd ios18-jit: StikDebug's Always Run Scripts where it treats the device as
+    /// non-TXM, Built-in on iOS 26 TXM devices; iOS 27 keeps the text it had).
+    static var noDebuggerMessage: String { JITNoDebuggerPool.flaggedAdvice }
+    /// The same after a pool request found no debugger: BCD runs one Wine session per app
+    /// run, so this run cannot start the game any more (ContentView.wineSequenceStarted).
+    static var poolNoDebuggerMessage: String {
+        noDebuggerMessage + " This launch can't be repeated in the same run: quit BCD (swipe it away in the app "
+            + "switcher) and open it again first."
+    }
 
     /// This app run's pool exists. The debugger detaches right after the pool is
     /// made, by design, so from then on "no debugger attached" is the normal state.
     private(set) static var poolTaken = false
+    /// madeira-bcd ios18-jit: this run's pool was built without a debugger (JITNoDebuggerPool);
+    /// there is no debugger to detach.
+    private(set) static var poolWithoutDebugger = false
+    /// The pool request in progress builds its regions without a debugger.
+    private static var noDebugger = false
+    /// The debugger-less regions of that request: RX base -> memory entry (for the RW alias),
+    /// released when allocatePool returns (the views keep the memory).
+    private static var noDebuggerEntries: [vm_address_t: (entry: mach_port_t, size: vm_size_t)] = [:]
 
     /// madeira-bcd split pool (`pool-split = 1`): the pool offsets [off, end) that
     /// lie between its two debugger regions (the main thread's stack and our
@@ -146,7 +210,7 @@ enum StikJITHelper {
     private(set) static var poolLow: (rx: Int, size: Int)?
 
     /// madeira-bcd Social Club layout 2 (`env.MADEIRA_SC_PA_POOLS = 2` in the game's
-    /// file or madeira.cfg; virtual_ios.c, ios_sc2_boot_holds): the RW alias goes to
+    /// file or bcd.cfg; virtual_ios.c, ios_sc2_boot_holds): the RW alias goes to
     /// 0x7900000000 and [0x7000000000, +4 GB) is held PROT_NONE before anything can
     /// land there, for libcef.dll's PartitionAlloc pools; ntdll takes the hold over.
     /// The alias holds no guest pointers, so its address is free (ml1037).
@@ -218,9 +282,22 @@ enum StikJITHelper {
     /// is the state StikDebug's own app list (attach, then detach) leaves behind.
     /// ml1235: the flag is read without jit_check_debugged's log line; the library
     /// polls this every 2 s for the whole app run (and waitForDebugger every 0.5 s).
+    /// madeira-bcd ios18-jit (2026-10-18): "attached" is P_TRACED (isDebuggerTraced), as
+    /// upstream's 9584f0e meant it. It read isDebuggerAttached(), which this fork's badge fix
+    /// b0ab3a3 had made true whenever CS_DEBUGGED is set, so `ready` was CS_DEBUGGED alone and
+    /// the attach-and-leave state started launches that died on the pool request
+    /// (docs/research/ios18-2026-10-18/runtime.md §2.3). The badge keeps isDebuggerAttached();
+    /// poolTaken keeps JIT on after the early detach, b0ab3a3's case. Also ready where BCD
+    /// builds the pool without a debugger (JITNoDebuggerPool: iOS 18, iOS 26 without TXM).
     static var ready: Bool {
         guard SigningStatus.current.debugged else { return false }
-        return !attachCheck || poolTaken || isDebuggerAttached()
+        return readiness(attachCheck: attachCheck, poolTaken: poolTaken, traced: isDebuggerTraced(),
+                         noDebuggerPool: JITNoDebuggerPool.usable)
+    }
+
+    /// `ready` with CS_DEBUGGED set (pure; tests/host/check-jit-no-debugger.py).
+    static func readiness(attachCheck: Bool, poolTaken: Bool, traced: Bool, noDebuggerPool: Bool) -> Bool {
+        !attachCheck || poolTaken || traced || noDebuggerPool
     }
 
     /// CS_DEBUGGED is set but nothing can answer a pool request: JIT has to be
@@ -238,7 +315,16 @@ enum StikJITHelper {
     static func allocatePool(poolSize requestedPoolSize: Int = 128 * 1024 * 1024) -> (rx: UnsafeMutableRawPointer, rw: UnsafeMutableRawPointer, size: Int)? {
         var poolSize = requestedPoolSize      // ml1036: may shrink to fit, see the hole census below
         poolFailure = nil
-        LogStore.shared.log("Allocating \(poolSize / 1024 / 1024)MB JIT pool via debugger...")
+        // madeira-bcd ios18-jit (2026-10-18): P_TRACED, not CS_DEBUGGED, says whether anything
+        // can answer the pool request's BRK. With no debugger attached the pool is built without
+        // one where TXM does not police code (JITNoDebuggerPool, after its one-page self-test);
+        // elsewhere the request still goes to the debugger protocol, and the trap fallback below
+        // turns an unanswered one into a clean refusal.
+        let debuggerAttached = isDebuggerTraced()
+        noDebugger = !debuggerAttached && SigningStatus.current.debugged && JITNoDebuggerPool.takeForPool()
+        defer { releaseNoDebuggerEntries() }
+        LogStore.shared.log("Allocating \(poolSize / 1024 / 1024)MB JIT pool " + (noDebugger ? "without a debugger..." : "via debugger..."))
+        if debuggerAttached { LogStore.shared.log("[jit-pool] path: debugger (attached at the pool request; it makes every region)") }
         // madeira-bcd Social Club layout 2: take the [0x7000000000, +4 GB) hold
         // FIRST. Taken at alias time it lost the race on build 348 (GTA log
         // 2026-10-03 08:00: "is not free (kr=3)", the RW alias then landed at
@@ -248,7 +334,6 @@ enum StikJITHelper {
         // idempotent once the hold is taken; a no-op without layout 2.
         _ = rwAliasHint()
 
-        let debuggerAttached = isDebuggerAttached()
         LogStore.shared.log("[jit-debugger] attached=\(debuggerAttached ? 1 : 0) at the pool request")
         // With no debugger attached, a JIT request fails the launch with a message; 0 lets it crash the app as before.
         // CS_DEBUGGED stays set after a debugger detaches (JIT enabled by a tool
@@ -258,11 +343,14 @@ enum StikJITHelper {
         // whether a debugger is attached now. The handler cannot take a BRK away
         // from an attached debugger, which sees the exception first, so a wrong
         // reading costs nothing.
-        if !debuggerAttached && MadeiraConfig.flag("MADEIRA_JIT_TRAP_FALLBACK") {
+        if !debuggerAttached && !noDebugger && MadeiraConfig.flag("MADEIRA_JIT_TRAP_FALLBACK") {
             jit_arm_trap_fallback()
             LogStore.shared.log("[jit-debugger] no debugger is attached although CS_DEBUGGED is set: "
                 + "an unanswered pool request now fails the launch instead of crashing the app", level: .error)
         }
+        // madeira-bcd pool-floor and pool-reserve (Modified by BCD (thebcd69), 2026-10-18): see PoolReserve.
+        let floorOff = PoolReserve.floorOff()
+        let reservePlan = PoolReserve.planForPool(wanted: poolSize, floor: floorOff ? 0x100000000 : 0x119000000)
 
         // iOS-Madeira: FEX's dispatcher emit has a position-dependent encoding
         // bug — only works when the JIT pool lands at a high enough address
@@ -285,7 +373,8 @@ enum StikJITHelper {
         // The BAD POOL check below stays as the safety net for non-
         // sequential placements.
         let pinTarget: vm_address_t = 0x119000000
-        let maxChunks = 32                 // safety cap (512 MB of reservation)
+        let maxChunks = floorOff ? 0 : 32  // safety cap (512 MB of reservation); none with pool-floor = 0
+        if floorOff { LogStore.shared.log("[pool-floor] pool-floor = 0: no mode-A pin chunks, no 0x119000000 floor") }
         for i in 0..<maxChunks {
             var addr: vm_address_t = 0
             let kr = vm_allocate(mach_task_self_, &addr, vm_size_t(chunkSize), VM_FLAGS_ANYWHERE)
@@ -425,7 +514,7 @@ enum StikJITHelper {
             }
         }
 
-        let goodLow = 0x119000000
+        let goodLow = floorOff ? 0x100000000 : 0x119000000   // madeira-bcd pool-floor = 0: the 4 GB bound only
         let guestLo = 0x7000000000
         let guestHi = 0x8000000000
 
@@ -464,7 +553,10 @@ enum StikJITHelper {
         var pairSingle = 0
         let earlyPoolBase = vm_address_t(madeira_early_pool_base)
         let earlyPoolSize = vm_address_t(madeira_early_pool_size)
-        if earlyPoolBase != 0 && earlyPoolReleased {
+        if reservePlan != nil || (bcd_pool_res_built != 0 && earlyPoolBase == 0) {
+            // madeira-bcd pool-reserve: a reservation build that kept its reservation at image load has no
+            // ml1040 placeholder; PoolReserve.planForPool logged the layout.
+        } else if earlyPoolBase != 0 && earlyPoolReleased {
             LogStore.shared.log(String(format: "ml1234: the early pool placeholder 0x%lx+%luMB was released by an earlier pool request in this run; not unmapped again",
                                        Int(earlyPoolBase), Int(earlyPoolSize >> 20)))
         } else if earlyPoolBase != 0 {
@@ -489,7 +581,7 @@ enum StikJITHelper {
                                            madeira_early_intruder_tag, madeira_early_intruder_prot), level: .error)
             }
         }
-        do {
+        if reservePlan == nil {   // madeira-bcd pool-reserve: no census or plugs for a pool placed in the reservation
             var holes: [(base: vm_address_t, size: vm_address_t)] = []
             var addr = vm_address_t(goodLow)
             var prevEnd = vm_address_t(goodLow)
@@ -510,7 +602,7 @@ enum StikJITHelper {
                 addr = prevEnd
             }
             let desc = holes.map { String(format: "0x%lx+%luMB", Int($0.base), Int($0.size >> 20)) }.joined(separator: " ")
-            LogStore.shared.log("ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: "
+            LogStore.shared.log(String(format: "ml1036: free holes >=64MB in [0x%lx,0x7000000000) with the window held: ", goodLow)
                 + (desc.isEmpty ? "NONE" : desc))
             let largest = holes.map { $0.size }.max() ?? 0
             // madeira-bcd pool-pair (pool-split only): two runs ABOVE the window, split
@@ -522,7 +614,7 @@ enum StikJITHelper {
             // lower run that could hold it is plugged, so first-fit lands there) and
             // takeSecondRegion then takes B exactly as for any split pool. Used only when
             // the single-region pool would land below the window and the pair is larger;
-            // `pool-pair = 0` in the game's file or madeira.cfg turns it off.
+            // `pool-pair = 0` in the game's file or bcd.cfg turns it off.
             let pairOff = ["0", "off", "false", "no"].contains((MadeiraConfig.gameValue("pool-pair")
                 ?? MadeiraConfig.get("pool-pair") ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
             let ceiling: vm_address_t = 0x180000000           // SHARED_REGION_BASE_ARM64, as takeSecondRegion
@@ -609,13 +701,13 @@ enum StikJITHelper {
             // held, the placeholder's run merged with the free space below it and
             // the old test plugged the only hole that fit (every launch of ml1095
             // ended in the guest window). Plug only holes ending below the placeholder.
-            // Plug only when a hole at or above the placeholder can take the pool.
-            // On an iPhone 17 Pro Max the placeholder got 559MB, the pool was shrunk
-            // to the 610MB hole BELOW the window, and that hole was then plugged as
-            // a "lower hole" -- so nothing could hold 608MB, all three placements
-            // fell into the guest window and the app killed itself. The hole below
-            // ends under 0x140000000, so a pool there is safe; steering only helps
-            // if the target fits.
+            // madeira-bcd: plug only when a hole at or above the placeholder can
+            // take the pool. On an iPhone 17 Pro Max the placeholder got 559MB,
+            // the pool was shrunk to the 610MB hole BELOW the window, and that
+            // hole was then plugged as a "lower hole" -- so nothing could hold
+            // 608MB, all three placements fell into the guest window and the
+            // app killed itself. The hole below ends under 0x140000000, so a
+            // pool there is safe; steering only helps if the target fits.
             let aboveFits = holes.contains { $0.base + $0.size > earlyPoolBase && $0.size >= vm_address_t(poolSize) }
             if pairA == nil && earlyPoolBase != 0 && windowHeld && !aboveFits {
                 LogStore.shared.log("ml1040: no hole above the window fits \(poolSize >> 20)MB — not plugging, the pool takes the hole below it")
@@ -632,11 +724,15 @@ enum StikJITHelper {
             }
         }
 
+        // madeira-bcd pool-reserve: the pool's slice of the reservation is released right before the
+        // first-fit request below; nothing under it is free, so the request lands at its start.
+        if let plan = reservePlan { poolSize = PoolReserve.releaseSlice(plan) }
         var rxPtrOpt: UnsafeMutableRawPointer? = nil
         var requestUnanswered = false
         for attempt in 0..<3 {
-            guard let p = jit26_prepare_region(nil, poolSize), p != UnsafeMutableRawPointer(bitPattern: 0) else {
-                LogStore.shared.log("Debugger failed to allocate RX memory (attempt \(attempt))", level: .error)
+            guard let p = requestRegion(poolSize), p != UnsafeMutableRawPointer(bitPattern: 0) else {
+                LogStore.shared.log(noDebugger ? "BCD could not map \(poolSize >> 20)MB of JIT memory without a debugger (attempt \(attempt))"
+                                               : "Debugger failed to allocate RX memory (attempt \(attempt))", level: .error)
                 requestUnanswered = true
                 break
             }
@@ -662,6 +758,7 @@ enum StikJITHelper {
         }
         // ml1040: the plugs existed only to steer first-fit; give the VA back.
         for (a, sz) in plugs { vm_deallocate(mach_task_self_, a, sz) }
+        if let plan = reservePlan { PoolReserve.finish(plan, rx: rxPtrOpt, size: poolSize) }   // madeira-bcd pool-reserve: all but the window back
         // madeira-bcd pool-pair: region A must sit at the run chosen by the census and
         // region B must be taken now. Otherwise fall back to the single-region pool the
         // census would have made (pairSingle), as if pool-pair were off.
@@ -695,7 +792,7 @@ enum StikJITHelper {
                         rxPtrOpt = nil
                     }
                     var replaced = false
-                    if let q = jit26_prepare_region(nil, pairSingle), q != UnsafeMutableRawPointer(bitPattern: 0) {
+                    if let q = requestRegion(pairSingle), q != UnsafeMutableRawPointer(bitPattern: 0) {
                         let qa = Int(bitPattern: q)
                         let qGuest = qa + pairSingle > guestLo && qa < guestHi
                         if qa >= goodLow && !qGuest && !overlapsExeWindow(vm_address_t(qa), vm_address_t(pairSingle)) {
@@ -724,23 +821,31 @@ enum StikJITHelper {
             }
         }
         guard let rxPtr = rxPtrOpt else {
-            if requestUnanswered && !debuggerAttached {
+            // madeira-bcd ios18-jit (2026-10-18): every way out here refuses the launch and leaves
+            // BCD up with the reason (ContentView shows it). The old BAD POOL path called exit(0)
+            // 10 s later, far from the tap that caused it, so it read as a random crash, and it
+            // was also where an unanswered request ended while CS_DEBUGGED stood in for "attached".
+            if noDebugger {
+                poolFailure = "BCD couldn't map its JIT memory. Quit BCD (swipe it away in the app switcher), open it "
+                    + "again, and start the game first."
+                LogStore.shared.log("[jit-pool] the pool could not be built without a debugger (see the [jit-nodebug] and "
+                    + "BAD POOL lines above): the game is not started", level: .error)
+                return nil
+            }
+            if requestUnanswered && !isDebuggerTraced() {
                 // Nothing answered the BRK: there is no pool and no placement to
                 // re-roll, so the app stays up and says what to do.
-                poolFailure = noDebuggerMessage
+                poolFailure = poolNoDebuggerMessage
                 LogStore.shared.log("[jit-debugger] the pool request was not answered: no debugger is attached. "
-                    + "Enable JIT with Madeira's Enable JIT button, so that StikDebug attaches with Madeira's "
+                    + "Enable JIT with BCD's Enable JIT button, so that StikDebug attaches with BCD's "
                     + "script and stays attached until the game starts.", level: .error)
                 return nil
             }
             poolFailure = requestUnanswered
-                ? "The debugger could not allocate the JIT memory. Restart Madeira, enable JIT and try again."
-                : "The JIT memory landed at an address Madeira cannot use. Restart Madeira, enable JIT and try again."
-            LogStore.shared.log("BAD POOL: no valid placement after retries. Killing in 10s — please relaunch.", level: .error)
-            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 10) {
-                LogStore.shared.log("BAD POOL — exiting now. Relaunch the app.", level: .error)
-                exit(0)
-            }
+                ? "The debugger couldn't reserve the JIT memory. Quit BCD (swipe it away in the app switcher), open it again, enable JIT, and give it another try."
+                : "The JIT memory ended up at an address BCD can't work with. Quit BCD (swipe it away in the app switcher), open it again, enable JIT, and give it another try."
+            LogStore.shared.log("BAD POOL: no valid placement after retries. The game is not started; BCD stays open "
+                + "(quit it and open it again for another try).", level: .error)
             return nil
         }
         let rxAddr = Int(bitPattern: rxPtr)
@@ -864,7 +969,7 @@ enum StikJITHelper {
                 level: .error)
         }
 
-        // madeira-bcd POOL-LOW: `pool-low = 1` in the game's own file or in madeira.cfg.
+        // madeira-bcd POOL-LOW: `pool-low = 1` in the game's own file or in bcd.cfg.
         // Off by default; nothing below runs without it.
         //
         // Every GTA V log has a 416-476MB free run BELOW the executable window (the
@@ -907,7 +1012,7 @@ enum StikJITHelper {
         }
 
         // madeira-bcd SPLIT POOL: `pool-split = 1` in the game's own file or in
-        // madeira.cfg. Off by default; nothing below runs without it.
+        // bcd.cfg. Off by default; nothing below runs without it.
         //
         // Executable memory can only come from the debugger and can only live in
         // the low band under the dyld shared region (0x180000000): everything from
@@ -966,8 +1071,10 @@ enum StikJITHelper {
                             LogStore.shared.log(midLayoutText(rxA: rxAddrV, sizeA: poolSize, second: second), level: .success)
                         }
                         lowReady(rwLow, low, rw)
-                        LogStore.shared.log("JIT pool ready (debugger still attached).", level: .success)
+                        LogStore.shared.log(poolReadyText, level: .success)
                         poolTaken = true
+                        poolWithoutDebugger = noDebugger
+                        guard floorAliasChecked(floorOff, rx: rxPtr, rw: rwPtr, size: span) else { return nil }   // madeira-bcd pool-floor
                         return (rx: rxPtr, rw: rwPtr, size: span)
                     }
                     dropLowRegion("no RW alias for the split pool with region C")
@@ -1012,8 +1119,10 @@ enum StikJITHelper {
                     } else {
                         LogStore.shared.log(midLayoutText(rxA: rxAddrV, sizeA: poolSize, second: second), level: .success)
                     }
-                    LogStore.shared.log("JIT pool ready (debugger still attached).", level: .success)
+                    LogStore.shared.log(poolReadyText, level: .success)
                     poolTaken = true
+                    poolWithoutDebugger = noDebugger
+                    guard floorAliasChecked(floorOff, rx: rxPtr, rw: rwPtr, size: span) else { return nil }   // madeira-bcd pool-floor
                     return (rx: rxPtr, rw: rwPtr, size: span)
                 }
                 let dkr = vm_deallocate(mach_task_self_, second.base, vm_size_t(second.size))
@@ -1038,8 +1147,10 @@ enum StikJITHelper {
                 let exempt = jit_make_region_no_footprint(rwPtr, poolSize, "pool-RW-alias")
                 LogStore.shared.log("[no-footprint] pool applied=\(exempt)", level: exempt ? .success : .error)
                 lowReady(rwLow, low, rw)
-                LogStore.shared.log("JIT pool ready (debugger still attached).", level: .success)
+                LogStore.shared.log(poolReadyText, level: .success)
                 poolTaken = true
+                poolWithoutDebugger = noDebugger
+                guard floorAliasChecked(floorOff, rx: rxPtr, rw: rwPtr, size: poolSize) else { return nil }   // madeira-bcd pool-floor
                 return (rx: rxPtr, rw: rwPtr, size: poolSize)
             }
             dropLowRegion("no RW alias for the pool with region C")
@@ -1053,29 +1164,20 @@ enum StikJITHelper {
         // Layout 2 maps the alias FIXED: an ANYWHERE hint at 0x7900000000 is not
         // honoured (build 338, 2026-10-02 19:33: it landed at 0x7100000000).
         let rwFixed = rwAddr == scLayout2Alias
-        var kr1 = vm_remap(
-            mach_task_self_,
-            &rwAddr,
-            vm_size_t(poolSize),
-            0,
-            rwFixed ? 0 /* VM_FLAGS_FIXED */ : VM_FLAGS_ANYWHERE,
-            mach_task_self_,
-            vm_address_t(bitPattern: rxPtr),
-            0, // copy = false
-            &curProt,
-            &maxProt,
-            VM_INHERIT_NONE
-        )
+        // madeira-bcd ios18-jit: remapRW is this vm_remap for a debugger's region (copy = false,
+        // VM_INHERIT_NONE); a debugger-less region maps its memory entry a second time instead.
+        var kr1 = remapRW(&rwAddr, vm_size_t(poolSize), rwFixed ? 0 /* VM_FLAGS_FIXED */ : VM_FLAGS_ANYWHERE,
+                          rx: vm_address_t(bitPattern: rxPtr), &curProt, &maxProt)
         if rwFixed && kr1 != KERN_SUCCESS {
             rwAliasDrop(kr1)
             rwAddr = 0x7000000000
-            kr1 = vm_remap(mach_task_self_, &rwAddr, vm_size_t(poolSize), 0, VM_FLAGS_ANYWHERE,
-                           mach_task_self_, vm_address_t(bitPattern: rxPtr), 0, &curProt, &maxProt, VM_INHERIT_NONE)
+            kr1 = remapRW(&rwAddr, vm_size_t(poolSize), VM_FLAGS_ANYWHERE, rx: vm_address_t(bitPattern: rxPtr),
+                          &curProt, &maxProt)
         } else if kr1 == KERN_SUCCESS && !rwAliasKeep(rwAddr) {
             vm_deallocate(mach_task_self_, rwAddr, vm_size_t(poolSize))
             rwAddr = 0x7000000000
-            kr1 = vm_remap(mach_task_self_, &rwAddr, vm_size_t(poolSize), 0, VM_FLAGS_ANYWHERE,
-                           mach_task_self_, vm_address_t(bitPattern: rxPtr), 0, &curProt, &maxProt, VM_INHERIT_NONE)
+            kr1 = remapRW(&rwAddr, vm_size_t(poolSize), VM_FLAGS_ANYWHERE, rx: vm_address_t(bitPattern: rxPtr),
+                          &curProt, &maxProt)
         }
 
         // A process without the extended-virtual-addressing entitlement has a map
@@ -1095,19 +1197,8 @@ enum StikJITHelper {
         if kr1 == KERN_NO_SPACE && aliasRetry {
             for hint in [rxAddrV + vm_address_t(poolSize), 0] {
                 rwAddr = hint
-                kr1 = vm_remap(
-                    mach_task_self_,
-                    &rwAddr,
-                    vm_size_t(poolSize),
-                    0,
-                    VM_FLAGS_ANYWHERE,
-                    mach_task_self_,
-                    vm_address_t(bitPattern: rxPtr),
-                    0, // copy = false
-                    &curProt,
-                    &maxProt,
-                    VM_INHERIT_NONE
-                )
+                kr1 = remapRW(&rwAddr, vm_size_t(poolSize), VM_FLAGS_ANYWHERE, rx: vm_address_t(bitPattern: rxPtr),
+                              &curProt, &maxProt)
                 LogStore.shared.log(String(format: "[rw-alias] high hint out of reach; %@ kr=%d RW=0x%lx",
                                            hint == 0 ? "kernel placement" : String(format: "above the RX pool (hint 0x%lx)", Int(hint)),
                                            kr1, Int(rwAddr)), level: kr1 == KERN_SUCCESS ? .info : .error)
@@ -1117,8 +1208,8 @@ enum StikJITHelper {
 
         guard kr1 == KERN_SUCCESS else {
             LogStore.shared.log("vm_remap failed: \(kr1)", level: .error)
-            poolFailure = "Madeira could not map its JIT memory (vm_remap error \(kr1)). Restart Madeira and try again; "
-                + "if it keeps happening, send the diagnostic log."
+            poolFailure = "Mapping the JIT memory failed (vm_remap error \(kr1)). Quit and reopen BCD to try again. "
+                + "If the problem comes back, please share the diagnostic log."
             return nil
         }
 
@@ -1136,8 +1227,8 @@ enum StikJITHelper {
         guard kr2 == KERN_SUCCESS else {
             LogStore.shared.log("vm_protect(RW) failed: \(kr2)", level: .error)
             vm_deallocate(mach_task_self_, rwAddr, vm_size_t(poolSize))
-            poolFailure = "Madeira could not make its JIT memory writable (vm_protect error \(kr2)). Restart Madeira and try again; "
-                + "if it keeps happening, send the diagnostic log."
+            poolFailure = "The JIT memory couldn't be made writable (vm_protect error \(kr2)). Quit and reopen BCD to try again. "
+                + "If the problem comes back, please share the diagnostic log."
             return nil
         }
 
@@ -1162,10 +1253,31 @@ enum StikJITHelper {
         // the UI view. Detail (kr / footprint delta) is in the jit_log lines.
         LogStore.shared.log("[no-footprint] pool applied=\(exempt)", level: exempt ? .success : .error)
 
-        LogStore.shared.log("JIT pool ready (debugger still attached).", level: .success)
+        LogStore.shared.log(poolReadyText, level: .success)
         poolTaken = true
+        poolWithoutDebugger = noDebugger
 
+        guard floorAliasChecked(floorOff, rx: rxPtr, rw: rwPtr, size: poolSize) else { return nil }   // madeira-bcd pool-floor
         return (rx: rxPtr, rw: rwPtr, size: poolSize)
+    }
+
+    /// madeira-bcd pool-floor (P1.3; Modified by BCD (thebcd69), 2026-10-18): with pool-floor = 0 the pool
+    /// may sit under 0x119000000, where FEX's dispatcher once broke ("mode A"). That holds only while FEX
+    /// writes its code through the RW alias, so a word written through RW must read back through RX, or the
+    /// launch is refused. Without pool-floor = 0 nothing runs.
+    private static func floorAliasChecked(_ floorOff: Bool, rx: UnsafeMutableRawPointer, rw: UnsafeMutableRawPointer,
+                                          size: Int) -> Bool {
+        guard floorOff else { return true }
+        var detail = [CChar](repeating: 0, count: 160)
+        let ok = bcd_pool_rw_rx_selftest(rx, rw, UInt(size), &detail, UInt(detail.count)) != 0
+        LogStore.shared.log("[pool-floor] RW->RX self-test " + (ok ? "passed: " : "FAILED: ") + String(cString: detail)
+            + String(format: " (pool RX 0x%lx, RW 0x%lx)", Int(bitPattern: rx), Int(bitPattern: rw)), level: ok ? .success : .error)
+        if !ok {
+            poolTaken = false
+            poolFailure = "BCD's JIT memory failed its check (pool-floor = 0). Remove pool-floor = 0 from this game's "
+                + "settings, then quit BCD (swipe it away in the app switcher) and open it again."
+        }
+        return ok
     }
 
     /// Default requests retain the 16MB rounding. The page-fit opt-in never
@@ -1283,7 +1395,7 @@ enum StikJITHelper {
                 if a == h.base { plugs.append((a, vm_size_t(h.size))) } else { vm_deallocate(mach_task_self_, a, vm_size_t(h.size)) }
             }
         }
-        let got = jit26_prepare_region(nil, Int(size))
+        let got = requestRegion(Int(size))
         for (a, sz) in plugs { vm_deallocate(mach_task_self_, a, sz) }
         guard let p = got, p != UnsafeMutableRawPointer(bitPattern: 0) else {
             LogStore.shared.log("[pool-split] the debugger did not allocate the second region (\(size >> 20)MB) — the pool "
@@ -1315,7 +1427,7 @@ enum StikJITHelper {
                         if a == h.base { mplugs.append((a, vm_size_t(h.size))) } else { vm_deallocate(mach_task_self_, a, vm_size_t(h.size)) }
                     }
                 }
-                let mgot = jit26_prepare_region(nil, Int(msize))
+                let mgot = requestRegion(Int(msize))
                 for (a, sz) in mplugs { vm_deallocate(mach_task_self_, a, sz) }
                 if let mp = mgot, mp != UnsafeMutableRawPointer(bitPattern: 0) {
                     let m = vm_address_t(bitPattern: mp)
@@ -1410,7 +1522,7 @@ enum StikJITHelper {
                 if a == h.base { plugs.append((a, vm_size_t(h.size))) } else { vm_deallocate(mach_task_self_, a, vm_size_t(h.size)) }
             }
         }
-        let got = jit26_prepare_region(nil, Int(size))
+        let got = requestRegion(Int(size))
         for (a, sz) in plugs { vm_deallocate(mach_task_self_, a, sz) }
         guard let p = got, p != UnsafeMutableRawPointer(bitPattern: 0) else {
             LogStore.shared.log("[pool-low] the debugger did not allocate region C (\(size >> 20)MB) -- code buffers stay "
@@ -1473,8 +1585,8 @@ enum StikJITHelper {
         for r in regions {
             let want = rw + (r.rx - first.rx)
             var a = want
-            let krMap = vm_remap(mach_task_self_, &a, vm_size_t(r.size), 0, 0 /* VM_FLAGS_FIXED */ | VM_FLAGS_OVERWRITE,
-                                 mach_task_self_, r.rx, 0, &curProt, &maxProt, VM_INHERIT_NONE)
+            let krMap = remapRW(&a, vm_size_t(r.size), 0 /* VM_FLAGS_FIXED */ | VM_FLAGS_OVERWRITE, rx: r.rx,
+                                &curProt, &maxProt)
             let krRW = krMap == KERN_SUCCESS
                 ? vm_protect(mach_task_self_, a, vm_size_t(r.size), 0, VM_PROT_READ | VM_PROT_WRITE)
                 : krMap
@@ -1532,12 +1644,10 @@ enum StikJITHelper {
         var curProt: vm_prot_t = 0
         var maxProt: vm_prot_t = 0
         var a = rw
-        let krA = vm_remap(mach_task_self_, &a, vm_size_t(sizeA), 0, 0 /* VM_FLAGS_FIXED */ | VM_FLAGS_OVERWRITE,
-                           mach_task_self_, rxA, 0, &curProt, &maxProt, VM_INHERIT_NONE)
+        let krA = remapRW(&a, vm_size_t(sizeA), 0 /* VM_FLAGS_FIXED */ | VM_FLAGS_OVERWRITE, rx: rxA, &curProt, &maxProt)
         var b = rw + (rxB - rxA)
         let krB = krA == KERN_SUCCESS
-            ? vm_remap(mach_task_self_, &b, vm_size_t(sizeB), 0, 0 /* VM_FLAGS_FIXED */ | VM_FLAGS_OVERWRITE,
-                       mach_task_self_, rxB, 0, &curProt, &maxProt, VM_INHERIT_NONE)
+            ? remapRW(&b, vm_size_t(sizeB), 0 /* VM_FLAGS_FIXED */ | VM_FLAGS_OVERWRITE, rx: rxB, &curProt, &maxProt)
             : krA
         let krHole = vm_protect(mach_task_self_, rw + sizeA, vm_size_t(rxB - rxA - sizeA), 1, VM_PROT_NONE)
         let krRW = krB == KERN_SUCCESS
@@ -1553,13 +1663,371 @@ enum StikJITHelper {
         return rw
     }
 
+    // MARK: madeira-bcd ios18-jit (2026-10-18): the debugger-less pool's plumbing
+
+    private static var poolReadyText: String {
+        noDebugger ? "JIT pool ready (built without a debugger)." : "JIT pool ready (debugger still attached)."
+    }
+
+    /// One RX region of `size` bytes where the kernel's first fit puts it: the debugger's
+    /// `_M` (BRK #0xf00d, x16 = 1, answered by madeira-jit.js), or for the debugger-less pool
+    /// a memory entry BCD maps RX itself (jit_nodebug_region), so the census and its plugs
+    /// steer both the same way. nil when neither gave one.
+    private static func requestRegion(_ size: Int) -> UnsafeMutableRawPointer? {
+        guard noDebugger else { return jit26_prepare_region(nil, size) }
+        var entry: mach_port_t = 0
+        guard let p = jit_nodebug_region(size, &entry) else { return nil }
+        let base = vm_address_t(bitPattern: p)
+        if let old = noDebuggerEntries[base] { jit_nodebug_release(old.entry) }   // a region given back at this base
+        noDebuggerEntries[base] = (entry: entry, size: vm_size_t(size))
+        return p
+    }
+
+    /// The RW alias of the pool region at `rx`: vm_remap of the debugger's region, exactly
+    /// as before; a debugger-less region maps its memory entry a second time instead (no
+    /// vm_remap of unsigned RX pages).
+    private static func remapRW(_ address: inout vm_address_t, _ size: vm_size_t, _ flags: Int32, rx: vm_address_t,
+                                _ cur: inout vm_prot_t, _ max: inout vm_prot_t) -> kern_return_t {
+        if let region = noDebuggerEntries[rx] {
+            return jit_nodebug_map_alias(region.entry, &address, Int(min(size, region.size)), flags)
+        }
+        return vm_remap(mach_task_self_, &address, size, 0, flags, mach_task_self_, rx, 0, &cur, &max, VM_INHERIT_NONE)
+    }
+
+    /// allocatePool's end: the entries' ports go; the views keep their memory.
+    private static func releaseNoDebuggerEntries() {
+        for region in noDebuggerEntries.values { jit_nodebug_release(region.entry) }
+        noDebuggerEntries.removeAll()
+    }
+
+    /// The SIGTRAP fallback at start-up (ContentView.onAppear): also when CS_DEBUGGED is set
+    /// already, so no pool request can die on its BRK. env.MADEIRA_JIT_TRAP_FALLBACK = 0
+    /// gives an app started debugged none, as before.
+    static func installTrapHandler() {
+        jit_install_trap_handler(MadeiraConfig.flag("MADEIRA_JIT_TRAP_FALLBACK"))
+    }
+
+    /// The pool size (MB) for a measured memory limit (pure; tests/host/check-jit-no-debugger.py):
+    /// `standard` (896, the size every working game ran with) from a 6 GB limit, then 640 from
+    /// 4 GB, 512 from 3 GB, and 384 below that (ml668's direct-game size). A debugger's pool is
+    /// dirty from birth, so its size is what it costs against the limit.
+    static func poolMB(forLimitMB limit: Int, standard: Int) -> Int {
+        if limit >= 6144 { return standard }
+        if limit >= 4096 { return min(standard, 640) }
+        if limit >= 3072 { return min(standard, 512) }
+        return min(standard, 384)
+    }
+
+    /// This launch's pool size before bcd.cfg `pool` (which still wins): `standard`, or with
+    /// env.MADEIRA_POOL_FROM_LIMIT = 1 poolMB(forLimitMB:) for the limit measured now
+    /// (phys_footprint + os_proc_available_memory).
+    static func launchPoolMB(standard: Int) -> Int {
+        // Sizes the JIT pool from the memory limit measured at launch (896 MB from 6 GB, 640 from 4 GB, 512 from 3 GB, else 384) instead of the same size on every device; bcd.cfg pool still wins. Off by default.
+        guard MadeiraConfig.flag("MADEIRA_POOL_FROM_LIMIT", fallback: false) else { return standard }
+        let limitMB = Int((jit_phys_footprint() + jit_available_memory()) >> 20)
+        let mb = poolMB(forLimitMB: limitMB, standard: standard)
+        LogStore.shared.log("[pool-size] env.MADEIRA_POOL_FROM_LIMIT: memory limit \(limitMB)MB -> \(mb)MB JIT pool "
+            + "(\(standard)MB otherwise)")
+        if limitMB < 3072 {
+            LogStore.shared.log("[pool-size] the memory limit is under 3 GB: large games are likely to run out of memory "
+                + "on this device", level: .error)
+        }
+        return mb
+    }
+
     /// Detach the debugger. Call this after Wine is done loading PE DLLs.
+    /// madeira-bcd ios18-jit: only when one is attached (P_TRACED). The request is a BRK only
+    /// a debugger answers; with none (it left, or this run's pool was built without one) there
+    /// is nothing to detach, and the BRK could only be skipped by a handler or end the app.
+    /// MADEIRA_DETACHED is set either way.
     static func detachDebugger() {
+        guard isDebuggerTraced() else {
+            setenv("MADEIRA_DETACHED", "1", 1)
+            LogStore.shared.log("Debugger detach skipped: no debugger is attached"
+                + (poolWithoutDebugger ? " (this run's JIT pool was built without one)." : "."))
+            return
+        }
         LogStore.shared.log("Detaching debugger...")
         jit26_detach()
         // task #34: signal in-process waiters (share-probe poller). CS_DEBUGGED
         // is sticky post-detach, so an env flag is the reliable signal.
         setenv("MADEIRA_DETACHED", "1", 1)
         LogStore.shared.log("Debugger detached.", level: .success)
+    }
+}
+
+/// madeira-bcd pool-reserve and pool-floor (Modified by BCD (thebcd69), 2026-10-18;
+/// docs/research/open-fork-2026-10-18/playport.md §3 P1.2 and P1.3, as a method only; JITAllocator.c,
+/// "THE JIT POOL'S ADDRESS RANGE RESERVED AT EXEC TIME").
+///
+/// A build made with BCD_POOL_BSS_MB carries a zero-fill segment that the kernel maps with the image,
+/// before any start-up mapping can take the pool's range. Unless bcd.cfg says pool-bss = 0 it stays held
+/// until the pool request. A game with pool-bss = 1 (its own file wins) then gets its pool at the
+/// reservation's start: the slice is released right before the first-fit request (the debugger's _M or
+/// the debugger-less pool's memory entry, both through requestRegion), and afterwards everything but the
+/// executable window goes back. Any other game gets everything but the window back first and its pool
+/// placed as before. The default build has no reservation: there this only says so when pool-bss is set.
+///
+/// With the mode-A floor the slice starts at 0x119000000 (at most 624 MB below the window); pool-floor = 0
+/// starts it at the reservation's start (about 870-950 MB below the window, by the slide).
+extension StikJITHelper {
+    enum PoolReserve {
+        static let slack: UInt = 64 << 20       // a small mapping made at the slice's start meanwhile still leaves room
+        static let minPool: UInt = 256 << 20    // the census's own minimum
+
+        /// pool-floor = 0 for this launch; the game's own file wins over bcd.cfg.
+        static func floorOff() -> Bool {
+            // 0 drops the JIT pool's 0x119000000 floor (mode-A pin chunks and placement check): FEX writes its code through the RW alias, and an RW-write/RX-read self-test refuses the launch if that fails. Unset keeps the floor.
+            let v = (MadeiraConfig.gameValue("pool-floor") ?? MadeiraConfig.get("pool-floor") ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return ["0", "off", "no", "false"].contains(v)
+        }
+
+        /// pool-bss = 1 for this launch; the game's own file wins over bcd.cfg.
+        static func requested() -> Bool {
+            let v = (MadeiraConfig.gameValue("pool-bss") ?? MadeiraConfig.get("pool-bss") ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return ["1", "on", "true", "yes"].contains(v)
+        }
+
+        static func stateName(_ s: Int32) -> String {
+            switch s {
+            case BCD_POOL_RES_HELD: return "held since image load"
+            case BCD_POOL_RES_RELEASED: return "given back at image load (\(String(cString: bcd_pool_res_refusal)))"
+            case BCD_POOL_RES_REFUSED: return "given back at image load: \(String(cString: bcd_pool_res_refusal))"
+            case BCD_POOL_RES_USED: return "used by an earlier pool request in this run"
+            case BCD_POOL_RES_DROPPED: return "given back by an earlier pool request in this run"
+            case BCD_POOL_RES_STUCK: return "a release left a mapping behind"
+            default: return "none"
+            }
+        }
+
+        /// The pool request, before anything else is placed: the plan when the held reservation takes
+        /// this launch's pool; nil otherwise, everything but the window given back first.
+        static func planForPool(wanted: Int, floor: UInt) -> bcd_pool_res_plan_t? {
+            let built = UInt(bcd_pool_res_built)
+            let on = requested()
+            guard built != 0 else {
+                if on {
+                    LogStore.shared.log("[pool-bss] pool-bss = 1, but this build has no reservation (it was made without "
+                        + "BCD_POOL_BSS_MB): the pool is placed as before", level: .error)
+                }
+                return nil
+            }
+            let base = UInt(bcd_pool_res_base)
+            let stackLo = UInt(bcd_pool_res_stack_lo), stackHi = UInt(bcd_pool_res_stack_hi), imageEnd = UInt(bcd_pool_res_image_end)
+            let room = stackLo > imageEnd ? Int((stackLo - imageEnd) >> 20) : -1
+            LogStore.shared.log(String(format: "[pool-bss] this build holds a JIT pool reservation [0x%lx,0x%lx) %luMB "
+                + "(BCD_POOL_BSS_MB); image end 0x%lx, main thread stack [0x%lx,0x%lx), %ldMB between them; %@",
+                base, base + built, built >> 20, imageEnd, stackLo, stackHi, room, stateName(bcd_pool_res_state)),
+                level: room >= 0 && room < 64 ? .error : .info)
+            guard bcd_pool_res_state == BCD_POOL_RES_HELD else { return nil }
+            guard on else {
+                let bad = bcd_pool_res_give_back(0, 0, BCD_POOL_RES_DROPPED)
+                LogStore.shared.log("[pool-bss] pool-bss is not 1 for this game: the reservation goes back but the "
+                    + "executable window, and the pool is placed as before" + (bad != 0 ? " (\(bad) part(s) did NOT come free)" : ""),
+                    level: bad != 0 ? .error : .info)
+                return nil
+            }
+            // The largest free run in the low band now, outside the reservation: what the pool would have had.
+            let runs = StikJITHelper.freeRuns(0x100000000, 0x180000000, minSize: 0x4000)
+            let largest = runs.max(by: { $0.size < $1.size })
+            var plan = bcd_pool_res_plan_t()
+            guard bcd_pool_res_plan(base, built, BCD_POOL_RES_WIN, BCD_POOL_RES_WIN_SIZE, floor, UInt(wanted), slack, minPool, &plan) != 0 else {
+                let bad = bcd_pool_res_give_back(0, 0, BCD_POOL_RES_DROPPED)
+                LogStore.shared.log(String(format: "[pool-bss] no slice of %luMB or more from 0x%lx below the window: the "
+                    + "reservation goes back but the window, and the pool is placed as before%@", minPool >> 20, max(base, floor),
+                    bad != 0 ? " (some parts did NOT come free)" : ""), level: .error)
+                return nil
+            }
+            LogStore.shared.log(String(format: "[pool-bss] pool-bss = 1: slice [0x%lx,0x%lx) for a %luMB pool%@ (%luMB of "
+                + "slack); largest free run outside the reservation 0x%lx+%luMB; floor 0x%lx%@",
+                plan.slice_base, plan.slice_base + plan.slice_size, plan.pool_size >> 20,
+                plan.pool_size < UInt(wanted) ? String(format: ", shrunk from %luMB", UInt(wanted) >> 20) : "",
+                (plan.slice_size - plan.pool_size) >> 20, UInt(largest?.base ?? 0), UInt(largest?.size ?? 0) >> 20, floor,
+                floor > base ? " (pool-floor = 0 starts the slice at the reservation's start)" : ""),
+                level: .success)
+            return plan
+        }
+
+        /// Right before the first-fit request: the slice comes free. Returns the pool size to request.
+        static func releaseSlice(_ plan: bcd_pool_res_plan_t) -> Int {
+            let r = bcd_pool_res_release(plan.slice_base, plan.slice_size)
+            if r != 0 {
+                LogStore.shared.log(String(format: "[pool-bss] releasing the slice [0x%lx,0x%lx) failed (%d): the request "
+                    + "lands where first fit puts it", plan.slice_base, plan.slice_base + plan.slice_size, r), level: .error)
+            }
+            return Int(plan.pool_size)
+        }
+
+        /// After the request: where the pool landed, and everything but the window given back.
+        static func finish(_ plan: bcd_pool_res_plan_t, rx: UnsafeMutableRawPointer?, size: Int) {
+            let at = UInt(bitPattern: rx.map { Int(bitPattern: $0) } ?? 0)
+            let inside = at >= plan.slice_base && at + UInt(size) <= plan.slice_base + plan.slice_size
+            let bad = bcd_pool_res_give_back(plan.slice_base, plan.slice_size, rx == nil ? BCD_POOL_RES_DROPPED : BCD_POOL_RES_USED)
+            let rest = " The rest of the reservation went back but the executable window [0x140000000,+128MB)"
+                + (bad != 0 ? "; \(bad) part(s) did NOT come free." : ".")
+            if rx == nil {
+                LogStore.shared.log("[pool-bss] no pool region was placed." + rest, level: .error)
+            } else {
+                LogStore.shared.log(String(format: "[pool-bss] the pool landed %@ the reservation: RX 0x%lx+%luMB%@.%@",
+                    inside ? "inside" : "OUTSIDE", at, UInt(size) >> 20,
+                    inside ? String(format: " (+%luMB from the slice's start)", (at - plan.slice_base) >> 20) : "", rest),
+                    level: inside && bad == 0 ? .success : .error)
+            }
+        }
+    }
+}
+
+/// madeira-bcd ios18-jit (2026-10-18): BCD's JIT memory without a debugger, where TXM does
+/// not police code (docs/research/ios18-2026-10-18/runtime.md §2.5.3; JITAllocator.c, "JIT
+/// MEMORY WITHOUT A DEBUGGER").
+///
+/// A debugger that attaches and leaves sets CS_DEBUGGED for good. On iOS 18, and on iOS 26 on
+/// a device without TXM, that flag alone lets BCD map its own executable memory, so the pool
+/// needs no debugger there. That state used to be a dead end: the pool request's BRK had
+/// nobody to answer it, so BCD quit itself 10 s later or crashed. On a TXM device (iOS 26
+/// with TXM, every iOS 27 device) nothing here runs and the pool comes from the debugger as
+/// before. The decision is pure (`gate`) so the host check can walk its table.
+enum JITNoDebuggerPool {
+    /// Where this device stands, before the setting and the self-test.
+    enum Gate: Equatable {
+        case allowed(String)
+        case refused(String)
+        var allowed: Bool { if case .allowed = self { return true }; return false }
+        var reason: String { switch self { case .allowed(let r), .refused(let r): return r } }
+    }
+
+    /// StikDebug's own rule for running a script (StikDebug 3.1.15, ProcessInfo+TXM.swift's
+    /// hasTXM without its manual override): iOS 27, every device but iPad8,11 and iPad8,12;
+    /// iOS 26, an iPhone from 14,2 and an iPad from 14,5, read as a decimal ("iPad14,10" is
+    /// 14.1); before 26, never. Where it says no, StikDebug attaches and leaves without BCD's
+    /// script unless its Always Run Scripts is on.
+    static func stikDebugRunsScript(osMajor: Int, machine: String) -> Bool {
+        if osMajor >= 27 { return machine != "iPad8,11" && machine != "iPad8,12" }
+        guard osMajor >= 26, let version = modelVersion(machine) else { return false }
+        return machine.hasPrefix("iPad") ? version >= 14.5 : version >= 14.2
+    }
+
+    /// StikDebug's deviceVersion: "iPhone14,2" -> 14.2, "iPad14,10" -> 14.1; nil for anything else.
+    static func modelVersion(_ machine: String) -> Double? {
+        for prefix in ["iPhone", "iPad"] where machine.hasPrefix(prefix) {
+            let parts = machine.dropFirst(prefix.count).split(separator: ",", omittingEmptySubsequences: false)
+            guard parts.count == 2, let major = Int(parts[0]), let minor = Int(parts[1]), major >= 0, minor >= 0 else { return nil }
+            var divisor = 1.0
+            for _ in String(minor) { divisor *= 10 }
+            return Double(major) + Double(minor) / divisor
+        }
+        return nil
+    }
+
+    /// The decision for one device. `deviceTreeTXM` is jit_txm_in_device_tree() (1 listed,
+    /// 0 not listed, -1 unknown), asked on iOS 26 only. iOS 26 needs both StikDebug's model
+    /// rule and the device tree (when it answers) to say "no TXM": there, executing a page TXM
+    /// never blessed can end the process.
+    static func gate(osMajor: Int, machine: String, onMac: Bool, simulator: Bool, deviceTreeTXM: Int) -> Gate {
+        if simulator { return .refused("the simulator") }
+        if onMac { return .refused("an iPhone or iPad app running on a Mac") }
+        if osMajor >= 27 { return .refused("iOS \(osMajor): every device is a TXM device") }
+        if osMajor >= 26 {
+            if stikDebugRunsScript(osMajor: osMajor, machine: machine) { return .refused("iOS 26 on \(machine), a TXM device") }
+            if deviceTreeTXM == 1 { return .refused("iOS 26 on \(machine): its device tree lists TXM") }
+            return .allowed("iOS 26 on \(machine), no TXM (StikDebug's model rule; device tree "
+                + (deviceTreeTXM == 0 ? "agrees)" : "unknown)"))
+        }
+        return .allowed("iOS \(osMajor): TXM restricts JIT memory only from iOS 26")
+    }
+
+    static let osMajor = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+
+    static let machine: String = {
+        var info = utsname()
+        uname(&info)
+        return withUnsafePointer(to: &info.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) { String(cString: $0) }
+        }
+    }()
+
+    /// This device's gate, once per app run (the device tree is read on iOS 26 only, never on 27).
+    static let current: Gate = {
+#if targetEnvironment(simulator)
+        let simulator = true
+#else
+        let simulator = false
+#endif
+        let onMac = ProcessInfo.processInfo.isiOSAppOnMac
+        let tree = osMajor == 26 && !simulator && !onMac ? Int(jit_txm_in_device_tree()) : -1
+        return gate(osMajor: osMajor, machine: machine, onMac: onMac, simulator: simulator, deviceTreeTXM: tree)
+    }()
+
+    // Builds the JIT pool without a debugger after one attached and left, where TXM does not police code (iOS 18; iOS 26 without TXM), after a one-page self-test; 0: only a debugger makes the pool, as before. Read at start-up and at each launch.
+    static let settingAtStart = MadeiraConfig.flag("MADEIRA_JIT_NO_DEBUGGER_POOL")
+
+    /// The self-test's verdict in this app run; nil until a pool request ran it.
+    private(set) static var selfTest: Bool?
+
+    /// `ready` may count on it: allowed here, switched on, and no failed self-test.
+    static var usable: Bool { current.allowed && settingAtStart && selfTest != false }
+
+    /// The [jit-nodebug] start-up line.
+    static var startupLine: String {
+        "debugger-less JIT pool: " + (current.allowed ? "allowed" : "not here") + " (\(current.reason)); "
+            + "env.MADEIRA_JIT_NO_DEBUGGER_POOL=\(settingAtStart ? 1 : 0)"
+    }
+
+    /// The pool request with CS_DEBUGGED set and no debugger attached: true to build the pool
+    /// without one. Reads the setting again, runs the self-test once per app run, and logs the
+    /// path taken.
+    static func takeForPool() -> Bool {
+        guard case .allowed(let why) = current else {
+            LogStore.shared.log("[jit-pool] path: none -- no debugger is attached and the pool cannot be built without "
+                + "one here (\(current.reason)); the request stays the debugger's and fails cleanly", level: .error)
+            return false
+        }
+        guard MadeiraConfig.flag("MADEIRA_JIT_NO_DEBUGGER_POOL") else {
+            LogStore.shared.log("[jit-pool] path: none -- no debugger is attached and env.MADEIRA_JIT_NO_DEBUGGER_POOL = 0 "
+                + "(\(why))", level: .error)
+            return false
+        }
+        if selfTest == nil {
+            var detail = [CChar](repeating: 0, count: 192)
+            selfTest = jit_nodebug_selftest(&detail, detail.count)
+        }
+        guard selfTest == true else {
+            LogStore.shared.log("[jit-pool] path: none -- the self-test of a page mapped without a debugger failed (\(why)); "
+                + "see [jit-nodebug] self-test above", level: .error)
+            return false
+        }
+        LogStore.shared.log("[jit-pool] path: no debugger -- CS_DEBUGGED is set, none is attached, \(why); "
+            + "the self-test ran a page mapped the pool's way", level: .success)
+        return true
+    }
+
+    /// JIT is on (CS_DEBUGGED), no debugger is attached, and this device cannot build the pool
+    /// without one: what to do (StikJITHelper.noDebuggerMessage). iOS 27 keeps the text it had.
+    static var flaggedAdvice: String { flaggedAdvice(osMajor: osMajor, machine: machine) }
+
+    /// Enable JIT saw a debugger attach and leave without BCD's script.
+    static var leftAdvice: String { leftAdvice(osMajor: osMajor) }
+
+    private static let builtInAdvice = " Built-in JIT works as well: it always runs BCD's script."
+
+    /// flaggedAdvice for one device (pure; tests/host/check-jit-no-debugger.py).
+    static func flaggedAdvice(osMajor: Int, machine: String) -> String {
+        let appList = "JIT is on, but StikDebug isn't attached to BCD, so BCD can't set up the JIT memory. "
+            + "That happens when JIT is turned on from StikDebug's app list. Use Enable JIT in BCD instead: StikDebug "
+            + "then attaches with BCD's script and brings you back, ready for the game."
+        if osMajor >= 27 { return appList }
+        if stikDebugRunsScript(osMajor: osMajor, machine: machine) { return appList + builtInAdvice }
+        return "JIT is on, but StikDebug isn't attached to BCD, and BCD can't set up its JIT memory without it on this "
+            + "device. StikDebug ran without BCD's script: on this iOS version it runs scripts only with Settings › Always "
+            + "Run Scripts turned on. Turn that on in StikDebug, then use Enable JIT in BCD." + (osMajor >= 26 ? builtInAdvice : "")
+    }
+
+    /// leftAdvice for one iOS version (pure).
+    static func leftAdvice(osMajor: Int) -> String {
+        "The debugger attached to BCD and left again without running BCD's JIT script, so BCD can't set up its JIT "
+            + "memory. In StikDebug, turn on Settings › Always Run Scripts, then tap Enable JIT again."
+            + (osMajor >= 26 ? builtInAdvice : "")
     }
 }

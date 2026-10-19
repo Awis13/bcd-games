@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "device-gpu-tier1"
+ ],
+ "next": [],
+ "note": "synthetic: an iPhone XR (A12, Tier 1 argument buffers) on iOS 18.6 before the device gate: GPU page fault, then the game ended (gameplay.md 1.1)",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "known"
+}

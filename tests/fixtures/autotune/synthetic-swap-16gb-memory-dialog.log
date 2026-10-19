@@ -1,0 +1,10 @@
+[10:00:00.000] [INFO] [build] v0.1.552 (552)
+[10:00:00.001] [INFO] [device] model=iPad16,5 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=15416MB available=12200MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=1 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=12200MB low-power=0
+[phase] wine-start             t+  0.639s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=2400 MB (peak 2500) internal=2100 MB compressed=100 MB external=200 MB reusable=0 MB (cycle=12)
+[win-name] #60 hwnd=0x10070 class='' text="Out of memory. The game will now close." rev=ml853
+0028:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000017) syscalls=0 unix_calls=9000

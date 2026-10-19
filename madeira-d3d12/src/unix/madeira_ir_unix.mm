@@ -31,7 +31,7 @@
 
 #include "madeira_ir_abi.h"
 #include "madeira_dxil_cache.h"   /* ml1990 */
-#include "madeira_sc_pack.h"      /* madeira-bcd: madeira.cfg d3d12-shader-pack */
+#include "madeira_sc_pack.h"      /* madeira-bcd: bcd.cfg d3d12-shader-pack */
 
 #define IR_PRIVATE_IMPLEMENTATION 0   /* the canary owns the one definition */
 #include <metal_irconverter/metal_irconverter.h>
@@ -453,7 +453,7 @@ static int mad_sc_path(uint64_t key, char *out, size_t cap)
  * madeira-bcd: the packed shader cache (madeira_sc_pack.c).
  *
  * One file per converted shader left 11,095 files in shadercache after two
- * Red Dead Redemption 2 runs. madeira.cfg (or the game's own file)
+ * Red Dead Redemption 2 runs. bcd.cfg (or the game's own file)
  * d3d12-shader-pack = 1 keeps the entries in one append-only file per kind
  * instead, shadercache/pack/dxbc.mdpk and dxil.mdpk, each entry the same bytes
  * its loose file would hold. OFF by default: then mad_sc_pack_dxbc() and
@@ -477,7 +477,7 @@ static void mad_sc_pack_once(void)
 {
     g_sc_pack_on = madeira_cfg_bool("d3d12-shader-pack", 0);   /* 1: packed shader cache; 0 (default): one file per shader */
     if (g_sc_pack_on)
-        fprintf(stderr, "[madeira-ir] packed shader cache ON (madeira.cfg d3d12-shader-pack): "
+        fprintf(stderr, "[madeira-ir] packed shader cache ON (bcd.cfg d3d12-shader-pack): "
                         "shadercache/pack/dxbc.mdpk and dxil.mdpk\n");
 }
 static int mad_sc_pack_on(void)
@@ -729,7 +729,7 @@ static void mad_sc_store(uint64_t key, const struct madeira_ir_convert_args *a,
  * instead of loudly. Until the matching is proven correct per shader, the safe
  * default is the behaviour that got further.
  *
- * Toggle with Documents/madeira-vsps-fill.txt = 1, no rebuild required. Both
+ * Toggle with bcd.cfg vsps-fill = 1, no rebuild required. Both
  * settings can coexist in the shader cache, because the key only folds in the
  * vertex bytecode when this is enabled. */
 static int mad_vsps_fill_enabled(void)
@@ -749,15 +749,15 @@ static int mad_vsps_fill_enabled(void)
          * isolated comparison. ml1033 makes every zero-fill VISIBLE instead, so
          * a misfire is measured rather than guessed at. Set the file to 0 to
          * disable and A/B without a rebuild. */
-        cached = (int)madeira_cfg_int("vsps-fill", 1);   /* ml1095: madeira.cfg vsps-fill = 0 disables */
+        cached = (int)madeira_cfg_int("vsps-fill", 1);   /* ml1095: bcd.cfg vsps-fill = 0 disables */
         (void)docs; (void)path; (void)fd;
         fprintf(stderr, "[madeira-ir] ml1032 VS/PS interpolant zero-fill %s "
-                        "(madeira.cfg vsps-fill)\n", cached ? "ENABLED" : "disabled");
+                        "(bcd.cfg vsps-fill)\n", cached ? "ENABLED" : "disabled");
     }
     return cached;
 }
 
-/* madeira-bcd: madeira.cfg (or the game's own file) dxbc-register-spaces = 1
+/* madeira-bcd: bcd.cfg (or the game's own file) dxbc-register-spaces = 1
  * lets SM 5.1 declarations in a register space other than 0 through. The
  * compiler keys its tables by the declaration's range id, never by register or
  * space, and the runtime resolves every range by (type, space, register)
@@ -774,7 +774,7 @@ static int mad_dxbc_spaces(void)
         cached = madeira_cfg_bool("dxbc-register-spaces", 0) ? 1 : 0;
         if (cached)
             fprintf(stderr, "[madeira-ir] DXBC register spaces other than 0 are mapped "
-                            "(madeira.cfg dxbc-register-spaces)\n");
+                            "(bcd.cfg dxbc-register-spaces)\n");
     }
     return cached;
 }
@@ -1240,7 +1240,7 @@ static int mad_airconv_convert(struct madeira_ir_convert_args *a,
     mad_air_entry_name(bc, bclen, name, sizeof name);
     if (a->out_entry)
         snprintf((char *)(uintptr_t)a->out_entry, MADEIRA_IR_ENTRY_MAX, "%s", name);
-    /* ml1106: madeira.cfg dump-shaders = mdc_x,mdc_y  -> Documents/capture/shader_<name>.dxbc,
+    /* ml1106: bcd.cfg dump-shaders = mdc_x,mdc_y  -> Documents/capture/shader_<name>.dxbc,
      * written BEFORE the cache lookup so a cached shader is dumped too. */
     {
         static char list[512]; static int loaded;
@@ -1581,7 +1581,7 @@ static void mad_dxc_slot_put(uint64_t key, uint64_t check, void *blob, size_t le
     free(old);
 }
 
-/* ml1149: read once; madeira.cfg ags-rewrite = 0 turns the rewrite off. */
+/* ml1149: read once; bcd.cfg ags-rewrite = 0 turns the rewrite off. */
 static int mad_ags_enabled(void)
 {
     static int enabled = -1;
@@ -1594,7 +1594,7 @@ static int mad_ags_enabled(void)
 
 /* The converter's compatibility flags: D3D12 guarantees the Metal Shader
  * Converter gives only on request. Each is on by default and can be turned off
- * in madeira.cfg for an A/B run; the DXIL cache keys on the result, so a
+ * in bcd.cfg for an A/B run; the DXIL cache keys on the result, so a
  * change re-converts once.
  * - ml932, always: IRCompatibilityFlagForceTextureArray (see the comment at
  *   IRCompilerSetCompatibilityFlags below).
@@ -1648,7 +1648,7 @@ static uint32_t mad_ir_compat_flags(void) {
         nan = 0;   /* converted IR was strict before 4.0 */
 #endif
         fprintf(stderr, "[madeira-ir] MSC %d.%d.%d compatibility: bounds check %s, position invariance %s, strict NaN/Inf %s, "
-                        "sampler LOD bias %s, sampled NaN -> 0 %s, Inf position -> NaN %s (madeira.cfg msc-bounds-check, "
+                        "sampler LOD bias %s, sampled NaN -> 0 %s, Inf position -> NaN %s (bcd.cfg msc-bounds-check, "
                         "msc-position-invariance, msc-strict-nan, msc-sampler-lod-bias, msc-sample-nan-zero, msc-position-inf-nan; "
                         "env MADEIRA_IR_NO_BOUNDS_CHECK=1)\n",
                 IR_VERSION_MAJOR, IR_VERSION_MINOR, IR_VERSION_PATCH, bc ? "on" : "off", inv ? "on" : "off",
@@ -1859,7 +1859,7 @@ extern "C" int madeira_ir_convert_impl(struct madeira_ir_convert_args *a) {
 
     /* ml1149: AMD AGS 64-bit atomics (magic UAV in space 0x7FFF0ADE) become
      * native SM6.6 64-bit atomics before the converter sees the module; it
-     * refuses the magic space outright. madeira.cfg ags-rewrite = 0 turns it off. */
+     * refuses the magic space outright. bcd.cfg ags-rewrite = 0 turns it off. */
     {
         const uint8_t *src = (const uint8_t *)(uintptr_t)a->dxil;
         size_t src_len = (size_t)a->dxil_len, ags_len = 0;
@@ -1902,10 +1902,17 @@ extern "C" int madeira_ir_convert_impl(struct madeira_ir_convert_args *a) {
      * mad_ir_compat_flags. */
     g_ir.IRCompilerSetCompatibilityFlags(compiler, (IRCompatibilityFlags)mad_ir_compat_flags());
     a->ret_len2 = 0; a->ret_vs_output_size = 0; a->ret_gs_max_prims = 0; a->ret_gs_payload = 0; a->ret_gs_passthrough = 0;
+    a->ret_hs_patches_per_tg = a->ret_hs_threads_per_patch = a->ret_hs_input_cps = a->ret_hs_output_cps = 0;   /* madeira-bcd */
+    a->ret_hs_output_cp_size = a->ret_hs_patch_const_size = a->ret_hs_out_prim = a->ret_hs_max_factor_bits = 0;
+    a->ret_ds_prims_per_mesh_tg = a->ret_ds_input_cps = a->ret_ds_input_cp_size = a->ret_ds_patch_const_size = 0;
     if (a->gs_emulation) {   /* ml927 */
         IRInputTopology topo = IRInputTopologyTriangle;
         if (a->input_topology == 1) topo = IRInputTopologyPoint;
         else if (a->input_topology == 2) topo = IRInputTopologyLine;
+        /* madeira-bcd: experiment for Ghost of Tsushima's lit smoke (docs/got-corruption.md),
+         * sent only with bcd.cfg dxil-tess-patch-topology = 1: the converter has a patch
+         * input topology the tessellation stages were never given. */
+        else if (a->input_topology == MADEIRA_IR_TOPOLOGY_PATCH_STRICT) topo = (IRInputTopology)4;   /* IRInputTopologyPatch */
         g_ir.IRCompilerEnableGeometryAndTessellationEmulation(compiler, true);
         g_ir.IRCompilerSetInputTopology(compiler, topo);
         if (a->layout) g_ir.IRCompilerSetStageInGenerationMode(compiler, IRStageInCodeGenerationModeUseSeparateStageInFunction);
@@ -1921,7 +1928,7 @@ extern "C" int madeira_ir_convert_impl(struct madeira_ir_convert_args *a) {
          * diagnostics, instead of a code number on a phone. */
         {
             static int dumped;
-            /* ml1139: the app's real Documents folder (where madeira.cfg lives).
+            /* ml1139: the app's real Documents folder (where bcd.cfg lives).
              * Inside a Wine process HOME is the prefix (Documents/wine), so the
              * old HOME/Documents/... path never existed and nothing was saved. */
             const char *docs = getenv("MADEIRA_DOCS_DIR");
@@ -1929,8 +1936,8 @@ extern "C" int madeira_ir_convert_impl(struct madeira_ir_convert_args *a) {
             char dir[512], path[640];
             if (!home) home = getenv("CFFIXED_USER_HOME");
             if (!home) home = "/tmp";
-            if (docs && docs[0]) snprintf(dir, sizeof dir, "%s/madeira-failed-shaders", docs);
-            else snprintf(dir, sizeof dir, "%s/Documents/madeira-failed-shaders", home);
+            if (docs && docs[0]) snprintf(dir, sizeof dir, "%s/bcd-failed-shaders", docs);
+            else snprintf(dir, sizeof dir, "%s/Documents/bcd-failed-shaders", home);
             if (dumped < 16) {
                 FILE *f;
                 mkdir(dir, 0755);

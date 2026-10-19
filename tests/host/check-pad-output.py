@@ -10,8 +10,8 @@ Bluetooth 0x31 report with its CRC-32 (seed 0xA2), and trigger effect blocks
 produced by a C transcription of Nielk1's TriggerEffectGenerator (the encoder
 libScePad's modes are documented by). Then checks the wiring that cannot be
 compiled here: PadOutput.m's GameController/CoreHaptics calls, the Xcode
-project and bridging header, GamepadInput.swift, the wineserver device and
-win32u's vibration op.
+project and bridging header, GamepadInput.swift, and the xinput patch against
+the wine submodule's source (WINE_SRC overrides; skipped without it).
 
 No Wine build, SDK, controller or device. Run with python3; CC picks the
 compiler.
@@ -314,9 +314,9 @@ for sel in ['setModeOff', 'setModeFeedbackWithStartPosition:', 'resistiveStrengt
             'winios_hidpad_get_output', 'winios_gamepad_get_vibration']:
     need(sel in pad, f'PadOutput.m lacks {sel}')
 need(re.search(r'float values\[WINIOS_TRIGGER_ZONES\]', pad), 'positional struct must be float values[10]')
-# Asking a DualSense for the advanced player broke the engine for the plain one
-# too (God of War on device); game controllers get plain players only, and a
-# failed set-up backs off and tries again instead of giving up.
+# GoW log 2026-10-02 16:38:12: asking a DualSense for the advanced player broke
+# the engine for the plain one too; game controllers get plain players only,
+# and a failed set-up backs off and tries again instead of giving up.
 need('createAdvancedPlayerWithPattern' not in pad, 'PadOutput.m must not ask a game controller for the advanced player')
 need('_retryAt' in pad and 'RUMBLE_GIVE_UP' in pad, 'PadOutput.m must back off and retry a failed haptics set-up')
 need('dispatch_get_main_queue' in pad and 'atomic_flag_test_and_set' in pad,
@@ -340,6 +340,42 @@ need('last handle closed' in hidpad and 'hidpad_output_log' in hidpad,
      'hidpad_ios.c must log [hidpad-out] and reset rumble/triggers when the game lets go')
 need('case 2:' in driver and 'winios_gamepad_set_vibration( index, motors[0], motors[1] )' in driver,
      'driver_ios.c must store XInput vibration (op 2)')
+extra = (root / 'tools/build-wine-extra-dlls.sh').read_text()
+need('patch-wine-xinput-vibration.py' in extra and 'dlls/xinput1_3/main.c' in extra,
+     'build-wine-extra-dlls.sh must build xinput with the rumble patch and restore the source')
+
+wine = Path(os.environ.get('WINE_SRC', root / 'wine'))
+xi = wine / 'dlls/xinput1_3/main.c'
+wine_note = 'xinput patch: skipped (no wine tree; set WINE_SRC)'
+if xi.exists():
+    with tempfile.TemporaryDirectory(prefix='madeira-xinput-') as tmp:
+        copy = Path(tmp) / 'main.c'
+        copy.write_text(xi.read_text())
+        script = str(root / 'tools/patch-wine-xinput-vibration.py')
+        subprocess.run([sys.executable, script, str(copy)], check=True, capture_output=True)
+        again = subprocess.run([sys.executable, script, str(copy)], check=True, capture_output=True, text=True)
+        need('already patched' in again.stdout or 'is upstream (willfaust/wine#20)' in again.stdout,
+             'the xinput patch must be idempotent')
+        patched = copy.read_text()
+        if 'NtUserGamepadOp_SetVibration' in patched:
+            # willfaust/wine#20 (wine 257f271): the same behaviour in upstream's names.
+            vib, op = 'host_pad_vibrate(index)', 'NtUserGamepadOp_SetVibration'
+            need(patched.count(vib) == 2, 'XInputSetState and XInputEnable must forward')
+            need('NtUserGetGamepadState(index, ' + op in patched, 'the host path must use the win32u vibration op')
+            need('case DLL_PROCESS_DETACH:' in patched and 'NtUserGetGamepadState(i, ' + op in patched,
+                 'motors must stop when the game process ends')
+        else:
+            vib = 'madeira_host_vibrate'
+            need(patched.count('madeira_host_vibrate(index)') == 2, 'XInputSetState and XInputEnable must forward')
+            need('NtUserGetGamepadState(index, 2' in patched, 'the patch must use win32u op 2')
+            need('case DLL_PROCESS_DETACH:' in patched and 'NtUserGetGamepadState(i, 2' in patched,
+                 'motors must stop when the game process ends')
+        set_state = patched[patched.index('XInputSetState(DWORD index'):]
+        set_state = set_state[:set_state.index('\n}\n')]
+        need(set_state.index(vib.split('(')[0]) < set_state.index('start_update_thread'),
+             'the host pad path must return before the HID path starts')
+    wine_note = 'xinput patch applies to ' + str(xi.relative_to(wine.parent) if wine.parent in xi.parents else xi)
+
 print('PASS: DualSense output decoder (USB v1/v2 rumble, triggers-only, LEDs, power, Bluetooth 0x31 + CRC), '
       'trigger effects -> GameController modes (Nielk1 encodings), levels and player LEDs, notify transport, '
-      'PadOutput/Xcode/bridging/GamepadInput/driver wiring')
+      'PadOutput/Xcode/bridging/GamepadInput/driver wiring; ' + wine_note)

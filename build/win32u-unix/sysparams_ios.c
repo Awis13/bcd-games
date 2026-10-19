@@ -1171,8 +1171,10 @@ static const char* driver_vendor_to_version( UINT16 vendor )
     {
     case 0x8086: /* Intel */    return "35.0.101.6314";
     case 0x1002: /* AMD */      return "35.0.21025.1024";
-    /* iOS-Madeira: 581.57, the driver DXMT's NVAPI reports; 35.0.15.6094 reads
-     * as 560.94, older than what current titles require (GTA V Enhanced: 572.60). */
+    /* madeira-bcd: GTA V Enhanced requires NVIDIA 572.60 or newer and the
+     * working Proton run reported 575.57; 35.0.15.6094 read as 560.94. The
+     * registry, D3DKMT and DXGI UMD versions all come from here (NVAPI:
+     * tools/patch-nvapi-driver-version.py). 32.0.15.8157 = 581.57. */
     case 0x10de: /* Nvidia */   return "32.0.15.8157";
     default:                    return "35.0.10.1000";
     }
@@ -2469,6 +2471,52 @@ static RECT monitor_get_rect( struct monitor *monitor, UINT dpi, MONITOR_DPI_TYP
     return map_dpi_rect( rect, dpi_from, dpi );
 }
 
+#ifdef WINE_IOS
+/* madeira-bcd: the virtual monitor's Win32 names (docs/got-gpu-check.md).
+ *
+ * This port reports one adapter, "\\.\DISPLAY1" (NtUserEnumDisplayDevices'
+ * synthesized branch; DXGI_OUTPUT_DESC::DeviceName says the same), and one
+ * monitor under it, the virtual monitor, which has no source. Upstream's code
+ * gives a sourceless monitor the GDI name "WinDisc" -- Windows' name for a
+ * DISCONNECTED display -- and the synthesized EnumDisplayDevices answered the
+ * monitor with an EMPTY DeviceID and DeviceKey, so a program that walks
+ * adapter -> monitor -> device interface (Ghost of Tsushima does exactly
+ * that, EnumDisplayDevices(L"\\.\DISPLAY1", 0, EDD_GET_DEVICE_INTERFACE_NAME))
+ * or matches GetMonitorInfo's szDevice against the DXGI output / NVAPI
+ * display name finds no monitor on the GPU. This fork answered both until
+ * the build 222 switch to upstream's sysparams_ios.c (2026-09-16 and the
+ * DeviceID fix of the same week); GoT has stopped at "No installed graphics
+ * card ... your monitor is connected to it" on every launch since.
+ * MADEIRA_VMON_IDS=0 restores upstream's answers. */
+/* vmon-test:begin (tests/host/check-vmon-identity.py compiles this region) */
+static int ios_vmon_ids_enabled(void)
+{
+    static int on = -1;
+    if (on < 0)
+    {
+        const char *e = getenv( "MADEIRA_VMON_IDS" );
+        on = !(e && e[0] == '0');
+    }
+    return on;
+}
+
+/* The monitor's DeviceID: its device interface path with
+ * EDD_GET_DEVICE_INTERFACE_NAME, its device instance id without. */
+static void ios_vmon_device_id( DWORD flags, char *buffer, size_t size )
+{
+    if (flags & EDD_GET_DEVICE_INTERFACE_NAME)
+        snprintf( buffer, size, "\\\\?\\DISPLAY#Default_Monitor#4&madeira&0&UID0#%s", guid_devinterface_monitorA );
+    else
+        snprintf( buffer, size, "MONITOR\\Default_Monitor\\%s\\0000", guid_devclass_monitorA );
+}
+
+static void ios_vmon_device_key( char *buffer, size_t size )
+{
+    snprintf( buffer, size, "%s\\Class\\%s\\0000", control_keyA, guid_devclass_monitorA );
+}
+/* vmon-test:end */
+#endif
+
 /* display_lock must be held */
 static void monitor_get_info( struct monitor *monitor, MONITORINFO *info, UINT dpi )
 {
@@ -2484,11 +2532,22 @@ static void monitor_get_info( struct monitor *monitor, MONITORINFO *info, UINT d
 #ifdef WINE_IOS
         /* iOS-Madeira: the virtual monitor is the one EnumDisplayDevices and
          * DXGI call "\\.\DISPLAY1"; "WinDisc" is Windows' name for a
-         * disconnected display, so a program matching the two found none. */
-        else if (monitor == &virtual_monitor) strcpy( buffer, "\\\\.\\DISPLAY1" );
+         * disconnected display, so a program matching the two found none.
+         * madeira-bcd: MADEIRA_VMON_IDS=0 restores "WinDisc" (ios_vmon_ids_enabled). */
+        else if (monitor == &virtual_monitor && ios_vmon_ids_enabled()) strcpy( buffer, "\\\\.\\DISPLAY1" );
 #endif
         else strcpy( buffer, "WinDisc" );
         asciiz_to_unicode( ((MONITORINFOEXW *)info)->szDevice, buffer );
+#ifdef WINE_IOS
+        {
+            static int logged;
+            if (logged++ < 4)
+                dprintf( 2, "[vmon] GetMonitorInfo(EX) monitor=%p szDevice=%s rc={%d,%d,%d,%d} flags=%#x "
+                         "(MADEIRA_VMON_IDS=0 restores \"WinDisc\")\n", monitor->handle, buffer,
+                         (int)info->rcMonitor.left, (int)info->rcMonitor.top, (int)info->rcMonitor.right,
+                         (int)info->rcMonitor.bottom, (unsigned)info->dwFlags );
+        }
+#endif
     }
 }
 
@@ -2930,13 +2989,13 @@ static void ios_forget_virtual_gpu( UINT16 vendor, UINT16 device )
     static const char *classes[] = { guid_devinterface_display_adapterA, guid_display_device_arrivalA };
     char dev[64], buffer[MAX_PATH];
     WCHAR nameW[MAX_PATH];
-    unsigned int i;
+    unsigned int i, removed = 0;
     HKEY hkey;
 
     snprintf( dev, sizeof(dev), "VEN_%04X&DEV_%04X&SUBSYS_00000000&REV_00", vendor, device );
     if ((hkey = reg_open_ascii_key( enum_key, "PCI" )))
     {
-        reg_delete_tree( hkey, nameW, asciiz_to_unicode( nameW, dev ) - sizeof(WCHAR) );
+        if (reg_delete_tree( hkey, nameW, asciiz_to_unicode( nameW, dev ) - sizeof(WCHAR) )) removed++;
         NtClose( hkey );
     }
     for (i = 0; i < ARRAY_SIZE(classes); i++)
@@ -2944,9 +3003,12 @@ static void ios_forget_virtual_gpu( UINT16 vendor, UINT16 device )
         snprintf( buffer, sizeof(buffer), "DeviceClasses\\%s", classes[i] );
         if (!(hkey = reg_open_ascii_key( control_key, buffer ))) continue;
         snprintf( buffer, sizeof(buffer), "##?#PCI#%s#%08X#%s", dev, 0, classes[i] );
-        reg_delete_tree( hkey, nameW, asciiz_to_unicode( nameW, buffer ) - sizeof(WCHAR) );
+        if (reg_delete_tree( hkey, nameW, asciiz_to_unicode( nameW, buffer ) - sizeof(WCHAR) )) removed++;
         NtClose( hkey );
     }
+    if (removed)
+        dprintf( 2, "[vgpu] removed the stale %04x:%04x adapter (%u keys) a launch with the other GPU identity left\n",
+                 vendor, device, removed );
 }
 
 /* This port never enumerates display devices (the service-process branch of
@@ -2979,7 +3041,7 @@ static void ios_register_virtual_gpu(void)
     ios_virtual_gpu_ids( &pci.vendor, &pci.device );
     if (pci.vendor == 0x10de) ios_forget_virtual_gpu( 0x106b, 0x0001 );
     else ios_forget_virtual_gpu( 0x10de, 0x2544 );
-    name = gpu_device_name( pci.vendor, pci.device, "Madeira Display" );
+    name = gpu_device_name( pci.vendor, pci.device, "BCD Display" );
     RtlUTF8ToUnicodeN( gpu.name, sizeof(gpu.name) - sizeof(WCHAR), &len, name, strlen( name ) );
     gpu.refcount = 1;
     gpu.index = 0;
@@ -3025,7 +3087,8 @@ static void ios_register_virtual_gpu(void)
         NtClose( hkey );
     }
     dprintf( 2, "[vgpu] registered %s (%04x:%04x) driver %s%s\n", gpu.path, pci.vendor, pci.device,
-             driver_vendor_to_version( pci.vendor ), kmt ? " (MADEIRA_KMT_ADAPTER: the D3DKMT adapter's LUID)" : "" );
+             driver_vendor_to_version( pci.vendor ),
+             kmt ? " (MADEIRA_KMT_ADAPTER: the D3DKMT adapter's LUID and dedicated size)" : "" );
 }
 
 /* What the D3DKMT adapter (d3dkmt_ios.c, MADEIRA_KMT_ADAPTER=1) reports: the
@@ -3038,7 +3101,7 @@ void madeira_kmt_identity( struct madeira_kmt_identity *id )
     ios_virtual_gpu_ids( &pci.vendor, &pci.device );
     id->vendor = pci.vendor;
     id->device = pci.device;
-    snprintf( id->name, sizeof(id->name), "%s", gpu_device_name( pci.vendor, pci.device, "Madeira Display" ) );
+    snprintf( id->name, sizeof(id->name), "%s", gpu_device_name( pci.vendor, pci.device, "BCD Display" ) );
     snprintf( id->driver_version, sizeof(id->driver_version), "%s", driver_vendor_to_version( pci.vendor ) );
     snprintf( id->path, sizeof(id->path), "PCI\\VEN_%04X&DEV_%04X&SUBSYS_00000000&REV_00\\%08X",
               pci.vendor, pci.device, 0 );
@@ -3678,6 +3741,14 @@ LONG WINAPI NtUserGetDisplayConfigBufferSizes( UINT32 flags, UINT32 *num_path_in
     if (flags & QDC_VIRTUAL_MODE_AWARE)
         *num_mode_info += count;
     TRACE( "returning %u paths %u modes\n", *num_path_info, *num_mode_info );
+#ifdef WINE_IOS
+    {
+        static int logged;   /* madeira-bcd: docs/got-gpu-check.md */
+        if (logged++ < 4)
+            dprintf( 2, "[vdcfg] GetDisplayConfigBufferSizes flags=%#x -> %u paths %u modes\n",
+                     (unsigned)flags, (unsigned)*num_path_info, (unsigned)*num_mode_info );
+    }
+#endif
     return ERROR_SUCCESS;
 }
 
@@ -3948,6 +4019,14 @@ LONG WINAPI NtUserQueryDisplayConfig( UINT32 flags, UINT32 *paths_count, DISPLAY
 
 done:
     unlock_display_devices();
+#ifdef WINE_IOS
+    {
+        static int logged;   /* madeira-bcd: the virtual monitor has no path (no source) */
+        if (logged++ < 4)
+            dprintf( 2, "[vdcfg] QueryDisplayConfig flags=%#x -> %ld, %u paths %u modes\n",
+                     (unsigned)flags, (long)ret, (unsigned)path_index, (unsigned)mode_index );
+    }
+#endif
     return ret;
 }
 
@@ -4529,14 +4608,22 @@ NTSTATUS WINAPI NtUserEnumDisplayDevices( UNICODE_STRING *device, DWORD index,
         if (!is_adapter &&
             (device->Length != (sizeof(display1W) - sizeof(WCHAR)) ||
              wcsnicmp( device->Buffer, display1W, ARRAY_SIZE(display1W) - 1 )))
+        {
+            /* madeira-bcd: a name this port never handed out (e.g. a
+             * GetMonitorInfo "WinDisc" fed back in) -- say which. */
+            static int refused;
+            if (refused++ < 4)
+                dprintf( 2, "[vmode] EnumDisplayDevices refused device=%s idx=%u flags=%#x\n",
+                         debugstr_us( device ), (unsigned)index, (unsigned)flags );
             return STATUS_UNSUCCESSFUL;
+        }
 
         if (info->cb >= offsetof(DISPLAY_DEVICEW, DeviceName) + sizeof(info->DeviceName))
             asciiz_to_unicode( info->DeviceName,
                                is_adapter ? "\\\\.\\DISPLAY1" : "\\\\.\\DISPLAY1\\Monitor0" );
         if (info->cb >= offsetof(DISPLAY_DEVICEW, DeviceString) + sizeof(info->DeviceString))
             asciiz_to_unicode( info->DeviceString,
-                               is_adapter ? "Madeira Display" : "Generic Non-PnP Monitor" );
+                               is_adapter ? "BCD Display" : "Generic Non-PnP Monitor" );
         if (info->cb >= offsetof(DISPLAY_DEVICEW, StateFlags) + sizeof(info->StateFlags))
         {
             if (is_adapter)
@@ -4545,46 +4632,46 @@ NTSTATUS WINAPI NtUserEnumDisplayDevices( UNICODE_STRING *device, DWORD index,
             else
                 info->StateFlags = DISPLAY_DEVICE_ATTACHED | DISPLAY_DEVICE_ACTIVE;
         }
+        /* madeira-bcd: the adapter is the GPU ios_register_virtual_gpu writes to
+         * the registry (Apple, or NVIDIA with "Report an NVIDIA GPU"), with its
+         * PCI ids and the driver key, so engines that read the driver version
+         * through EnumDisplayDevices find one (Ghost of Tsushima). Under
+         * display_lock, as lock_display_devices calls it (upstream). */
+        if (is_adapter)
         {
-            /* The adapter is the GPU ios_register_virtual_gpu writes to the
-             * registry, with its PCI id and driver key; the monitor has its
-             * device instance id, or its device interface path with
-             * EDD_GET_DEVICE_INTERFACE_NAME (an adapter has none, on Windows
-             * either). Programs walk adapter -> monitor -> interface to find the
-             * GPU that drives their monitor (Ghost of Tsushima asks
-             * EnumDisplayDevices(L"\\.\DISPLAY1", 0, EDD_GET_DEVICE_INTERFACE_NAME)). */
+            pthread_mutex_lock( &display_lock );
+            ios_register_virtual_gpu();
+            pthread_mutex_unlock( &display_lock );
+        }
+        {
+            /* madeira-bcd: what DeviceID / DeviceKey said, for the log line. */
             char id[MAX_PATH] = "", key[MAX_PATH] = "";
 
-            if (is_adapter)
+            if (is_adapter && !(flags & EDD_GET_DEVICE_INTERFACE_NAME))
             {
                 UINT16 vendor, device_id;
-
-                pthread_mutex_lock( &display_lock );
-                ios_register_virtual_gpu();
-                pthread_mutex_unlock( &display_lock );
                 ios_virtual_gpu_ids( &vendor, &device_id );
-                if (!(flags & EDD_GET_DEVICE_INTERFACE_NAME))
-                    snprintf( id, sizeof(id), "PCI\\VEN_%04X&DEV_%04X&SUBSYS_00000000&REV_00", vendor, device_id );
-                snprintf( key, sizeof(key), "%s\\Video\\%s\\0000", control_keyA, ios_video_guidA );
+                snprintf( id, sizeof(id), "PCI\\VEN_%04X&DEV_%04X&SUBSYS_00000000&REV_00", vendor, device_id );
             }
-            else
-            {
-                if (flags & EDD_GET_DEVICE_INTERFACE_NAME)
-                    snprintf( id, sizeof(id), "\\\\?\\DISPLAY#Default_Monitor#4&madeira&0&UID0#%s", guid_devinterface_monitorA );
-                else
-                    snprintf( id, sizeof(id), "MONITOR\\Default_Monitor\\%s\\0000", guid_devclass_monitorA );
-                snprintf( key, sizeof(key), "%s\\Class\\%s\\0000", control_keyA, guid_devclass_monitorA );
-            }
+            /* madeira-bcd: the monitor's ids, which upstream left empty (an
+             * adapter has no interface name, on Windows either). */
+            else if (!is_adapter && ios_vmon_ids_enabled()) ios_vmon_device_id( flags, id, sizeof(id) );
+            if (is_adapter)
+                snprintf( key, sizeof(key), "%s\\Video\\%s\\0000", control_keyA,
+                          "{8C0C2A5B-0E7E-4B0E-9E3F-1D0A6B5C4D21}" );
+            else if (ios_vmon_ids_enabled()) ios_vmon_device_key( key, sizeof(key) );
+
             if (info->cb >= offsetof(DISPLAY_DEVICEW, DeviceID) + sizeof(info->DeviceID))
                 asciiz_to_unicode( info->DeviceID, id );
             if (info->cb >= offsetof(DISPLAY_DEVICEW, DeviceKey) + sizeof(info->DeviceKey))
                 asciiz_to_unicode( info->DeviceKey, key );
-        }
-        {
-            static int logged;
-            if (logged++ < 4)
-                dprintf(2, "[vmode] synthesized EnumDisplayDevices %s idx=%u\n",
-                        is_adapter ? "adapter" : "monitor", index);
+            {
+                static int logged;
+                if (logged++ < 8)
+                    dprintf(2, "[vmode] synthesized EnumDisplayDevices %s idx=%u flags=%#x cb=%u id=%s key=%s\n",
+                            is_adapter ? "adapter" : "monitor", index, (unsigned)flags,
+                            (unsigned)info->cb, id[0] ? id : "(empty)", key[0] ? key : "(empty)");
+            }
         }
         return STATUS_SUCCESS;
     }
@@ -8535,7 +8622,13 @@ ULONG_PTR WINAPI NtUserCallTwoParam( ULONG_PTR arg1, ULONG_PTR arg2, ULONG code 
 /***********************************************************************
  *           NtUserDisplayConfigGetDeviceInfo    (win32u.@)
  */
+#ifdef WINE_IOS
+/* madeira-bcd: the body is upstream's; NtUserDisplayConfigGetDeviceInfo below
+ * wraps it to log what a game asks (docs/got-gpu-check.md). */
+static NTSTATUS display_config_get_device_info( DISPLAYCONFIG_DEVICE_INFO_HEADER *packet )
+#else
 NTSTATUS WINAPI NtUserDisplayConfigGetDeviceInfo( DISPLAYCONFIG_DEVICE_INFO_HEADER *packet )
+#endif
 {
     NTSTATUS ret = STATUS_UNSUCCESSFUL;
     char buffer[CCHDEVICENAME];
@@ -8791,6 +8884,23 @@ NTSTATUS WINAPI NtUserDisplayConfigGetDeviceInfo( DISPLAYCONFIG_DEVICE_INFO_HEAD
     }
 }
 
+#ifdef WINE_IOS
+NTSTATUS WINAPI NtUserDisplayConfigGetDeviceInfo( DISPLAYCONFIG_DEVICE_INFO_HEADER *packet )
+{
+    NTSTATUS ret = display_config_get_device_info( packet );
+    static int logged;
+
+    /* type: 1 source name, 2 target name, 3 preferred mode, 4 adapter name,
+     * 9 advanced colour info ... (DISPLAYCONFIG_DEVICE_INFO_TYPE) */
+    if (logged++ < 12)
+        dprintf( 2, "[vdcfg] DisplayConfigGetDeviceInfo type=%d id=%u adapter=%08x:%08x -> %#x\n",
+                 packet ? (int)packet->type : -1, packet ? (unsigned)packet->id : 0,
+                 packet ? (unsigned)packet->adapterId.HighPart : 0, packet ? (unsigned)packet->adapterId.LowPart : 0,
+                 (unsigned)ret );
+    return ret;
+}
+#endif
+
 /******************************************************************************
  *           NtGdiDdDDIEnumAdapters2    (win32u.@)
  */
@@ -8801,6 +8911,11 @@ NTSTATUS WINAPI NtGdiDdDDIEnumAdapters2( D3DKMT_ENUMADAPTERS2 *desc )
     D3DKMT_CLOSEADAPTER close_adapter;
     NTSTATUS status = STATUS_SUCCESS;
     UINT idx = 0, count = 0;
+#ifdef WINE_IOS
+    static int logged;   /* madeira-bcd: [vkmt] trace, first 8 calls */
+    LUID kmt_luid;
+    BOOL kmt = FALSE;
+#endif
 
     TRACE( "(%p)\n", desc );
 
@@ -8809,6 +8924,11 @@ NTSTATUS WINAPI NtGdiDdDDIEnumAdapters2( D3DKMT_ENUMADAPTERS2 *desc )
     if (!desc->pAdapters)
     {
         desc->NumAdapters = ARRAY_SIZE(current_gpus);
+#ifdef WINE_IOS
+        if (logged++ < 8)
+            dprintf( 2, "[vkmt] tid=%04x D3DKMTEnumAdapters2(NULL) -> 0, room for %u adapters (size query)\n",
+                     (unsigned)GetCurrentThreadId(), (unsigned)desc->NumAdapters );
+#endif
         return STATUS_SUCCESS;
     }
 
@@ -8826,21 +8946,26 @@ NTSTATUS WINAPI NtGdiDdDDIEnumAdapters2( D3DKMT_ENUMADAPTERS2 *desc )
     unlock_display_devices();
 
 #ifdef WINE_IOS
-    /* iOS-Madeira, MADEIRA_KMT_ADAPTER=1: the virtual-monitor regime has no GPU
-     * in `gpus`; list the one DXGI / madeira_d3d12 / NVAPI report, by their
-     * LUID, driving the virtual monitor's one source. */
-    if (!count && madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &open_adapter_from_luid.AdapterLuid ))
+    /* madeira-bcd, MADEIRA_KMT_ADAPTER=1: the virtual-monitor regime has no
+     * GPU in `gpus`; list the one DXGI / madeira_d3d12 / NVAPI report, by
+     * their LUID, driving the virtual monitor's one source. */
+    if (!count && madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &kmt_luid ))
     {
-        if (!desc->NumAdapters) return STATUS_BUFFER_TOO_SMALL;
-        if (!(status = NtGdiDdDDIOpenAdapterFromLuid( &open_adapter_from_luid )))
+        kmt = TRUE;
+        if (!desc->NumAdapters) status = STATUS_BUFFER_TOO_SMALL;
+        else
         {
-            desc->pAdapters[0].hAdapter = open_adapter_from_luid.hAdapter;
-            desc->pAdapters[0].AdapterLuid = open_adapter_from_luid.AdapterLuid;
-            desc->pAdapters[0].NumOfSources = 1;
-            desc->pAdapters[0].bPrecisePresentRegionsPreferred = FALSE;
-            desc->NumAdapters = 1;
+            open_adapter_from_luid.AdapterLuid = kmt_luid;
+            if (!(status = NtGdiDdDDIOpenAdapterFromLuid( &open_adapter_from_luid )))
+            {
+                desc->pAdapters[0].hAdapter = open_adapter_from_luid.hAdapter;
+                desc->pAdapters[0].AdapterLuid = kmt_luid;
+                desc->pAdapters[0].NumOfSources = 1;
+                desc->pAdapters[0].bPrecisePresentRegionsPreferred = FALSE;
+                desc->NumAdapters = 1;
+            }
         }
-        return status;
+        goto done;
     }
 #endif
 
@@ -8887,6 +9012,20 @@ NTSTATUS WINAPI NtGdiDdDDIEnumAdapters2( D3DKMT_ENUMADAPTERS2 *desc )
     desc->NumAdapters = idx;
 
 done:
+#ifdef WINE_IOS
+    if (logged++ < 8)
+    {
+        if (kmt)
+            dprintf( 2, "[vkmt] tid=%04x D3DKMTEnumAdapters2 -> %#x, %u adapters (MADEIRA_KMT_ADAPTER: the "
+                     "DXGI/D3D12 adapter, luid %08x:%08x, hAdapter %#x)\n", (unsigned)GetCurrentThreadId(),
+                     (unsigned)status, status ? 0u : 1u, (unsigned)kmt_luid.HighPart, (unsigned)kmt_luid.LowPart,
+                     status ? 0u : (unsigned)desc->pAdapters[0].hAdapter );
+        else   /* the virtual-monitor regime lists no GPU here */
+            dprintf( 2, "[vkmt] tid=%04x D3DKMTEnumAdapters2 -> %#x, %u adapters (registered GPU is not in the "
+                     "list%s)\n", (unsigned)GetCurrentThreadId(), (unsigned)status, (unsigned)count,
+                     madeira_kmt_adapter_enabled() ? "" : "; env.MADEIRA_KMT_ADAPTER = 1 lists it" );
+    }
+#endif
     while (count) gpu_release( current_gpus[--count] );
     return status;
 }
@@ -8980,6 +9119,15 @@ NTSTATUS WINAPI NtGdiDdDDIOpenAdapterFromDeviceName( D3DKMT_OPENADAPTERFROMDEVIC
     }
 
 done:
+#ifdef WINE_IOS
+    {
+        static int logged;   /* madeira-bcd: [vkmt] trace */
+        if (logged++ < 8)
+            dprintf( 2, "[vkmt] tid=%04x OpenAdapterFromDeviceName %s -> %#x hAdapter=%#x\n",
+                     (unsigned)GetCurrentThreadId(), debugstr_w(desc->pDeviceName), status,
+                     status ? 0u : (unsigned)desc->hAdapter );
+    }
+#endif
     free( name );
     TRACE( "%s -> %#x.\n", debugstr_w(desc->pDeviceName), status );
     return status;

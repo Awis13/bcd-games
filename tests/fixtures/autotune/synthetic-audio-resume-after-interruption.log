@@ -1,0 +1,14 @@
+[10:00:00.000] [INFO] [build] v0.1.571 (571)
+[10:00:00.001] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6634MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=8059MB low-power=0
+[phase] wine-start             t+  0.639s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=601 MB (peak 601) internal=523 MB compressed=0 MB external=72 MB reusable=12 MB (cycle=1)
+[ios_audio] ml1066 create_stream by 'Game.exe' flow=0 share=0 flags=0x40000 duration=1000000 period=0 fmt tag=0xfffe ch=2 rate=48000 bits=32 align=8
+[ios_audio] ml1026 RemoteIO ENDPOINT ready: 48000 Hz, 2 ch, float32 -- shared by every client
+[10:00:12.000] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[ios_audio] ml1230 pacing stream=0x7a00402000 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 981 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2880..4224 frames; worst late wake 1.1 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x7a00402000 lead 60 ms: client wrote 0.12 s of audio in 41.83 s (0.3%) over 2 wakes; device short 0.0 ms in 0 of 0 passes (largest pass 1024 frames); ring 4800..4800 frames; worst late wake 0.6 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x7a00402000 lead 60 ms: client wrote 0.00 s of audio in 10.00 s (0.0%) over 0 wakes; device short 0.0 ms in 0 of 0 passes (largest pass 1024 frames); ring 4800..4800 frames; worst late wake 0.3 ms; clamped 0 samples

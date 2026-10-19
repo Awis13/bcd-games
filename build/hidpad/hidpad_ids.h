@@ -4,10 +4,10 @@
  * GPL-3.0-or-later WITH the Madeira Converter Exception, version 1; see
  * LICENSE-EXCEPTION.md.
  *
- * With `env.MADEIRA_PAD_MODE = hid` in madeira.cfg, player 1's controller
- * reaches Windows as a HID game controller instead of an XInput pad: a
- * DualSense (Sony 054C:0CE6, so Sony's libScePad and anything matching Sony's
- * IDs sees a PlayStation pad) or a generic HID gamepad. The app decides
+ * With `env.MADEIRA_PAD_MODE = hid` (bcd.cfg or the game's own file) player
+ * 1's controller reaches Windows as a HID game controller instead of an XInput
+ * pad: a DualSense (Sony 054C:0CE6, so Sony's libScePad and anything matching
+ * Sony's IDs sees a PlayStation pad) or a generic HID gamepad. The app decides
  * which at session start (GamepadInput.swift) and exports it as
  * MADEIRA_HIDPAD=dualsense|generic before the wineserver starts. Two places
  * read it:
@@ -85,7 +85,7 @@ static const struct hidpad_identity hidpad_identities[] =
           "HID\\VID_1209&UP:0001_U:0005", "HID_DEVICE_SYSTEM_GAME", "HID_DEVICE_UP:0001_U:0005",
           "HID_DEVICE" },
         "{4d616465-6972-6148-4944-47454e000001}",
-        "Madeira", "Madeira Gamepad", "",
+        "BCD", "BCD Gamepad", "",
     },
 };
 

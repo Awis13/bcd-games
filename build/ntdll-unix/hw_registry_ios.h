@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * The values of the volatile hardware description keys
+ * madeira-bcd: the values of the volatile hardware description keys
  * (HKLM\HARDWARE\DESCRIPTION\System) that wineboot writes at every boot on
  * desktop Wine -- programs/wineboot/wineboot.c create_hardware_registry_keys,
  * create_bios_*_values and create_bios_processor_values. wineboot never runs
@@ -134,10 +134,21 @@ struct hwreg_bios
     unsigned int defaults;    /* strings taken from Wine's generic table */
 };
 
-/* MADEIRA_HW_REGISTRY: 0 writes nothing; unset or anything else writes the keys. */
-static inline int hwreg_enabled( const char *env )
+#define HWREG_ENV_VALUES 5
+struct hwreg_env
 {
-    return !(env && env[0] == '0');
+    const char *name;
+    char value[96];
+};
+
+/* MADEIRA_HW_REGISTRY: unset or empty = 1 (the keys), 0 = nothing,
+ * 2 = the keys and wineboot's five processor values in Session Manager\Environment. */
+static inline int hwreg_mode( const char *env )
+{
+    if (!env || !env[0]) return 1;
+    if (env[0] == '0') return 0;
+    if (env[0] == '2') return 2;
+    return 1;
 }
 
 /* One CentralProcessor key per processor GetSystemInfo reports. */
@@ -158,8 +169,8 @@ static inline uint64_t hwreg_fex_tsc_hz( uint64_t cntfrq )
     return hz;
 }
 
-/* `avx`: FEX runs with SupportsAVX (MADEIRA_FEX_AVX=1, read by FetchHostFeatures
- * for the ARM64EC module only), which turns on CPUID's OSXSAVE/AVX (leaf 1) and
+/* `avx`: FEX runs with SupportsAVX (MADEIRA_FEX_AVX=1 with the ARM64EC module,
+ * tools/patch-fex-ios-avx.py), which turns on CPUID's OSXSAVE/AVX (leaf 1) and
  * AVX2 (leaf 7) and with them FEX's XSAVE/AVX/AVX2 feature bits. SSE4.2 follows
  * SupportsCRC, which the iOS branch of FetchHostFeatures always sets for the
  * ARM64EC module. */
@@ -305,6 +316,22 @@ static inline void hwreg_bios_values( struct hwreg_bios *b, const unsigned char 
     hwreg_field( b->sys_version, buf, len, sys, 6, wine_version, &b->defaults );
     hwreg_field( b->sys_sku, buf, len, sys, sys_ext ? 0x19 : 0, "", &b->defaults );
     hwreg_field( b->sys_family, buf, len, sys, sys_ext ? 0x1a : 0, "", &b->defaults );
+}
+
+/* wineboot's Session Manager\Environment values (create_bios_processor_values, package 0). */
+static inline void hwreg_environment( struct hwreg_env env[HWREG_ENV_VALUES], const struct hwreg_cpu *cpu,
+                                      unsigned long processors )
+{
+    env[0].name = "PROCESSOR_ARCHITECTURE";
+    snprintf( env[0].value, sizeof(env[0].value), "%s", "AMD64" );
+    env[1].name = "PROCESSOR_IDENTIFIER";
+    snprintf( env[1].value, sizeof(env[1].value), "%s, %s", cpu->identifier, cpu->vendor );
+    env[2].name = "PROCESSOR_LEVEL";
+    snprintf( env[2].value, sizeof(env[2].value), "%u", cpu->level );
+    env[3].name = "PROCESSOR_REVISION";
+    snprintf( env[3].value, sizeof(env[3].value), "%04x", cpu->revision );
+    env[4].name = "NUMBER_OF_PROCESSORS";
+    snprintf( env[4].value, sizeof(env[4].value), "%lu", processors );
 }
 
 #endif /* MADEIRA_HW_REGISTRY_IOS_H */

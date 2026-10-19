@@ -48,14 +48,18 @@ require('Bundle.main.url(forResource: "madeira-jit", withExtension: "js")' in st
         and "private static let scriptBase64" not in stik,
         "the bundled JavaScript file is the single script source")
 wait = function(stik, "static func waitForDebugger(")
-require("timeout: TimeInterval = 90" in wait and "if ready {" in wait,
+# madeira-bcd ios18-jit: each poll goes through attachPoll(ready:...), which also ends the
+# wait when a debugger attached and left (tests/host/check-jit-no-debugger.py).
+require("timeout: TimeInterval = 90" in wait and ("if ready {" in wait or "attachPoll(ready: ready," in wait),
         "StikDebug attach has a finite 90-second readiness timeout")
 ready = function(stik, "static var ready: Bool")
 # ml1235 (local): `ready` reads CS_DEBUGGED through SigningStatus.current.debugged,
 # the same csops query without jit_check_debugged's log line (the library polls
 # `ready` every 2 s and waitForDebugger every 0.5 s).
+# madeira-bcd ios18-jit (2026-10-18): the live debugger is P_TRACED (isDebuggerTraced), as
+# upstream meant it; isDebuggerAttached() is the badge's CS_DEBUGGED-first reading.
 require(("jit_check_debugged()" in ready or "SigningStatus.current.debugged" in ready)
-        and "isDebuggerAttached()" in ready,
+        and "isDebuggerTraced()" in ready and "isDebuggerAttached()" not in ready,
         "readiness requires CS_DEBUGGED and a live debugger")
 
 # Automatic selection is deterministic: installed StikDebug first, otherwise
@@ -70,7 +74,11 @@ require("ensureLoopback" in coordinator_enable and "self?.enableResolved" in coo
         and "enableBuiltIn(completion: completion)" in coordinator_route
         and setup.count("StikJITHelper.enableJIT") == 1,
         "the coordinator routes each selected JIT method once, after the loopback check")
-require("JITSetupView()" in content and "JITSettingsSection()" in library,
+# ContentView's on-demand JIT setup is BCD's (BCDJITSetupSheet, 2026-10-18).
+# Wave 3 (2026-10-19): the classic JITSettingsSection and JITSetupView are deleted; Settings › JIT is BCD's section.
+require("BCDJITSetupSheet(enableJIT: { enableJIT() })" in content
+        and ".jit: { AnyView(BCDJITLiveSection(enableJIT:" in (app / "BCDSettingsLive.swift").read_text()
+        and "JITSettingsSection" not in library and "JITSetupView" not in setup,
         "JIT setup is reachable from the main flow and Settings")
 require('dictionary["public_key"]' in setup
         and 'dictionary["private_key"]' in setup
@@ -137,7 +145,7 @@ project = (root / "app/Madeira.xcodeproj/project.pbxproj").read_text()
 helper_source = (root / "app/MadeiraJITHelper/MadeiraJITHelper.swift").read_text()
 require(project.count('PRODUCT_BUNDLE_IDENTIFIER = "$(MADEIRA_BUNDLE_IDENTIFIER)";') == 2
         and project.count('PRODUCT_BUNDLE_IDENTIFIER = "$(MADEIRA_BUNDLE_IDENTIFIER).JITHelper";') == 2
-        and project.count("MADEIRA_BUNDLE_IDENTIFIER = com.willfaust.madeora;") == 2
+        and project.count("MADEIRA_BUNDLE_IDENTIFIER = com.thebcd69.bcd;") == 2   # the app is BCD (owner, 2026-10-18)
         and "AppExtensionPoint" not in helper_source,
         "one setting, MADEIRA_BUNDLE_IDENTIFIER, names the app and the helper")
 
@@ -147,24 +155,22 @@ require(problem.index('"connectionreset"') < problem.index("self = .pairing") < 
         "a reset connection reads as a rejected pairing; refused, timed out or unreachable as LocalDevVPN")
 require(setup.count("helperFailure(response.message)") == 2,
         "Check setup and Enable JIT both explain connection problems")
-library_source = (app / "Library.swift").read_text()
-require("if let jitProblem { jitConnectionActions(jitProblem, retry: enableJIT) { model.error = nil } }" in library_source,
+# Wave 3: the library's error alert is BCD's interface's (BCDLiveFrontEnd), over the whole shell, Settings included.
+front = (app / "BCDLiveFrontEnd.swift").read_text()
+require("if let jitProblem { jitConnectionActions(jitProblem, retry: enableJIT) { library.error = nil } }" in front,
         "the library's JIT error offers Pair Again and LocalDevVPN (or the shortcut)")
-# The error alert hangs off LibraryView's tab view, so it presents from Settings too
-# (an alert inside the Library page waited until that tab came back).
-body = library_source[library_source.index('struct LibraryView: View {'):]
-body = body[body.index('    var body: some View {'):body.index('    @ToolbarContentBuilder private var libraryToolbar')]
-require('.alert(jitProblem == nil ? "Library" : "Couldn\'t Enable JIT"' in body,
-        "the library's error alert is on the tab view, shown on the Settings tab as well")
-require('URL(string: "localdevvpn://enable?scheme=madeira")' in setup
+require('.alert(jitProblem == nil ? "Library" : "Enabling JIT Failed"' in front
+        and "presenting(watching(shell))" in front,
+        "the library's error alert is on the whole shell, shown over Settings as well")
+require('URL(string: "localdevvpn://enable?scheme=bcd")' in setup
         and "localdevvpn" in app_plist["LSApplicationQueriesSchemes"]
-        and any("madeira" in t.get("CFBundleURLSchemes", []) for t in app_plist.get("CFBundleURLTypes", [])),
+        and any("bcd" in t.get("CFBundleURLSchemes", []) for t in app_plist.get("CFBundleURLTypes", [])),
         "LocalDevVPN opens to connect and returns to Madeira's own URL scheme")
 
 # Play without JIT runs Enable JIT, then starts the game, once: only with the debugger
 # attached (so the start cannot ask again), and never after a failure.
 gate = function(content, "private func jitReadyForLaunch(")
-require(gate.index("if StikJITHelper.ready { return true }") < gate.index("if inLibrary, let launch {")
+require(gate.index("if StikJITHelper.ready { return true }") < gate.index("if let launch {")
         < gate.index("if StikJITHelper.flaggedWithoutDebugger {")
         and "launchAfterJIT = launch" in gate and "library.startingJIT = entry" in gate
         and "if jitStatus != .testing { enableJIT() }" in gate,
@@ -174,16 +180,16 @@ require("launchAfterJIT = nil" in ended
         and "guard started, StikJITHelper.ready, library.current == nil, wine_process_is_running() == 0 else {" in ended
         and ended.index("launchAfterJIT = nil") < ended.index("library.startingJIT = nil") < ended.index("launch()"),
         "the waiting game starts once, only when JIT came on and nothing else started")
-require('if model.startingJIT == entry.id {' in library and 'Text("Starting JIT")' in library and 'ProgressView()' in library
-        and "if selected?.id == entry.id, model.startingJIT != entry.id { selected = nil }" in library
-        and ".onChange(of: jit.showSetup) { _, show in if show { selected = nil } }" in library,
-        "the Play button reads Starting JIT with a spinner meanwhile; the details page stays up for it, "
-        "and closes for JIT setup")
+# Wave 3: the classic Play button ("Enabling JIT" with a spinner) is deleted; BCD's Play says "Turning on JIT…"
+# (checked in check-bcd-launch.py) and BCD's open page closes for JIT setup.
+require(".onChange(of: jit.showSetup) { _, show in if show { live.sheet = nil } }" in front
+        and "library.$startingJIT" in (app / "BCDLiveStore.swift").read_text(),
+        "BCD's Play says JIT is turning on meanwhile, and an open page closes for JIT setup")
 enable_jit = function(content, "private func enableJIT()")
 require(enable_jit.count("launchAfterJITEnded(started: false)") == 2 and enable_jit.count("launchAfterJITEnded(started: true)") == 1,
         "every way Enable JIT ends settles the waiting game")
 play = function(content, "private func launchLibraryEntry(")
-require("guard jitReadyForLaunch(inLibrary: true, entry: entry.id, then: { startLibraryEntry(entry) }) else { return }" in play
+require("guard jitReadyForLaunch(entry: entry.id, then: { startLibraryEntry(entry) }) else { return }" in play
         and play.index("cloudClear(") < play.index("jitReadyForLaunch(")
         and "then: { startDock(game, compactPool: compactPool, profile: profile) }) else { return }" in content,
         "Play and Dock starts continue after JIT without repeating the checks already passed")

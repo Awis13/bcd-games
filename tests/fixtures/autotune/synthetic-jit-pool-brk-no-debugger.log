@@ -1,0 +1,15 @@
+[10:00:00.000] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[10:00:00.001] [INFO] Debugger attached — skipping SIGTRAP handler (debugger handles BRK)
+[10:00:00.010] [INFO] [build] v0.1.569 (569)
+[10:00:00.011] [INFO] [device] model=iPhone17,1 idiom=phone os=iOS Version 26.1 (Build 23B85) ram=7816MB available=5900MB cores=6
+[10:00:00.011] [INFO] [device] address-map=[0x104e1c000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:00.012] [INFO] [device] signing: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 profile=development lifetime=7d left=6d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[10:00:40.000] [INFO] [bcd] library launch Game.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=0 metalfx=off
+[10:00:40.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104e1c000,0x8000000000) 512GB available=5880MB low-power=0 thermal=nominal
+[10:00:40.300] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[10:00:40.301] [INFO] Allocating 896MB JIT pool via debugger...
+[10:00:40.302] [INFO] [jit-debugger] attached=1 at the pool request
+[10:00:40.310] [INFO] JIT-pool frontier already at 0x11b000000 — no pin needed
+[10:00:40.320] [SUCCESS] ml1040: executable window [0x140000000,+128MB) held since image load
+[10:00:40.330] [INFO] ml1040: released the early pool placeholder 0x148000000+1024MB for the debugger
+[10:00:40.340] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x11b000000+400MB 0x148000000+1024MB

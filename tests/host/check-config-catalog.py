@@ -3,7 +3,7 @@
 
 Regenerates the catalog in memory from the sources (build/tools/gen-config-catalog.py)
 and fails when app/Madeira/ConfigCatalog.generated.swift differs, so a new
-madeira.cfg key or env switch cannot be added without appearing in Settings.
+bcd.cfg key or env switch cannot be added without appearing in Settings.
 Also checks the hand-built Memory & sync rows: swap sizes include 3 GB and the
 coverage picker defaults to large allocations only (classic); JIT pool and
 video memory have pickers of their own. Checks every generated kind against
@@ -13,6 +13,7 @@ import os, re, shutil, subprocess, sys, tempfile
 R = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 rc = subprocess.run([sys.executable, os.path.join(R, "build/tools/gen-config-catalog.py"), "--check"]).returncode
 lib = open(os.path.join(R, "app/Madeira/Library.swift")).read()
+live = open(os.path.join(R, "app/Madeira/BCDSettingsLive.swift")).read()   # BCD's Settings (the classic Memory & sync rows are deleted)
 gen = open(os.path.join(R, "app/Madeira/ConfigCatalog.generated.swift")).read()
 ok = rc == 0
 model = open(os.path.join(R, "app/Madeira/ConfigCatalog.swift")).read()
@@ -31,7 +32,9 @@ if swiftc:
     # These are the actual production models before the SwiftUI view begins,
     # rather than a test copy of the enum that could drift with the generator.
     start = model.index("struct ConfigOption: Identifiable {")
-    end = model.index("/// Settings › All settings:", start)
+    # Wave 3 (2026-10-19): the classic All settings screen (AllSettingsView) that followed the models is deleted.
+    marker = "/// Settings › All settings:"
+    end = model.index(marker, start) if marker in model else len(model)
     with tempfile.TemporaryDirectory() as directory:
         models = os.path.join(directory, "ConfigModels.swift")
         with open(models, "w") as output:
@@ -48,8 +51,8 @@ else:
 for what, cond in [
     ("swap sizes include 3072", "swapChoices = [0, 1024, 2048, 3072, 4096]" in lib),
     ("coverage picker: large-only default, blocks, wide", '("", "Large allocations (8 MB+)")' in lib and '("blocks"' in lib and '("wide"' in lib),
-    ("JIT pool and video memory pickers in Memory & sync", 'key: "pool"' in lib and 'key: "vram-mb"' in lib),
-    ("eco mode toggle in Memory & sync, off unless set", 'MadeiraConfig.set("eco", on ? "1" : nil)' in lib and 'MadeiraConfig.bool("eco", default: false)' in lib),
+    ("JIT pool and video memory choices in Memory & performance", 'static let pool = "pool"' in live and 'static let videoMemory = "vram-mb"' in live),
+    ("eco mode toggle in Memory & performance, off unless set", 'MadeiraConfig.set(BCDLiveKey.eco, on ? "1" : nil)' in live and 'MadeiraConfig.bool(BCDLiveKey.eco, default: false)' in live),
     ("catalog lists swap-mb with a 3 GB choice", re.search(r'key: "swap-mb".*\("3072", "3 GB"\)', gen) is not None),
     ("catalog lists env.MADEIRA_SWAP_COVERAGE", 'key: "env.MADEIRA_SWAP_COVERAGE"' in gen),
 ]:

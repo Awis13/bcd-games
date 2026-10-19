@@ -75,7 +75,7 @@ static void *wineserver_thread_func(void *arg) {
     @autoreleasepool {
         // Set up file-based logging
         NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-        NSString *logPath = [docs stringByAppendingPathComponent:@"madeira-log.txt"];
+        NSString *logPath = [docs stringByAppendingPathComponent:@"bcd-log.txt"];
         pthread_mutex_lock(&g_ws_bridge_log_mutex);
         if (g_ws_bridge_log) fclose(g_ws_bridge_log);
         g_ws_bridge_log = fopen(logPath.UTF8String, "a");

@@ -1,0 +1,18 @@
+{
+ "dialogs": [
+  "ERR_GFX_INIT: Failed to initialize graphics device. Please reboot or reinstall latest drivers."
+ ],
+ "end": {},
+ "matched": [
+  "pool-bss-cut-pool",
+  "x64-image-nocopy"
+ ],
+ "next": [
+  "pool-bss = 1",
+  "pool-floor = 0"
+ ],
+ "note": "synthetic: a reservation build (BCD_POOL_BSS_MB = 1152) whose game did not set pool-bss; with the reservation given back the pool was cut to 624 MB below the window and ran out (as RDR2's build 470, ERR_GFX_INIT); branch pool-reserve",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

@@ -19,7 +19,7 @@ against a fake Mach map that starts with the app's PROT_NONE hold over
     as the jumbo holdback, which an 8960 MB request gets once and a smaller
     one (Social Club's hinted 1 GB) never;
   - a mapping that is not the app's hold stays where it is (no release);
-  - a jumbo-mb in madeira.cfg does not replace that hold;
+  - a jumbo-mb in bcd.cfg does not replace that hold;
   - a mapping in the way leaves no holdback and says so, the slots stay held;
   - a slot released and held again goes back to the same place;
   - another layout ignores the env;
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
         if (ios_jumbo_hold_base != 0x75d0000000ull || ios_jumbo_hold_size != 0x230000000ull) return fail("jumbo-mb replaced the hold");
         if (!has("[jumbo-hold] jumbo-mb = 9856 ignored: 0x75d0000000 +8960 MB is already held (MADEIRA_RDR2_VA_HOLD)"))
             return fail("no ignored line");
-        printf("PASS: a jumbo-mb in madeira.cfg leaves the RDR2 hold alone\n");
+        printf("PASS: a jumbo-mb in bcd.cfg leaves the RDR2 hold alone\n");
         return 0;
     }
     if (!strcmp(s, "blocked"))

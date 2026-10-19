@@ -61,7 +61,7 @@ enum JITPairingFileStore {
         ] as CFDictionary, &result)
         guard status == errSecSuccess, let data = result as? Data, !data.isEmpty else {
             throw NSError(domain: "MadeiraJIT", code: 11,
-                          userInfo: [NSLocalizedDescriptionKey: "No pairing file is stored for this device."])
+                          userInfo: [NSLocalizedDescriptionKey: "This device has no saved pairing file."])
         }
         return data
     }
@@ -82,7 +82,7 @@ enum JITPairingFileStore {
               let identifier = dictionary["identifier"] as? String, !identifier.isEmpty else {
             throw NSError(domain: "MadeiraJIT", code: 10,
                           userInfo: [NSLocalizedDescriptionKey:
-                            "That is not a StikDebug remote pairing file. Create one with iloader and try again."])
+                            "This file isn't a StikDebug remote pairing file. Make one with iloader and import it instead."])
         }
         let item: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -97,7 +97,7 @@ enum JITPairingFileStore {
         guard status == errSecSuccess else {
             throw NSError(domain: "MadeiraJIT", code: 12,
                           userInfo: [NSLocalizedDescriptionKey:
-                            "The pairing file could not be saved in the Keychain (\(status)). Unlock this device and try again."])
+                            "BCD couldn't save the pairing file to the Keychain (error \(status)). Make sure this device is unlocked, then try again."])
         }
         UserDefaults.standard.set(source.rawValue, forKey: sourceKey)
     }
@@ -136,8 +136,8 @@ final class JITCoordinator: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .setupRequired(let message): return message
-            case .pairingMissing: return "Pair this device or import its pairing file first."
-            case .scriptMissing: return "Madeira's JIT script is missing from this installation. Reinstall Madeira."
+            case .pairingMissing: return "This device isn't paired yet. Pair it, or import its pairing file."
+            case .scriptMissing: return "This copy of BCD is missing its JIT script. Install BCD again to restore it."
             }
         }
     }
@@ -166,9 +166,9 @@ final class JITCoordinator: ObservableObject {
         var message: String {
             switch self {
             case .vpn:
-                return "Madeira couldn't reach this device. Connect LocalDevVPN, then try again."
+                return "There's no connection to this device. Connect LocalDevVPN and try again."
             case .pairing:
-                return "This device closed the connection, which usually means it no longer accepts Madeira's pairing. Pair again, and check that LocalDevVPN is connected."
+                return "This device dropped the connection. Most often that means it has stopped accepting BCD's pairing. Pair again, and make sure LocalDevVPN is connected."
             }
         }
     }
@@ -201,8 +201,8 @@ final class JITCoordinator: ObservableObject {
 
     var automaticDescription: String {
         StikJITHelper.isAvailable
-            ? "StikDebug is installed, so Madeira will open it directly."
-            : "StikDebug was not detected, so Madeira will use its built-in helper."
+            ? "BCD found StikDebug and will open it to enable JIT."
+            : "BCD didn't find StikDebug and will enable JIT with the helper it ships with."
     }
 
     func refreshPairingStatus() {
@@ -257,15 +257,15 @@ final class JITCoordinator: ObservableObject {
                                        vpnWasUp ? 1 : 0, probe.detail))
             self?.loopbackAnswered = probe.reachable
             guard let self, !probe.reachable, JITNetworkShortcut.shared.enabled else { proceed(false); return }
-            status = "Running the \(JITNetworkShortcut.name) shortcut…"
+            status = "Starting the JIT shortcut…"
             JITNetworkShortcut.shared.start { [weak self] outcome in
                 if case .failed(let why) = outcome {
-                    stopped("Your \(JITNetworkShortcut.name) shortcut stopped: \(why) Check its steps in Shortcuts, then try again.")
+                    stopped("The JIT shortcut stopped before it finished (\(why)). Review its steps in the Shortcuts app and try again.")
                     return
                 }
                 // LocalDevVPN's Connect returns before its tunnel routes (about 5 s
                 // on the 18 Pro): go on the moment lockdownd answers.
-                self?.status = "Waiting for LocalDevVPN…"
+                self?.status = "LocalDevVPN is connecting…"
                 let waitStart = CFAbsoluteTimeGetCurrent()
                 LoopbackProbe.waitUntilReachable(within: 15) { [weak self] probe in
                     LogStore.shared.log(String(format: "[jit-loopback] after the shortcut: %@ after %.1f s (vpn-interface=%d, %@)",
@@ -284,19 +284,19 @@ final class JITCoordinator: ObservableObject {
     func connectWithShortcut() {
         busy = true
         error = nil
-        status = "Running the \(JITNetworkShortcut.name) shortcut…"
+        status = "Starting the JIT shortcut…"
         JITNetworkShortcut.shared.start { [weak self] outcome in
             if case .failed(let why) = outcome {
                 self?.busy = false
                 self?.status = nil
-                self?.error = "The \(JITNetworkShortcut.name) shortcut did not run: \(why)."
+                self?.error = "Couldn't run the JIT shortcut (\(why))."
                 return
             }
             LoopbackProbe.waitUntilReachable(within: 15) { [weak self] probe in
                 self?.busy = false
                 if probe.reachable {
                     self?.connectionProblem = nil
-                    self?.status = "LocalDevVPN reaches this device."
+                    self?.status = "This device answers through LocalDevVPN."
                 } else {
                     self?.status = nil
                     self?.error = ConnectionProblem.vpn.message
@@ -311,25 +311,25 @@ final class JITCoordinator: ObservableObject {
             assertionFailure("Automatic must resolve to a concrete JIT method")
         case .stikDebug:
             guard StikJITHelper.isAvailable else {
-                let message = "StikDebug is not installed. Install it or choose Built-in StikJIT."
+                let message = "BCD can't find StikDebug. Install it, or switch the method to Built-in StikJIT."
                 error = message
                 showSetup = true
                 completion(.failure(CoordinatorError.setupRequired(message)))
                 return
             }
             busy = true
-            status = "Waiting for StikDebug…"
+            status = "StikDebug is attaching…"
             StikJITHelper.enableJIT { [weak self] result in
                 Task { @MainActor in
                     self?.busy = false
-                    self?.status = (try? result.get()).map { _ in "StikDebug is attached." }
+                    self?.status = (try? result.get()).map { _ in "StikDebug has attached." }
                     if case .failure(let failure) = result { self?.error = failure.localizedDescription }
                     completion(result)
                 }
             }
         case .builtIn:
             guard JITPairingFileStore.isImported else {
-                let message = "Pair this device or import its pairing file to finish Built-in StikJIT setup."
+                let message = "Built-in StikJIT still needs a pairing. Pair this device, or import its pairing file."
                 error = message
                 showSetup = true
                 completion(.failure(CoordinatorError.setupRequired(message)))
@@ -344,7 +344,7 @@ final class JITCoordinator: ObservableObject {
             try JITPairingFileStore.importFile(from: source)
             OnDevicePairing.shared.cancel()
             refreshPairingStatus()
-            status = "Pairing file imported."
+            status = "Pairing file saved."
             error = nil
         } catch {
             self.error = error.localizedDescription
@@ -356,7 +356,7 @@ final class JITCoordinator: ObservableObject {
         try JITPairingFileStore.store(data, source: .onDevice)
         refreshPairingStatus()
         method = .builtIn
-        status = "Paired in Madeira."
+        status = "This device is now paired with BCD."
         error = nil
     }
 
@@ -376,7 +376,7 @@ final class JITCoordinator: ObservableObject {
         busy = true
         error = nil
         connectionProblem = nil
-        status = "Checking LocalDevVPN and the Developer Disk Image…"
+        status = "Testing LocalDevVPN and preparing the Developer Disk Image…"
         MadeiraBuiltInJIT.send(.prepare(pairingData: pairing)) { [weak self] result in
             guard let self else { return }
             busy = false
@@ -396,7 +396,7 @@ final class JITCoordinator: ObservableObject {
             let failure = NSError(
                 domain: "MadeiraJIT", code: 12,
                 userInfo: [NSLocalizedDescriptionKey:
-                    MadeiraBuiltInJIT.unavailableReason ?? "Built-in JIT is unavailable."])
+                    MadeiraBuiltInJIT.unavailableReason ?? "Built-in JIT can't be used on this device."])
             error = failure.localizedDescription
             completion(.failure(failure))
             return
@@ -414,21 +414,21 @@ final class JITCoordinator: ObservableObject {
 
         busy = true
         error = nil
-        status = "Starting Madeira's JIT helper…"
+        status = "BCD's JIT helper is starting…"
         var readinessTimer: Timer?
         var readinessFinished = false
         MadeiraBuiltInJIT.send(
             .enable(targetPID: getpid(), pairingData: pairing,
                     scriptBase64: script.base64EncodedString()),
             started: { [weak self] in
-                self?.status = "Waiting for Madeira's JIT helper to attach…"
+                self?.status = "The JIT helper is attaching to BCD…"
                 readinessTimer = StikJITHelper.waitForDebugger { [weak self] result in
                     guard !readinessFinished else { return }
                     readinessFinished = true
                     self?.busy = false
                     switch result {
                     case .success:
-                        self?.status = "Built-in JIT is attached."
+                        self?.status = "The built-in helper has attached."
                         self?.error = nil
                     case .failure(let failure):
                         self?.error = failure.localizedDescription
@@ -474,7 +474,7 @@ final class JITCoordinator: ObservableObject {
     func resetDDI() {
         busy = true
         error = nil
-        status = "Resetting the Developer Disk Image cache…"
+        status = "Clearing the cached Developer Disk Image…"
         MadeiraBuiltInJIT.send(.resetDDI) { [weak self] result in
             self?.busy = false
             switch result {
@@ -493,7 +493,7 @@ final class JITCoordinator: ObservableObject {
 enum LocalDevVPN {
     static let appStore = URL(string: "https://apps.apple.com/us/app/localdevvpn/id6755608044")!
     /// `enable` connects the VPN; `scheme` has LocalDevVPN return to Madeira a second later.
-    static let connect = URL(string: "localdevvpn://enable?scheme=madeira")!
+    static let connect = URL(string: "localdevvpn://enable?scheme=bcd")!
 
     static var isInstalled: Bool { UIApplication.shared.canOpenURL(URL(string: "localdevvpn://")!) }
     static var actionTitle: String { isInstalled ? "Connect LocalDevVPN" : "Get LocalDevVPN" }
@@ -521,176 +521,12 @@ enum LocalDevVPN {
             }
         }
         if JITNetworkShortcut.shared.enabled {
-            Button("Connect with \(JITNetworkShortcut.name)") {
+            Button("Run the JIT shortcut") {
                 dismiss()
                 if let retry { retry() } else { JITCoordinator.shared.connectWithShortcut() }
             }
         } else {
             Button(LocalDevVPN.actionTitle) { dismiss(); LocalDevVPN.open() }
         }
-    }
-}
-
-struct JITSettingsSection: View {
-    @ObservedObject private var coordinator = JITCoordinator.shared
-    @ObservedObject private var onboarding = OnboardingModel.shared
-    @ObservedObject private var shortcut = JITNetworkShortcut.shared
-
-    var body: some View {
-        Section {
-            Picker("JIT method", selection: $coordinator.method) {
-                ForEach(JITMethod.allCases) { method in
-                    Text(method.title).tag(method)
-                }
-            }
-            Button {
-                coordinator.showSetup = true
-            } label: {
-                Label("JIT setup", systemImage: "bolt.badge.clock")
-            }
-            if onboarding.available {
-                Button {
-                    onboarding.rerun()
-                } label: {
-                    Label("Run setup again", systemImage: "wand.and.stars")
-                }
-            }
-            if coordinator.method == .automatic {
-                Text(coordinator.automaticDescription)
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            if JITShortcutFile.supported, let url = JITShortcutFile.url {
-                Button {
-                    LogStore.shared.log("[jit-shortcut] add: iCloud link")
-                    UIApplication.shared.open(JITShortcutFile.iCloudLink)
-                } label: {
-                    Label("Add the \(JITNetworkShortcut.name) shortcut", systemImage: "plus.square.on.square")
-                }
-                ShareLink(item: url) {
-                    Label("No internet connection? Add local copy", systemImage: "square.and.arrow.up")
-                }
-            }
-            Toggle("\(JITNetworkShortcut.name) shortcut", isOn: $shortcut.enabled)
-        } header: {
-            Text("JIT")
-        } footer: {
-            Text("When LocalDevVPN can't reach this device, Enable JIT runs your \(JITNetworkShortcut.name) shortcut: it turns Cellular Data off when there's no Wi-Fi and connects LocalDevVPN, then puts both back once the game has started. Each run opens Shortcuts for a moment.")
-        }
-    }
-}
-
-struct JITSetupView: View {
-    @ObservedObject private var coordinator = JITCoordinator.shared
-    @ObservedObject private var pairing = OnDevicePairing.shared
-    @State private var importing = false
-    @Environment(\.dismiss) private var dismiss
-
-    private var pairingLabel: String {
-        switch coordinator.pairingSource {
-        case .onDevice: return "Paired in Madeira"
-        case .imported: return "File imported"
-        case nil: return "Not set up"
-        }
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Picker("Method", selection: $coordinator.method) {
-                        ForEach(JITMethod.allCases) { method in
-                            Text(method.title).tag(method)
-                        }
-                    }
-                    if coordinator.method == .automatic {
-                        Text(coordinator.automaticDescription)
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    LabeledContent("StikDebug",
-                                   value: StikJITHelper.isAvailable ? "Installed" : "Not detected")
-                    LabeledContent("Built-in helper",
-                                   value: MadeiraBuiltInJIT.isAvailable ? "Available" : "Unavailable")
-                } header: {
-                    Text("JIT method")
-                } footer: {
-                    Text("Automatic uses StikDebug when it is installed. Madeira does not silently change methods after a failure.")
-                }
-
-                if coordinator.method != .stikDebug {
-                    Section {
-                        LabeledContent("Pairing", value: pairingLabel)
-                        if OnDevicePairing.isSupported {
-                            Button(coordinator.pairingSource == .onDevice ? "Pair in Madeira again" : "Pair in Madeira") {
-                                pairing.start()
-                            }
-                            .disabled(pairing.active)
-                            OnDevicePairingPanel()
-                        }
-                        Button("Import pairing file") { importing = true }
-                        Link("How to create a pairing file",
-                             destination: URL(string: "https://github.com/StikDebug/StikDebug-Guide/blob/main/pairing_file.md")!)
-                        Button(LocalDevVPN.actionTitle) { LocalDevVPN.open() }
-                    } header: {
-                        Text("Built-in StikJIT")
-                    } footer: {
-                        Text(OnDevicePairing.isSupported
-                             ? "Pair in Madeira or import a pairing file made on a computer, connect LocalDevVPN, then check setup. The pairing file is kept in this device's Keychain."
-                             : "Import this device's pairing file, connect LocalDevVPN, then check setup. The pairing file is kept in this device's Keychain. Pairing in Madeira needs iOS 27 or later.")
-                    }
-
-                    Section {
-                        Button("Check setup") { coordinator.prepareBuiltIn() }
-                            .disabled(coordinator.busy || !coordinator.pairingImported)
-                        Button("Enable JIT") { coordinator.enableBuiltIn() }
-                            .disabled(coordinator.busy || !coordinator.pairingImported)
-                        Button("Reset Developer Disk Image", role: .destructive) {
-                            coordinator.resetDDI()
-                        }.disabled(coordinator.busy)
-                    }
-                } else {
-                    Section {
-                        if StikJITHelper.isAvailable {
-                            Button("Enable JIT with StikDebug") { coordinator.enable() { _ in } }
-                        } else {
-                            Link("Install StikDebug",
-                                 destination: URL(string: "https://github.com/StikDebug/StikDebug/releases/latest")!)
-                        }
-                    } footer: {
-                        Text("StikDebug needs a pairing file and an active LocalDevVPN connection. Madeira sends its own script automatically.")
-                    }
-                }
-
-                if coordinator.busy {
-                    Section { HStack { ProgressView(); Text(coordinator.status ?? "Working…") } }
-                } else if let error = coordinator.error {
-                    Section {
-                        Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
-                        if let problem = coordinator.connectionProblem { jitConnectionActions(problem) }
-                    }
-                } else if let status = coordinator.status {
-                    Section { Label(status, systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
-                }
-                if let txm = coordinator.txmPresent {
-                    Section { LabeledContent("TXM/SPTM", value: txm ? "Present" : "Not present") }
-                }
-            }
-            .navigationTitle("JIT setup")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { coordinator.showSetup = false; dismiss() }
-                }
-            }
-        }
-        .fileImporter(isPresented: $importing,
-                      allowedContentTypes: [.propertyList, .data]) { result in
-            if case .success(let url) = result {
-                coordinator.importPairingFile(url)
-            } else if case .failure(let failure) = result {
-                LogStore.shared.log("[jit-built-in] pairing import failed: \(failure.localizedDescription)",
-                                    level: .error)
-            }
-        }
-        .onAppear { coordinator.refreshPairingStatus() }
     }
 }

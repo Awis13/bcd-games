@@ -1,0 +1,59 @@
+[15:07:39.750] [INFO] [build] v0.1.547 (547)
+[15:07:39.751] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6635MB cores=6
+[15:07:39.751] [INFO] [device] address-map=[0x104e28000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[15:07:51.071] [INFO] [bcd] library launch Crysis3Remastered: avx=1 wine-vcrt=1 nvidia=0 game-config=1 metalfx=off
+[15:07:55.495] [INFO] [dock-launch] image-retire=1
+[15:07:55.495] [INFO] [dock-launch] image-map-guard=1
+[15:07:55.511] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104e28000,0x8000000000) 512GB available=8021MB low-power=0 thermal=nominal
+[phase] wine-start             t+  1.941s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[footprint] rev=ml358 phys=646 MB (peak 646) internal=619 MB compressed=0 MB external=69 MB reusable=26 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11BA70000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[footprint] rev=ml358 phys=895 MB (peak 895) internal=879 MB compressed=0 MB external=140 MB reusable=26 MB (cycle=2)
+[footprint] rev=ml358 phys=991 MB (peak 991) internal=975 MB compressed=0 MB external=145 MB reusable=26 MB (cycle=3)
+[footprint] rev=ml358 phys=1058 MB (peak 1058) internal=1042 MB compressed=0 MB external=148 MB reusable=26 MB (cycle=4)
+[footprint] rev=ml358 phys=1050 MB (peak 1058) internal=1042 MB compressed=0 MB external=148 MB reusable=26 MB (cycle=5)
+[footprint] rev=ml358 phys=1069 MB (peak 1069) internal=1061 MB compressed=0 MB external=148 MB reusable=26 MB (cycle=6)
+D B4 Load module CRYPT32.dll (crypt32.dll-6b697b9bfcd69537): 71F0EC0000
+D B4 Load module bcrypt.dll (bcrypt.dll-5a6e36eeb1a98b0b): 71F0E30000
+D B4 Load module Txaa.win64.dll (txaa.win64.dll-1e3fa03322d507c8): 71F0E10000
+D B4 Load module imm32.dll (imm32.dll-d32ec4d784d2a68d): 71F0D70000
+D B4 Load module uxtheme.dll (uxtheme.dll-4e1d696344b97035): 71F0CC0000
+D B4 Load module concrt140.dll (concrt140.dll-7f7bd0536697a14b): 71F0CE0000
+00b4:err:seh:call_seh_handlers [exc] ml811 code=c000001d addr=00000071F1E40000 flags=0 nparams=0 tid=00b4 hit=1
+00b4:err:module:loader_init "MSVCP140.dll" failed to initialize, aborting
+00b4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc000001d) syscalls=0 unix_calls=8822
+[Wine child thread] child exited with code -1073741795
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #47 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #48 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=9509
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=9517
+[15:08:27.555] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=21 resident=1371MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1153 MB (peak 1333) internal=1146 MB compressed=0 MB external=196 MB reusable=28 MB (cycle=28)
+[footprint] rev=ml358 phys=1153 MB (peak 1333) internal=1146 MB compressed=0 MB external=196 MB reusable=28 MB (cycle=29)
+[footprint] rev=ml358 phys=1153 MB (peak 1333) internal=1146 MB compressed=0 MB external=196 MB reusable=28 MB (cycle=30)
+[15:08:57.670] [INFO] detach-wait: presents=0 running=1 elapsed=60s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=20 resident=1371MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1153 MB (peak 1333) internal=1146 MB compressed=0 MB external=196 MB reusable=28 MB (cycle=31)
+[footprint] rev=ml358 phys=1153 MB (peak 1333) internal=1146 MB compressed=0 MB external=196 MB reusable=28 MB (cycle=32)
+[footprint] rev=ml358 phys=1153 MB (peak 1333) internal=1146 MB compressed=0 MB external=196 MB reusable=28 MB (cycle=33)

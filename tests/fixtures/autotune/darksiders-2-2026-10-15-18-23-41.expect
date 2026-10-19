@@ -1,0 +1,15 @@
+{
+ "dialogs": [
+  "Critical error",
+  "Could not initialize the graphics subsystem, probably because the resolution 1112 x 832 is not supported for fullscreen display."
+ ],
+ "end": {
+  "killed": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "Darksiders II Deathinitive Edition, build 548, iPad16,5 (15416 MB): crashed",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "stuck"
+}

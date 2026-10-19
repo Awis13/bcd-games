@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [
+  "jit-pool-unanswered-exit"
+ ],
+ "next": [],
+ "note": "synthetic: build 569's StikJITHelper.allocatePool lines after StikDebug attached and left without BCD's script (iOS 18): the request was unanswered and BCD quit itself (runtime.md §2.3 a); ios18-jit",
+ "outcome": "killed",
+ "stage": 0,
+ "status": "known"
+}

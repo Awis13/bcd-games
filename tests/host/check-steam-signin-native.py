@@ -54,7 +54,7 @@ def block(source, start_marker):
 
 # ---------------------------------------------------------------- Part A
 files = sorted(steam.rglob('*.swift'))
-signin_files = {'SteamSignIn.swift', 'SteamSignInView.swift', 'SteamAuthAPI.swift', 'SteamCredentialAuth.swift',
+signin_files = {'SteamSignIn.swift', 'SteamAuthAPI.swift', 'SteamCredentialAuth.swift',
                 'SteamQRAuth.swift', 'SteamTokenStore.swift', 'SteamError.swift', 'SteamProtoMessages.swift',
                 'SteamDevice.swift', 'SteamLog.swift'}
 # The owned library and downloads (docs/STEAM_LIBRARY.md). SteamError and SteamProtoMessages are shared.
@@ -90,10 +90,12 @@ for f in files:
 store = (steam / 'Auth/SteamTokenStore.swift').read_text()
 require('kSecAttrAccessibleWhenUnlockedThisDeviceOnly' in store, 'Keychain item stays on this device, available while unlocked')
 require('kSecAttrSynchronizable' not in store, 'Keychain item is not synchronised')
-signin_view = (steam / 'SteamSignInView.swift').read_text()
+# Wave 3 (2026-10-19): the classic sign-in sheet (SteamSignInView.swift) and the developer interface's button that
+# opened it are deleted; BCD's own sign-in page (BCDAccounts.swift, BCDSteamSignInSheet) is the only one.
+signin_view = (app / 'BCDAccounts.swift').read_text()
 require('password = ""' in signin_view, 'the password field is cleared after submitting')
-content = (app / 'ContentView.swift').read_text()
-require('Button("Steam sign-in")' in content and 'SteamSignIn.isEnabled' in content, 'developer interface opens the sheet')
+require(not (steam / 'SteamSignInView.swift').exists() and 'BCDSteamSignInSheet()' in (app / 'BCDLiveFrontEnd.swift').read_text(),
+        "BCD's sign-in sheet is the one the shell opens")
 
 # ---------------------------------------------------------------- Part B
 signin = (steam / 'SteamSignIn.swift').read_text()
@@ -259,7 +261,7 @@ func expectError(_ expected: SteamError, _ label: String, _ run: () async throws
         StubProtocol.eresult = nil; StubProtocol.status = 429
         await expectError(.rateLimited, "HTTP 429 is a rate limit") { try await SteamAuthAPI.call("X", body: Data()) }
         StubProtocol.status = 503
-        await expectError(.authenticationFailed("Steam sign-in is unavailable right now (HTTP 503)."), "other HTTP errors") { try await SteamAuthAPI.call("X", body: Data()) }
+        await expectError(.authenticationFailed("Steam's sign-in service isn't available at the moment (HTTP 503)."), "other HTTP errors") { try await SteamAuthAPI.call("X", body: Data()) }
 
         // SteamSignIn: the Dock's view of the stored sign-in.
         func jwt(_ claims: String) -> String {

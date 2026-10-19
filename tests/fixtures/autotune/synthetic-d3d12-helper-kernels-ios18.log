@@ -1,0 +1,12 @@
+[10:00:00.000] [INFO] [build] v0.1.571 (571)
+[10:00:00.001] [INFO] [device] model=iPhone16,2 idiom=phone os=iOS Version 18.6 (Build 22G86) ram=7676MB available=5180MB cores=6
+[10:00:00.001] [INFO] [device] address-map=[0x104ea4000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:05.000] [INFO] [bcd] library launch Game.exe: avx=1 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[10:00:05.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104ea4000,0x8000000000) 512GB available=5103MB low-power=0
+[phase] wine-start             t+  0.655s rev=ml526
+D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=1810 MB (peak 1810) internal=1690 MB compressed=0 MB external=120 MB reusable=16 MB (cycle=1)
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] ml1049 helper kernels: Error Domain=MTLLibraryErrorDomain Code=6 "This library is using a deployment target (0x00020008) that is not supported on this OS." UserInfo={NSLocalizedDescription=This library is using a deployment target (0x00020008) that is not supported on this OS.}
+[madeira-d3d12] helper kernels: NOT available (library 0, indirect tessellation kernel 0, probe kernel 0, ring 0)
+0028:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000409) syscalls=0 unix_calls=91822

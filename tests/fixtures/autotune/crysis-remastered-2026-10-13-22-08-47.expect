@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "quitRequested": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "Crysis Remastered, build 528, iPhone18,2 (11695 MB): ran_ok_user_quit",
+ "outcome": "quit",
+ "stage": 5,
+ "status": "ok"
+}

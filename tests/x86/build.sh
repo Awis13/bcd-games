@@ -5,7 +5,7 @@
 # Usage: ./build.sh hello-x86   (kernel32 only, no CRT)
 #
 # The exe is copied into app/Madeira/i386-windows/. Launch it from a direct
-# launch with env.MADEIRA_EXE = hello-x86.exe in madeira.cfg: the bridge reads
+# launch with env.MADEIRA_EXE = hello-x86.exe in bcd.cfg: the bridge reads
 # its PE machine, runs it from C:\windows\syswow64, and the log shows
 # "MADEIRA-X86-32: hello from a 32-bit PE" and exit code 42.
 set -e

@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "audio-resume-after-interruption"
+ ],
+ "next": [
+  "env.MADEIRA_AUDIO_RESUME = 1"
+ ],
+ "note": "synthetic: built from audio_null_ios.c's ml1230 pacing format; iOS stopped the output (a call, Siri, an app switch) and the stream's clock froze with its ring full (gameplay.md 2.1)",
+ "outcome": "hung",
+ "stage": 3,
+ "status": "trying"
+}

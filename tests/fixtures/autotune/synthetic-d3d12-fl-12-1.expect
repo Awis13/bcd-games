@@ -1,0 +1,18 @@
+{
+ "dialogs": [
+  "DirectX 12 is not supported on your system. Failed to create the device."
+ ],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "d3d12-fl-12-1"
+ ],
+ "next": [
+  "d3d12-fl-12-1 = 1"
+ ],
+ "note": "synthetic: built from madeira-d3d12's 'feature level %#x refused'; MSFS 2024 538/540",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

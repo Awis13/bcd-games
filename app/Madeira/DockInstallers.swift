@@ -198,7 +198,7 @@ enum SteamInstallScripts {
         return (lines.joined(separator: "\n"), removed)
     }
 
-    /// Records the runs in the prefix's system.reg and user.reg (a .madeira-bak copy is kept
+    /// Records the runs in the prefix's system.reg and user.reg (a .bcd-bak copy is kept
     /// once). Returns the number of values written. Only while no session runs.
     @discardableResult
     static func mark(_ runs: [SteamInstallRun], prefix: URL) throws -> Int {
@@ -210,7 +210,7 @@ enum SteamInstallScripts {
     }
 
     /// Removes the runs' records from the prefix's system.reg and user.reg (the same
-    /// .madeira-bak copy is kept once). Returns the number of values removed. Only while no
+    /// .bcd-bak copy is kept once). Returns the number of values removed. Only while no
     /// session runs.
     @discardableResult
     static func unmark(_ runs: [SteamInstallRun], prefix: URL) throws -> Int {
@@ -232,7 +232,7 @@ enum SteamInstallScripts {
             guard let contents = try? Data(contentsOf: registry), !contents.isEmpty else { continue }   // a prefix not seeded yet
             let (updated, changed) = change(selected, String(decoding: contents, as: UTF8.self))
             guard changed > 0 else { continue }
-            let backup = registry.appendingPathExtension("madeira-bak")
+            let backup = registry.appendingPathExtension("bcd-bak")
             if !FileManager.default.fileExists(atPath: backup.path) { try? FileManager.default.copyItem(at: registry, to: backup) }
             try Data(updated.utf8).write(to: registry, options: .atomic)
             total += changed
@@ -372,12 +372,12 @@ enum DockInstallScripts {
         }
         guard items.contains(where: { $0.status != .done }) else { return nil }
         var parts: [String] = []
-        if !names(.pending).isEmpty { parts.append("Runs first: " + names(.pending)) }
-        if !names(.done).isEmpty { parts.append("Already done: " + names(.done)) }
-        if !names(.missing).isEmpty { parts.append("Installer file missing: " + names(.missing)) }
-        if !names(.unsupported).isEmpty { parts.append("Cannot run in this build: " + names(.unsupported)) }
-        if !names(.limit).isEmpty { parts.append("Next start: " + names(.limit)) }
-        return "One-time installs. " + parts.joined(separator: ". ") + "."
+        if !names(.pending).isEmpty { parts.append("To run: " + names(.pending)) }
+        if !names(.done).isEmpty { parts.append("Done earlier: " + names(.done)) }
+        if !names(.missing).isEmpty { parts.append("Installer not found: " + names(.missing)) }
+        if !names(.unsupported).isEmpty { parts.append("Not supported by this build: " + names(.unsupported)) }
+        if !names(.limit).isEmpty { parts.append("Left for the next start: " + names(.limit)) }
+        return "One-time installs for this start. " + parts.joined(separator: ". ") + "."
     }
 
     /// A program's label for logs, the batch and the sheet: the entry name, reduced to
@@ -398,7 +398,7 @@ enum DockInstallScripts {
     /// when it could not run) or records "services off".
     static func batch(_ processes: [SteamInstallProcess], resultFile: String, services: DockInstallServices) -> String {
         let result = " >>\"" + resultFile.replacingOccurrences(of: "\"", with: "") + "\""
-        var lines = ["@echo off", "rem Madeira Dock: a game's one-time installs, before the host starts the game",
+        var lines = ["@echo off", "rem BCD Dock: a game's one-time installs, before the host starts the game",
                      "echo begin \(processes.count)" + result.replacingOccurrences(of: " >>", with: " >")]
         switch services {
         case .off: lines.append("echo services off" + result)
@@ -481,7 +481,7 @@ enum DockInstallRequest: String, Sendable {
 /// batch runs, in its order (result lines refer to them by index), and each game's
 /// One-time installs choice.
 struct DockInstallLedger: Codable, Equatable, Sendable {
-    static let fileName = "madeira-dock-installs.json"
+    static let fileName = "bcd-dock-installs.json"
     var session: [SteamInstallRun] = []
     var sessionApp: Int = 0
     /// App ID -> false: the game's next Dock start skips its one-time installs (Skip).
@@ -532,7 +532,7 @@ struct DockInstallLedger: Codable, Equatable, Sendable {
 /// The app side: plan the game's programs before a Dock start, write the batch the
 /// session runs before the host, report progress, and record results at the next start.
 ///
-/// Switches (`env.NAME` in madeira.cfg; "0" turns one off):
+/// Switches (`env.NAME` in bcd.cfg; "0" turns one off):
 /// - `MADEIRA_DOCK_INSTALLERS`: the whole feature.
 /// - `MADEIRA_INSTALL_DEFAULT_KEY`: entries without a "HasRunKey" use Steam's per-app key
 ///   (off: such entries are ignored).
@@ -548,8 +548,8 @@ struct DockInstallLedger: Codable, Equatable, Sendable {
 ///   the prefix into a backup (DockReset.swift; off: only the records are forgotten).
 @MainActor
 enum DockInstallers {
-    static let scriptName = "madeira-dock-installers.cmd"
-    static let resultName = "madeira-dock-installers.result"
+    static let scriptName = "bcd-dock-installers.cmd"
+    static let resultName = "bcd-dock-installers.result"
 
     /// The batch this start runs before the host (a C:\ path), nil when none runs.
     private(set) static var script: String?
@@ -559,10 +559,10 @@ enum DockInstallers {
     /// session of their own also leaves madsync on for the game. One session runs per app run,
     /// so the game starts after a restart of Madeira.
     private(set) static var installsOnly = false
-    nonisolated static let restartWords = "To start the game, restart Madeira: swipe it away in the app switcher, open it again and start the game."
+    nonisolated static let restartWords = "The game starts after a restart of BCD: swipe BCD away in the app switcher, open it again, then start the game."
     /// What the starting screen says once the installs ended, until the session has closed (the
     /// wineserver writes the registry to disk as it stops; Madeira asks for the restart then).
-    nonisolated static let closingWords = "This session now closes. Madeira asks you to restart it when it has; wait for that."
+    nonisolated static let closingWords = "This session is closing now. Wait until BCD asks you to restart it."
     /// madeira-bcd: the game's lines a session of one-time installs runs without. Social Club's
     /// layout 2 (env.MADEIRA_SC_PA_POOLS) and RDR2's hold (env.MADEIRA_RDR2_VA_HOLD) take the
     /// 4 GB slots 32-bit programs run in, so the Visual C++ setups' second 32-bit process could
@@ -588,7 +588,7 @@ enum DockInstallers {
             return false
         }
         guard !dropped.isEmpty else { return [] }
-        let copy = directory.appendingPathComponent("madeira-game-installs.cfg")
+        let copy = directory.appendingPathComponent("bcd-game-installs.cfg")
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try kept.joined(separator: "\n").write(to: copy, atomically: true, encoding: .utf8)
@@ -616,7 +616,7 @@ enum DockInstallers {
     nonisolated static var enabled: Bool { flag("MADEIRA_DOCK_INSTALLERS") }   // 0: Dock starts run no install-script programs
     nonisolated static var choiceEnabled: Bool { enabled && flag("MADEIRA_DOCK_INSTALL_CHOICE") }   // 0: no per-game choice, every start runs what is pending
 
-    /// Whether madeira.cfg selects madsync, as the engine reads it (madeira_cfg_sync_engine
+    /// Whether bcd.cfg selects madsync, as the engine reads it (madeira_cfg_sync_engine
     /// in build/madeira_cfg.h): only inproc-sync set to 1/on/true/yes; unset is fastsync,
     /// the default engine.
     static var madsyncConfigured: Bool {
@@ -869,7 +869,7 @@ enum DockInstallers {
            let moved = DockReset.restoreStandIn(drive: drive, documents: prefix.deletingLastPathComponent(),
                                                 standIn: Bundle.main.resourceURL?.appendingPathComponent("arm64ec-windows/vulkan-1.dll")) {
             LogStore.shared.log("[dock-installers] C:\\" + moved.replacingOccurrences(of: "/", with: "\\") +
-                                " (an installer's Vulkan loader) moved to Documents/madeira-reset-backup; this session links Madeira's stand-in")
+                                " (an installer's Vulkan loader) moved to Documents/bcd-reset-backup; this session links BCD's stand-in")
         }
         guard enabled else {
             LogStore.shared.log("[dock-installers] app=\(app) off (MADEIRA_DOCK_INSTALLERS=0)"); return
@@ -940,13 +940,13 @@ enum DockInstallers {
                                 "key=\(run.hive == .machine ? "HKLM" : "HKCU")\\\(run.key) recorded=\(recorded) minimum=\(run.value)\(lastRun)")
         }
         if skipped {
-            note = "One-time installs skipped. To run them, choose Run at next start under One-time installs."
+            note = "The one-time installs were skipped this time. To have them run, pick Run at next start under One-time installs."
         } else {
             note = DockInstallScripts.note(items)
             if installsOnly {
-                note = (note.map { $0 + " " } ?? "") + "This start runs only them; afterwards restart Madeira and start the game again."
+                note = (note.map { $0 + " " } ?? "") + "This start runs only the installs. Restart BCD after them, then start the game again."
             } else if serverSync && madsyncConfigured {
-                note = (note.map { $0 + " " } ?? "") + "This start uses Wine's standard synchronization instead of madsync; the next start uses madsync again."
+                note = (note.map { $0 + " " } ?? "") + "For this start, Wine's standard synchronization replaces madsync; madsync is back at the next start."
             }
         }
         // Those still not recorded and not run again now are named in the note, so an
@@ -956,7 +956,7 @@ enum DockInstallers {
         }.map { DockInstallScripts.label($0.process.run) }
         if !stillUnfinished.isEmpty {
             let names = stillUnfinished.joined(separator: ", ")
-            let words = "Last run did not finish: \(names) (its installer never closed). If it installed, choose Record as done under One-time installs."
+            let words = "Not finished last time: \(names) (its installer never closed). If it did install, choose Record as done under One-time installs."
             note = (note.map { $0 + " " } ?? "") + words
             LogStore.shared.log("[dock-installers] app=\(app) unfinished=\(stillUnfinished.joined(separator: ",")): the last batch started it and saw no exit status")
         }
@@ -969,7 +969,7 @@ enum DockInstallers {
                             "services-step=\(script == nil ? "-" : services == .off ? "off" : "start") session-madsync-off=\(serverSync ? 1 : 0) " +
                             "installs-only=\(installsOnly ? 1 : 0)")
         if installsOnly {
-            LogStore.shared.log("[dock-installers] app=\(app) this session runs only the one-time installs; the game starts after Madeira is restarted (MADEIRA_DOCK_INSTALL_SEPARATE=0: in the same session)")
+            LogStore.shared.log("[dock-installers] app=\(app) this session runs only the one-time installs; the game starts after BCD is restarted (MADEIRA_DOCK_INSTALL_SEPARATE=0: in the same session)")
         }
     }
 
@@ -1040,7 +1040,7 @@ enum DockInstallers {
     static func poll(drive: URL, now: Date = Date()) -> String? {
         guard script != nil else { return nil }
         let file = drive.appendingPathComponent(resultName)
-        guard let contents = try? Data(contentsOf: file), contents.count <= 16384 else { return "Starting this game's one-time installs…" }
+        guard let contents = try? Data(contentsOf: file), contents.count <= 16384 else { return "Preparing this game's one-time installs…" }
         let results = DockInstallScripts.results(String(decoding: contents, as: UTF8.self))
         if let services = results.services, logged.insert("services").inserted {
             LogStore.shared.log("[dock-installers] services=\(services)", level: services == "failed" || services == "timeout" ? .error : .info)
@@ -1061,9 +1061,9 @@ enum DockInstallers {
             if runningSince?.index != running { runningSince = (running, now) }
             let seconds = max(0, Int(now.timeIntervalSince(runningSince?.at ?? now)))
             let program = results.started[running] ?? ""
-            var text = "Running one-time install \(running) of \(max(results.total, running)): \(program)…"
+            var text = "One-time install \(running) of \(max(results.total, running)): \(program) is running…"
             if seconds >= stallSeconds {
-                let hint = "If its window no longer changes, it may have finished without closing. Ending the session leaves it unrecorded; Record as done under One-time installs records it."
+                let hint = "If its window has stopped changing, the installer may be done but still open. Closing the session now leaves it unrecorded; Record as done under One-time installs can record it afterwards."
                 text += " (\(seconds / 60) min)\n" + hint
                 if logged.insert("stall\(running)").inserted {
                     let line = "[dock-installers] still running \(running)/\(results.total) program=\(program) after \(seconds) s; the host waits for it (an installer window that never closes keeps the batch here)"
@@ -1072,7 +1072,7 @@ enum DockInstallers {
             }
             return text + failures
         }
-        guard results.ended else { return "Running this game's one-time installs…" + failures }
+        guard results.ended else { return "This game's one-time installs are running…" + failures }
         let total = max(results.total, results.exits.count), succeeded = results.exits.count - failed.count
         if logged.insert("end").inserted {
             finishedAt = Date()
@@ -1080,17 +1080,17 @@ enum DockInstallers {
                                 (installsOnly ? "the session ends, the game starts after a restart" : "the host starts next"))
         }
         allSucceeded = total > 0 && succeeded == total
-        return "One-time installs finished: \(succeeded) of \(total) succeeded." + failures
+        return "Done with the one-time installs: \(succeeded) of \(total) succeeded." + failures
     }
 
     /// madeira-bcd: the batch ended and every program in it succeeded (poll).
     private(set) static var allSucceeded = false
 
-    /// madeira-bcd: the "Restart Madeira" alert after a session of one-time installs, in the
+    /// madeira-bcd: the restart alert ("BCD needs a restart") after one-time installs, in the
     /// owner's words (2026-10-12): all succeeded, or the count and the failed programs. `ended`
     /// is poll's text, nil when the batch never ended.
     static func restartNotice(_ ended: String?) -> String {
-        if allSucceeded { return "One-time installs completed successfully. Close Madeira and open it again to play the game." }
-        return (ended ?? "One-time installs ended.") + "\nClose Madeira and open it again to play the game."
+        if allSucceeded { return "One-time installs completed successfully. Close BCD and open it again to play the game." }
+        return (ended ?? "The session for the one-time installs has ended.") + "\nClose BCD and open it again to play the game."
     }
 }

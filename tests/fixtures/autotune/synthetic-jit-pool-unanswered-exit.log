@@ -1,0 +1,25 @@
+[10:00:00.000] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003005)
+[10:00:00.001] [INFO] SIGTRAP handler installed (no debugger)
+[10:00:00.010] [INFO] [build] v0.1.569 (569)
+[10:00:00.011] [INFO] [device] model=iPhone14,5 idiom=phone os=iOS Version 18.6.2 (Build 22G100) ram=5672MB available=3020MB cores=6
+[10:00:00.011] [INFO] [device] address-map=[0x104e1c000,0xfc0000000) 63GB increased-memory=1 extended-va=0
+[10:00:00.012] [INFO] [device] signing: cs-flags=0x22003005 get-task-allow=1 cs-debugged=0 debugger-attached=0 profile=development lifetime=7d left=6d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=0
+[10:00:20.000] [INFO] Requesting JIT with StikDebug...
+[10:00:20.010] [INFO] Opening StikDebug to enable JIT...
+[10:00:26.500] [SUCCESS] JIT enabled and debugger attached.
+[10:00:26.501] [SUCCESS] JIT enabled! Debugger attached.
+[10:00:31.000] [INFO] [bcd] library launch Game.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=0 metalfx=off
+[10:00:31.100] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104e1c000,0xfc0000000) 63GB available=3001MB low-power=0 thermal=nominal
+[10:00:31.300] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[10:00:31.301] [INFO] Allocating 896MB JIT pool via debugger...
+[10:00:31.302] [INFO] [jit-debugger] attached=1 at the pool request
+[10:00:31.310] [INFO] JIT-pool frontier already at 0x11b000000 — no pin needed
+[10:00:31.320] [SUCCESS] ml1040: executable window [0x140000000,+128MB) held since image load
+[10:00:31.330] [INFO] ml1040: released the early pool placeholder 0x148000000+1024MB for the debugger
+[10:00:31.340] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x11b000000+400MB 0x148000000+1024MB
+[10:00:31.350] [ERROR] Debugger failed to allocate RX memory (attempt 0)
+[10:00:31.351] [ERROR] BAD POOL: no valid placement after retries. Killing in 10s — please relaunch.
+[10:00:31.352] [INFO] BRK suspension lasted 0.05s
+[10:00:31.353] [ERROR] JIT pool allocation FAILED — not starting Wine.
+[10:00:31.354] [INFO]   The debugger couldn't reserve the JIT memory. Open BCD again, enable JIT, and give it another try.
+[10:00:41.352] [ERROR] BAD POOL — exiting now. Relaunch the app.

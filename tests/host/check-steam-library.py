@@ -174,7 +174,7 @@ require(dock_start.count('SteamSignIn.credentialsForDock()') == 1 and dock_start
         'the sign-in is read and written once, after the connection closed')
 require('SteamOwnedLibrary.shared.dockEnded()' in dock_start[:dock_start.index('Task { @MainActor in')],
         'a failed Dock start gives the connection back')
-dock_view = (app / 'MadeiraDockView.swift').read_text()
+dock_view = (app / 'MadeiraDockModel.swift').read_text()
 watch = block(dock_view, 'func watchReport()')
 require(watch.index('MadeiraDock.cleanup()') < watch.index('SteamOwnedLibrary.shared.dockEnded()'),
         "the connection may come back only when the Dock host's report or session is over")

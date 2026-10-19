@@ -101,7 +101,7 @@ fi
 # it hands the next launch a fresh log written by the OLD binary, which reads
 # exactly like a deployed build that changed nothing.
 if [ "$fail" = "0" ]; then
-  "${SSH[@]}" "$RPATH; D=/var/mobile/Containers/Data/Application/5BC39EAE-C20C-41FA-BCE2-7BF3D2B5822F/Documents; rm -f \$D/madeira-log.txt \$D/madeira-log.prev.txt" >/dev/null 2>&1
+  "${SSH[@]}" "$RPATH; D=/var/mobile/Containers/Data/Application/5BC39EAE-C20C-41FA-BCE2-7BF3D2B5822F/Documents; rm -f \$D/bcd-log.txt \$D/bcd-log.prev.txt" >/dev/null 2>&1
 
 # ml1024: clear RDR2's session marker.
 #
@@ -114,7 +114,7 @@ if [ "$fail" = "0" ]; then
 # clear it with the log.
 "${SSH[@]}" "$RPATH; rm -f '/var/mobile/Containers/Data/Application/5BC39EAE-C20C-41FA-BCE2-7BF3D2B5822F/Documents/wine/drive_c/users/mobile/AppData/Local/Rockstar Games/Red Dead Redemption 2/exit_file.dat'" >/dev/null 2>&1
 echo "  RDR2 session marker cleared — no stale 'exited unexpectedly' dialog"
-  echo "  log cleared — next launch starts a fresh madeira-log.txt"
+  echo "  log cleared — next launch starts a fresh bcd-log.txt"
   echo "DEPLOY VERIFIED — no instance running, next launch is COLD and uses this build"
 else
   echo "  log NOT cleared (deploy failed) — the installed build is still the previous one"

@@ -1,0 +1,168 @@
+[13:34:45.248] [INFO] [build] v0.1.547 (547)
+[13:34:45.249] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8170MB cores=6
+[13:34:45.249] [INFO] [device] address-map=[0x102c24000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:35:57.093] [INFO] [bcd] library launch Grand Theft Auto V: avx=0 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[13:36:01.136] [INFO] [dock-launch] image-retire=1
+[13:36:01.136] [INFO] [dock-launch] image-map-guard=1
+[13:36:01.315] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x102c24000,0x8000000000) 512GB available=8023MB low-power=0 thermal=nominal
+[phase] wine-start             t+  3.428s rev=ml526
+[cage] holdback reserved 0x7a00000000+0x1ffff0000 rev=ml433
+[footprint] rev=ml358 phys=1164 MB (peak 1164) internal=1147 MB compressed=0 MB external=107 MB reusable=20 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[x64-image] L"\\??\\C:\\windows\\system32\\dockhost.exe" 0x121160000+0x99000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #1 0x121160000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x121160000+0x8000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x121168000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x121168000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x12116c000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 121160000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 73FE600000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 73FC180000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 73FC100000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 73FBFF0000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 73FBF30000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x7100000000+0xc000
+[footprint] rev=ml358 phys=1380 MB (peak 1380) internal=1367 MB compressed=0 MB external=171 MB reusable=21 MB (cycle=2)
+[footprint] rev=ml358 phys=1381 MB (peak 1381) internal=1368 MB compressed=0 MB external=172 MB reusable=21 MB (cycle=3)
+[footprint] rev=ml358 phys=1413 MB (peak 1413) internal=1402 MB compressed=0 MB external=176 MB reusable=25 MB (cycle=4)
+[footprint] rev=ml358 phys=1408 MB (peak 1413) internal=1402 MB compressed=0 MB external=176 MB reusable=25 MB (cycle=5)
+[footprint] rev=ml358 phys=1471 MB (peak 1471) internal=1465 MB compressed=0 MB external=178 MB reusable=25 MB (cycle=6)
+[alloc-fail] ml814 #2 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00dc | STAGE=none err=1 at 0x100000000+0x1b0000
+00ec:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=15388
+00ec:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=15405
+[alloc-fail] ml814 #3 status=c0000018 hint=0x73f44a2000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #4 status=c0000018 hint=0x73f44a3000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #5 status=c0000018 hint=0x73f44a4000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #6 status=c0000018 hint=0x73f44a5000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #7 status=c0000018 hint=0x73f44a6000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #8 status=c0000018 hint=0x73f44a7000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x73f44a8000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #10 status=c0000018 hint=0x73f44a9000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #11 status=c0000018 hint=0x73f44aa000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #12 status=c0000018 hint=0x73f44ab000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #13 status=c0000018 hint=0x73f44ac000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #14 status=c0000018 hint=0x73f44ad000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #15 status=c0000018 hint=0x73f44ae000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #16 status=c0000018 hint=0x73f44af000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #17 status=c0000018 hint=0x73f68b2000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #18 status=c0000018 hint=0x73f68b3000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #19 status=c0000018 hint=0x73f68b4000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #20 status=c0000018 hint=0x73f68b5000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #21 status=c0000018 hint=0x73f68b6000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #22 status=c0000018 hint=0x73f68b7000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #23 status=c0000018 hint=0x73f68b8000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #24 status=c0000018 hint=0x73f68b9000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #25 status=c0000018 hint=0x73f68ba000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #26 status=c0000018 hint=0x73f68bb000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #27 status=c0000018 hint=0x73f68bc000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #28 status=c0000018 hint=0x73f68bd000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #29 status=c0000018 hint=0x73f68be000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #30 status=c0000018 hint=0x73f68bf000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #31 status=c0000018 hint=0x73f71b1000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #32 status=c0000018 hint=0x73f71b2000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #33 status=c0000018 hint=0x73f71b3000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #34 status=c0000018 hint=0x73f71b4000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #35 status=c0000018 hint=0x73f71b5000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #36 status=c0000018 hint=0x73f71b6000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #37 status=c0000018 hint=0x73f71b7000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #38 status=c0000018 hint=0x73f71b8000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #39 status=c0000018 hint=0x73f71b9000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #40 status=c0000018 hint=0x73f71ba000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #41 status=c0000018 hint=0x73f71bb000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #42 status=c0000018 hint=0x73f71bc000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #43 status=c0000018 hint=0x73f71bd000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #44 status=c0000018 hint=0x73f71be000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #45 status=c0000018 hint=0x73f71bf000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #46 status=c0000018 hint=0x73f71c4000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #47 status=c0000018 hint=0x73f71c5000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #48 status=c0000018 hint=0x73f71c6000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #49 status=c0000018 hint=0x73f71c7000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #50 status=c0000018 hint=0x73f71c8000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #51 status=c0000018 hint=0x73f71c9000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #52 status=c0000018 hint=0x73f71ca000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #53 status=c0000018 hint=0x73f71cb000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #54 status=c0000018 hint=0x73f71cc000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #55 status=c0000018 hint=0x73f71cd000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #56 status=c0000018 hint=0x73f71ce000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #57 status=c0000018 hint=0x73f71cf000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #58 status=c0000018 hint=0x73f71d1000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #59 status=c0000018 hint=0x73f71d2000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #60 status=c0000018 hint=0x73f71d3000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #61 status=c0000018 hint=0x73f71d4000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #62 status=c0000018 hint=0x73f71d5000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #63 status=c0000018 hint=0x73f71d6000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #64 status=c0000018 hint=0x73f71d7000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[alloc-fail] ml814 #128 status=c0000018 hint=0x73ee017000 size=0x1000 type=0x3000 protect=0x40 tid=00dc | STAGE=none err=3 at 0x7100050000+0x4000
+[win-name] #32 hwnd=0x10066 class='' text="RGSCSystemTray" rev=ml853
+[win-name] #36 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #42 hwnd=0x1007c class='' text="Default IME" rev=ml853
+[launch-view] dismissed reason=game-window logs=0
+[13:36:34.791] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=85 resident=2687MB dbg=DEBUGGED rev=ml525
+[va-scan] FAILED window=0x7100000000..0x73ffff0000 size=0x200000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7100016000..0x73ffff0000 views=549 maxgap=0x70ca0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7100000000..0x73ffff0000 size=0x200000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7100016000..0x73ffff0000 views=549 maxgap=0x70ca0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7100000000..0x73ffff0000 size=0x200000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7100016000..0x73ffff0000 views=549 maxgap=0x70ca0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7100000000..0x73ffff0000 size=0x200000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7100016000..0x73ffff0000 views=549 maxgap=0x70ca0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7100000000..0x73ffff0000 size=0x200000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7100016000..0x73ffff0000 views=549 maxgap=0x70ca0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x7100000000..0x73ffff0000 size=0x200000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7100016000..0x73ffff0000 views=549 maxgap=0x70ca0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   --> relaxing ceiling, retrying unclamped
+[13:37:04.890] [INFO] detach-wait: presents=242 running=1 elapsed=60s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=188 resident=3981MB dbg=DEBUGGED rev=ml525
+[win-name] #135 hwnd=0x2007c class='' text="Rockstar Games - Sign In" rev=ml853
+[13:37:34.987] [INFO] detach-wait: presents=1412 running=1 elapsed=90s
+[freeze] alive t+90s beats=3 gaps=0 iter=357 gen=1 threads=218 resident=3826MB dbg=DEBUGGED rev=ml525
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Grand Theft Auto V\\steam_api64.dll" 0x73cc800000+0x3f000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamclient64.dll" 0x73aaa40000+0x18bb000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\tier0_s64.dll" 0x73cc660000+0x19c000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\vstdlib_s64.dll" 0x73cc590000+0xc1000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+0414:err:module:load_dll [dll-missing] rev=ml336 #2 L"MSV1_0.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #27 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #28 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #29 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #30 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\gameoverlayrenderer64.dll" 0x73aa800000+0x1ac000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[alloc-fail] ml814 #192 status=c0000018 hint=0x73d3729000 size=0x1000 type=0x3000 protect=0x40 tid=0414 | STAGE=none err=3 at 0x7100050000+0x4000
+[win-name] #138 hwnd=0x100f0 class='' text="Default IME" rev=ml853
+[win-name] #139 hwnd=0x300e6 class='' text="Grand Theft Auto V" rev=ml853
+[win-name] #140 hwnd=0x300e6 class='' text="Grand Theft Auto V" rev=ml853
+[win-name] #146 hwnd=0x100aa class='' text="Rockstar Games Launcher" rev=ml853
+[win-name] #148 hwnd=0x100fc class='' text="DIEmWin" rev=ml853
+[x64-image] L"\\??\\C:\\Program Files\\Rockstar Games\\Social Club\\socialclub.dll" 0x73a8fb0000+0x601000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 414 Load module oleacc.dll (oleacc.dll-bb90a2c4b0d2aa98): 73A8E30000
+D 414 Load module netprofm.dll (netprofm.dll-b562c150cf34dc18): 73A8DA0000
+D 414 Load module hnetcfg.dll (hnetcfg.dll-9f7f4588e4bfae3c): 73A8D00000
+D 414 Load module winhttp.dll (winhttp.dll-940743fb9f87d8d4): 73A8C50000
+D 414 Load module jsproxy.dll (jsproxy.dll-cf964b9ca28dbd5b): 73A8BB0000
+D 414 Load module xmllite.dll (xmllite.dll-3244816c814c92a6): 73A8B20000
+[va-scan] FAILED window=0x10000..0x7100000000 size=0x40000 align=0x10000 top-down tries=66425 skips=180 | seen=0x10000..0x7000000000 views=290 maxgap=0x6ee73f0000 tailgap=0x6ee73f0000 stop=walked-all-views | firstfail=0x6ffffc0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x10000..0x7100000000 size=0x40000 align=0x10000 top-down tries=66425 skips=180 | seen=0x10000..0x7000000000 views=290 maxgap=0x6ee73f0000 tailgap=0x6ee73f0000 stop=walked-all-views | firstfail=0x6ffffc0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x10000..0x7100000000 size=0x40000 align=0x10000 top-down tries=66425 skips=180 | seen=0x10000..0x7000000000 views=290 maxgap=0x6ee73f0000 tailgap=0x6ee73f0000 stop=walked-all-views | firstfail=0x6ffffc0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x10000..0x7100000000 size=0x40000 align=0x10000 top-down tries=66425 skips=180 | seen=0x10000..0x7000000000 views=290 maxgap=0x6ee73f0000 tailgap=0x6ee73f0000 stop=walked-all-views | firstfail=0x6ffffc0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x10000..0x7100000000 size=0x40000 align=0x10000 top-down tries=66425 skips=180 | seen=0x10000..0x7000000000 views=290 maxgap=0x6ee73f0000 tailgap=0x6ee73f0000 stop=walked-all-views | firstfail=0x6ffffc0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x10000..0x7100000000 size=0x40000 align=0x10000 top-down tries=66425 skips=180 | seen=0x10000..0x7000000000 views=290 maxgap=0x6ee73f0000 tailgap=0x6ee73f0000 stop=walked-all-views | firstfail=0x6ffffc0000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+0200:err:module:load_dll [dll-missing] rev=ml336 #24 L"C:\\windows\\system32\\windows.media.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[13:38:05.157] [INFO] detach-wait: presents=3337 running=1 elapsed=120s
+[freeze] alive t+120s beats=4 gaps=0 iter=476 gen=1 threads=308 resident=4571MB dbg=DEBUGGED rev=ml525
+[13:38:35.353] [INFO] detach-wait: presents=5448 running=1 elapsed=150s
+[freeze] alive t+151s beats=5 gaps=0 iter=595 gen=1 threads=274 resident=4388MB dbg=DEBUGGED rev=ml525
+[13:39:05.530] [INFO] detach-wait: presents=7557 running=1 elapsed=180s
+[freeze] alive t+181s beats=6 gaps=0 iter=714 gen=1 threads=275 resident=4631MB dbg=DEBUGGED rev=ml525
+[13:39:35.623] [INFO] detach-wait: presents=9553 running=1 elapsed=210s
+[freeze] alive t+211s beats=7 gaps=0 iter=833 gen=1 threads=285 resident=5246MB dbg=DEBUGGED rev=ml525
+[13:40:05.715] [INFO] detach-wait: presents=11236 running=1 elapsed=240s
+[freeze] alive t+241s beats=8 gaps=0 iter=952 gen=1 threads=284 resident=5340MB dbg=DEBUGGED rev=ml525
+[13:40:35.816] [INFO] detach-wait: presents=12625 running=1 elapsed=271s
+[freeze] alive t+271s beats=9 gaps=0 iter=1071 gen=1 threads=284 resident=5803MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=7561 MB (peak 7568) internal=5306 MB compressed=1348 MB external=483 MB reusable=21 MB (cycle=136)
+[footprint] rev=ml358 phys=7576 MB (peak 7576) internal=5306 MB compressed=1348 MB external=477 MB reusable=21 MB (cycle=137)
+[footprint] rev=ml358 phys=7566 MB (peak 7576) internal=5307 MB compressed=1347 MB external=477 MB reusable=21 MB (cycle=138)
+[footprint] rev=ml358 phys=7536 MB (peak 7576) internal=5307 MB compressed=1347 MB external=477 MB reusable=21 MB (cycle=139)
+[footprint] rev=ml358 phys=7537 MB (peak 7576) internal=5308 MB compressed=1347 MB external=474 MB reusable=21 MB (cycle=140)
+[footprint] rev=ml358 phys=7552 MB (peak 7576) internal=5310 MB compressed=1346 MB external=470 MB reusable=21 MB (cycle=141)

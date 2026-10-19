@@ -133,7 +133,7 @@ int main(void)
     assert(!request(IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), 8));
     STORAGE_DESCRIPTOR_HEADER header;
     memcpy(&header, buffer + 17, sizeof(header));
-    assert(written == 8 && header.Version == 40 && header.Size == 61);
+    assert(written == 8 && header.Version == 40 && header.Size == 40 + 17);
     for (size_t len = 8; len < header.Size; len++)
     {
         assert(!request(IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), len));
@@ -149,7 +149,8 @@ int main(void)
     assert(descriptor.DeviceType == 0 && !descriptor.RemovableMedia);
     assert(!descriptor.SerialNumberOffset && !descriptor.VendorIdOffset && !descriptor.ProductRevisionOffset);
     assert(descriptor.ProductIdOffset == 40);
-    assert(!strcmp((char *)buffer + 17 + descriptor.ProductIdOffset, "Madeira virtual disk"));
+    assert(!strcmp((char *)buffer + 17 + descriptor.ProductIdOffset, "BCD virtual disk"));
+    assert(descriptor.Size == descriptor.ProductIdOffset + sizeof("BCD virtual disk") && descriptor.Size == header.Size);
 
     query.QueryType = PropertyExistsQuery;
     assert(!request(IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), 0) && !written);

@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "alias-release-arena-reuse"
+ ],
+ "next": [
+  "env.MADEIRA_ALIAS_RELEASE = 1"
+ ],
+ "note": "Ratchet & Clank: Rift Apart, build 553, iPhone18,2 (11695 MB), without fence-poll-backoff: froze loading the save (stale aliases in a re-reserved arena); owner, 555: with ALIAS_RELEASE the save loaded",
+ "outcome": "hung",
+ "stage": 4,
+ "status": "trying"
+}

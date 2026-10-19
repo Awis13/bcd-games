@@ -1,0 +1,18 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "swap-8gb-memory-kill"
+ ],
+ "next": [
+  "swap-mb = 3072",
+  "swap-mode = 2",
+  "swap-min-mb = 1"
+ ],
+ "note": "synthetic: a 8 GB device closed at its memory limit (footprint 60 MB under it)",
+ "outcome": "killed",
+ "stage": 4,
+ "status": "trying"
+}

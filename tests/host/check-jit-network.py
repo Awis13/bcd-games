@@ -65,7 +65,13 @@ require('returned output=\\(result.isEmpty ? "none" : "a VPN name")' in net and 
 
 # The bundled shortcut: a signed export (iOS imports only signed files), in the app's
 # resources, named after the shortcut Madeira runs, offered on iOS 27 or later.
-onboarding = (app / 'Onboarding.swift').read_text()
+# The setup screens are BCD's own since 2026-10-18 (BCDSetupView.swift); Onboarding.swift keeps
+# the rules and the model.
+onboarding = (app / 'BCDSetupView.swift').read_text()
+# Wave 3 (2026-10-19): the classic Settings › JIT section (JITSettingsSection) is deleted; Settings › JIT is BCD's
+# (BCDJIT.swift over BCDJITLive.swift).
+bcd_jit_live = (app / 'BCDJITLive.swift').read_text()
+bcd_jit_ui = (app / 'BCDJIT.swift').read_text()
 bundled = app / 'Madeira JIT.shortcut'
 blob = bundled.read_bytes() if bundled.exists() else b''
 require(blob[:4] == b'AEA1' and b'SigningCertificateChain' in blob[:64],
@@ -76,14 +82,15 @@ require('Bundle.main.url(forResource: "Madeira JIT", withExtension: "shortcut")'
         and 'static let name = "Madeira JIT"' in net,
         "the file's name is the shortcut's name Madeira runs (Shortcuts names an import after its file)")
 require('OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)' in net
-        and 'if JITShortcutFile.supported, let url = JITShortcutFile.url {' in setup,
+        and 'if JITShortcutFile.supported, JITShortcutFile.url != nil {' in onboarding
+        and 'next.shortcutCopy = BCDJITRules.shortcutAvailable(platform) ? JITShortcutFile.url : nil' in bcd_jit_live,
         'the shortcut is offered on iOS 27 or later only (it uses Store Content)')
 shortcut_page = onboarding[onboarding.index('private var shortcutPage'):onboarding.index('private var signInPage')]
 require('case .shortcut: shortcutPage' in onboarding and 'JITShortcutOffer' not in onboarding
         and onboarding.count('finishJIT()') == 3 and 'jitPath = .shortcut' in onboarding,
         "setup offers it on its own page after any of the three JIT guides, so the guides fit on one screen")
 require('UIApplication.shared.open(JITShortcutFile.iCloudLink)' in shortcut_page and 'ShareLink(item: url)' in shortcut_page
-        and 'UIApplication.shared.open(JITShortcutFile.iCloudLink)' in setup and 'ShareLink(item: url)' in setup,
+        and 'UIApplication.shared.open(JITShortcutFile.iCloudLink)' in bcd_jit_live and 'shortcutCopy' in bcd_jit_ui,
         "setup's page and Settings › JIT add it from its iCloud link (straight to Add Shortcut), "
         "and Madeira's copy through the share sheet with no connection")
 require('static let iCloudLink = URL(string: "https://www.icloud.com/shortcuts/' in net

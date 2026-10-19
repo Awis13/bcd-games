@@ -17,7 +17,7 @@ enum SteamSignIn {
     /// Posted on the main queue after a sign-in is stored or removed.
     static let didChange = Notification.Name("MadeiraSteamSignInDidChange")
 
-    /// `env.NAME` from madeira.cfg, then the process environment. "0" is off.
+    /// `env.NAME` from bcd.cfg, then the process environment. "0" is off.
     static func flag(_ name: String, default fallback: Bool) -> Bool {
         guard let value = MadeiraConfig.get("env." + name) ?? ProcessInfo.processInfo.environment[name] else {
             return fallback
@@ -86,9 +86,9 @@ enum SteamSignIn {
         if let steam = error as? SteamError, let text = steam.errorDescription { return text }
         if let url = error as? URLError {
             switch url.code {
-            case .notConnectedToInternet, .networkConnectionLost: return "No internet connection. Connect and try again."
-            case .timedOut: return "Steam did not respond in time. Try again."
-            default: return "A network error occurred (\(url.code.rawValue)). Try again."
+            case .notConnectedToInternet, .networkConnectionLost: return "You're offline. Connect to the internet and try again."
+            case .timedOut: return "Steam took too long to answer. Try again."
+            default: return "Something went wrong on the network (error \(url.code.rawValue)). Try again."
             }
         }
         return error.localizedDescription
@@ -209,7 +209,7 @@ final class SteamSignInModel: ObservableObject {
         signInTask = nil; qr.onNewChallenge = nil
         qrImage = nil; qrLink = nil; guardPrompt = nil; signInBusy = false
         guard SteamSignIn.store(accountName: account, refreshToken: refresh, accessToken: access) else {
-            signInError = "Steam accepted the sign-in, but Madeira could not save it in this device's Keychain. Check the app's signing and try again."
+            signInError = "Steam signed you in, but BCD couldn't store the sign-in in this device's Keychain. Check how the app is signed, then try again."
             SteamLog.event("[steam-signin] sign-in keychain-store failed method=\(method)")
             return
         }

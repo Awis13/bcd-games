@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DXBC register spaces other than 0 (madeira.cfg dxbc-register-spaces = 1); no Metal.
+"""DXBC register spaces other than 0 (bcd.cfg dxbc-register-spaces = 1); no Metal.
 
 The converter service refused every shader model 5.1 declaration outside
 register space 0. Horizon Zero Dawn keeps its constant buffers, samplers and
@@ -25,15 +25,21 @@ space; the catalog lists the switch, off by default; Horizon Zero Dawn's
 recommended list turns it on.
 """
 from pathlib import Path
-import re, shutil, subprocess, sys, tempfile
+import json, re, shutil, subprocess, sys, tempfile
 
 root = Path(__file__).resolve().parents[2]
 unix = (root / "madeira-d3d12/src/unix/madeira_ir_unix.mm").read_text()
 pe = (root / "madeira-d3d12/src/pe/madeira_d3d12.c").read_text()
 airconv = (root / "dxmt/src/airconv/dxbc_converter.cpp").read_text()
 catalog = (root / "app/Madeira/ConfigCatalog.generated.swift").read_text()
-recs = (root / "app/Madeira/GameRecommendations.swift").read_text()
+recs = json.loads((root / "recommended/recommendations.json").read_text())
 ok = True
+
+
+def rule_config(rules, ident):
+    """A rule's config lines in recommended/recommendations.json (the lists since 2026-10-18)."""
+    rule = next(r for r in rules['rules'] if r['id'] == ident)
+    return '\n'.join(l if isinstance(l, str) else l['line'] for l in rule['config'] + rule.get('smallRAMConfig', []))
 
 
 def check(what, cond):
@@ -88,8 +94,8 @@ check("airconv names its tables by range id and reports each range's space",
       and 'o.RegisterSpace = r ? r->space : ~0u;' in airconv)
 check("catalog lists dxbc-register-spaces, off by default",
       re.search(r'key: "dxbc-register-spaces".*kind: \.bool, defaultValue: "0"', catalog) is not None)
-hzd = recs[recs.index("static let horizonZeroDawn = GameRecommendation("):]
-check("Horizon Zero Dawn's list turns it on", "dxbc-register-spaces = 1" in hzd[:hzd.index('""",')])
+hzd = rule_config(recs, "horizon-zero-dawn")
+check("Horizon Zero Dawn's list turns it on", "dxbc-register-spaces = 1" in hzd.split("\n"))
 
 harness = r'''
 #include <cstdio>

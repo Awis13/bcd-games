@@ -280,10 +280,8 @@ cat = (root / "app/Madeira/ConfigCatalog.generated.swift").read_text()
 for key in ("msc-unbounded-retry", "msc-fail-memo", "pso-placeholder"):
     check("catalog lists %s, off by default" % key,
           ('key: "%s", ' % key) in cat and 'kind: .bool, defaultValue: "0"' in cat.split('key: "%s", ' % key)[1].split("\n")[0])
-# The CI step exists only in the fork's workflow; upstream has no .github.
-if (root / ".github/workflows/build-ipa.yml").exists():
-    wf = (root / ".github/workflows/build-ipa.yml").read_text()
-    check("the workflow runs this check", "python3 tests/host/check-msc-unbounded-retry.py" in wf)
+wf = (root / ".github/workflows/build-ipa.yml").read_text()
+check("the workflow runs this check", "python3 tests/host/check-msc-unbounded-retry.py" in wf)
 
 print("PASS" if ok else "FAILED")
 sys.exit(0 if ok else 1)

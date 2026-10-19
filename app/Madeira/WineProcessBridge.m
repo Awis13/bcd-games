@@ -11,6 +11,10 @@
  * in via autolink — the static-lib driver code can't autolink itself. */
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioToolbox.h>
+/* madeira-bcd: the app's activity notifications (MADEIRA_AUDIO_RESUME, MADEIRA_PAUSE_IN_BACKGROUND). */
+#import <UIKit/UIKit.h>
+#include <stdatomic.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <fcntl.h>
@@ -291,16 +295,14 @@ extern void __wine_main(int argc, char *argv[]);
 // File-based logging (from server_ios.c)
 extern void wine_log_set_file(const char *path);
 
+static pthread_t g_wine_thread;
+static volatile int g_wine_running = 0;
 /* madeira-bcd: env.MADEIRA_SRV_FGETPATH of the launch in progress, read by the in-app
  * wineserver (build/wineserver/fd_ios.c), which is running before a game's env lines
  * are set. Set after they are applied, cleared when the session ends. */
 volatile int g_madeira_srv_fgetpath = 0;
-static pthread_t g_wine_thread;
-static volatile int g_wine_running = 0;
-/* madeira-bcd: the server's per-launch switches (fd_ios.c, request_ios.c; ntdll's
- * server_ios.c reads g_madeira_srv_direct too), for the in-app wineserver, which is
- * running before a game's env lines are set. Set after they are applied, cleared when
- * the session ends. All off by default. */
+/* madeira-bcd: the same for the server's other per-launch switches (fd_ios.c, request_ios.c;
+ * ntdll's server_ios.c reads g_madeira_srv_direct too). All off by default. */
 volatile int g_madeira_srv_eco_follow = 0;   /* env.MADEIRA_SRV_ECO_FOLLOW = 1 */
 volatile int g_madeira_srv_direct = 0;       /* env.MADEIRA_SRV_DIRECT = 1 or 2 */
 volatile int g_madeira_srv_idle_us = 0;      /* env.MADEIRA_SRV_IDLE_US = 100..50000, 0 = 1000 */
@@ -331,12 +333,12 @@ static char *g_prefix_path = NULL;
 
 /* Export MADEIRA_DOCS_DIR before main(), while HOME is still the app container.
  * The in-app wineserver thread sets HOME to the Wine prefix before it creates its
- * first object, and madsync reads madeira.cfg inproc-sync right there (then keeps
+ * first object, and madsync reads bcd.cfg inproc-sync right there (then keeps
  * the answer for the whole app run); with MADEIRA_DOCS_DIR exported only when the
  * guest starts (wine_process_thread below), that read looked in
- * Documents/wine/Documents and missed the user's madeira.cfg. Kill switch:
+ * Documents/wine/Documents and missed the user's bcd.cfg. Kill switch:
  * MADEIRA_CFG_EARLY_DOCS=0 in the process environment or
- * env.MADEIRA_CFG_EARLY_DOCS = 0 in madeira.cfg. Pure C, host-tested
+ * env.MADEIRA_CFG_EARLY_DOCS = 0 in bcd.cfg. Pure C, host-tested
  * (tests/host/check-cfg-early-docs.py). */
 static const char *g_madeira_docs_early = "not-run";
 static int madeira_cfg_off_word(const char *v)
@@ -408,7 +410,7 @@ static void madeira_ensure_locallow(NSString *prefix)
     /* 0 leaves the profile's AppData\LocalLow folder missing, as before. */
     const char *off = getenv( "MADEIRA_PROFILE_LOCALLOW" );
     /* ml1236: this runs from wineserver_start, before wine_process_thread exports
-     * madeira.cfg's env.* lines, so the cfg line is read here directly. */
+     * bcd.cfg's env.* lines, so the cfg line is read here directly. */
     char cfg_off[16];
     if (!off && madeira_cfg_get( "env.MADEIRA_PROFILE_LOCALLOW", cfg_off, sizeof(cfg_off) )) off = cfg_off;
     if (off && off[0] == '0') return;
@@ -677,6 +679,31 @@ static void madeira_link_wine_mono(NSFileManager *fm, NSString *prefix, NSString
         dprintf(STDERR_FILENO, "[wine-mono] ml1275 FAILED to link C:\\windows\\mono\\mono-2.0 errno=%d\n", errno);
 }
 
+/* BCD: the folder Microsoft's x64 VC++ runtime DLLs are linked from this
+ * session. The bundle's x86_64-vcruntime when it holds them (the owner's
+ * builds, which fetch them at build time: unchanged); else the copy the app
+ * downloaded from Microsoft (VCRuntimeDownload.swift) into
+ * Library/Application Support/VCRuntime/x86_64; else the bundle's folder as
+ * before, with nothing to link. vcruntime140.dll marks a folder that holds
+ * them (VCRuntimeInstaller.marker). `support` is the Application Support
+ * directory. */
+static NSString *madeira_vcruntime_dir(NSString *bundle, NSString *support)
+{
+    NSString *bundled = [bundle stringByAppendingPathComponent:@"x86_64-vcruntime"];
+    NSString *downloaded = support ? [support stringByAppendingPathComponent:@"VCRuntime/x86_64"] : nil;
+    const char *source = "none";
+    NSString *dir = bundled;
+    if (access([bundled stringByAppendingPathComponent:@"vcruntime140.dll"].fileSystemRepresentation, R_OK) == 0) {
+        source = "bundled";
+    } else if (downloaded &&
+               access([downloaded stringByAppendingPathComponent:@"vcruntime140.dll"].fileSystemRepresentation, R_OK) == 0) {
+        source = "downloaded";
+        dir = downloaded;
+    }
+    dprintf(STDERR_FILENO, "[WineProc] VC++ runtime: %s\n", source);
+    return dir;
+}
+
 /* C:\windows\winsxs for 32-bit processes: the x86 side-by-side assemblies Wine
  * ships. Re-seeded every session, because the links name the bundle path.
  *
@@ -885,14 +912,178 @@ static void madeira_publish_host_probe(void)
     dprintf(STDERR_FILENO, "[WineProc] FEX host feature probe: %s\n", buf);
 }
 
+/* ---- madeira-bcd: the audio session and the app's activity, for the engine ----
+ * (2026-10-18, docs/research/ios18-2026-10-18/gameplay.md sections 2.1 and 2.2)
+ *
+ * env.MADEIRA_AUDIO_RESUME = 1 (opt-in, off by default): game audio comes back
+ * after an interruption. The session is set up once (Playback, active), and iOS
+ * stops it for a phone call, Siri, an alarm, another app's sound, or when it
+ * suspends the app; nothing started the output again, so the sound stayed off
+ * until the game was restarted and an audio-clocked game could stall. These
+ * observers report the events to the audio driver (audio_null_ios.c,
+ * madeira_audio_session_event), which keeps its clients' clock running while
+ * the output is stopped and starts the output again:
+ *   - an interruption began: the output stops; the clock runs on;
+ *   - the interruption ended, or the app is active again: the session is
+ *     activated and the output started where a client plays;
+ *   - the route changed: an output that stopped behind our back starts again;
+ *   - media services were reset: category, session and a new output unit.
+ * Log: "[audio] interruption began", "[audio] interruption ended, resumed=1"
+ * (0: the output did not start; the next event tries again).
+ *
+ * env.MADEIRA_PAUSE_IN_BACKGROUND = 1 (opt-in, off by default): Metal work waits
+ * while the app is not active (madeira_app_wait_active, called by winemetal
+ * before a commit and a present, tools/patch-winemetal-pause-inactive.py). iOS
+ * refuses GPU work from the background, and a game runs on for some seconds
+ * after Home: what it submitted then was lost (a streamed texture could stay
+ * black). Log: "[gpu-pause] ...".
+ *
+ * Neither switch set: no observer is registered and nothing here runs. */
+extern int madeira_audio_session_event(int what);   /* build/ntdll-unix/audio_null_ios.c */
+
+static int madeira_audio_resume_switch(void)
+{
+    const char *v = getenv("MADEIRA_AUDIO_RESUME");   /* 1: the app reports the audio session's interruptions to the audio driver, which restarts the output (audio_null_ios.c) */
+    return v && v[0] == '1' && !v[1];
+}
+
+static int madeira_pause_switch(void)
+{
+    const char *v = getenv("MADEIRA_PAUSE_IN_BACKGROUND");   /* 1: Metal command buffers and presents wait while the app is not active, so iOS never refuses the game's GPU work from the background; unset/0: as before */
+    return v && v[0] == '1' && !v[1];
+}
+
+static pthread_mutex_t g_madeira_active_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_madeira_active_cond = PTHREAD_COND_INITIALIZER;
+static _Atomic int g_madeira_inactive;   /* 1 from resign-active to become-active, only with MADEIRA_PAUSE_IN_BACKGROUND */
+
+static void madeira_set_inactive(int inactive)
+{
+    pthread_mutex_lock(&g_madeira_active_lock);
+    atomic_store_explicit(&g_madeira_inactive, inactive, memory_order_release);
+    if (!inactive) pthread_cond_broadcast(&g_madeira_active_cond);
+    pthread_mutex_unlock(&g_madeira_active_lock);
+}
+
+/* winemetal calls this before it commits a command buffer and before a present
+ * (tools/patch-winemetal-pause-inactive.py). While the app is active, and always
+ * without the switch (the flag is then never set), it returns at once. Otherwise
+ * it waits until the app is active again: never on the main thread, whose run
+ * loop delivers the notification that ends the wait, and 10 minutes at most. */
+int madeira_app_wait_active(const char *where)
+{
+    static _Atomic int said;
+    struct timeval tv, t1;
+    struct timespec until;
+    int timed_out = 0;
+
+    if (!atomic_load_explicit(&g_madeira_inactive, memory_order_acquire) || pthread_main_np()) return 0;
+    gettimeofday(&tv, NULL);
+    until.tv_sec = tv.tv_sec + 600;
+    until.tv_nsec = (long)tv.tv_usec * 1000;
+    pthread_mutex_lock(&g_madeira_active_lock);
+    while (atomic_load_explicit(&g_madeira_inactive, memory_order_acquire) && !timed_out)
+        timed_out = pthread_cond_timedwait(&g_madeira_active_cond, &g_madeira_active_lock, &until) == ETIMEDOUT;
+    pthread_mutex_unlock(&g_madeira_active_lock);
+    gettimeofday(&t1, NULL);
+    if (atomic_fetch_add_explicit(&said, 1, memory_order_relaxed) < 24)
+        dprintf(STDERR_FILENO, "[gpu-pause] %s waited %.1f s while the app was not active%s\n", where ? where : "?",
+                (double)(t1.tv_sec - tv.tv_sec) + (double)(t1.tv_usec - tv.tv_usec) / 1e6,
+                timed_out ? " (10 minutes: going on)" : "");
+    return 1;
+}
+
+/* Activate the session and ask the driver to start the output again. */
+static void madeira_audio_resume(const char *why, int always_log)
+{
+    NSError *err = nil;
+    BOOL active = [[AVAudioSession sharedInstance] setActive:YES error:&err];
+    int r = active ? madeira_audio_session_event(1) : 0;
+    if (always_log || r == 0 || r == 2)
+        dprintf(STDERR_FILENO, "[audio] %s, resumed=%d (%s%s)\n", why, r >= 1 ? 1 : 0,
+                !active ? "the audio session could not be activated: " :
+                r == 2 ? "output started again" : r == 1 ? "output running" : r == 3 ? "no stream playing" :
+                r < 0 ? "switch off in the driver" : "output still stopped",
+                !active ? err.localizedDescription.UTF8String : "");
+}
+
+/* Once per app run, when a session with either switch starts; each observer
+ * checks its switch again when it fires (a later session may have it off). */
+static void madeira_engine_observers_install(void)
+{
+    static dispatch_once_t once;
+    int audio = madeira_audio_resume_switch(), pause = madeira_pause_switch();
+
+    if (audio) dprintf(STDERR_FILENO, "[audio] interruption handling on (env.MADEIRA_AUDIO_RESUME = 1)\n");
+    if (pause) dprintf(STDERR_FILENO, "[gpu-pause] Metal work waits while the app is not active "
+                       "(env.MADEIRA_PAUSE_IN_BACKGROUND = 1)\n");
+    if (!audio && !pause) return;
+    dispatch_once(&once, ^{
+        NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+        AVAudioSession *session = [AVAudioSession sharedInstance];
+        /* setActive can block for a while: the audio events run on their own serial queue */
+        NSOperationQueue *q = [[NSOperationQueue alloc] init];
+        q.maxConcurrentOperationCount = 1;
+        q.qualityOfService = NSQualityOfServiceUserInitiated;
+        q.name = @"madeira.audio-session";
+        [nc addObserverForName:AVAudioSessionInterruptionNotification object:session queue:q
+                    usingBlock:^(NSNotification *n) {
+            if (!madeira_audio_resume_switch()) return;
+            if ([n.userInfo[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue] == AVAudioSessionInterruptionTypeBegan) {
+                madeira_audio_session_event(0);
+                dprintf(STDERR_FILENO, "[audio] interruption began (reason %lu)\n",
+                        (unsigned long)[n.userInfo[AVAudioSessionInterruptionReasonKey] unsignedIntegerValue]);
+            } else {
+                madeira_audio_resume("interruption ended", 1);
+            }
+        }];
+        [nc addObserverForName:AVAudioSessionRouteChangeNotification object:session queue:q
+                    usingBlock:^(NSNotification *n) {
+            if (!madeira_audio_resume_switch()) return;
+            if (madeira_audio_session_event(3) == 2)
+                dprintf(STDERR_FILENO, "[audio] route changed (reason %lu), resumed=1 (output started again)\n",
+                        (unsigned long)[n.userInfo[AVAudioSessionRouteChangeReasonKey] unsignedIntegerValue]);
+        }];
+        [nc addObserverForName:AVAudioSessionMediaServicesWereResetNotification object:session queue:q
+                    usingBlock:^(NSNotification *n) {
+            (void)n;
+            if (!madeira_audio_resume_switch()) return;
+            NSError *err = nil;
+            [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&err];
+            BOOL active = [[AVAudioSession sharedInstance] setActive:YES error:&err];
+            int r = madeira_audio_session_event(2);
+            dprintf(STDERR_FILENO, "[audio] media services were reset, resumed=%d (session %s)\n",
+                    r >= 1 ? 1 : 0, active ? "active" : "not active");
+        }];
+        [nc addObserverForName:UIApplicationWillResignActiveNotification object:nil queue:nil
+                    usingBlock:^(NSNotification *n) {
+            (void)n;
+            if (madeira_pause_switch()) madeira_set_inactive(1);
+        }];
+        [nc addObserverForName:UIApplicationDidBecomeActiveNotification object:nil queue:nil
+                    usingBlock:^(NSNotification *n) {
+            (void)n;
+            madeira_set_inactive(0);   /* always: the switch may have changed since */
+            if (madeira_audio_resume_switch())
+                [q addOperationWithBlock:^{ madeira_audio_resume("app active again", 0); }];
+        }];
+    });
+}
+
 static void *wine_process_thread(void *arg) {
     @autoreleasepool {
         /* Perf: the guest main thread runs ON this pthread. Promote to
          * USER_INTERACTIVE so it schedules on P-cores with minimal kernel
          * timer coalescing (same rationale as start_thread in
          * thread_ios.c — default QoS costs tens of ms of sleep leeway). */
-        pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
-        LOG("Wine process thread started");
+        {
+            int qrc = pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+            qos_class_t q = QOS_CLASS_UNSPECIFIED; int rel = 0;
+            pthread_get_qos_class_np(pthread_self(), &q, &rel);
+            LOG("Wine process thread started");
+            dprintf(STDERR_FILENO, "[main-qos] madeira-bcd guest main thread: set USER_INTERACTIVE rc=%d, class now 0x%x\n",
+                    qrc, (unsigned)q);
+        }
 
         /* ml588: seeding itself now happens in wineserver_start(), BEFORE the
          * server loads the registry. Kept here as a safety net for any path
@@ -1088,7 +1279,7 @@ static void *wine_process_thread(void *arg) {
             unsetenv("SteamAppPath");
             unsetenv("SteamGameId");
             unsetenv("SteamAppId");
-            dprintf(STDERR_FILENO, "[steam-env] Madeira Dock session: no fixed Steam game identity published\n");
+            dprintf(STDERR_FILENO, "[steam-env] BCD Dock session: no fixed Steam game identity published\n");
         } else if (direct_app && direct_app[0] && strlen(direct_app) <= 10 &&
             strspn(direct_app, "0123456789") == strlen(direct_app) &&
             direct_path && (direct_path[0] == 'C' || direct_path[0] == 'c') && direct_path[1] == ':' &&
@@ -1145,7 +1336,7 @@ static void *wine_process_thread(void *arg) {
         // Set up file-based logging for Wine C code
         {
             NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-            NSString *logPath = [docs stringByAppendingPathComponent:@"madeira-log.txt"];
+            NSString *logPath = [docs stringByAppendingPathComponent:@"bcd-log.txt"];
             wine_log_set_file(logPath.UTF8String);
             /* ml519: start the freeze detector as soon as logging works, so
              * every launch (Thumper as well as Steam) yields a measurement. */
@@ -1156,32 +1347,32 @@ static void *wine_process_thread(void *arg) {
             LOG("Wine log file: %{public}s", logPath.UTF8String);
             /* Expose the app Documents dir to Wine code (e.g. for fex-jit-dump.bin) */
             setenv("MADEIRA_DOCS_DIR", docs.UTF8String, 1);
-            dprintf(STDERR_FILENO, "[config-dir] early MADEIRA_DOCS_DIR=%s; native madeira.cfg readers that run "
+            dprintf(STDERR_FILENO, "[config-dir] early MADEIRA_DOCS_DIR=%s; native bcd.cfg readers that run "
                     "before this point (wineserver start: madsync inproc-sync) use it (MADEIRA_CFG_EARLY_DOCS=0 disables)\n",
                     g_madeira_docs_early);
 
             /* ml1076: file-backed memory canary (Astra's memory-backing-canary.c,
-             * run in-app on the phone, gated by Documents/madeira-swap-canary.txt).
+             * run in-app on the phone, gated by bcd.cfg swap-canary = 1).
              * Question: do dirty pages of a MAP_SHARED mapping of a private temp file
              * stay OUT of phys_footprint on iOS the way they do on macOS? If yes, a
              * file-backed tier for large guest commits is a real capacity lever. */
-            if (madeira_cfg_bool("swap-canary", 0)) {   /* ml1095: madeira.cfg swap-canary = 1 */
+            if (madeira_cfg_bool("swap-canary", 0)) {   /* ml1095: bcd.cfg swap-canary = 1 */
                 extern void madeira_memory_canary(const char *tmpdir);
                 madeira_memory_canary(NSTemporaryDirectory().UTF8String);
             }
 
-            /* ml1077: file-backed guest data tier. Documents/madeira-swap-mb.txt = cap
+            /* ml1077: file-backed guest data tier. bcd.cfg swap-mb = cap
              * in MB; the sparse backing file lives in tmp with NO file protection so
              * the mapping survives the screen locking. See virtual_ios.c ml1077. */
             {
-                long capMB = (long)madeira_cfg_int("swap-mb", 0);   /* ml1095: madeira.cfg swap-mb = N */
+                long capMB = (long)madeira_cfg_int("swap-mb", 0);   /* ml1095: bcd.cfg swap-mb = N */
                 if (capMB >= 64) {
                     NSString *swapPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"madeira-swap.bin"];
                     [[NSFileManager defaultManager] removeItemAtPath:swapPath error:nil];
                     if ([[NSFileManager defaultManager] createFileAtPath:swapPath contents:nil attributes:@{NSFileProtectionKey: NSFileProtectionNone}]) {
                         setenv("MADEIRA_SWAP_FILE", swapPath.UTF8String, 1);
                         setenv("MADEIRA_SWAP_MB", [NSString stringWithFormat:@"%ld", capMB].UTF8String, 1);
-                        /* madeira-bcd: swap-min-kb (madeira.cfg or the game's config) lowers
+                        /* madeira-bcd: swap-min-kb (bcd.cfg or the game's config) lowers
                          * the tier's 8 MB eligibility floor. Upstream's virtual_ios.c reads
                          * MADEIRA_SWAP_MIN_KB only in its "blocks" coverage, so swap-min-kb
                          * selects that; an env.MADEIRA_SWAP_COVERAGE line, exported below,
@@ -1197,20 +1388,26 @@ static void *wine_process_thread(void *arg) {
                         }
                         LOG("ml1077 swap tier armed: %{public}s, %ld MB", swapPath.UTF8String, capMB);
                         fprintf(stderr, "[swap] ml1077 app: backing file %s, cap %ld MB\n", swapPath.UTF8String, capMB);
+                        /* ml1150: memory pool, the tier's first stage (MemoryPool.m). */
+                        long poolMB = (long)madeira_cfg_int("mempool-mb", 0);   /* bcd.cfg mempool-mb = N */
+                        if (poolMB >= 512) {
+                            extern long MadeiraMemoryPoolStart(long megabytes);
+                            long got = MadeiraMemoryPoolStart(poolMB);
+                            LOG("ml1150 memory pool: %ld of %ld MB", got, poolMB);
+                        }
                     }
                 }
             }
 
-            /* ml1062: Documents/madeira-env.txt -- one KEY=VALUE per line, exported
-             * before Wine starts. FEX reads its whole configuration from FEX_*
+            /* ml1062: environment exports -- the "env.NAME = value" lines of bcd.cfg,
+             * exported before Wine starts. FEX reads its whole configuration from FEX_*
              * environment variables (EnvLoader over the process environment, which
              * Wine builds from ours), so this turns every FEX option -- TSO emulation,
              * multiblock, SMC checks, x87 precision -- into a file edit instead of a
              * rebuild. Lines starting with # are comments. Logged, so a run's log
              * always says what it ran with. */
             {
-                /* ml1095: "env.NAME = value" lines of madeira.cfg; the legacy
-                 * madeira-env.txt (KEY=VALUE lines) only when madeira.cfg is absent. */
+                /* ml1095: collected as KEY=VALUE lines; none without bcd.cfg. */
                 NSString *text = nil;
                 if (madeira_cfg_present()) {
                     NSMutableString *acc = [NSMutableString string];
@@ -1224,14 +1421,12 @@ static void *wine_process_thread(void *arg) {
                         if (k.length) [acc appendFormat:@"%@=%@\n", k, v];
                     }
                     text = acc;
-                } else {
-                    text = [NSString stringWithContentsOfFile:[docs stringByAppendingPathComponent:@"madeira-env.txt"] encoding:NSUTF8StringEncoding error:nil];
                 }
                 /* iOS-Madeira ml1184: a library game's own settings (LibraryEntry.applyEnvironment,
                  * which ran before this on the launch worker) win over the same key in
-                 * madeira.cfg, as its details page says; the cfg line used to replace them
+                 * bcd.cfg, as its details page says; the cfg line used to replace them
                  * (env.MADEIRA_FASTSYNC = auto undid "Fast synchronization: off"). Which of
-                 * them the game set is noted before the first cfg line is exported: madeira.cfg
+                 * them the game set is noted before the first cfg line is exported: bcd.cfg
                  * is last-line-wins, and a later line for the same key must still replace an
                  * earlier one instead of being taken for the game's own setting. Every key
                  * applyEnvironment exports belongs here (check-frontend). The game's own
@@ -1256,24 +1451,33 @@ static void *wine_process_thread(void *arg) {
                     for (size_t i = 0; i < per_launch_count; i++)
                         if (game_set[i] && !strcmp(k.UTF8String, per_launch[i])) kept = YES;
                     if (kept) {
-                        fprintf(stderr, "[madeira-env] ml1184 %s=%s kept (the game's own setting); madeira.cfg's %s ignored\n",
+                        fprintf(stderr, "[madeira-env] ml1184 %s=%s kept (the game's own setting); bcd.cfg's %s ignored\n",
                                 k.UTF8String, getenv(k.UTF8String), v.UTF8String);
                         continue;
                     }
                     setenv(k.UTF8String, v.UTF8String, 1);
-                    LOG("madeira.cfg env: %{public}s=%{public}s", k.UTF8String, v.UTF8String);
+                    LOG("bcd.cfg env: %{public}s=%{public}s", k.UTF8String, v.UTF8String);
                     fprintf(stderr, "[madeira-env] ml1062 %s=%s\n", k.UTF8String, v.UTF8String);
                 }
                 /* The game's own lines ($MADEIRA_CFG_GAME): madeira-bcd's per-game file
                  * (GameProfiles.swift, Application Support/GameConfigs), or the
                  * library entry's lines LibraryEntry.applyEnvironment writes
                  * (MadeiraConfig.applyGame merges the two). Its env.NAME lines come
-                 * after madeira.cfg's and win, the rule madeira_cfg_get applies to keys. */
+                 * after bcd.cfg's and win, the rule madeira_cfg_get applies to keys. */
                 const char *gameCfg = getenv("MADEIRA_CFG_GAME");
-                NSString *gameText = (gameCfg && *gameCfg)
+                NSString *gtext = (gameCfg && *gameCfg)
                     ? [NSString stringWithContentsOfFile:[NSString stringWithUTF8String:gameCfg] encoding:NSUTF8StringEncoding error:nil]
                     : nil;
-                for (NSString *raw in [gameText componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]]) {
+                /* madeira-bcd: print every setting line of the game's file, so a log
+                 * always says which per-game keys (dxmt, swap-*, metalfx...) it ran with. */
+                if (gameCfg && *gameCfg)
+                    fprintf(stderr, "[game-cfg] %s (%s)\n", gameCfg, gtext ? "read" : "MISSING");
+                for (NSString *raw in [gtext componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]]) {
+                    NSString *t = [raw stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                    if (t.length && ![t hasPrefix:@"#"] && ![t hasPrefix:@"env."])
+                        fprintf(stderr, "[game-cfg]   %s\n", t.UTF8String);
+                }
+                for (NSString *raw in [gtext componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]]) {
                     NSString *line = [raw stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
                     NSRange eq = [line rangeOfString:@"="];
                     if (![line hasPrefix:@"env."] || eq.location == NSNotFound) continue;
@@ -1284,7 +1488,13 @@ static void *wine_process_thread(void *arg) {
                     LOG("game config env: %{public}s=%{public}s", k.UTF8String, v.UTF8String);
                     fprintf(stderr, "[madeira-env] game %s=%s\n", k.UTF8String, v.UTF8String);
                 }
-                {   /* madeira-bcd: the server's per-launch switches (fd_ios.c, request_ios.c) */
+                {   /* madeira-bcd: for the wineserver (g_madeira_srv_fgetpath) */
+                    const char *fp = getenv("MADEIRA_SRV_FGETPATH");
+                    g_madeira_srv_fgetpath = (fp && fp[0] == '1') ? 1 : 0;
+                    if (g_madeira_srv_fgetpath)
+                        fprintf(stderr, "[madeira-env] MADEIRA_SRV_FGETPATH=1: the server names the files it opens with F_GETPATH\n");
+                }
+                {   /* madeira-bcd: the server's other per-launch switches (fd_ios.c, request_ios.c) */
                     const char *ef = getenv("MADEIRA_SRV_ECO_FOLLOW");   /* 1: the server thread runs at utility QoS while ECO is on */
                     const char *dr = getenv("MADEIRA_SRV_DIRECT");       /* 1 or 2: listed requests run on the calling thread */
                     const char *iu = getenv("MADEIRA_SRV_IDLE_US");      /* the server loop's longest sleep, us (default 1000) */
@@ -1300,18 +1510,12 @@ static void *wine_process_thread(void *arg) {
                                 g_madeira_srv_direct, g_madeira_srv_idle_us, g_madeira_srv_log_all);
                 }
                 /* Fastsync is the default sync engine: with neither inproc-sync nor
-                 * env.MADEIRA_FASTSYNC in madeira.cfg, Wine gets MADEIRA_FASTSYNC=auto,
+                 * env.MADEIRA_FASTSYNC in bcd.cfg, Wine gets MADEIRA_FASTSYNC=auto,
                  * the value Settings > Sync engine > Fastsync writes. Never overrides a
                  * value already set (a game's own fastsync switch sets 0). */
                 if (madeira_cfg_sync_engine() == MADEIRA_SYNC_FASTSYNC && !getenv("MADEIRA_FASTSYNC")) {
                     setenv("MADEIRA_FASTSYNC", "auto", 0);
                     fprintf(stderr, "[madeira-env] sync engine: fastsync (default), MADEIRA_FASTSYNC=auto\n");
-                }
-                {   /* madeira-bcd: for the wineserver (g_madeira_srv_fgetpath) */
-                    const char *fp = getenv("MADEIRA_SRV_FGETPATH");
-                    g_madeira_srv_fgetpath = (fp && fp[0] == '1') ? 1 : 0;
-                    if (g_madeira_srv_fgetpath)
-                        fprintf(stderr, "[madeira-env] MADEIRA_SRV_FGETPATH=1: the server names the files it opens with F_GETPATH\n");
                 }
             }
         }
@@ -1333,7 +1537,7 @@ static void *wine_process_thread(void *arg) {
         // and the guest program's printf are both captured.
         {
             NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-            NSString *logPath2 = [docs stringByAppendingPathComponent:@"madeira-log.txt"];
+            NSString *logPath2 = [docs stringByAppendingPathComponent:@"bcd-log.txt"];
             int logfd = open(logPath2.UTF8String, O_WRONLY | O_CREAT | O_APPEND, 0644);
             if (logfd >= 0) {
                 dup2(logfd, STDERR_FILENO);
@@ -1341,6 +1545,8 @@ static void *wine_process_thread(void *arg) {
                 close(logfd);
             }
         }
+
+        madeira_engine_observers_install();   /* madeira-bcd: env.MADEIRA_AUDIO_RESUME / env.MADEIRA_PAUSE_IN_BACKGROUND; neither set: nothing */
 
         // Pick which exe to run (env var override, default = cube.exe).
         // Set MADEIRA_EXE=hello-x64.exe in env to launch the ARM64EC test path.
@@ -1396,8 +1602,8 @@ static void *wine_process_thread(void *arg) {
                     linked++;
             }
             LOG("Symlinked %d DLLs from %{public}s to %{public}s", linked, bundle_subdir, sys32Dir.UTF8String);
+            madeira_link_wbem(fm, prefix, @"system32", dllSource);   /* madeira-bcd: WMI for 64-bit targets */
             dprintf(STDERR_FILENO, "[WineProc] Symlinked %d DLLs from %s -> sys32\n", linked, bundle_subdir);
-            madeira_link_wbem(fm, prefix, @"system32", dllSource);
 
             // X3 mixed-mode: also link NON-COLLIDING files from the other
             // bundle arch so cross-arch child exes resolve by Win32 path
@@ -1478,6 +1684,189 @@ static void *wine_process_thread(void *arg) {
                 madeira_seed_winsxs_x86(fm, prefix, bundlePath);
             }
             madeira_link_wine_mono(fm, prefix, bundlePath);
+
+            /* madeira-bcd: the AVX opt-in lives in a separately built FEX module
+             * (tools/build-xtajit64.sh ships it as xtajit64-avx.dll). Only a
+             * game whose settings ask for AVX gets it; everything else keeps
+             * upstream's xtajit64.dll. Wine loads the emulator as
+             * C:\windows\system32\xtajit64.dll, one of the links made above. */
+            {
+                const char *avxEnv = getenv("MADEIRA_FEX_AVX");
+                if (use_arm64ec && avxEnv && avxEnv[0] == '1') {
+                    NSString *avxDll = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"]
+                                        stringByAppendingPathComponent:@"xtajit64-avx.dll"];
+                    if ([fm fileExistsAtPath:avxDll]) {
+                        for (NSString *dir in @[ sys32Dir, [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"] ]) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"xtajit64.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:avxDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_FEX_AVX=1: xtajit64.dll -> xtajit64-avx.dll\n");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_FEX_AVX=1 but this build has no xtajit64-avx.dll -- AVX stays off\n");
+                    }
+                }
+            }
+
+            /* madeira-bcd: env.MADEIRA_DXGI_SRC = 1 (the game's own file) runs the
+             * 64-bit dxgi.dll built from the dxmt submodule source
+             * (tools/build-dxgi-dll.sh ships it as dxgi-src.dll): upstream's committed
+             * DXMT dxgi.dll -- the CI checks the unpatched source build reproduces
+             * it -- plus IDXGIFactory7 and EnumAdapterByLuid. GTA V Enhanced asks
+             * for IDXGIFactory7 and stops with ERR_GFX_D3D_NOD3D12 without it. Off
+             * by default: every other game keeps upstream's binary, and dropping
+             * the line restores it at the next start (the farms above are relinked
+             * from the bundle every session). sysx64 is relinked in any session, an
+             * x64 child of an aarch64 session loads from there. */
+            {
+                const char *dxgiSrc = getenv("MADEIRA_DXGI_SRC");
+                if (dxgiSrc && dxgiSrc[0] == '1') {
+                    NSString *ecDir = [bundlePath stringByAppendingPathComponent:@"arm64ec-windows"];
+                    NSString *srcDll = [ecDir stringByAppendingPathComponent:@"dxgi-src.dll"];
+                    if ([fm fileExistsAtPath:srcDll]) {
+                        NSMutableArray *dirs = [NSMutableArray arrayWithObject:
+                            [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"]];
+                        if (use_arm64ec) [dirs addObject:sys32Dir];
+                        for (NSString *dir in dirs) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"dxgi.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:srcDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_DXGI_SRC=1: dxgi.dll -> dxgi-src.dll (DXMT source build with IDXGIFactory7; %s)\n",
+                                use_arm64ec ? "system32 + sysx64" : "sysx64 only");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_DXGI_SRC=1 but this build has no dxgi-src.dll -- upstream's dxgi.dll stays\n");
+                    }
+                }
+            }
+
+            /* madeira-bcd: env.MADEIRA_D3D11_SRC = 1 (the game's own file) runs the
+             * 64-bit d3d11.dll built from the dxmt submodule source
+             * (tools/build-d3d11-dll.sh ships it as d3d11-src.dll): upstream's
+             * committed DXMT d3d11.dll -- the CI checks the unpatched source build
+             * against it -- plus ID3D11DeviceContext1::SwapDeviceContextState,
+             * which upstream's aborts in. Wine's d2d1 calls it around every draw:
+             * the Rockstar Games Launcher exited with code 3 there. Off by default,
+             * linked like dxgi-src.dll above (system32 + sysx64, relinked from the
+             * bundle every session, so dropping the line restores upstream's). */
+            {
+                const char *d3d11Src = getenv("MADEIRA_D3D11_SRC");
+                if (d3d11Src && d3d11Src[0] == '1') {
+                    NSString *ecDir = [bundlePath stringByAppendingPathComponent:@"arm64ec-windows"];
+                    NSString *srcDll = [ecDir stringByAppendingPathComponent:@"d3d11-src.dll"];
+                    if ([fm fileExistsAtPath:srcDll]) {
+                        NSMutableArray *dirs = [NSMutableArray arrayWithObject:
+                            [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"]];
+                        if (use_arm64ec) [dirs addObject:sys32Dir];
+                        for (NSString *dir in dirs) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"d3d11.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:srcDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_D3D11_SRC=1: d3d11.dll -> d3d11-src.dll (DXMT source build with SwapDeviceContextState; %s)\n",
+                                use_arm64ec ? "system32 + sysx64" : "sysx64 only");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_D3D11_SRC=1 but this build has no d3d11-src.dll -- upstream's d3d11.dll stays\n");
+                    }
+                }
+            }
+
+            /* madeira-bcd: env.MADEIRA_UCRT_X64_MATH = 1 (the game's own file) runs
+             * ucrtbase-x64math.dll as ucrtbase.dll: Wine's ucrtbase built from the
+             * submodule with tools/patch-wine-ucrtbase-x64-math.py, whose floor and
+             * sqrt exports are x64 code, so an x64 caller stays in the emulator
+             * instead of crossing to the native body and back. Horizon Zero Dawn
+             * (build 492) makes 2-4 million such calls a second, about half of all
+             * its x64->ARM64EC calls. Off by default: every other game keeps the
+             * shipped ucrtbase.dll, and dropping the line restores it at the next
+             * start (the farms above are relinked from the bundle every session).
+             * ARM64EC sessions only, linked like xtajit64-avx.dll. */
+            {
+                const char *ucrtX64 = getenv("MADEIRA_UCRT_X64_MATH");
+                if (use_arm64ec && ucrtX64 && ucrtX64[0] == '1') {
+                    NSString *mathDll = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"]
+                                         stringByAppendingPathComponent:@"ucrtbase-x64math.dll"];
+                    if ([fm fileExistsAtPath:mathDll]) {
+                        for (NSString *dir in @[ sys32Dir, [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"] ]) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"ucrtbase.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:mathDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_UCRT_X64_MATH=1: ucrtbase.dll -> ucrtbase-x64math.dll (floor and sqrt as x64 code for x64 callers)\n");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_UCRT_X64_MATH=1 but this build has no ucrtbase-x64math.dll -- the shipped ucrtbase.dll stays\n");
+                    }
+                }
+            }
+
+            /* madeira-bcd: env.MADEIRA_FIBER_TRACE = 1 (the game's own file) runs
+             * kernelbase-fibertrace.dll as kernelbase.dll: Wine's kernelbase built from
+             * the submodule with tools/patch-wine-kernelbase-fibertrace.py, which logs
+             * the fiber calls as [fiber-trace] lines (creation, conversion, deletion, a
+             * summary every 2 s, fibers parked for 3 s or more with the x64 calls on
+             * their stacks, wrong switches, the table at an unhandled exception).
+             * Microsoft Flight Simulator 2024 stops with "FiberError" once its job
+             * system has run out of free fibers (build 540). A diagnostic, off by
+             * default: every other game keeps the shipped kernelbase.dll, and dropping
+             * the line restores it at the next start. Linked like dxgi-src.dll:
+             * sysx64 in any session, system32 too in an ARM64EC one. A Steam game
+             * runs in the Dock's aarch64 session and its x64 process loads
+             * kernelbase.dll from sysx64; with system32 alone (ARM64EC sessions
+             * only, until build 545) the line did nothing there (MSFS 2024, build
+             * 543: no [WineProc] line, no [fiber-trace] lines). */
+            {
+                const char *fiberTrace = getenv("MADEIRA_FIBER_TRACE");
+                if (fiberTrace && fiberTrace[0] == '1') {
+                    NSString *traceDll = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"]
+                                          stringByAppendingPathComponent:@"kernelbase-fibertrace.dll"];
+                    if ([fm fileExistsAtPath:traceDll]) {
+                        NSMutableArray *dirs = [NSMutableArray arrayWithObject:
+                            [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"]];
+                        if (use_arm64ec) [dirs addObject:sys32Dir];
+                        for (NSString *dir in dirs) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"kernelbase.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:traceDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_FIBER_TRACE=1: kernelbase.dll -> kernelbase-fibertrace.dll (fiber calls logged as [fiber-trace] lines; %s)\n",
+                                use_arm64ec ? "system32 + sysx64" : "sysx64 only");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_FIBER_TRACE=1 but this build has no kernelbase-fibertrace.dll -- the shipped kernelbase.dll stays\n");
+                    }
+                }
+            }
+
+            /* madeira-bcd: ntdll-sync.dll (tools/patch-wine-ntdll-sync.py, built by
+             * tools/build-wine-extra-dlls.sh next to the shipped ntdll.dll) is the
+             * ARM64EC ntdll the unix loader maps when env.MADEIRA_NTDLL_SYNC = 1 or
+             * native (build/ntdll-unix/loader_ios.c, ios_ec_ntdll_name): the same
+             * SRW locks and critical sections, cheaper. Off by default since build
+             * 499 (on 498 every 64-bit game died at start; see loader_ios.c). Wine
+             * names it C:\windows\system32\ntdll.dll, so that link (ARM64EC sessions)
+             * and sysx64's (x64 children) name the same file: a program reading
+             * ntdll.dll from disk sees what runs. Unset or 0 keeps the shipped
+             * ntdll.dll for both; the farms above are relinked from the bundle
+             * every session. */
+            {
+                const char *ntSync = getenv("MADEIRA_NTDLL_SYNC");
+                BOOL ntSyncOn = ntSync && ((ntSync[0] == '1' && !ntSync[1]) || !strcmp(ntSync, "native"));
+                NSString *syncDll = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"]
+                                     stringByAppendingPathComponent:@"ntdll-sync.dll"];
+                if (ntSyncOn && [fm fileExistsAtPath:syncDll]) {
+                    NSMutableArray *dirs = [NSMutableArray arrayWithObject:
+                        [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"]];
+                    if (use_arm64ec) [dirs addObject:sys32Dir];
+                    for (NSString *dir in dirs) {
+                        NSString *dst = [dir stringByAppendingPathComponent:@"ntdll.dll"];
+                        [fm removeItemAtPath:dst error:nil];
+                        [fm createSymbolicLinkAtPath:dst withDestinationPath:syncDll error:nil];
+                    }
+                    dprintf(STDERR_FILENO, "[WineProc] ntdll.dll -> ntdll-sync.dll (opt-in MADEIRA_NTDLL_SYNC=%s; %s)\n",
+                            ntSync, use_arm64ec ? "system32 + sysx64" : "sysx64 only");
+                } else if (ntSyncOn) {
+                    dprintf(STDERR_FILENO, "[WineProc] MADEIRA_NTDLL_SYNC=%s but this build has no ntdll-sync.dll: the shipped ntdll.dll\n", ntSync);
+                }
+            }
 
             /* ml719: REPAIR THE SHELL FOLDERS. They ship as symlinks to the BUILD
              * MACHINE's home directory.
@@ -1585,8 +1974,10 @@ static void *wine_process_thread(void *arg) {
              * Tsushima dies right after loading the MS x86_64 concrt140,
              * in the x64<->EC transition the two exemptions below describe. */
             const char *wineVcrt = getenv("MADEIRA_WINE_VCRT");
+            NSString *vcrtDir = use_arm64ec ? madeira_vcruntime_dir(bundlePath,   /* BCD: the bundle's DLLs, else the download */
+                NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject) : nil;
             if (use_arm64ec && wineVcrt && wineVcrt[0] == '1') {
-                for (NSString *dll in [fm contentsOfDirectoryAtPath:[bundlePath stringByAppendingPathComponent:@"x86_64-vcruntime"] error:nil]) {
+                for (NSString *dll in [fm contentsOfDirectoryAtPath:vcrtDir error:nil]) {
                     NSString *dst = [sys32Dir stringByAppendingPathComponent:dll];
                     NSString *builtin = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"] stringByAppendingPathComponent:dll];
                     if ([fm fileExistsAtPath:builtin]) {
@@ -1598,7 +1989,7 @@ static void *wine_process_thread(void *arg) {
                 dprintf(STDERR_FILENO, "[WineProc] MADEIRA_WINE_VCRT=1: MS VC++ runtime overlay skipped\n");
             } else
             if (use_arm64ec) {
-                NSString *vcrtSource = [bundlePath stringByAppendingPathComponent:@"x86_64-vcruntime"];
+                NSString *vcrtSource = vcrtDir;
                 NSArray *vcrtDlls = [fm contentsOfDirectoryAtPath:vcrtSource error:nil];
                 int vcrtLinked = 0, vcrtSkipped = 0;
                 /* madeira-bcd: MFC (mfc140.dll, mfc140u.dll) comes from the same
@@ -1817,47 +2208,44 @@ static void *wine_process_thread(void *arg) {
          * started in the last 60 s and still runs, the session goes on until
          * no such child is left (process_ios.c, madeira_live_game_children).
          * A game that exits normally long after starting its helpers is not
-         * affected. Opt-in, MADEIRA_WAIT_CHILDREN=1 (madeira.cfg, or a game's
-         * own config): a child that ends from a worker thread never releases its
-         * slot (process_ios.c), and the session would then wait forever. */
+         * affected. MADEIRA_WAIT_CHILDREN=0 ends the session with the main
+         * process, as before. */
         {
             extern int madeira_live_game_children(char *buf, int len, double max_age);
             const char *wc = getenv("MADEIRA_WAIT_CHILDREN");
             char names[256];
             int n = madeira_live_game_children(names, sizeof names, 60.0);
-            if (n > 0 && !(wc && wc[0] == '1')) {
-                dprintf(STDERR_FILENO, "[WineProc] the main process exited while %d child process(es) it started "
-                        "still run (%s); the session ends with it (MADEIRA_WAIT_CHILDREN=1 keeps it while they run)\n",
-                        n, names);
-            } else if (n > 0) {
-                dprintf(STDERR_FILENO, "[WineProc] the main process exited but %d child process(es) "
+            if (n > 0 && !(wc && wc[0] == '0')) {
+                dprintf(STDERR_FILENO, "[WineProc] madeira-bcd: the main process exited but %d child process(es) "
                         "it started still run (%s) -- a launcher started the game; the session goes on until "
-                        "they exit (MADEIRA_WAIT_CHILDREN=1)\n", n, names);
+                        "they exit (MADEIRA_WAIT_CHILDREN=0 ends it with the main process)\n", n, names);
                 unsigned ticks = 0;
                 while ((n = madeira_live_game_children(names, sizeof names, -1.0)) > 0) {
                     usleep(200 * 1000);
                     if ((++ticks % 300) == 0)
-                        dprintf(STDERR_FILENO, "[WineProc] still running: %d child process(es) (%s), %u s\n",
+                        dprintf(STDERR_FILENO, "[WineProc] madeira-bcd: still running: %d child process(es) (%s), %u s\n",
                                 n, names, ticks / 5);
                 }
-                dprintf(STDERR_FILENO, "[WineProc] the last child process exited after %u s\n", ticks / 5);
+                dprintf(STDERR_FILENO, "[WineProc] madeira-bcd: the last child process exited after %u s\n", ticks / 5);
             }
         }
 
         g_wine_running = 0;
         /* ml1184: these belong to the launch that just ended; a later session in this app
-         * run gets its own from its game, or madeira.cfg's. */
+         * run gets its own from its game, or bcd.cfg's. */
         unsetenv("MADEIRA_FASTSYNC"); unsetenv("MADEIRA_FASTSYNC_SEM");
         unsetenv("MADEIRA_CPU_COUNT"); unsetenv("DXMT_D9_ANISO_LIMIT");
         unsetenv("FEX_X87REDUCEDPRECISION");   /* ml1184 */
         unsetenv("MADEIRA_DINPUT_PAD");        /* ml1240 */
-        /* madeira-bcd: Horizon Zero Dawn's per-game switches must not reach a later game
-         * of this app run (GTA V Enhanced runs without them). */
-        unsetenv("MADEIRA_SRV_FGETPATH");
-        g_madeira_srv_fgetpath = 0;
         unsetenv("MADEIRA_FEX_AVX"); unsetenv("MADEIRA_FRAMEGEN");   /* ml1184 */
         unsetenv("DXMT_ENABLE_NVEXT"); unsetenv("DXMT_WSI_MONITOR_IDENTITY"); unsetenv("DXMT_WSI_MODE_TABLE");
-        /* madeira-bcd: the server's per-launch switches end with the session */
+        /* madeira-bcd: Horizon Zero Dawn's per-game switches must not reach a later game
+         * of this app run (GTA V Enhanced runs without them). */
+        unsetenv("MADEIRA_UCRT_X64_MATH"); unsetenv("MADEIRA_SRV_FGETPATH");
+        unsetenv("MADEIRA_NTDLL_SYNC");   /* madeira-bcd: a game's switch is its own */
+        unsetenv("MADEIRA_FIBER_TRACE");  /* madeira-bcd: likewise */
+        g_madeira_srv_fgetpath = 0;
+        /* madeira-bcd: the server's per-launch switches end with the session as well */
         unsetenv("MADEIRA_SRV_ECO_FOLLOW"); unsetenv("MADEIRA_SRV_DIRECT");
         unsetenv("MADEIRA_SRV_IDLE_US"); unsetenv("MADEIRA_SRV_LOG_ALL");
         g_madeira_srv_eco_follow = 0; g_madeira_srv_direct = 0;
@@ -1918,12 +2306,13 @@ int wine_process_start(const char *prefix_path) {
     // Inject wineserver side — the event loop will pick this up
     wineserver_inject_client_fd(pair[0]);
 
-    /* The guest main thread runs on this pthread. Give it its QoS class
-     * through the attribute, as wineserver_start does for the server thread:
-     * a thread created with pthread_attr_setschedparam has a fixed priority,
-     * and Darwin then refuses pthread_set_qos_class_self_np (EPERM), so the
-     * USER_INTERACTIVE promotion in wine_process_thread never took effect and
-     * the game's main thread ran at priority 20 on the efficiency cores. */
+    // madeira-bcd: no explicit sched priority on the guest main thread. A thread
+    // created with pthread_attr_setschedparam has a fixed priority, and Darwin
+    // then refuses pthread_set_qos_class_self_np (EPERM) -- so the promotion to
+    // USER_INTERACTIVE in wine_process_thread, and the ECO switch, never took,
+    // and the game's main thread ran at priority 20 on the efficiency cores for
+    // the whole session (32-bit Crysis, [xp-t] 0024: 0 ms P / ~100 % E, logs
+    // 2026-09-30 13:19-15:46). Ask for the QoS class through the attribute.
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_set_qos_class_np(&attr, QOS_CLASS_USER_INTERACTIVE, 0);

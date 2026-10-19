@@ -147,10 +147,10 @@ struct ProtobufDecoder {
             }
             shift += 7
             if shift >= 64 {
-                throw SteamError.protobufError("Varint too long")
+                throw SteamError.protobufError("a number field is too long")
             }
         }
-        throw SteamError.protobufError("Unexpected end of data reading varint")
+        throw SteamError.protobufError("it ends inside a number field")
     }
 
     mutating func readTag() throws -> (fieldNumber: UInt32, wireType: ProtoWireType)? {
@@ -158,7 +158,7 @@ struct ProtobufDecoder {
         let tag = try readVarint()
         let wireTypeRaw = UInt8(tag & 0x7)
         guard let wireType = ProtoWireType(rawValue: wireTypeRaw) else {
-            throw SteamError.protobufError("Unknown wire type: \(wireTypeRaw)")
+            throw SteamError.protobufError("unknown field type \(wireTypeRaw)")
         }
         return (fieldNumber: UInt32(tag >> 3), wireType: wireType)
     }
@@ -168,7 +168,7 @@ struct ProtobufDecoder {
     mutating func readLength() throws -> Int {
         let length = try readVarint()
         guard length <= UInt64(data.count - offset) else {
-            throw SteamError.protobufError("Length past end of data")
+            throw SteamError.protobufError("a length runs past the end")
         }
         return Int(length)
     }
@@ -176,7 +176,7 @@ struct ProtobufDecoder {
     mutating func readBytes() throws -> Data {
         let length = try readLength()
         guard offset + length <= data.count else {
-            throw SteamError.protobufError("Unexpected end of data reading bytes")
+            throw SteamError.protobufError("it ends inside a data field")
         }
         let bytes = data[offset..<offset + length]
         offset += length
@@ -186,14 +186,14 @@ struct ProtobufDecoder {
     mutating func readString() throws -> String {
         let bytes = try readBytes()
         guard let str = String(data: bytes, encoding: .utf8) else {
-            throw SteamError.protobufError("Invalid UTF-8 string")
+            throw SteamError.protobufError("a text field isn't valid UTF-8")
         }
         return str
     }
 
     mutating func readFixed32() throws -> UInt32 {
         guard offset + 4 <= data.count else {
-            throw SteamError.protobufError("Unexpected end of data reading fixed32")
+            throw SteamError.protobufError("it ends inside a 32-bit field")
         }
         let value = data[offset..<offset + 4].withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
         offset += 4
@@ -202,7 +202,7 @@ struct ProtobufDecoder {
 
     mutating func readFixed64() throws -> UInt64 {
         guard offset + 8 <= data.count else {
-            throw SteamError.protobufError("Unexpected end of data reading fixed64")
+            throw SteamError.protobufError("it ends inside a 64-bit field")
         }
         let value = data[offset..<offset + 8].withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) }
         offset += 8
@@ -221,7 +221,7 @@ struct ProtobufDecoder {
             offset += 4
         }
         guard offset <= data.count else {
-            throw SteamError.protobufError("Skip went past end of data")
+            throw SteamError.protobufError("a skipped field runs past the end")
         }
     }
 }

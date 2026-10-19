@@ -73,17 +73,16 @@ check('graphics: only a plain pipeline that is built at its first draw',
       'lz_on = mad_lzlib_on() && mad_pso_lazy_on() && !desc->GS.pShaderBytecode && !desc->HS.pShaderBytecode &&\n'
       '            !desc->DS.pShaderBytecode;' in gfx)
 drop = 'if (lz_on && p->lazy && !p->rps && mad_lzlib_can_drop(p, &lzv, &lzp)) mad_lzlib_drop(p, &lzv, &lzp);'
-check('graphics: dropped after the pso-warm request (where pso-warm is built in), before the pipeline is handed out',
-      ('mad_pso_warm(' not in gfx or gfx.index('mad_pso_warm(p->device_handle, &p->rp') < gfx.index(drop))
-      and gfx.index(drop) < gfx.rindex('hr = pso_QI('))
+check('graphics: dropped after the pso-warm request, before the pipeline is handed out',
+      gfx.index('mad_pso_warm(p->device_handle, &p->rp') < gfx.index(drop) < gfx.rindex('hr = pso_QI('))
 check('graphics: both stages are converted with the key request',
       'if (lz_on) ov2.lz = &lzv;' in gfx and 'if (lz_on) op.lz = &lzp;' in gfx)
 cs = body('static HRESULT device_CreateComputePipelineState_impl(ID3D12Device *This,')
-cdrop = 'if (lz_on && mad_lzlib_can_drop(p, &lzc, NULL)) mad_lzlib_drop(p, &lzc, NULL);'
-check('compute: dropped after the pso-warm request of a lazy pipeline (where pso-warm is built in)',
+check('compute: dropped after the pso-warm request of a lazy pipeline',
       'if (lz_on) o.lz = &lzc;' in cs and
-      ('mad_pso_warm(' not in cs or cs.index('mad_pso_warm(p->device_handle, &ci, NULL, 2);') < cs.index(cdrop)) and
-      cs.index(cdrop) < cs.index('p->cps = MTLDevice_newComputePipelineState(d->mtl_device, &ci, &err);'))
+      cs.index('mad_pso_warm(p->device_handle, &ci, NULL, 2);') <
+      cs.index('if (lz_on && mad_lzlib_can_drop(p, &lzc, NULL)) mad_lzlib_drop(p, &lzc, NULL);') <
+      cs.index('p->cps = MTLDevice_newComputePipelineState(d->mtl_device, &ci, &err);'))
 check('the DXBC draw path knows a dropped pixel stage by lz_has_ps',
       '(e->pso->ps_fn || e->pso->lz_has_ps) &&' in pe)
 check('pso_Release still releases only what is there',
@@ -92,12 +91,8 @@ check('in the settings catalog, off by default',
       'key: "pso-lazy-libs"' in catalog and 'defaultValue: "0"' in catalog[catalog.index('key: "pso-lazy-libs"'):][:300])
 
 # --- the helpers, against stubs ------------------------------------------------
-share = pe[pe.index('struct mad_libshare { UINT64 k0, k1; obj_handle_t lib, fn; };'):pe.index('/* madeira-bcd pso-lazy-libs (madeira.cfg or the game')]
-if '/* madeira-bcd rsig-miss: the converter' in share:   # the rsig-miss helpers may sit between the libshare helpers
-    rs0 = share.index('/* madeira-bcd rsig-miss: the converter')
-    share = share[:rs0] + share[share.index('static int mad_libshare_find(', rs0):]
-lz0 = pe.index('static int mad_lzlib_on(void) {')
-lz = pe[lz0:pe.index('\n}\n', pe.index('static int mad_lzlib_restore(struct mad_pso *p) {', lz0)) + 3]
+share = pe[pe.index('struct mad_libshare { UINT64 k0, k1; obj_handle_t lib, fn; };'):pe.index('/* madeira-bcd pso-lazy-libs (bcd.cfg or the game')]
+lz = pe[pe.index('static int mad_lzlib_on(void) {'):pe.index('/* madeira-bcd rsig-miss: the converter')]
 hdr = pe[pe.index('#define MAD_SC_MAGIC'):pe.index('static int g_sc_on = -1;')]
 
 harness = r'''

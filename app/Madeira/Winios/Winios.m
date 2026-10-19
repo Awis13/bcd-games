@@ -128,9 +128,9 @@ static unsigned winios_resident_mb(void) {
  *
  * Steam takes ~33s from the desktop's first present to the login window, and we
  * could only account for it in coarse chunks pieced together from Steam's own
- * cumulative logs. madeira-log cannot time anything on its own: its
+ * cumulative logs. bcd-log.txt cannot time anything on its own: its
  * `[HH:MM:SS.mmm]` prefixes stop after the boot phase, and `[HEARTBEAT]` goes to
- * os_log only (0 hits in madeira-log). The only way to bound a run at all was the
+ * os_log only (0 hits in bcd-log.txt). The only way to bound a run at all was the
  * last `[footprint] cycle=N` × 2s — which is 2s-granular and says nothing about
  * what happened in between.
  *
@@ -864,7 +864,16 @@ void winios_post_touch_up(int x, int y) {
 /* Key press bridge. vk = Windows virtual-key code, down = 1 for press,
  * 0 for release. Queued like mouse events; drained in pProcessEvents. */
 void winios_post_key(int vk, int down) {
-    fprintf(stderr, "[winios] post_key vk=0x%x down=%d\n", vk, down); fflush(stderr);
+    /* madeira-bcd (2026-10-18): the first 60 keys, then a count every 1000. A
+     * line per key, flushed, was one write per key-down and key-up (and per
+     * repeat with env.MADEIRA_KEY_REPEAT = 1) for the whole session. */
+    static _Atomic unsigned int keys;
+    unsigned int n = atomic_fetch_add_explicit(&keys, 1, memory_order_relaxed) + 1;
+    if (n <= 60) {
+        fprintf(stderr, "[winios] post_key vk=0x%x down=%d\n", vk, down); fflush(stderr);
+    } else if (n % 1000 == 0) {
+        fprintf(stderr, "[winios] post_key: %u keys posted (one line each for the first 60)\n", n); fflush(stderr);
+    }
     winios_q_push_ev(WINIOS_EV_KEY, vk, 0, down ? 0 : KEYEVENTF_KEYUP, 0);
 }
 
@@ -909,7 +918,23 @@ BOOL winios_pProcessEvents(DWORD mask) {
         g_input_q.tail = (g_input_q.tail + 1) % WINIOS_RING_SIZE;
         pthread_mutex_unlock(&g_input_q.lock);
 
-        fprintf(stderr, "[winios] drain type=%u x=%d y=%d flags=0x%x\n", e.type, e.x, e.y, e.flags); fflush(stderr);
+        /* madeira-bcd (2026-10-18): the first 40 events, then a count every
+         * 5000. A flushed line per event was a write() per mouse move on the
+         * thread that pumps the game's messages (a GCMouse reports up to its
+         * polling rate), and grew the session log by ~60 bytes per move. The
+         * first lines still prove the drain runs (docs/madeira-bcd.md). */
+        {
+            static unsigned int drained_mouse, drained_keys;   /* log counts only: a race costs a miscount */
+            unsigned int total;
+            if (e.type == WINIOS_EV_KEY) drained_keys++; else drained_mouse++;
+            total = drained_mouse + drained_keys;
+            if (total <= 40) {
+                fprintf(stderr, "[winios] drain type=%u x=%d y=%d flags=0x%x\n", e.type, e.x, e.y, e.flags); fflush(stderr);
+            } else if (total % 5000 == 0) {
+                fprintf(stderr, "[winios] drain: %u events (mouse %u, keys %u; one line each for the first 40)\n",
+                        total, drained_mouse, drained_keys); fflush(stderr);
+            }
+        }
         if (e.type == WINIOS_EV_KEY)
             winios_drv_post_key((unsigned short)e.x, e.flags);
         else
@@ -1137,7 +1162,13 @@ int winios_desktop_point_from_window(double wx, double wy, int *px, int *py) {
  * window is drawn only if it does not cover the whole guest desktop and does
  * not present through Metal (winios_note_game_metal_hwnd): a game's own
  * window never covers its picture, and God of War's (full-desktop) window is
- * never drawn. MADEIRA_GAME_WINDOWS=0 turns it off (both sides). */
+ * never drawn. MADEIRA_GAME_WINDOWS=0 turns it off (both sides).
+ * MADEIRA_GAME_WINDOWS=2 (opt-in, a game's own config line) also draws a
+ * window that covers the whole guest desktop, as long as it does not present
+ * through Metal: for games that draw their picture with GDI (DirectDraw through
+ * wined3d's GDI path). Warcraft II: Battle.net Edition ran with sound and no
+ * picture (2026-10-14, "[winios] game window ... not drawn (covers the guest
+ * desktop)"). Unset or 1: unchanged. */
 static NSMutableSet<NSNumber *> *g_game_metal;  /* game mode: hwnds presenting through Metal */
 
 static int winios_desktop_session(void) {
@@ -1149,6 +1180,12 @@ static int winios_desktop_session(void) {
 static int winios_game_windows_enabled(void) {
     const char *e = getenv("MADEIRA_GAME_WINDOWS");
     return !(e && *e == '0');
+}
+
+/* MADEIRA_GAME_WINDOWS=2: a desktop-covering window is drawn too (see above). */
+static int winios_game_windows_cover(void) {
+    const char *e = getenv("MADEIRA_GAME_WINDOWS");
+    return e && *e == '2';
 }
 
 /* A window whose rect covers the whole guest desktop: a game's own window. */
@@ -1188,7 +1225,7 @@ static BOOL winios_game_window_shown(NSNumber *key) {
     if (!g_comp_game) return YES;
     NSValue *rv = g_px_rects[key];
     BOOL metal = [g_game_metal containsObject:key];
-    if (!metal && rv && !winios_covers_desktop(rv.CGRectValue)) return YES;
+    if (!metal && rv && (!winios_covers_desktop(rv.CGRectValue) || winios_game_windows_cover())) return YES;
     CALayer *l = g_layers[key];
     if (l) {
         [l removeFromSuperlayer];

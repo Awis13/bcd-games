@@ -70,7 +70,7 @@ assert 'return STATUS_ACCESS_DENIED;' in conhost
 assert create.index('if (ec_conhost_refuse(') < create.index('create_startup_info( attr.ObjectName')
 print('PASS: NtCreateUserProcess refuses conhost.exe in an ARM64EC session before the startup info')
 assert 'child_extra_args( getenv( "MADEIRA_CHILD_ARGS" ), params->ImagePathName.Buffer,' in create
-assert create.index('if (ec_conhost_refuse(') < create.index('child_extra_args( getenv') < create.index('create_startup_info( attr.ObjectName')
+assert create.index('child_extra_args( getenv') < create.index('if (ec_conhost_refuse(') < create.index('create_startup_info( attr.ObjectName')
 
 mprot = function(native, 'static inline int mprotect_exec( void *base, size_t size, int unix_prot )')
 refuse = mprot[mprot.index("/* madeira-bcd: a Social Club client's libcef.dll and DLSS runtimes"):]

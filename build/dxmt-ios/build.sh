@@ -178,7 +178,7 @@ if [[ -f "$BUILD_DIR/../madeira-d3d12/deps.sh" ]] && \
     # ml1149: AMD AGS 64-bit atomics -> native SM6.6 atomics, a DXIL rewrite on
     # the LLVM 15 that airconv already links (bitcode reader + writer).
     compile_cxx "$REPO_ROOT/madeira-d3d12/src/unix/madeira_ags.cpp" madeira_ags
-    # madeira-bcd: the packed shader cache (madeira.cfg d3d12-shader-pack),
+    # madeira-bcd: the packed shader cache (bcd.cfg d3d12-shader-pack),
     # plain C so tests/host/check-shader-pack.py builds and runs it on Linux.
     compile_c "$REPO_ROOT/madeira-d3d12/src/unix/madeira_sc_pack.c" madeira_sc_pack
 else

@@ -1,0 +1,7 @@
+# madeira-bcd FORK-ONLY: the newest build number started, by GitHub Actions or
+# the local Mac build: one sequence (owner's decisions 2026-10-13/14). Whoever
+# starts the next build commits this + 1 first ("Build N (local)" from the Mac's
+# run.sh, "Build N (GitHub)" from a cloud session before it dispatches);
+# build-ipa.yml's "Build number" step reads it, and the app's version is
+# 0.1.<number>. GitHub's run_number does not follow it.
+569

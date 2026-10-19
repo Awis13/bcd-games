@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [],
+ "next": [],
+ "note": "Ratchet & Clank: Rift Apart, build 531, iPhone16,2 (7655 MB): hung",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "stuck"
+}

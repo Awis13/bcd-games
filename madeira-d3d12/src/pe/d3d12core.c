@@ -10,7 +10,7 @@
  *
  * Nothing but the version lives here: every function forwards to d3d12.dll
  * (d3d12core.def). madeira-d3d12's d3d12.dll loads this DLL at process attach
- * only with madeira.cfg d3d12-core-dll set, and a value above 1 replaces the
+ * only with bcd.cfg d3d12-core-dll set, and a value above 1 replaces the
  * version (d3d12-core-dll = 614 -> D3D12SDKVersion 614).
  *
  * Built by build/madeira-d3d12/build-pe.sh.

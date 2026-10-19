@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Encode batching (madeira.cfg encode-batch, default 1); no Wine, no Metal.
+"""Encode batching (bcd.cfg encode-batch, default 1); no Wine, no Metal.
 
 madeira_d3d12.c handed every draw's command chain, and every encoder's fence
 wait and fence update, to Metal in an encodeCommands call of its own. With
@@ -20,7 +20,7 @@ once with the switch off and once on. The calls Metal receives must be the
 same commands, with the same contents (setBytes as they were when handed over),
 on the same encoders, in the same order, interleaved with the same creations,
 ends, releases and labels; on, they must take far fewer encodeCommands calls.
-Also: on unless madeira.cfg says encode-batch = 0; a thread-local slot that
+Also: on unless bcd.cfg says encode-batch = 0; a thread-local slot that
 cannot be read in place turns batching and draw-dedup off (on ARM64EC the slot
 is read through `ldr xT, [x18, #0x30]`, not an add off x18: HZD build 500
 died on one); a thread outside a
@@ -302,7 +302,7 @@ int main(void) {
     /* batched */
     g_eb_on = -1; g_dd_on = -1; cfg_eb = -1; nev = 0; ncalls = 0; next_handle = 0x1000;
     scenario(1);
-    EXPECT(g_eb_on == 1, "on by default (madeira.cfg unset)");
+    EXPECT(g_eb_on == 1, "on by default (bcd.cfg unset)");
     EXPECT(same_log(), "Metal receives the same commands, contents and order, interleaved the same with opens, ends, releases and labels");
     EXPECT(ncalls * 10 < ref_calls, "far fewer encodeCommands calls");
     printf("note: %u encodeCommands calls batched vs %u one per chain; longest chain %u\n", ncalls, ref_calls, maxchain);

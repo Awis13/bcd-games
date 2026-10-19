@@ -83,7 +83,7 @@ enum WineMonoInstaller {
         var stream = compression_stream(dst_ptr: UnsafeMutablePointer<UInt8>(bitPattern: 1)!, dst_size: 0,
                                         src_ptr: UnsafePointer<UInt8>(bitPattern: 1)!, src_size: 0, state: nil)
         guard compression_stream_init(&stream, COMPRESSION_STREAM_DECODE, COMPRESSION_LZMA) == COMPRESSION_STATUS_OK else {
-            throw WineMonoInstallError.message("The xz decoder could not start.")
+            throw WineMonoInstallError.message("BCD couldn't start the xz decoder.")
         }
         defer { compression_stream_destroy(&stream) }
 
@@ -116,9 +116,9 @@ enum WineMonoInstaller {
             case COMPRESSION_STATUS_END: finished = true
             case COMPRESSION_STATUS_OK:
                 if inputDone && produced == 0 && stream.src_size == 0 {
-                    throw WineMonoInstallError.message("The download ended early.")
+                    throw WineMonoInstallError.message("The download is incomplete.")
                 }
-            default: throw WineMonoInstallError.message("The download is not a readable xz archive.")
+            default: throw WineMonoInstallError.message("The downloaded file isn't an xz archive BCD can read.")
             }
         }
         try tar.finish()
@@ -134,15 +134,15 @@ enum WineMonoInstaller {
         let before = digest(data)
         if before == WineMonoPin.mscorlibPatchedSHA256 { return }
         guard before == WineMonoPin.mscorlibSHA256 else {
-            throw WineMonoInstallError.message("mscorlib.dll is not the pinned build.")
+            throw WineMonoInstallError.message("mscorlib.dll doesn't match the pinned build.")
         }
         let off = WineMonoPin.patchOffset
         guard data.count >= off + 14, Array(data[(off - 6)..<(off + 14)]) == WineMonoPin.patchContext else {
-            throw WineMonoInstallError.message("mscorlib.dll does not have the expected bytes to patch.")
+            throw WineMonoInstallError.message("mscorlib.dll doesn't have the bytes BCD expects to patch.")
         }
         data.replaceSubrange(off..<(off + 4), with: WineMonoPin.patchBytes)
         guard digest(data) == WineMonoPin.mscorlibPatchedSHA256 else {
-            throw WineMonoInstallError.message("The patched mscorlib.dll does not match the pinned result.")
+            throw WineMonoInstallError.message("After patching, mscorlib.dll doesn't match the pinned result.")
         }
         try data.write(to: file, options: .atomic)
     }
@@ -189,7 +189,7 @@ private struct TarReader {
 
     mutating func finish() throws {
         guard remaining == 0, header.isEmpty || header.allSatisfy({ $0 == 0 }) else {
-            throw WineMonoInstallError.message("The archive ended in the middle of a file.")
+            throw WineMonoInstallError.message("The archive stops partway through a file.")
         }
         try sink?.close(); sink = nil
     }
@@ -202,7 +202,7 @@ private struct TarReader {
     private func octal(_ start: Int, _ length: Int) throws -> Int64 {
         let text = field(start, length).trimmingCharacters(in: CharacterSet(charactersIn: " \0"))
         if text.isEmpty { return 0 }
-        guard let value = Int64(text, radix: 8) else { throw WineMonoInstallError.message("The archive has a damaged header.") }
+        guard let value = Int64(text, radix: 8) else { throw WineMonoInstallError.message("One of the archive's headers is damaged.") }
         return value
     }
 
@@ -236,7 +236,7 @@ private struct TarReader {
                 let url = destination.appendingPathComponent(path)
                 try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
                 guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
-                    throw WineMonoInstallError.message("Could not write \(path).")
+                    throw WineMonoInstallError.message("BCD couldn't write \(path).")
                 }
                 sink = try FileHandle(forWritingTo: url)
                 files += 1
@@ -306,11 +306,11 @@ private struct TarReader {
         switch phase {
         case .downloading(let f):
             let total = Double(WineMonoPin.tarBytes) / 1_000_000
-            return "Downloading… \(Int((f * total).rounded())) of \(Int(total.rounded())) MB"
-        case .installing(let f): return "Installing… \(Int((f * 100).rounded()))%"
+            return "\(Int((f * total).rounded())) of \(Int(total.rounded())) MB downloaded…"
+        case .installing(let f): return "\(Int((f * 100).rounded()))% installed…"
         case .idle:
-            if Self.bundled { return "Included in this build" }
-            return installed ? "Wine Mono \(WineMonoPin.version) is installed" : "Not installed"
+            if Self.bundled { return "Built into this copy of BCD" }
+            return installed ? "Version \(WineMonoPin.version) installed" : "Not downloaded yet"
         }
     }
 
@@ -326,11 +326,11 @@ private struct TarReader {
             var url = root; try url.setResourceValues(values)
             let free = try root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage ?? 0
             guard free > 450_000_000 else {
-                error = "Wine Mono needs about 450 MB of free space while it installs (about 130 MB once installed)."
+                error = "Installing Wine Mono takes about 450 MB of free space; once installed it uses about 130 MB."
                 return
             }
         } catch {
-            fail("Could not prepare the Wine Mono folder: \(error.localizedDescription)"); return
+            fail("BCD couldn't set up the Wine Mono folder: \(error.localizedDescription)"); return
         }
         log("download \(WineMonoPin.url.absoluteString)")
         phase = .downloading(0)
@@ -340,7 +340,7 @@ private struct TarReader {
             var moved: Error? = failure
             if failure == nil, let temp {
                 if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                    moved = WineMonoInstallError.message("WineHQ answered \(http.statusCode).")
+                    moved = WineMonoInstallError.message("WineHQ replied with HTTP status \(http.statusCode).")
                 } else {
                     try? FileManager.default.removeItem(at: archive)
                     do { try FileManager.default.moveItem(at: temp, to: archive) } catch { moved = error }
@@ -362,7 +362,7 @@ private struct TarReader {
     private func downloaded(archive: URL, error failure: Error?) {
         observation = nil
         if let failure {
-            fail("The download failed: \(failure.localizedDescription)"); return
+            fail("The download couldn't finish: \(failure.localizedDescription)"); return
         }
         phase = .installing(0)
         let root = Self.root, runtime = Self.runtime
@@ -371,7 +371,7 @@ private struct TarReader {
             let fm = FileManager.default
             do {
                 guard try WineMonoInstaller.sha256(of: archive) == WineMonoPin.tarSHA256 else {
-                    throw WineMonoInstallError.message("The download does not match the pinned Wine Mono \(WineMonoPin.version).")
+                    throw WineMonoInstallError.message("The downloaded file isn't the pinned Wine Mono \(WineMonoPin.version).")
                 }
                 try? fm.removeItem(at: staging)
                 var last = -1
@@ -391,7 +391,7 @@ private struct TarReader {
                 try? fm.removeItem(at: staging)
                 try? fm.removeItem(at: archive)
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                await MainActor.run { WineMonoModel.shared.fail("Installing Wine Mono failed: \(message)") }
+                await MainActor.run { WineMonoModel.shared.fail("Wine Mono couldn't be installed: \(message)") }
             }
         }
     }
@@ -414,42 +414,5 @@ private struct TarReader {
         try? FileManager.default.removeItem(at: Self.runtime)
         refresh()
         log("removed")
-    }
-}
-
-// MARK: - Settings › .NET Framework
-
-struct WineMonoSettingsSection: View {
-    @ObservedObject private var mono = WineMonoModel.shared
-    @State private var confirmRemove = false
-
-    var body: some View {
-        Section {
-            LabeledContent("Wine Mono", value: mono.status)
-            if case .downloading(let f) = mono.phase { ProgressView(value: f) }
-            if case .installing(let f) = mono.phase { ProgressView(value: f) }
-            if let error = mono.error {
-                Text(error).font(.caption).foregroundStyle(.red)
-            }
-            if !WineMonoModel.bundled && !mono.busy {
-                if mono.installed {
-                    Button("Remove Wine Mono", role: .destructive) { confirmRemove = true }
-                } else {
-                    Button { mono.install() } label: {
-                        Label(mono.error == nil ? "Download Wine Mono" : "Try again", systemImage: "arrow.down.circle")
-                    }
-                }
-            }
-        } header: {
-            Text(".NET Framework")
-        } footer: {
-            Text("Games built on Microsoft's .NET Framework run on Wine Mono, the Wine project's open-source .NET runtime. Madeira downloads it from WineHQ: about 42 MB, about 130 MB once installed.")
-        }
-        .confirmationDialog("Remove Wine Mono?", isPresented: $confirmRemove, titleVisibility: .visible) {
-            Button("Remove", role: .destructive) { mono.remove() }
-        } message: {
-            Text(".NET Framework games will not start until you download it again.")
-        }
-        .onAppear { mono.refresh() }
     }
 }

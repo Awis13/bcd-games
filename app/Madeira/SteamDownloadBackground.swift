@@ -83,7 +83,7 @@ import UserNotifications
         requestNotificationPermission()
         if #available(iOS 26.0, *), Self.continuedEnabled { submitContinued() }
         if #available(iOS 26.0, *), let task = continued as? BGContinuedProcessingTask {
-            task.updateTitle("Downloading \(name)", subtitle: "Steam download in Madeira")
+            task.updateTitle("Downloading \(name)", subtitle: "From Steam, in BCD")
         }
         if isBackground { beginGrace() }
     }
@@ -102,8 +102,8 @@ import UserNotifications
     func downloadEnded(appID: Int, name: String, outcome: Outcome, queueEmpty: Bool) {
         if isBackground {
             switch outcome {
-            case .completed: notify("\(name) is ready to play", body: "The Steam download finished.")
-            case .failed(let reason): notify("\(name) download stopped", body: reason)
+            case .completed: notify("\(name) is ready", body: "Finished downloading from Steam. Open BCD to play.")
+            case .failed(let reason): notify("Couldn't download \(name)", body: reason)
             case .paused: break
             }
         }
@@ -126,7 +126,7 @@ import UserNotifications
             registered = identifier
         }
         let request = BGContinuedProcessingTaskRequest(identifier: identifier, title: "Downloading \(currentName)",
-                                                       subtitle: "Steam download in Madeira")
+                                                       subtitle: "From Steam, in BCD")
         request.strategy = .fail
         do {
             try BGTaskScheduler.shared.submit(request)
@@ -146,7 +146,7 @@ import UserNotifications
             DispatchQueue.main.async {
                 self?.log("continued-processing expired; pausing downloads")
                 self?.library?.pauseForBackground()
-                self?.notify("Download paused", body: "Open Madeira to continue downloading.")
+                self?.notify("Steam download paused", body: "Open BCD again to resume it.")
                 self?.finishContinued(success: false)
             }
         }
@@ -166,14 +166,14 @@ import UserNotifications
 
     private func beginGrace() {
         guard graceTask == .invalid, continued == nil, library?.hasActiveDownload == true else { return }
-        graceTask = UIApplication.shared.beginBackgroundTask(withName: "Madeira Steam download") { [weak self] in
+        graceTask = UIApplication.shared.beginBackgroundTask(withName: "BCD Steam download") { [weak self] in
             MainActor.assumeIsolated {
                 guard let self else { return }
                 // Continued processing keeps the app running; only pause without it.
                 if self.continued == nil {
                     self.log("background time over; pausing downloads")
                     self.library?.pauseForBackground()
-                    self.notify("Download paused", body: "Open Madeira to continue downloading.")
+                    self.notify("Steam download paused", body: "Open BCD again to resume it.")
                 }
                 self.endGrace()
             }

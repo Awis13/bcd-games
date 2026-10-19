@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
 #ifdef WINE_IOS
@@ -396,7 +397,7 @@ int ios_wx_enabled( void )
          * crashes in two builds; silent corruption on a fresh install would be
          * worse than a clean crash, and a kill switch a user must discover
          * afterward is not a substitute for a safe default. Opt in with
-         * Documents/madeira-wx.txt containing 1.
+         * bcd.cfg wx = 1.
          *
          * Native code reads ONLY this env value -- Swift owns the sandbox path
          * so that knowledge is not duplicated in two places. */
@@ -1446,6 +1447,33 @@ static int ios_x18_derived_base( uint64_t fault_pc, int rn )
  * ran and hit the 4096MB jetsam limit four seconds later. Pages mincore()
  * reports neither resident nor paged out were never written; they stay holes,
  * so file offsets still equal pool offsets (head copies and tail CodeBuffers). */
+/* madeira-bcd: the dump is opt-in now. A mach UNHANDLED is any fault the handler
+ * passes on to Wine's own exception path, i.e. every guest access violation a game
+ * or the Rockstar Games Launcher catches itself, so the old default fired in every
+ * licensed session long before anything failed (build 460, log 2026-10-08
+ * 23:59:11: the launcher's first one, at start-up) and wrote ~930 MB of pool to
+ * Documents each time, for a file too large to send. */
+static int ios_jit_dump_enabled( void )
+{
+    /* 1: write Documents/fex-jit-dump.bin (the JIT pool, sparse) on the first mach UNHANDLED / SIGILL (ml1242); default 0. */
+    const char *jd = getenv( "MADEIRA_JIT_DUMP" );
+    return jd && jd[0] == '1';
+}
+
+/* Without the switch, remove a dump an earlier session left in Documents. */
+static void ios_jit_dump_remove_stale( void )
+{
+    const char *docs = getenv( "MADEIRA_DOCS_DIR" );
+    char path[512];
+    struct stat st;
+
+    if (ios_jit_dump_enabled() || !docs || !*docs) return;
+    if (snprintf( path, sizeof(path), "%s/fex-jit-dump.bin", docs ) >= (int)sizeof(path)) return;
+    if (stat( path, &st ) || unlink( path )) return;
+    dprintf( 2, "[jit-dump] removed %s (%lld MB) left by an earlier session; MADEIRA_JIT_DUMP=1 writes it again\n",
+             path, (long long)(st.st_size >> 20) );
+}
+
 static void ios_dump_jit_pool( const char *why )
 {
     extern void *ios_jit_rw_base_global;
@@ -1456,10 +1484,7 @@ static void ios_dump_jit_pool( const char *why )
     char path[512], vec[256];   /* one byte per page of a 1MB chunk, down to 4KB pages */
     int fd;
 
-    const char *jd = getenv( "MADEIRA_JIT_DUMP" );
-    /* 0: no Documents/fex-jit-dump.bin; by default the JIT pool is written (sparse) on the
-     * first mach UNHANDLED / SIGILL, and pulled with the log (ml1242) */
-    if ((jd && jd[0] == '0') || !ios_jit_rw_base_global || !total) return;
+    if (!ios_jit_dump_enabled() || !ios_jit_rw_base_global || !total) return;
     docs = getenv( "MADEIRA_DOCS_DIR" );
     snprintf( path, sizeof(path), "%s/fex-jit-dump.bin", docs ? docs : "/tmp" );
     if ((fd = open( path, O_WRONLY | O_CREAT | O_TRUNC, 0644 )) < 0)
@@ -1505,6 +1530,7 @@ static void *ios_mach_exception_thread( void *arg )
     pthread_set_qos_class_self_np( QOS_CLASS_USER_INTERACTIVE, 0 );
 
     ios_exc_thread_alive = 1;
+    ios_jit_dump_remove_stale();
 
     for (;;)
     {
@@ -4173,7 +4199,7 @@ static void *ios_mach_exception_thread( void *arg )
                              *
                              * Demote only after a page has faulted repeatedly, so
                              * one-off writes never change page state. Disable at
-                             * runtime with Documents/madeira-wx.txt containing 0. */
+                             * runtime with bcd.cfg wx = 0. */
                             {
                                 /* ml693: BACK TO 32. ml691 proved threshold 32 safe over
                                  * 192 demotions with zero re-promotions; ml692 changed the
@@ -7042,34 +7068,29 @@ NTSTATUS WINAPI NtSetContextThread( HANDLE handle, const CONTEXT *context )
 
 /* A CROSS-THREAD CONTEXT WITHOUT ITS CONTROL REGISTERS.
  *
- * When the server has no native capture of the target it answers with the
- * integer registers only, and the ARM64EC wrapper hands an x64 caller
- * Rip = Rsp = 0 with no CONTEXT_CONTROL. Ghost of Tsushima's loading screen
- * froze on exactly that: one thread called GetThreadContext on another
- * thousands of times, getting rip 0 each time, while holding a critical
- * section the main thread waited on.
+ * When the server has no native capture of the target (have_native = 0) it
+ * answers with the integer registers only, and the ARM64EC wrapper hands an
+ * x64 caller Rip = Rsp = 0 with no CONTEXT_CONTROL. Ghost of Tsushima's
+ * loading screen froze on exactly that (madeira-bcd build 213, log 2026-09-28
+ * 14:03): one thread called GetThreadContext on another thousands of times,
+ * getting rip 0 each time, while holding a critical section the main thread
+ * waited on ("RtlpWaitForCriticalSection ... blocked by 00bc").
  *
  * The target's last x64 state is in its CPU area (ChpeV2CpuAreaInfo->
- * ContextAmd64, saved whenever it left emulated code). Its control registers
- * (Pc, Sp, Fp, Lr) are returned in the ARM64EC register mapping, which the
- * wrapper's context_arm_to_x64() turns back into x64 registers; X23/X28 are
- * cleared so the wrapper does not replace Pc/Sp with an emulator frame's. The
- * integer registers stay the server's. Threads of this process only: the TEB
- * pointer is read in this address space, through mach_vm_read_overwrite, so a
- * target that exits meanwhile cannot fault this thread.
+ * ContextAmd64, saved whenever it left emulated code). It is returned in the
+ * ARM64EC register mapping, which the wrapper's context_arm_to_x64() turns
+ * back into x64 registers; X23/X28 are cleared so the wrapper does not replace
+ * Pc/Sp with an emulator frame's (ml980). Threads of this process only: the
+ * TEB pointer is read in this address space, through mach_vm_read_overwrite,
+ * so a target that exits meanwhile cannot fault this thread.
  *
- * Opt-in, MADEIRA_CTX_CPU_AREA=1 (madeira.cfg env., or a game's own config):
- * the snapshot is the thread's last exit from emulated code, not where it is
- * now, so a caller that writes the context back (SetThreadContext, as a .NET
- * runtime redirecting a thread does) would move the thread back there.
- *
- * MADEIRA_CTX_CPU_AREA=2 also returns the snapshot's integer registers when the
- * caller asked for CONTEXT_INTEGER (the ARM64EC_NT_CONTEXT registers that hold
- * x64 state: X0-X12, X15, X19-X22 and X25-X27; the others are zeroed) and sets
- * Cpsr to 0, so the caller gets one x64 state from a single moment instead of
- * the snapshot's control registers next to the server's integer registers.
- * madeira-bcd has run this form by default since its build 213 (2026-09-28),
- * and its game lists were tested with it. */
+ * madeira-bcd: ON by default (the fork's build-213 behaviour, which also
+ * returns the snapshot's integer registers when the caller asked for them,
+ * as tested on Ghost of Tsushima); MADEIRA_CTX_CPU_AREA=0 turns it off.
+ * Upstream ships it opt-in: the snapshot is the thread's last exit from
+ * emulated code, not where it is now, so a caller that writes the context
+ * back (SetThreadContext, as a .NET runtime redirecting a thread does) would
+ * move the thread back there. */
 static int ctx_peek( void *dst, const void *src, size_t size )
 {
     mach_vm_size_t got = 0;
@@ -7089,12 +7110,11 @@ static int get_context_from_amd64_area( HANDLE handle, CONTEXT *context, DWORD n
 
     if (on < 0)
     {
-        /* For a cross-thread GetThreadContext without control registers. 1: the target's
-         * Pc/Sp/Fp/Lr from its last exit from emulated code (upstream's opt-in). 2: also
-         * X0-X12, X15, X19-X22, X25-X27 and Cpsr = 0 from the same snapshot (madeira-bcd's
-         * behaviour). Default off: a context written back would rewind the thread. */
+        /* 0: a cross-thread GetThreadContext without control registers keeps rip 0 (upstream's
+         * default). Default on: it gets the target's saved x64 state (a context written back
+         * would rewind the thread there). */
         const char *env = getenv( "MADEIRA_CTX_CPU_AREA" );
-        on = !env ? 0 : env[0] == '1' ? 1 : env[0] == '2' ? 2 : 0;
+        on = !(env && env[0] == '0');
     }
     if (!on) return 0;
     if (NtQueryInformationThread( handle, ThreadBasicInformation, &tbi, sizeof(tbi), NULL )) return 0;
@@ -7104,7 +7124,7 @@ static int get_context_from_amd64_area( HANDLE handle, CONTEXT *context, DWORD n
     if (!ctx_peek( &ecp, &cpu->ContextAmd64, sizeof(ecp) ) || !ecp) return 0;
     if (!ctx_peek( &ec, ecp, sizeof(ec) )) return 0;
     if (!ec.Pc || !ec.Sp) return 0;
-    if (on == 2 && (needed & (CONTEXT_INTEGER & ~CONTEXT_ARM64)))
+    if (needed & (CONTEXT_INTEGER & ~CONTEXT_ARM64))
     {
         memset( context->X, 0, sizeof(context->X[0]) * 29 );
         context->X[0] = ec.X0;   context->X[1] = ec.X1;   context->X[2] = ec.X2;   context->X[3] = ec.X3;
@@ -7120,12 +7140,12 @@ static int get_context_from_amd64_area( HANDLE handle, CONTEXT *context, DWORD n
     context->Lr = ec.Lr;
     context->Sp = ec.Sp;
     context->Pc = ec.Pc;
-    if (on == 2) context->Cpsr = 0;
+    context->Cpsr = 0;
     context->ContextFlags |= CONTEXT_CONTROL;
     if (InterlockedIncrement( &said ) <= 8)
-        ERR( "[ctx] get handle=%p: no control registers from the server; "
-             "returning the target's saved x64 %s rip=%p rsp=%p (MADEIRA_CTX_CPU_AREA=%d)\n",
-             handle, on == 2 ? "state" : "Pc/Sp/Fp/Lr", (void *)ec.Pc, (void *)ec.Sp, on );
+        ERR_(seh)( "[ctx] madeira-bcd get handle=%p: no control registers from the server; "
+                   "returning the target's saved x64 state rip=%p rsp=%p (MADEIRA_CTX_CPU_AREA=0 turns it off)\n",
+                   handle, (void *)ec.Pc, (void *)ec.Sp );
     return 1;
 }
 
@@ -10041,7 +10061,7 @@ static void segv_handler( int signal, siginfo_t *siginfo, void *sigcontext )
                      * the range as executable: an executable section here points at
                      * the emulator, a data section with an executable vprot at a
                      * protect it was never told about, a data section without one at
-                     * a wrong jump target (GTA V Enhanced's NoExec crash). */
+                     * a wrong jump target (docs/gta5-child-crash.md section 8). */
                     {
                         extern int ios_image_section_describe( unsigned long long va, char *buf, size_t len,
                                                                unsigned long long *img_base );

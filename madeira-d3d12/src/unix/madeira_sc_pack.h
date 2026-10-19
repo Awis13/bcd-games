@@ -1,4 +1,4 @@
-/* madeira-bcd: the packed shader cache (madeira.cfg d3d12-shader-pack = 1).
+/* madeira-bcd: the packed shader cache (bcd.cfg d3d12-shader-pack = 1).
  *
  * The persistent caches of madeira_ir_unix.mm -- the DXBC entries of ml1020
  * (".mdsc") and the DXIL entries of ml1990 (".mdxc") -- write one file per

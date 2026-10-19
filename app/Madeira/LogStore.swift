@@ -7,7 +7,27 @@ final class LogStore: ObservableObject {
     /// One row per unique signature — semantically identical events bucket here.
     @Published var entries: [LogEntry] = []
 
-    private let logFileURL: URL
+    /// Readable so the UI can hand the file to a share sheet. Every device round
+    /// so far ended with the log being hunted down in the Files app and uploaded
+    /// by hand; one tap is cheaper, and these runs are expensive enough that the
+    /// friction was costing us results.
+    let logFileURL: URL
+
+    /// The rotated previous run, when there is one. Worth offering alongside the
+    /// current log: a crash often matters less than the run before it.
+    var previousLogFileURL: URL? {
+        let url = logFileURL.deletingLastPathComponent().appendingPathComponent("bcd-log.prev.txt")
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// Files worth exporting, newest first, skipping any that are empty.
+    var exportableLogs: [URL] {
+        [logFileURL, previousLogFileURL].compactMap { $0 }.filter { url in
+            let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+            let size = (attrs?[.size] as? NSNumber)?.intValue ?? 0
+            return size > 0
+        }
+    }
     private let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "HH:mm:ss.SSS"
@@ -70,7 +90,7 @@ final class LogStore: ObservableObject {
 
     private init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        logFileURL = docs.appendingPathComponent("madeira-log.txt")
+        logFileURL = docs.appendingPathComponent("bcd-log.txt")
 
         // ml601: ROTATE, don't destroy.
         //
@@ -82,8 +102,8 @@ final class LogStore: ObservableObject {
         // worth one file's worth of disk.
         //
         // Pull the previous run with the usual devicectl command, substituting
-        // Documents/madeira-log.prev.txt for Documents/madeira-log.txt.
-        let prevLogURL = docs.appendingPathComponent("madeira-log.prev.txt")
+        // Documents/bcd-log.prev.txt for Documents/bcd-log.txt.
+        let prevLogURL = docs.appendingPathComponent("bcd-log.prev.txt")
         if FileManager.default.fileExists(atPath: logFileURL.path) {
             try? FileManager.default.removeItem(at: prevLogURL)
             try? FileManager.default.moveItem(at: logFileURL, to: prevLogURL)
@@ -136,11 +156,11 @@ final class LogStore: ObservableObject {
     /// Keeps this session's log under the program's name as well:
     /// Documents/logs/<exe>-<yyyy-MM-dd_HH-mm-ss>.txt, e.g.
     /// Crysis64.exe-2026-09-26_12-05-00.txt, so a run can be found and sent
-    /// without renaming madeira-log.txt by hand.
+    /// without renaming bcd-log.txt by hand.
     ///
     /// A hard link, not a copy: Wine, wineserver and the app all append to
-    /// madeira-log.txt through their own descriptors right up to a crash, and
-    /// both names see every line. The next app launch rotates madeira-log.txt
+    /// bcd-log.txt through their own descriptors right up to a crash, and
+    /// both names see every line. The next app launch rotates bcd-log.txt
     /// to a new file, which leaves this name holding the finished run. Keeps
     /// the newest `keep` runs. A Steam game started through Madeira Dock is
     /// named by ntdll instead (process_ios.c, madeira_steam_session_log).
@@ -168,7 +188,7 @@ final class LogStore: ObservableObject {
         for old in runs.dropFirst(keep) { try? fm.removeItem(at: old) }
     }
 
-    /// Once Wine points stderr at madeira-log.txt, the app's own log lines are
+    /// Once Wine points stderr at bcd-log.txt, the app's own log lines are
     /// written through stderr too (appendToFile); 0 keeps a per-call file handle.
     private static let viaStderr = MadeiraConfig.flag("MADEIRA_LOG_VIA_STDERR")
 

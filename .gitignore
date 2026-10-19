@@ -155,9 +155,33 @@ research/remote-metal/host/rmetald.*
 # Licence copies generated into the bundle by build/stage-licenses.sh (from COPYING and LICENSE-EXCEPTION.md)
 app/Madeira/licenses/LICENSE-MADEIRA-GPL-3.0.txt
 app/Madeira/licenses/LICENSE-MADEIRA-EXCEPTION.txt
+app/Madeira/licenses/LICENSE-BCD.txt
 madeira-d3d12/tests/offline/sm51/
-build/stub-dlls/
 
+# Former CI staging dir for the Metal Shader Converter headers (now vendored in
+# madeira-d3d12/third_party/metal-shader-converter); kept ignored.
+build/madeira-d3d12/msc-include/
+build/faultrep/out/
+app/Madeira/arm64ec-windows/faultrep.dll
+build/d3d12core/out/
+app/Madeira/arm64ec-windows/d3d12core.dll
+build/stub-dlls/
+app/Madeira/arm64ec-windows/d3d10.dll
+app/Madeira/arm64ec-windows/avifil32.dll
+app/Madeira/arm64ec-windows/vulkan-1.dll
+app/Madeira/arm64ec-windows/xtajit64-avx.dll
+# tools/build-wine-extra-dlls.sh output (opt-in diagnostic kernelbase, env.MADEIRA_FIBER_TRACE), built in CI
+app/Madeira/arm64ec-windows/kernelbase-fibertrace.dll
+# tools/build-dxmt-nvapi.sh output, built in CI
+build/dxmt-nvapi/
+app/Madeira/arm64ec-windows/nvapi64.dll
+# tools/build-dxgi-dll.sh output (DXMT dxgi.dll from source, IDXGIFactory7), built in CI
+build/dxmt-dxgi/
+app/Madeira/arm64ec-windows/dxgi-src.dll
+# tools/build-d3d11-dll.sh output (DXMT d3d11.dll from source, SwapDeviceContextState), built in CI
+build/dxmt-d3d11/
+app/Madeira/arm64ec-windows/d3d11-src.dll
+__pycache__/
 # The i386 farm (32-bit Wine + DXMT DLLs) is built from the pinned submodules by
 # build/wine-i386/build.sh (docs/WOW64.md section 9); it is not committed.
 app/Madeira/i386-windows/*
@@ -167,5 +191,8 @@ app/Madeira/i386-windows/*
 app/Madeira/arm64ec-windows/dockhost.exe
 app/Madeira/arm64ec-windows/dock-notices.txt
 
-# faultrep.dll: build/faultrep/build.sh (its install goes into the tracked farm)
-build/faultrep/out/
+# agent worktrees (Claude Code isolation), never part of the repo
+.claude/worktrees/
+# madeira-bcd fork-only smoke tests (bcd-smoke/build.sh output; built in CI, never committed)
+bcd-smoke/out/
+app/Madeira/arm64ec-windows/bcd-smoke-*.exe

@@ -363,6 +363,9 @@ struct ios_stream {
     _Atomic uint32_t st_cbs;       /* render passes that mixed this stream */
     _Atomic uint32_t st_short_cbs; /* passes that ran short */
     _Atomic uint32_t st_cb_max;    /* largest render pass, device frames */
+    /* madeira-bcd MADEIRA_AUDIO_RESUME: mach time up to which ios_stream_drain has
+     * played this stream's ring by the clock while iOS held the endpoint stopped. */
+    uint64_t drain_mach;
 };
 
 /* ml739: one stream object per client, mirroring Wine's CoreAudio driver.
@@ -943,14 +946,52 @@ static void ios_dev_detach(struct ios_stream *s)
     }
 }
 
+/* madeira-bcd MADEIRA_AUDIO_RESUME (opt-in, off by default; 2026-10-18,
+ * docs/research/ios18-2026-10-18/gameplay.md section 2.1). iOS stops the
+ * endpoint for a phone call, Siri, an alarm, another app's sound, or when it
+ * suspends the app, and nothing here ever started it again. A client stays
+ * "live" with a stopped endpoint, so its position froze (FMOD's clock), its
+ * full ring kept GetBuffer refusing and its timer loop stopped waking it: the
+ * sound never came back and an audio-clocked game could stall. With the switch
+ * the app reports the audio session's events (WineProcessBridge.m) through
+ * madeira_audio_session_event below. While iOS holds the endpoint stopped, each
+ * stream's timer loop plays its ring out by the clock (ios_stream_drain): the
+ * position keeps moving, padding drains and the client keeps being woken. The
+ * endpoint starts again when the session is back. Without the switch
+ * g_dev_suspended is never set, and the driver works exactly as before. */
+static _Atomic int g_dev_suspended;   /* iOS holds the endpoint stopped; set and cleared under g_dev_lock */
+static uint64_t g_dev_suspend_mach;   /* mach time it stopped; under g_dev_lock */
+
+static int ios_audio_resume_on(void)
+{
+    const char *e = getenv("MADEIRA_AUDIO_RESUME");   /* 1: game audio comes back after a call, Siri, an alarm or an app switch, and its clock keeps running while iOS holds the output stopped; unset/0: as before */
+    return e && e[0] == '1' && !e[1];
+}
+
+/* The endpoint stopped for iOS: the drain counts from now. Caller holds g_dev_lock. */
+static void ios_dev_suspend_locked(void)
+{
+    if (atomic_load_explicit(&g_dev_suspended, memory_order_relaxed)) return;
+    g_dev_suspend_mach = mach_absolute_time();
+    atomic_store_explicit(&g_dev_suspended, 1, memory_order_release);
+}
+
 /* Start/stop the shared endpoint. It runs while at least one client is
  * started; with none it is stopped rather than rendering silence. */
 static void ios_dev_start(void)
 {
     pthread_mutex_lock(&g_dev_lock);
-    if (g_dev.au && !g_dev.running) {
+    /* madeira-bcd MADEIRA_AUDIO_RESUME: while iOS holds the audio, the session event starts the endpoint */
+    if (g_dev.au && !g_dev.running && !atomic_load_explicit(&g_dev_suspended, memory_order_acquire)) {
         OSStatus err = AudioOutputUnitStart(g_dev.au);
-        if (err) fprintf(stderr, "[ios_audio] ml1026 AudioOutputUnitStart: %d -- null-mode\n", (int)err);
+        if (err) {
+            fprintf(stderr, "[ios_audio] ml1026 AudioOutputUnitStart: %d -- null-mode\n", (int)err);
+            if (ios_audio_resume_on()) {   /* madeira-bcd: the clock runs on until the session is back */
+                ios_dev_suspend_locked();
+                fprintf(stderr, "[ios_audio] madeira-bcd MADEIRA_AUDIO_RESUME: the endpoint did not start; "
+                                "its clients' rings play out by the clock until the audio session is back\n");
+            }
+        }
         else g_dev.running = 1;
     }
     pthread_mutex_unlock(&g_dev_lock);
@@ -978,6 +1019,141 @@ static void ios_dev_stop_if_idle(void)
 static int ios_stream_is_live(const struct ios_stream *s)
 {
     return s->mixable && g_dev.au != NULL;
+}
+
+/* madeira-bcd MADEIRA_AUDIO_RESUME: while iOS holds the endpoint stopped, play
+ * this stream's ring out by the clock, as the endpoint would have: play_pos
+ * advances at the stream's rate and never past write_pos; time with an empty
+ * ring is lost, as an underrun is. Called from the stream's own timer loop
+ * only while g_dev_suspended is set. Under g_dev_lock, which every start of
+ * the endpoint holds, so the render callback and this never move play_pos at
+ * the same time; the compare-and-swap leaves a concurrent reset alone. */
+static uint64_t ns_to_mach(uint64_t ns);
+static void ios_stream_drain(struct ios_stream *s)
+{
+    uint64_t now, ns, frames, play, wr, avail, next;
+    UINT32 rate;
+
+    pthread_mutex_lock(&g_dev_lock);
+    rate = s->sample_rate ? s->sample_rate : IOS_AUDIO_SAMPLE_RATE;
+    if (!atomic_load_explicit(&g_dev_suspended, memory_order_relaxed) || !s->started || !ios_stream_is_live(s)) {
+        pthread_mutex_unlock(&g_dev_lock);
+        return;
+    }
+    now = mach_absolute_time();
+    if (s->drain_mach < g_dev_suspend_mach) s->drain_mach = g_dev_suspend_mach;
+    if (now <= s->drain_mach) { pthread_mutex_unlock(&g_dev_lock); return; }
+    ns = mach_to_ns(now - s->drain_mach);
+    frames = ns * rate / 1000000000ull;
+    play = atomic_load_explicit(&s->play_pos, memory_order_acquire);
+    wr = atomic_load_explicit(&s->write_pos, memory_order_acquire);
+    avail = wr > play ? wr - play : 0;
+    if (frames >= avail) {
+        next = play + avail;
+        s->drain_mach = now;   /* the rest of the interval was an underrun */
+    } else {
+        next = play + frames;
+        s->drain_mach += ns_to_mach(frames * 1000000000ull / rate);
+    }
+    if (next != play)
+        atomic_compare_exchange_strong_explicit(&s->play_pos, &play, next,
+                                                memory_order_release, memory_order_relaxed);
+    pthread_mutex_unlock(&g_dev_lock);
+}
+
+/* madeira-bcd MADEIRA_AUDIO_RESUME: the app's audio session events
+ * (WineProcessBridge.m), only with the switch.
+ *   what 0: iOS stopped our audio (an interruption began). The endpoint is
+ *           stopped and the clients' rings play out by the clock.
+ *   what 1: the session is active again (the interruption ended, the app is
+ *           active, the route changed). When a client plays and the endpoint
+ *           does not run (stopped above, stopped by iOS behind our back, or
+ *           "running" with no render pass in 250 ms), it starts again.
+ *   what 2: media services were reset: every audio object is invalid, so the
+ *           endpoint is built again in the same format, then as 1.
+ *   what 3: the route changed: as 1, except that an endpoint stopped for iOS
+ *           stays stopped (a call routes audio away; its end restarts it).
+ * Returns -1 with the switch off (nothing is done), 0 when a client plays and
+ * the endpoint does not run, 1 when it runs, 2 when this call started it
+ * again, 3 when no client plays (the next one starts it, ios_dev_start). */
+int madeira_audio_session_event(int what)
+{
+    int i, any = 0, ret, restarted = 0, dead = 0;
+    OSStatus err = 0;
+
+    if (!ios_audio_resume_on()) return -1;
+    pthread_mutex_lock(&g_dev_lock);
+    if (what == 3 && atomic_load_explicit(&g_dev_suspended, memory_order_relaxed)) {
+        pthread_mutex_unlock(&g_dev_lock);
+        return 0;
+    }
+    if (what == 0) {
+        ios_dev_suspend_locked();
+        if (g_dev.au && g_dev.running) {
+            AudioOutputUnitStop(g_dev.au);
+            g_dev.running = 0;
+        }
+        pthread_mutex_unlock(&g_dev_lock);
+        fprintf(stderr, "[ios_audio] madeira-bcd MADEIRA_AUDIO_RESUME: endpoint stopped for iOS; "
+                        "the clients' rings play out by the clock\n");
+        return 0;
+    }
+    if (what == 2 && g_dev.au) {
+        struct ios_stream fmt;
+        memset(&fmt, 0, sizeof(fmt));
+        fmt.sample_rate = g_dev.rate;      /* the format every client's ring is mixed for */
+        fmt.channels = g_dev.channels;
+        if (g_dev.running) AudioOutputUnitStop(g_dev.au);
+        AudioComponentInstanceDispose(g_dev.au);
+        g_dev.au = NULL;
+        g_dev.running = 0;
+        g_dev.failed = 0;
+        if (ios_dev_create_locked(&fmt))
+            fprintf(stderr, "[ios_audio] madeira-bcd MADEIRA_AUDIO_RESUME: media services reset; the endpoint "
+                            "could not be built again -- null-mode\n");
+    }
+    for (i = 0; i < IOS_MAX_STREAMS; i++) {
+        struct ios_stream *m = atomic_load_explicit(&g_mix[i], memory_order_relaxed);
+        if (m && m->started) { any = 1; break; }
+    }
+    if (g_dev.au && any && g_dev.running && !atomic_load_explicit(&g_dev_suspended, memory_order_relaxed)) {
+        UInt32 on = 1, size = sizeof(on);
+        if (AudioUnitGetProperty(g_dev.au, kAudioOutputUnitProperty_IsRunning, kAudioUnitScope_Global, 0,
+                                 &on, &size) == noErr && !on)
+            dead = 1;
+        else {
+            uint64_t e0 = atomic_load_explicit(&g_dev.cb_epoch, memory_order_acquire);
+            pthread_mutex_unlock(&g_dev_lock);
+            usleep(250000);
+            pthread_mutex_lock(&g_dev_lock);
+            if (g_dev.au && g_dev.running && !atomic_load_explicit(&g_dev_suspended, memory_order_relaxed) &&
+                atomic_load_explicit(&g_dev.cb_epoch, memory_order_acquire) == e0)
+                dead = 2;
+        }
+        if (dead) {
+            AudioOutputUnitStop(g_dev.au);
+            g_dev.running = 0;
+            ios_dev_suspend_locked();
+        }
+        any = 0;   /* a client may have stopped while the lock was free */
+        for (i = 0; i < IOS_MAX_STREAMS; i++) {
+            struct ios_stream *m = atomic_load_explicit(&g_mix[i], memory_order_relaxed);
+            if (m && m->started) { any = 1; break; }
+        }
+    }
+    if (g_dev.au && any && !g_dev.running) {
+        err = AudioOutputUnitStart(g_dev.au);
+        if (!err) { g_dev.running = 1; restarted = 1; }
+    }
+    if (!g_dev.au || !any || g_dev.running)
+        atomic_store_explicit(&g_dev_suspended, 0, memory_order_release);
+    ret = !any && g_dev.au ? 3 : restarted ? 2 : g_dev.running ? 1 : 0;
+    pthread_mutex_unlock(&g_dev_lock);
+    if (dead || restarted || ret == 0)
+        fprintf(stderr, "[ios_audio] madeira-bcd MADEIRA_AUDIO_RESUME: event %d: %s%s (AudioOutputUnitStart %d)\n", what,
+                dead == 1 ? "iOS had stopped the endpoint; " : dead == 2 ? "no render pass in 250 ms; " : "",
+                restarted ? "endpoint started again" : ret == 0 ? "endpoint still stopped" : "endpoint idle", (int)err);
+    return ret;
 }
 
 /* ---------------------------------------------------------------- */
@@ -1115,6 +1291,40 @@ static NTSTATUS ios_get_endpoint_ids(void *args) {
     return STATUS_SUCCESS;
 }
 
+/* madeira-bcd: MADEIRA_AUDIO_SPATIAL=0 (opt-in) leaves Wine's spatial audio out.
+ * Horizon Forbidden West's Wwise renders its main mix through Wine's
+ * ISpatialAudioObjectRenderStream, a 7.1.4 bed of 12 channels, and delivered
+ * 23 % of the audio that stream needed (2.3 s in every 10 s, ml1230): robotic,
+ * broken sound, while its stereo stream ran at 100 %. Refusing the 12-channel
+ * stream (build 533) made Wwise give up on audio altogether. Before it creates
+ * an ISpatialAudioClient, mmdevapi (spatialaudio.c, SpatialAudioClient_Create)
+ * asks whether shared mode takes its object format, mono 32-bit float at
+ * 48 kHz, and fails the activation with whatever error comes back; the game
+ * then sees no spatial audio, as on Windows 7 or a PC with spatial sound off,
+ * and renders through a plain stream. This answers exactly that probe with
+ * AUDCLNT_E_UNSUPPORTED_FORMAT; everything else is accepted as before. */
+static int ios_audio_spatial_off(void)
+{
+    static int cached = -1;
+    if (cached < 0) {
+        /* 0: no spatial audio (a game falls back to a plain stream); unset or 1: Wine's spatial audio, as before */
+        const char *e = getenv("MADEIRA_AUDIO_SPATIAL");
+        cached = (e && e[0] == '0' && !e[1]) ? 1 : 0;
+        if (cached)
+            fprintf(stderr, "[ios_audio] madeira-bcd MADEIRA_AUDIO_SPATIAL=0: spatial audio is left out (its mono-float probe is refused)\n");
+    }
+    return cached;
+}
+
+/* The format SpatialAudioClient_Create probes: shared render, WAVE_FORMAT_IEEE_FLOAT,
+ * one channel, 48 kHz, 32 bits. */
+static int ios_audio_is_spatial_probe(const struct is_format_supported_params *p)
+{
+    const struct WAVEFORMATEX_stub *f = p->fmt_in;
+    return p->flow == eRender && p->share == 0 && f && f->wFormatTag == 3 && f->nChannels == 1 &&
+           f->nSamplesPerSec == 48000 && f->wBitsPerSample == 32;
+}
+
 static NTSTATUS ios_create_stream(void *args) {
     LOG_FN_CALL(4, "create_stream");
     struct create_stream_params *p = args;
@@ -1216,6 +1426,7 @@ static NTSTATUS ios_start(void *args) {
         /* ml1026: started BEFORE the endpoint runs, so the first render pass
          * already sees this client. */
         s->start_mach = mach_absolute_time();
+        s->drain_mach = s->start_mach;   /* madeira-bcd MADEIRA_AUDIO_RESUME: a drain counts from this start */
         s->started = 1;
         ios_dev_start();
     }
@@ -1326,6 +1537,8 @@ static NTSTATUS ios_timer_loop(void *args) {
         UINT32 rate = s->sample_rate ? s->sample_rate : IOS_AUDIO_SAMPLE_RATE;
         uint64_t period = rate / 100, lead, play, wr, pad, now, sleep_ns, deadline, t;
 
+        if (atomic_load_explicit(&g_dev_suspended, memory_order_acquire))
+            ios_stream_drain(s);   /* madeira-bcd MADEIRA_AUDIO_RESUME: iOS holds the endpoint; the ring plays out by the clock */
         if (!s->event || !s->started || !ios_stream_is_live(s) || !ios_audio_lead_ms()) {
             /* null-mode, nothing to drive yet, or MADEIRA_AUDIO_LEAD_MS=0: the plain 10 ms beat */
             usleep(10000); /* device period, 10 ms */
@@ -1537,7 +1750,15 @@ static NTSTATUS ios_release_capture_buffer(void *args) {
 static NTSTATUS ios_is_format_supported(void *args) {
     struct is_format_supported_params *p = args;
     LOG_FN_CALL(14, "is_format_supported");
-    /* Accept anything. */
+    /* Accept anything, except spatial audio's probe with MADEIRA_AUDIO_SPATIAL=0. */
+    if (ios_audio_spatial_off() && ios_audio_is_spatial_probe(p)) {
+        static int said;
+        if (said++ < 4)
+            fprintf(stderr, "[ios_audio] madeira-bcd refused spatial audio's mono-float probe (MADEIRA_AUDIO_SPATIAL=0): "
+                    "no ISpatialAudioClient\n");
+        p->result = (HRESULT)0x88890008L; /* AUDCLNT_E_UNSUPPORTED_FORMAT */
+        return STATUS_SUCCESS;
+    }
     p->result = S_OK;
     return STATUS_SUCCESS;
 }

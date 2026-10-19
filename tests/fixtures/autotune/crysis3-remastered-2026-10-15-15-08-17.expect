@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "app-dll-shadow-vcruntime"
+ ],
+ "next": [
+  "env.MADEIRA_APP_DLL_SHADOW = vcruntime140.dll"
+ ],
+ "note": "Crysis 3 Remastered, build 547, iPhone18,2 (11695 MB): crashed",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

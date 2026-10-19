@@ -1,0 +1,26 @@
+[22:23:47.150] [INFO] [build] v0.1.559 (559)
+[22:23:47.150] [INFO] [device] model=iPad16,5 idiom=pad os=iPadOS Version 27.2 (Build 24B5089g) ram=15416MB available=16362MB cores=10
+[22:23:47.150] [INFO] [device] address-map=[0x104904000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[22:24:07.126] [INFO] [bcd] library launch war3.exe: avx=1 wine-vcrt=1 nvidia=1 game-config=1 metalfx=off
+[22:24:07.147] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x104904000,0x8000000000) 512GB available=16272MB low-power=0 thermal=nominal
+[phase] wine-start             t+  0.593s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=479 MB (peak 479) internal=477 MB compressed=0 MB external=71 MB reusable=12 MB (cycle=1)
+D 24 Load module war3.exe (war3.exe-8c43fb63a16335ca): 7100400000
+D 24 Load module ntdll.dll (ntdll.dll-3903196a83fae68b): 71FFF40000
+D 24 Load module kernel32.dll (kernel32.dll-3a7c334be1e71252): 717BED0000
+D 24 Load module kernelbase.dll (kernelbase.dll-1bada4728a9f00a2): 717BC40000
+D 24 Load module COMCTL32.dll (comctl32.dll-8c41fd137b7fcd74): 717BB30000
+D 24 Load module user32.dll (user32.dll-7d7be97280eb2b4a): 717B970000
+D 24 Load module ijl15.dll (ijl15.dll-6b833a4cfb1ad12d): 7160000000
+D 24 Load module d3d9.dll (d3d9.dll-23c8601a8efc0ed1): 71790D0000
+D 24 Load module d3d9-emulated.dll (d3d9-emulated.dll-cd2c9233124e6d53): 7178D80000
+D 24 Load module winemetal.dll (winemetal.dll-5ddc509614b9dfc3): 7178D60000
+D 24 Load module d3d9.dll (d3d9.dll-23c8601a8efc0ed1): 71790D0000
+[win-name] #4 hwnd=0x10036 class='' text="Default IME" rev=ml853
+D 24 Load module d3d9.dll (d3d9.dll-23c8601a8efc0ed1): 71790D0000
+[win-name] #5 hwnd=0x2002e class='' text="Warcraft III" rev=ml853
+[win-name] #6 hwnd=0x2002e class='' text="Warcraft III" rev=ml853
+*** Terminating app due to uncaught exception 'CAMetalLayerInvalid', reason: 'invalid pixel format 40'

@@ -18,6 +18,7 @@ draw's own argument slot and is reused while nothing changes; catalog; Horizon
 Zero Dawn's list. The helpers are compiled and run against stubs.
 """
 from pathlib import Path
+import json
 import shutil
 import subprocess
 import tempfile
@@ -25,8 +26,14 @@ import tempfile
 root = Path(__file__).resolve().parents[2]
 pe = (root / 'madeira-d3d12/src/pe/madeira_d3d12.c').read_text()
 catalog = (root / 'app/Madeira/ConfigCatalog.generated.swift').read_text()
-recs = (root / 'app/Madeira/GameRecommendations.swift').read_text()
+recs = json.loads((root / 'recommended/recommendations.json').read_text())
 ok = True
+
+
+def rule_config(rules, ident):
+    """A rule's config lines in recommended/recommendations.json (the lists since 2026-10-18)."""
+    rule = next(r for r in rules['rules'] if r['id'] == ident)
+    return '\n'.join(l if isinstance(l, str) else l['line'] for l in rule['config'] + rule.get('smallRAMConfig', []))
 
 
 def check(what, cond):
@@ -73,9 +80,9 @@ check('the copies are made right before the argument slot (modes 1 and 2), after
       slot.index('chunk = l->ring_used / (MAD_ARG_RING_BYTES / MAD_ARG_SLOT_BYTES);'))
 check('a report every 300 presents', 'if (g_scbv_on > 0 && s->presents % 300 == 0) mad_scbv_report(s->presents);' in pe)
 check('settings catalog', 'ConfigOption(key: "static-cbv"' in catalog)
-hzd = block(recs, 'static let horizonZeroDawn = GameRecommendation(', 'avx: false')
+hzd = rule_config(recs, 'horizon-zero-dawn')
 check("no game list has it (HZD's v15 dropped it: on 491 it found nothing to latch differently)", 'static-cbv' not in hzd)
-configs = [c.split('"""')[0] for c in recs.split('config: """')[1:]]
+configs = [rule_config(recs, r['id']) for r in recs['rules']]
 check('no other game list has it', sum('static-cbv' in c for c in configs) == 0)
 
 harness = r'''

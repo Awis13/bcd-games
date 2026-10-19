@@ -1,0 +1,19 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "swap-12gb-memory-kill",
+  "swap-12gb-more"
+ ],
+ "next": [
+  "swap-mb = 6144",
+  "swap-mode = 2",
+  "swap-min-mb = 1"
+ ],
+ "note": "synthetic: a 12 GB device closed at its memory limit with the swap file in use",
+ "outcome": "killed",
+ "stage": 4,
+ "status": "trying"
+}

@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "lock-orphan-stamped"
+ ],
+ "next": [
+  "env.MADEIRA_LOCK_ORPHAN = stamped"
+ ],
+ "note": "synthetic: built from [lock-reap] SRW's format and Wine's 'is not owned exclusive!'; HZD 479-480, GTA V 510",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

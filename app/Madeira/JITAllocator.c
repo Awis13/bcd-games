@@ -16,6 +16,9 @@
 #include <mach-o/dyld.h>
 #include <os/log.h>
 #include <os/proc.h>
+#include <setjmp.h>
+#include <dlfcn.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 // csops syscall - used to check CS_DEBUGGED flag
 #ifndef CS_DEBUGGED
@@ -374,10 +377,10 @@ void *jit_region_write(JITRegion *region, size_t offset, const void *code, size_
 // ml1233: only the JIT protocol's BRK #0xf00d (as Wine's handler does). Any other
 // trap is not ours -- a Swift runtime trap (precondition, force unwrap, overflow)
 // is BRK #1 -- and was skipped too, running on past it with x0 = 0. The handler
-// stays installed for the rest of the app run (from start-up without CS_DEBUGGED,
-// or from jit_arm_trap_fallback before a launch that then fails and keeps the app
-// up), so put the default action back and return: the instruction traps again and
-// the app crashes with a report.
+// stays installed for the rest of the app run (from start-up, since ios18-jit also
+// with CS_DEBUGGED set, or from jit_arm_trap_fallback before a launch that then
+// fails and keeps the app up), so put the default action back and return: the
+// instruction traps again and the app crashes with a report.
 static void sigtrap_handler(int sig, siginfo_t *info, void *context) {
     (void)info;
     ucontext_t *uc = (ucontext_t *)context;
@@ -393,11 +396,18 @@ static void sigtrap_handler(int sig, siginfo_t *info, void *context) {
     uc->uc_mcontext->__ss.__x[0] = 0;
 }
 
-void jit_install_trap_handler(void) {
-    // Only install if no debugger is attached.
-    // When StikDebug is attached, it handles BRK/SIGTRAP directly.
-    // Our handler would steal signals from the debugger and break the protocol.
-    if (jit_check_debugged()) {
+// madeira-bcd ios18-jit (2026-10-18): installed whether or not CS_DEBUGGED is already set.
+// An app started already debugged (StikDebug's app list, LiveContainer's JIT launch, Xcode)
+// used to get no handler, and its pool request then died on the BRK once that debugger had
+// left (docs/research/ios18-2026-10-18/runtime.md §2.3 b). A debugger that is attached still
+// receives every BRK first: the kernel raises the Mach exception, the debugger's exception port
+// takes it, and the BSD signal this handler catches is never sent. That is BCD's everyday case
+// too: it starts without CS_DEBUGGED, installs this handler, and StikDebug attaches with BCD's
+// script afterwards and answers every BRK. `when_debugged` false (MADEIRA_JIT_TRAP_FALLBACK=0)
+// keeps the old rule: no handler when CS_DEBUGGED is set.
+void jit_install_trap_handler(bool when_debugged) {
+    bool debugged = jit_check_debugged();
+    if (debugged && !when_debugged) {
         jit_log("Debugger attached — skipping SIGTRAP handler (debugger handles BRK)");
         return;
     }
@@ -406,7 +416,8 @@ void jit_install_trap_handler(void) {
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = sigtrap_handler;
     sigaction(SIGTRAP, &sa, NULL);
-    jit_log("SIGTRAP handler installed (no debugger)");
+    jit_log(debugged ? "SIGTRAP handler installed (CS_DEBUGGED set: a debugger that is attached still takes BRK first)"
+                     : "SIGTRAP handler installed (no debugger)");
 }
 
 void jit_arm_trap_fallback(void) {
@@ -437,6 +448,250 @@ bool jit_task_map_range(uint64_t *min_address, uint64_t *max_address) {
 
 uint64_t jit_available_memory(void) {
     return (uint64_t)os_proc_available_memory();
+}
+
+uint64_t jit_phys_footprint(void) {
+    task_vm_info_data_t vmi;
+    mach_msg_type_number_t cnt = TASK_VM_INFO_COUNT;
+    if (task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vmi, &cnt) != KERN_SUCCESS) return 0;
+    return vmi.phys_footprint;
+}
+
+/* ============================================================================
+ * madeira-bcd ios18-jit (2026-10-18): JIT MEMORY WITHOUT A DEBUGGER
+ * (docs/research/ios18-2026-10-18/runtime.md §2.5.3).
+ *
+ * A debugger that attaches and leaves -- StikDebug without BCD's script (iOS 18,
+ * and iOS 26 on devices it treats as non-TXM), AltJIT, SideJITServer, Xcode,
+ * LiveContainer's JIT launch -- leaves CS_DEBUGGED set for good. cs_allow_invalid()
+ * cleared CS_KILL and CS_HARD (an unsigned page no longer kills: cs_invalid_page
+ * only drops CS_VALID), opened the map to invalid code (vm_map_cs_wx_enable) and
+ * allowed memory-ownership transfer. Where no TXM polices code (iOS 18; iOS 26
+ * without TXM) that lets the process map its own executable memory, so the pool
+ * needs no debugger. StikJITHelper decides where (JITNoDebuggerPool) and runs
+ * jit_nodebug_selftest() first; on a TXM device none of this runs, because there
+ * executing a page TXM never blessed can end the process.
+ *
+ * Each region is a named memory entry (max RWX), mapped RX wherever the kernel's
+ * first fit puts it -- the same placement the debugger's _M gets (mach_vm_allocate
+ * ANYWHERE from the bottom of the map), so the pool census and its plugs steer it
+ * the same way -- and mapped a second time, RW, for the alias. No vm_remap of
+ * unsigned RX pages (the Dart VM: "kernel crashes in certain combinations of
+ * hardware and kernel version"), no prepare_memory_region writes (the pool is not
+ * dirty from birth), and NO_FOOTPRINT on the entry.
+ * ==========================================================================*/
+
+/* One page through the same recipe as the pool: mov x0, #42; ret. */
+static const unsigned char nodebug_probe_code[] = {
+#if defined(__aarch64__)
+    0x40, 0x05, 0x80, 0xd2,             /* mov x0, #42 */
+    0xc0, 0x03, 0x5f, 0xd6,             /* ret */
+#elif defined(__x86_64__)
+    0xb8, 0x2a, 0x00, 0x00, 0x00,       /* mov eax, 42 (tests/host/check-jit-no-debugger.py on an Intel Mac) */
+    0xc3,                               /* ret */
+#else
+#error "jit_nodebug_selftest has no probe code for this architecture"
+#endif
+};
+
+static sigjmp_buf nodebug_jb;
+static volatile sig_atomic_t nodebug_armed;
+static pthread_t nodebug_thread;
+static const int nodebug_sigs[3] = { SIGBUS, SIGSEGV, SIGILL };
+static struct sigaction nodebug_prev[3];
+
+/* A fault while the probe runs on the probing thread ends the probe, not the app.
+ * Anything else goes to the handler that was there before (or its default action). */
+static void nodebug_fault(int sig, siginfo_t *info, void *ctx)
+{
+    if (nodebug_armed && pthread_equal(pthread_self(), nodebug_thread)) {
+        nodebug_armed = 0;
+        siglongjmp(nodebug_jb, sig);
+    }
+    for (int i = 0; i < 3; i++) {
+        if (nodebug_sigs[i] != sig) continue;
+        const struct sigaction *prev = &nodebug_prev[i];
+        if ((prev->sa_flags & SA_SIGINFO) && prev->sa_sigaction) { prev->sa_sigaction(sig, info, ctx); return; }
+        if (!(prev->sa_flags & SA_SIGINFO) && prev->sa_handler != SIG_DFL && prev->sa_handler != SIG_IGN) {
+            prev->sa_handler(sig);
+            return;
+        }
+        sigaction(sig, prev, NULL);     /* the instruction faults again and gets the old action */
+        return;
+    }
+}
+
+static kern_return_t nodebug_entry(size_t size, mach_port_t *entry)
+{
+    memory_object_size_t esize = (memory_object_size_t)size;
+    *entry = MACH_PORT_NULL;
+    kern_return_t kr = mach_make_memory_entry_64(mach_task_self(), &esize, 0,
+                                                 MAP_MEM_NAMED_CREATE | VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
+                                                 entry, MACH_PORT_NULL);
+    if (kr == KERN_SUCCESS && esize < size) {
+        mach_port_deallocate(mach_task_self(), *entry);
+        *entry = MACH_PORT_NULL;
+        kr = KERN_RESOURCE_SHORTAGE;
+    }
+    return kr;
+}
+
+/* The probe with the RX view's protection as a parameter: the host check maps it
+ * without EXECUTE to prove that a refused page ends the probe and not the app. */
+static bool nodebug_selftest_prot(vm_prot_t rx_prot, char *detail, size_t detail_len)
+{
+    mach_port_t task = mach_task_self(), entry = MACH_PORT_NULL;
+    vm_address_t rx = 0, rw = 0;
+    const vm_size_t size = JIT_PAGE_SIZE;
+    volatile int64_t result = -1;
+    bool ok = false;
+    int sig;
+
+    kern_return_t kr = nodebug_entry(size, &entry);
+    if (kr != KERN_SUCCESS) {
+        snprintf(detail, detail_len, "no memory entry (kr=%d)", kr);
+        return false;
+    }
+    kr = vm_map(task, &rx, size, 0, VM_FLAGS_ANYWHERE, entry, 0, FALSE, rx_prot, VM_PROT_ALL, VM_INHERIT_NONE);
+    if (kr != KERN_SUCCESS) {
+        snprintf(detail, detail_len, "the RX view was refused (vm_map kr=%d)", kr);
+        rx = 0;
+        goto out;
+    }
+    kr = vm_map(task, &rw, size, 0, VM_FLAGS_ANYWHERE, entry, 0, FALSE,
+                VM_PROT_READ | VM_PROT_WRITE, VM_PROT_ALL, VM_INHERIT_NONE);
+    if (kr != KERN_SUCCESS) {
+        snprintf(detail, detail_len, "the RW view was refused (vm_map kr=%d)", kr);
+        rw = 0;
+        goto out;
+    }
+    memcpy((void *)rw, nodebug_probe_code, sizeof(nodebug_probe_code));
+    sys_icache_invalidate((void *)rx, sizeof(nodebug_probe_code));
+    if ((rx_prot & VM_PROT_READ) && memcmp((const void *)rx, nodebug_probe_code, sizeof(nodebug_probe_code)) != 0) {
+        snprintf(detail, detail_len, "the RX view does not show what the RW view wrote");
+        goto out;
+    }
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = nodebug_fault;
+    sigemptyset(&sa.sa_mask);
+    for (int i = 0; i < 3; i++) sigaction(nodebug_sigs[i], &sa, &nodebug_prev[i]);
+    sig = sigsetjmp(nodebug_jb, 1);
+    if (sig == 0) {
+        nodebug_thread = pthread_self();
+        nodebug_armed = 1;
+        result = ((int64_t (*)(void))rx)();
+        nodebug_armed = 0;
+    }
+    for (int i = 0; i < 3; i++) sigaction(nodebug_sigs[i], &nodebug_prev[i], NULL);
+
+    if (sig != 0)
+        snprintf(detail, detail_len, "executing the page raised signal %d", sig);
+    else if (result != 42)
+        snprintf(detail, detail_len, "the page returned %lld, not 42", (long long)result);
+    else {
+        snprintf(detail, detail_len, "a page mapped RX from a memory entry ran and returned 42");
+        ok = true;
+    }
+out:
+    if (rw) vm_deallocate(task, rw, size);
+    if (rx) vm_deallocate(task, rx, size);
+    mach_port_deallocate(task, entry);
+    return ok;
+}
+
+bool jit_nodebug_selftest(char *detail, size_t detail_len)
+{
+    bool ok = nodebug_selftest_prot(VM_PROT_READ | VM_PROT_EXECUTE, detail, detail_len);
+    jit_log("[jit-nodebug] self-test %s: %s", ok ? "passed" : "FAILED", detail);
+    return ok;
+}
+
+void *jit_nodebug_region(size_t size, unsigned int *entry_out)
+{
+    mach_port_t task = mach_task_self(), entry = MACH_PORT_NULL;
+    vm_address_t rx = 0;   /* first fit from the bottom of the map, as the debugger's _M */
+
+    *entry_out = MACH_PORT_NULL;
+    size = align_to_page(size);
+    kern_return_t kr = nodebug_entry(size, &entry);
+    if (kr != KERN_SUCCESS) {
+        jit_log("[jit-nodebug] no memory entry for %zuMB (kr=%d)", size >> 20, kr);
+        return NULL;
+    }
+    kern_return_t own = mach_memory_entry_ownership(entry, TASK_NULL, VM_LEDGER_TAG_DEFAULT,
+                                                    VM_LEDGER_FLAG_NO_FOOTPRINT);
+    kr = vm_map(task, &rx, size, 0, VM_FLAGS_ANYWHERE, entry, 0, FALSE,
+                VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_ALL, VM_INHERIT_DEFAULT);
+    if (kr != KERN_SUCCESS) {
+        jit_log("[jit-nodebug] %zuMB could not be mapped RX (vm_map kr=%d)", size >> 20, kr);
+        mach_port_deallocate(task, entry);
+        return NULL;
+    }
+    jit_log("[jit-nodebug] region RX 0x%lx+%zuMB from a memory entry, no debugger (no-footprint %s, kr=%d)",
+            (unsigned long)rx, size >> 20, own == KERN_SUCCESS ? "applied" : "refused", own);
+    *entry_out = entry;
+    return (void *)rx;
+}
+
+int jit_nodebug_map_alias(unsigned int entry, uintptr_t *address, size_t size, int flags)
+{
+    vm_address_t a = (vm_address_t)*address;
+    kern_return_t kr = vm_map(mach_task_self(), &a, (vm_size_t)size, 0, flags, (mach_port_t)entry, 0, FALSE,
+                              VM_PROT_READ | VM_PROT_WRITE, VM_PROT_ALL, VM_INHERIT_NONE);
+    if (kr == KERN_SUCCESS) *address = (uintptr_t)a;
+    return kr;
+}
+
+void jit_nodebug_release(unsigned int entry)
+{
+    if (entry != MACH_PORT_NULL) mach_port_deallocate(mach_task_self(), (mach_port_t)entry);
+}
+
+/* Whether the device tree lists TXM: StikJIT's own test (IODeviceTree:/chosen/memory-map
+ * has a "TXM..." key). 1 listed, 0 not listed, -1 unknown (no IOKit, or the sandbox does
+ * not show the node). Only asked on iOS 26, where some models StikDebug treats as non-TXM
+ * may have it. */
+int jit_txm_in_device_tree(void)
+{
+    static const char *const paths[] = { "/System/Library/Frameworks/IOKit.framework/IOKit",
+                                         "/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit" };
+    void *iokit = NULL;
+    for (unsigned i = 0; i < sizeof(paths) / sizeof(paths[0]) && !iokit; i++) iokit = dlopen(paths[i], RTLD_LAZY | RTLD_LOCAL);
+    if (!iokit) {
+        jit_log("[jit-nodebug] device tree: unknown (IOKit not loaded)");
+        return -1;
+    }
+    mach_port_t (*from_path)(mach_port_t, const char *) =
+        (mach_port_t (*)(mach_port_t, const char *))dlsym(iokit, "IORegistryEntryFromPath");
+    CFTypeRef (*property)(mach_port_t, CFStringRef, CFAllocatorRef, uint32_t) =
+        (CFTypeRef (*)(mach_port_t, CFStringRef, CFAllocatorRef, uint32_t))dlsym(iokit, "IORegistryEntryCreateCFProperty");
+    kern_return_t (*release)(mach_port_t) = (kern_return_t (*)(mach_port_t))dlsym(iokit, "IOObjectRelease");
+    if (!from_path || !property || !release) {
+        jit_log("[jit-nodebug] device tree: unknown (IOKit functions missing)");
+        return -1;
+    }
+    mach_port_t node = from_path(MACH_PORT_NULL, "IODeviceTree:/chosen/memory-map");
+    if (node == MACH_PORT_NULL) {
+        jit_log("[jit-nodebug] device tree: unknown (IODeviceTree:/chosen/memory-map not visible)");
+        return -1;
+    }
+    CFTypeRef keys = property(node, CFSTR("IORegistryEntryPropertyKeys"), kCFAllocatorDefault, 0);
+    release(node);
+    int found = -1;
+    if (keys && CFGetTypeID(keys) == CFArrayGetTypeID()) {
+        found = 0;
+        for (CFIndex i = 0, n = CFArrayGetCount((CFArrayRef)keys); i < n && !found; i++) {
+            CFTypeRef key = CFArrayGetValueAtIndex((CFArrayRef)keys, i);
+            if (key && CFGetTypeID(key) == CFStringGetTypeID() &&
+                CFStringFind((CFStringRef)key, CFSTR("TXM"), 0).location != kCFNotFound) found = 1;
+        }
+    }
+    if (keys) CFRelease(keys);
+    jit_log("[jit-nodebug] device tree: TXM %s", found == 1 ? "listed" : found == 0 ? "not listed" : "unknown (no key list)");
+    return found;
 }
 
 // iOS 26 BRK-based JIT syscalls.
@@ -478,6 +733,14 @@ bool jit_check_debugged(void) {
     bool debugged = (flags & CS_DEBUGGED) != 0;
     jit_log("CS_DEBUGGED flag: %s (flags=0x%x)", debugged ? "SET" : "NOT SET", flags);
     return debugged;
+}
+
+// Same check without the log line, for callers that poll (the JIT badge
+// re-reads this every 2s and jit_check_debugged would flood the log).
+bool jit_is_debugged_quiet(void) {
+    uint32_t flags = 0;
+    if (csops(getpid(), CS_OPS_STATUS, &flags, sizeof(flags)) != 0) return false;
+    return (flags & CS_DEBUGGED) != 0;
 }
 
 bool jit_test_mapping(void) {
@@ -908,12 +1171,15 @@ unsigned long madeira_early_pool_base, madeira_early_pool_size;
 unsigned long madeira_early_intruder_base, madeira_early_intruder_size;   /* ml1135 */
 unsigned madeira_early_intruder_tag, madeira_early_intruder_prot;
 
+static int bcd_pool_reserve_at_load(void);   /* madeira-bcd pool-reserve, below */
+
 __attribute__((constructor(101), used)) static void madeira_early_va_claim(void)
 {
     const vm_address_t win = 0x140000000ul, winsz = 0x8000000ul;       /* 128MB, see ml1037 */
     vm_address_t a = win;
     vm_size_t sz;
 
+    if (bcd_pool_reserve_at_load()) return;   /* madeira-bcd pool-reserve: the window is inside the reservation (only a build with BCD_POOL_BSS_MB) */
     if (vm_allocate(mach_task_self(), &a, winsz, VM_FLAGS_FIXED) == KERN_SUCCESS && a == win) {
         vm_protect(mach_task_self(), a, winsz, 0, VM_PROT_NONE);
         madeira_early_window_base = win; madeira_early_window_size = winsz;
@@ -950,13 +1216,270 @@ __attribute__((constructor(101), used)) static void madeira_early_va_claim(void)
     }
 }
 
+/* ============================================================================
+ * madeira-bcd pool-reserve (Modified by BCD (thebcd69), 2026-10-18): THE JIT
+ * POOL'S ADDRESS RANGE RESERVED AT EXEC TIME. The method is described in
+ * docs/research/open-fork-2026-10-18/playport.md §3 P1.2; this code is BCD's own.
+ *
+ * ml1040 above claims the window and a placeholder in a constructor, but by then
+ * dyld, libmalloc's start-up regions and other start-up mappings are already
+ * placed: ml1135 named a 31 MB mapping at 0x157d00000, RDR2's build 470 a 71 MB
+ * one at 0x159d00000 (pool 604 MB), launch C a 31 MB one at 0x15dd00000 (pool
+ * exhausted, crash). A zero-fill segment of the main executable is mapped by the
+ * kernel together with the image, before any of them, so nothing can land in it;
+ * untouched it has no resident pages and no footprint.
+ *
+ * It is a SEGMENT of its own (__BCDPOOL), not an array in __bss: ld always puts a
+ * custom segment right after __DATA, so its offset in the image is fixed (__TEXT +
+ * __DATA_CONST + __DATA, 73 MB in build 571), while an array in __bss lands
+ * wherever the link order puts it.
+ *
+ * NOT in the default build. The array's presence alone moves every start-up
+ * mapping (dyld goes right after the image's end, libmalloc's regions first-fit
+ * above it), so no runtime switch could make a build that carries it lay out its
+ * address space as today. BCD_POOL_BSS_MB = 0 (the default) compiles none of
+ * it: bcd_pool_reserve_at_load() returns 0 and the constructor above runs as
+ * before. A reservation build is made with the archive step's environment
+ * variable BCD_POOL_BSS_MB (build-ipa.yml); 1152 is the planned size:
+ *   - 1152 MB covers the executable window [0x140000000, 0x148000000) at every
+ *     slide and image size (the image starts at 0x100000000 or above);
+ *   - the image's end at the largest slide (80 MB) is then about 0x152d00000,
+ *     ~370 MB under the lowest main-thread stack mapping the alpha logs show
+ *     (0x16b000000 at a 76.8 MB slide); the kernel creates the stack at a fixed
+ *     address after mapping the image and dyld, so an image reaching it would
+ *     end the exec. tests/host/check-pool-reserve.py bounds the size.
+ *
+ * In such a build, bcd.cfg's pool-bss is read here (the game is not known yet):
+ *   0      release it all now; ml1040 runs on what is left;
+ *   other  keep it, PROT_NONE, the window included (exported as before), until
+ *          the pool request. That decides per game (StikJITHelper, PoolReserve):
+ *          pool-bss = 1 takes the pool's slice at the reservation's start, anything
+ *          else gives all of it back but the window and places the pool as before.
+ * ==========================================================================*/
+#ifndef BCD_POOL_BSS_MB
+#define BCD_POOL_BSS_MB 0
+#endif
+
+unsigned long bcd_pool_res_built;              /* bytes compiled in; 0: this build has no reservation */
+unsigned long bcd_pool_res_base;               /* where the reservation starts (also after it is given back) */
+int bcd_pool_res_state;                        /* BCD_POOL_RES_* */
+int bcd_pool_res_load_setting = -1;            /* bcd.cfg pool-bss at image load: -1 unset, 0, 1 */
+const char *bcd_pool_res_refusal = "";         /* why a reservation was not kept at load */
+unsigned long bcd_pool_res_stack_lo, bcd_pool_res_stack_hi;   /* the main thread's stack mapping at load */
+unsigned long bcd_pool_res_image_end;          /* the end of the main executable's last segment */
+
+/* The pool's slice of a reservation [res_base, +res_size): it starts at the reservation's start, or at
+ * floor_addr when that is higher (16 KB pages), ends at the window or at the reservation's end, and
+ * holds `wanted` bytes plus `slack` (that absorbs a small mapping another thread makes at the slice's
+ * start during the request; cut at the window). A pool that does not fit is shrunk to 16 MB steps;
+ * under min_pool there is no plan (returns 0). Pure: tests/host/check-pool-reserve.py. */
+int bcd_pool_res_plan(unsigned long res_base, unsigned long res_size, unsigned long win_base,
+                      unsigned long win_size, unsigned long floor_addr, unsigned long wanted,
+                      unsigned long slack, unsigned long min_pool, bcd_pool_res_plan_t *out)
+{
+    const unsigned long page = 0x4000ul, step = 16ul << 20;
+    unsigned long res_end = res_base + res_size, start, end, avail, pool;
+
+    memset(out, 0, sizeof(*out));
+    if (!res_size || res_end < res_base) return 0;
+    start = res_base > floor_addr ? res_base : floor_addr;
+    start = (start + page - 1) & ~(page - 1);
+    if (win_size && start >= win_base && start < win_base + win_size) start = win_base + win_size;   /* never in the window */
+    end = res_end;
+    if (win_size && win_base >= start && win_base < end) end = win_base;      /* the window stays out of the slice */
+    if (start >= end) return 0;
+    avail = (end - start) & ~(page - 1);
+    pool = (wanted + page - 1) & ~(page - 1);
+    if (pool > avail) pool = avail & ~(step - 1);
+    if (!pool || pool < min_pool) return 0;
+    out->pool_size = pool;
+    out->slice_base = start;
+    out->slice_size = avail - pool > slack ? pool + slack : avail;
+    return 1;
+}
+
+/* What stays held of the reservation once the slice [slice_base, +slice_size) is released (slice_size 0:
+ * no slice): everything but the slice and the window, at most 3 ranges, written as base and size to
+ * out[i][0] and out[i][1]. Pure: the host check. */
+int bcd_pool_res_rest(unsigned long res_base, unsigned long res_size, unsigned long win_base,
+                      unsigned long win_size, unsigned long slice_base, unsigned long slice_size,
+                      unsigned long out[3][2])
+{
+    unsigned long cut[2][2], res_end = res_base + res_size, at = res_base;
+    int n = 0, c = 0, i;
+
+    if (slice_size) { cut[c][0] = slice_base; cut[c][1] = slice_base + slice_size; c++; }
+    if (win_size) { cut[c][0] = win_base; cut[c][1] = win_base + win_size; c++; }
+    if (c == 2 && cut[1][0] < cut[0][0]) {           /* address order */
+        unsigned long t0 = cut[0][0], t1 = cut[0][1];
+        cut[0][0] = cut[1][0]; cut[0][1] = cut[1][1]; cut[1][0] = t0; cut[1][1] = t1;
+    }
+    for (i = 0; i <= c && n < 3; i++) {
+        unsigned long lo = at, hi = i < c ? cut[i][0] : res_end;
+        if (hi > res_end) hi = res_end;
+        if (hi > lo) { out[n][0] = lo; out[n][1] = hi - lo; n++; }
+        if (i < c && cut[i][1] > at) at = cut[i][1];
+    }
+    return n;
+}
+
+/* Release [base, +size) of the reservation and confirm that the range is free now: 0, else the
+ * vm_deallocate error, or -1 when something is still mapped in it (the kernel kept the entry). */
+int bcd_pool_res_release(unsigned long base, unsigned long size)
+{
+    mach_vm_address_t a = base;
+    mach_vm_size_t rs = 0;
+    vm_region_basic_info_data_64_t info;
+    mach_msg_type_number_t cnt = VM_REGION_BASIC_INFO_COUNT_64;
+    mach_port_t obj = MACH_PORT_NULL;
+    kern_return_t kr;
+
+    if (!size) return 0;
+    kr = vm_deallocate(mach_task_self(), (vm_address_t)base, (vm_size_t)size);
+    if (kr != KERN_SUCCESS) return kr;
+    kr = mach_vm_region(mach_task_self(), &a, &rs, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &cnt, &obj);
+    if (kr == KERN_SUCCESS && a < base + size) return -1;
+    return 0;
+}
+
+/* Give back what is still held but the window (the slice, if any, is already free); the state becomes
+ * `state`. Returns how many parts did not come free. */
+int bcd_pool_res_give_back(unsigned long slice_base, unsigned long slice_size, int state)
+{
+    unsigned long parts[3][2];
+    int n, i, bad = 0;
+
+    if (bcd_pool_res_state != BCD_POOL_RES_HELD) return 0;
+    n = bcd_pool_res_rest(bcd_pool_res_base, bcd_pool_res_built, BCD_POOL_RES_WIN, BCD_POOL_RES_WIN_SIZE,
+                          slice_base, slice_size, parts);
+    for (i = 0; i < n; i++)
+        if (bcd_pool_res_release(parts[i][0], parts[i][1]) != 0) bad++;
+    bcd_pool_res_state = bad ? BCD_POOL_RES_STUCK : state;
+    return bad;
+}
+
+/* The main thread's stack mapping (the VM_MEMORY_STACK regions running down from its top, guard pages
+ * included) and the end of the main executable, for the log: the image must stay under the stack. */
+static void bcd_pool_res_note_layout(void)
+{
+    const struct mach_header_64 *mh = (const struct mach_header_64 *)_dyld_get_image_header(0);
+    unsigned long top = (unsigned long)pthread_get_stackaddr_np(pthread_self());
+    unsigned long lo = top - (unsigned long)pthread_get_stacksize_np(pthread_self());
+    vm_address_t a = top > (64ul << 20) ? top - (64ul << 20) : 0;
+
+    while (a < top) {
+        vm_size_t rs = 0;
+        natural_t depth = 0;
+        vm_region_submap_info_data_64_t info;
+        mach_msg_type_number_t cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
+        if (vm_region_recurse_64(mach_task_self(), &a, &rs, &depth, (vm_region_recurse_info_t)&info, &cnt) != KERN_SUCCESS
+            || a >= top || !rs) break;
+        if (info.user_tag == VM_MEMORY_STACK && a < lo && a + rs >= lo) lo = a;
+        a += rs;
+    }
+    bcd_pool_res_stack_lo = lo;
+    bcd_pool_res_stack_hi = top;
+    if (mh && mh->magic == MH_MAGIC_64) {
+        const struct load_command *lc = (const struct load_command *)(mh + 1);
+        unsigned long slide = (unsigned long)_dyld_get_image_vmaddr_slide(0), end = 0;
+        for (uint32_t i = 0; i < mh->ncmds; i++, lc = (const struct load_command *)((const char *)lc + lc->cmdsize)) {
+            const struct segment_command_64 *seg = (const struct segment_command_64 *)lc;
+            if (lc->cmd != LC_SEGMENT_64 || !seg->vmsize || !strcmp(seg->segname, "__PAGEZERO")) continue;
+            if (seg->vmaddr + seg->vmsize + slide > end) end = seg->vmaddr + seg->vmsize + slide;
+        }
+        bcd_pool_res_image_end = end;
+    }
+}
+
+/* madeira-bcd pool-floor (P1.3): FEX writes every byte of code through the pool's RW alias
+ * (Buffer.h WritePtr, WriteOffset = WINE_IOS_JIT_RW - WINE_IOS_JIT_RX), which is what made the
+ * 0x119000000 "mode A" floor obsolete elsewhere. The floor is dropped only when that alias works:
+ * a word written through RW at the pool's first and last 16 bytes must read back through RX. The
+ * old bytes are put back. 1 passed; 0 failed, with `detail` saying where. */
+int bcd_pool_rw_rx_selftest(const void *rx, void *rw, unsigned long size, char *detail, unsigned long detail_len)
+{
+    static const uint64_t pattern[2] = { 0x4243445f706f6f6cull, 0x6c6f6f705f444342ull };   /* "BCD_pool" both ways */
+    unsigned long offs[2];
+    int i;
+
+    if (!rx || !rw || rx == (const void *)rw || size < 64) {
+        snprintf(detail, detail_len, "no RW alias apart from RX (rx=%p rw=%p size=%lu)", rx, (void *)rw, size);
+        return 0;
+    }
+    offs[0] = 8;
+    offs[1] = (size - 16) & ~7ul;
+    for (i = 0; i < 2; i++) {
+        volatile uint64_t *w = (volatile uint64_t *)((char *)rw + offs[i]);
+        const volatile uint64_t *r = (const volatile uint64_t *)((const char *)rx + offs[i]);
+        uint64_t old = *w, seen;
+        *w = pattern[i];
+        __atomic_thread_fence(__ATOMIC_SEQ_CST);
+        seen = *r;
+        *w = old;
+        if (seen != pattern[i]) {
+            snprintf(detail, detail_len, "wrote 0x%llx through RW at +0x%lx, read 0x%llx through RX",
+                     (unsigned long long)pattern[i], offs[i], (unsigned long long)seen);
+            return 0;
+        }
+    }
+    snprintf(detail, detail_len, "a word written through RW read back through RX at +0x8 and +0x%lx", offs[1]);
+    return 1;
+}
+
+/* Decide at image load what happens to a reservation [base, +size) (the build's, or the host check's
+ * own): 1 when it is kept for the pool request (the window inside it is then the one ml1040 would
+ * have held), 0 when it was given back. */
+int bcd_pool_res_keep(unsigned long base, unsigned long size)
+{
+    char v[32];
+
+    bcd_pool_res_built = size;
+    bcd_pool_res_base = base;
+    bcd_pool_res_note_layout();
+    // Keeps the JIT pool's address range reserved from app start (only in a build made with BCD_POOL_BSS_MB): a game with pool-bss = 1 gets its pool there, below the executable window; 0 in bcd.cfg gives it back at start. Off by default.
+    if (madeira_cfg_get("pool-bss", v, sizeof v)) bcd_pool_res_load_setting = madeira_cfg_bool("pool-bss", 0);
+    if (bcd_pool_res_load_setting == 0) {
+        bcd_pool_res_refusal = "pool-bss = 0 in bcd.cfg";
+        bcd_pool_res_state = bcd_pool_res_release(base, size) == 0 ? BCD_POOL_RES_RELEASED : BCD_POOL_RES_STUCK;
+        return 0;
+    }
+    if (base < 0x100000000ul || base + (256ul << 20) > BCD_POOL_RES_WIN
+        || base + size < BCD_POOL_RES_WIN + BCD_POOL_RES_WIN_SIZE) {
+        bcd_pool_res_refusal = "the executable window is not inside it, or less than 256 MB of it lies below the window";
+        bcd_pool_res_state = bcd_pool_res_release(base, size) == 0 ? BCD_POOL_RES_REFUSED : BCD_POOL_RES_STUCK;
+        return 0;
+    }
+    /* Never touched; PROT_NONE like ml1040's holds, the window part included. */
+    vm_protect(mach_task_self(), (vm_address_t)base, (vm_size_t)size, 0, VM_PROT_NONE);
+    madeira_early_window_base = BCD_POOL_RES_WIN;
+    madeira_early_window_size = BCD_POOL_RES_WIN_SIZE;
+    bcd_pool_res_state = BCD_POOL_RES_HELD;
+    return 1;
+}
+
+#if BCD_POOL_BSS_MB > 0
+_Static_assert(BCD_POOL_BSS_MB >= 1152 && BCD_POOL_BSS_MB <= 1408,
+               "BCD_POOL_BSS_MB: 1152 (covers the executable window at every slide) to 1408 (room under the stack)");
+
+/* The reservation. Its name is what dladdr gives a JIT pool pc that lies in it. */
+__attribute__((used, aligned(0x4000), section("__BCDPOOL,__reserve,zerofill")))
+unsigned char bcd_jit_pool_reservation[(unsigned long)BCD_POOL_BSS_MB << 20];
+
+static int bcd_pool_reserve_at_load(void)
+{
+    return bcd_pool_res_keep((unsigned long)bcd_jit_pool_reservation, sizeof(bcd_jit_pool_reservation));
+}
+#else
+static int bcd_pool_reserve_at_load(void) { return 0; }
+#endif
+
 /* ml1249: METAL API VALIDATION ON DEMAND.
  *
- * `metal-validation = 1` in Documents/madeira.cfg turns on Metal's own debug
+ * `metal-validation = 1` in Documents/bcd.cfg turns on Metal's own debug
  * layer for this launch, reporting instead of aborting, and routes NSLog to
  * stderr so the reports land in the Madeira log. It has to be in the
  * environment before the first MTLDevice exists, and the app makes one for its
- * CAMetalLayer long before madeira.cfg is otherwise read -- hence a
+ * CAMetalLayer long before bcd.cfg is otherwise read -- hence a
  * constructor. Expensive: diagnostic runs only. */
 __attribute__((constructor(102), used)) static void madeira_metal_validation_opt_in(void)
 {

@@ -155,7 +155,7 @@ static int test_fcntl( int fd, int cmd, struct fpunchhole *ph )
 
 harness = r'''
 static unsigned long long ios_swap_footprint_mb( void ) { return 4321; }
-/* ml1257: defined after the core in virtual_ios.c (madeira.cfg and fstat); classic cfg, no disk use here */
+/* ml1257: defined after the core in virtual_ios.c (bcd.cfg and fstat); classic cfg, no disk use here */
 static void ios_swap_cfg( int *mode, int *min_mb ) { *mode = 1; *min_mb = 0; }
 static unsigned long long ios_swap_disk_used( void ) { return 0; }
 static int bad;

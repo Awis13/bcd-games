@@ -8,7 +8,7 @@
    MadeiraConfig.swift (HOME pointed at a scratch directory) and checks the
    JIT page, pages with and without Madeira Dock and Steam sign-in, the
    first-run decision and the UserDefaults done key, navigation and the step
-   counter, and the MADEIRA_ONBOARDING switch from madeira.cfg and from the
+   counter, and the MADEIRA_ONBOARDING switch from bcd.cfg and from the
    environment.
 2. Source checks: the library opens setup once and reopens it from Settings,
    never over a session; JIT setup uses the coordinator's pairing import and
@@ -49,6 +49,8 @@ def block(text, header):
 
 
 onboarding = (app / 'Onboarding.swift').read_text()
+# BCD's setup screens (2026-10-18): BCD's own look and wording, in their own file.
+setup = (app / 'BCDSetupView.swift').read_text()
 library = (app / 'Library.swift').read_text()
 content = (app / 'ContentView.swift').read_text()
 project = (root / 'app/Madeira.xcodeproj/project.pbxproj').read_text()
@@ -57,8 +59,12 @@ jit_setup = (app / 'JITSetup.swift').read_text()
 
 rules = onboarding[onboarding.index('// MARK: - Rules'):onboarding.index('// MARK: - Setup model')]
 model = block(onboarding, 'final class OnboardingModel')
-settings_section = block(onboarding, 'struct SteamSettingsSection: View')
-jit_settings_section = block(jit_setup, 'struct JITSettingsSection: View')
+# Wave 3 (2026-10-19): the classic Settings › Steam and Settings › JIT sections (SteamSettingsSection, JITSettingsSection),
+# the library screen and its Dock sheet are deleted; Settings › Accounts, JIT and BCD Dock are BCD's (BCDAccounts*,
+# BCDJIT*, BCDDock*), and BCDLiveFrontEnd presents setup.
+front = (app / 'BCDLiveFrontEnd.swift').read_text()
+accounts_live = (app / 'BCDAccountsLive.swift').read_text()
+jit_live = (app / 'BCDJITLive.swift').read_text()
 
 # ------------------------------------------------------------------ static: provenance and project
 require(onboarding.startswith('// SPDX-License-Identifier: GPL-3.0-or-later\n// Copyright 2026 125hz\n'
@@ -66,6 +72,15 @@ require(onboarding.startswith('// SPDX-License-Identifier: GPL-3.0-or-later\n// 
         'Onboarding.swift: GPL-3.0-or-later, Copyright 2026 125hz, Converter Exception')
 require('/* Onboarding.swift in Sources */,' in project and 'path = "Onboarding.swift"' in project,
         'Onboarding.swift is built by the Xcode project')
+# BCDSetupView.swift grew out of 125hz's Onboarding.swift, so it keeps 125hz's copyright and
+# licence and the Converter Exception (legal audit, 2026-10-18); it is not BCD Material.
+require(setup.startswith('// SPDX-License-Identifier: GPL-3.0-or-later\n// Copyright 2026 125hz\n'
+                         '// Copyright 2026 thebcd69 (BCD)\n// Madeira Converter Exception: see LICENSE-EXCEPTION.md\n')
+        and '// BCD Material: additional terms' not in setup.split('\n\n')[0]
+        and 'struct OnboardingView: View' not in onboarding and 'Modified by BCD (thebcd69), 2026-10-18' in onboarding,
+        'BCDSetupView.swift: 125hz and BCD copyright, GPL-3.0-or-later, Converter Exception; Onboarding.swift keeps the rules and the model, marked as modified')
+require('/* BCDSetupView.swift in Sources */,' in project and '/* BCDStyle.swift in Sources */,' in project,
+        'BCDSetupView.swift and BCDStyle.swift are built by the Xcode project')
 require(not re.search(r'\b(SwiftUI|UIKit|View|UIDevice)\b', rules.replace('// MARK: - Rules', '')),
         'the rules are Foundation-only (compiled on the host)')
 
@@ -80,8 +95,15 @@ opener = block(model, 'private func open(reason: String, since: Int)')
 require('LibraryModel.shared.current == nil' in opener and 'wine_process_is_running() == 0' in opener and 'guard available' in opener,
         'setup never opens over a running session, or with nothing to set up')
 require('OnboardingRules.steps(signIn: SteamSignIn.isEnabled, dock: MadeiraDock.enabled, localDevVPN: offerLocalDevVPN,\n'
-        '                              wineMono: offerWineMono, since: since)' in model,
-        'the pages follow the sign-in and Dock switches, whether LocalDevVPN and Wine Mono are here, and the revision seen')
+        '                              wineMono: offerWineMono, vcRuntime: offerVCRuntime, since: since)' in model,
+        'the pages follow the sign-in and Dock switches, whether LocalDevVPN, Wine Mono and the VC++ runtime are here, and the revision seen')
+require('private var offerVCRuntime = !VCRuntime.shared.isAvailable' in model
+        and 'offerVCRuntime = !VCRuntime.shared.isAvailable' in opener,
+        'the VC++ page is offered only when neither the build nor a download has the runtime')
+require('case .vcRuntime: vcRuntimePage' in setup and 'vcrt.install()' in block(setup, 'private var vcRuntimePage')
+        and 'https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/' in block(setup, 'private var vcRuntimePage')
+        and 'Accept and download' in block(setup, 'private var vcRuntimePage'),
+        "setup: the VC++ page links Microsoft's license terms and downloads only on Accept")
 require(opener.index('offerLocalDevVPN = !LocalDevVPN.isInstalled') < opener.index('[onboarding] shown')
         and opener.index('offerWineMono = !WineMonoModel.available') < opener.index('[onboarding] shown'),
         "LocalDevVPN's and Wine Mono's pages are decided once, when setup opens, so installing on the way does not renumber the steps")
@@ -90,31 +112,31 @@ require(model.count(stamp) == 2 and stamp in block(model, 'func finish()') and s
         and 'removeObject' not in onboarding and 'set(false' not in onboarding and 'set(0' not in onboarding,
         'only finishing or skipping stores the setup revision; nothing clears it')
 require('static var enabled: Bool { OnboardingRules.enabled }' in model, 'the model uses the rules switch')
-require('.fullScreenCover(isPresented: $onboarding.presented) { OnboardingView() }' in library,
-        'Library: setup is presented over the library')
-require('onboarding.presentIfNeeded()' in block(library, 'struct LibraryView: View'),
-        'Library: setup is considered when the library appears')
-require(library.count('!onboarding.presented') >= 2, 'Library: controller commands do not act behind setup')
-require('if onboarding.available {' in settings_section and 'onboarding.rerun()' in settings_section,
-        'Settings › Steam: Run setup again, hidden with MADEIRA_ONBOARDING=0')
-require('if onboarding.available {' in jit_settings_section and 'onboarding.rerun()' in jit_settings_section,
+require('.fullScreenCover(isPresented: $onboarding.presented) { OnboardingView() }' in front,
+        "BCD's interface: setup is presented over it")
+require('onboarding.presentIfNeeded()' in front,
+        "BCD's interface: setup is considered when it appears")
+require(front.count('!onboarding.presented') >= 1, "BCD's interface: controller commands do not act behind setup")
+require('OnboardingModel.shared.rerun()' in accounts_live and 'OnboardingModel.shared.available' in accounts_live,
+        'Settings › Accounts: Run setup again, hidden with MADEIRA_ONBOARDING=0')
+require('OnboardingModel.shared.rerun()' in jit_live and 'OnboardingModel.shared.available' in jit_live,
         'Settings › JIT: Run setup again, hidden with MADEIRA_ONBOARDING=0')
 
 # ------------------------------------------------------------------ static: skippable steps
-view = block(onboarding, 'struct OnboardingView: View')
+view = block(setup, 'struct OnboardingView: View')
 for page in ['private var signInPage', 'private var dockClientPage']:
-    require('secondary("Set up later") { model.next() }' in block(view, page), f'{page.split()[-1]}: Set up later')
-require('secondary("Skip setup") { model.skip() }' in block(view, 'private var welcome'), 'welcome: visible Skip setup')
+    require('secondary("Later") { model.next() }' in block(view, page), f'{page.split()[-1]}: Later')
+require('secondary("Skip for now") { model.skip() }' in block(view, 'private var welcome'), 'welcome: visible Skip for now')
 jit_page = block(view, 'private var jitPage')
 choices = block(view, 'private var jitChoices')
 require(all(f'case .{path}: {guide}' in jit_page for path, guide in
             [('onDevice', 'onDeviceGuide'), ('pairingFile', 'pairingFileGuide'), ('stikDebug', 'stikDebugGuide')]),
         'JIT: each of the three ways in has its own guide')
-require(all(f'jitChoice("{title}"' in choices for title in ['In-app', 'In-app with pairing file', 'StikDebug'])
+require(all(f'jitChoice("{title}"' in choices for title in ['Built-in', 'Built-in, with a pairing file', 'StikDebug'])
         and 'enabled: OnDevicePairing.isSupported' in choices,
-        'JIT: In-app (iOS 27), In-app with pairing file, StikDebug')
+        'JIT: Built-in (iOS 27), Built-in with a pairing file, StikDebug')
 on_device = block(view, 'private var onDeviceGuide')
-require('startPairing()' in on_device and 'OnDevicePairingPanel()' in on_device
+require('startPairing()' in on_device and 'BCDJITPairingPanel(run: BCDJITLive.pairingRun()' in on_device
         and 'pairing.start()' in block(view, 'private func startPairing'),
         'JIT: the on-device guide pairs and shows its progress')
 require('importPairingFile()' in block(view, 'private var pairingFileGuide')
@@ -122,30 +144,30 @@ require('importPairingFile()' in block(view, 'private var pairingFileGuide')
         'JIT: the pairing-file guide imports')
 require('jit.method = .stikDebug' in block(view, 'private var stikDebugGuide'), 'JIT: the StikDebug guide selects StikDebug')
 for guide in ['onDeviceGuide', 'pairingFileGuide', 'stikDebugGuide']:
-    require('secondary("Back to options") { leaveGuide() }' in block(view, f'private var {guide}'), f'JIT: {guide} goes back')
+    require('secondary("See the other methods") { leaveGuide() }' in block(view, f'private var {guide}'), f'JIT: {guide} goes back')
 require('pairing.cancel()' in block(view, 'private func leaveGuide'), 'JIT: leaving the guide stops a waiting pairing')
-require("secondary(\"I'll do this later\") { model.next() }" in choices, 'JIT: visible defer choice')
+require('secondary("Decide later") { model.next() }' in choices, 'JIT: visible defer choice')
 require('jit.importPairingFile(url)' in view and 'jit.method = .builtIn' in view,
         'JIT: validated import selects Built-in StikJIT through the coordinator')
 ldv_page = block(view, 'private var localDevVPNPage')
-require('UIApplication.shared.open(LocalDevVPN.appStore)' in ldv_page and "secondary(\"I'll do this later\") { model.next() }" in ldv_page
+require('UIApplication.shared.open(LocalDevVPN.appStore)' in ldv_page and 'secondary("Later") { model.next() }' in ldv_page
         and 'if localDevVPNInstalled' in ldv_page and 'case .localDevVPN: localDevVPNPage' in view,
         "LocalDevVPN's page sends a missing LocalDevVPN to the App Store, and can be skipped")
 require('if phase == .active { localDevVPNInstalled = LocalDevVPN.isInstalled }' in view
         and 'UIApplication.shared.canOpenURL(URL(string: "localdevvpn://")!)' in (app / 'JITSetup.swift').read_text(),
         'LocalDevVPN is checked with canOpenURL (nothing opens), again whenever Madeira comes back to the front')
-require('onTapGesture' not in onboarding, 'no hidden gestures')
+require('onTapGesture' not in onboarding and 'onTapGesture' not in setup, 'no hidden gestures')
 require('dock.prepareClient()' in block(view, 'private var dockClientPage'), "components through Dock's verified download")
 
 # ------------------------------------------------------------------ static: sign-in and tokens
-require('SteamSignInView()' in view and 'open(.steamSignIn)' in settings_section
-        and 'case .steamSignIn: SteamSignInView()' in library, "sign-in through #45's sheet")
-require('signIn.signOut()' in settings_section, "sign-out through #45's model")
-require('open(.dock)' in settings_section and 'case .dock: MadeiraDockView(start: startDock)' in library,
-        "Settings opens Dock's sheet")
+# BCD's setup signs in through BCD's own sign-in page over #45's model (BCDSteamSignInSheet,
+# 2026-10-18); the classic library keeps #45's sheet until it is removed.
+require('BCDSteamSignInSheet()' in view and 'SteamSignInView' not in view and 'BCDSteamSignInSheet()' in front,
+        "sign-in through #45's model (BCD's page in setup and in the shell)")
+require('SteamSignInModel.shared.signOut()' in (app / 'BCDLiveStore.swift').read_text(), "sign-out through #45's model")
 for forbidden in ['SteamTokenStore', 'credentialsForDock', 'refreshToken', 'SecItem', 'kSec', 'accessToken']:
-    require(forbidden not in onboarding, f'Onboarding.swift: no {forbidden} (tokens only via the sign-in store)')
-for line in onboarding.splitlines():
+    require(forbidden not in onboarding + setup, f'Onboarding.swift: no {forbidden} (tokens only via the sign-in store)')
+for line in (onboarding + setup).splitlines():
     if re.search(r'LogStore|SteamLog\.|print\(|NSLog|fputs', line):
         require(re.search(r'\\\((name|account|signIn|token|url|path|game|status|error)', line) is None,
                 f'no account, token or path in "{line.strip()[:70]}"')
@@ -154,16 +176,16 @@ for line in onboarding.splitlines():
 for forbidden in ['runWineFullSequence', 'setenv(', 'unsetenv(', 'MADEIRA_EXE', 'MADEIRA_ARGS', 'jit_', 'StikJITHelper',
                   'poolSize', 'JITPool', 'MADEIRA_POOL', 'FEX_', 'DXMT', 'MADEIRA_JIT', 'steamwebhelper', 'SteamSetup',
                   'inproc-sync', 'swap-mb', 'MADEIRA_FASTSYNC', 'madsync']:
-    require(forbidden not in onboarding, f'Onboarding.swift: no {forbidden}')
-require(not re.search(r'\b(512|896|1024|1152)\b', onboarding), 'Onboarding.swift: no pool size')
+    require(forbidden not in onboarding + setup, f'setup: no {forbidden}')
+require(not re.search(r'\b(512|896|1024|1152)\b', onboarding + setup), 'setup: no pool size')
 exes = {m.split('/')[-1].split('\\')[-1].lower() for m in re.findall(r'"([^"\n]*?\.exe)"', onboarding)}
 require(exes <= {'explorer.exe'}, f'Onboarding.swift: no program-name list ({sorted(exes)})')
 require('.exe' not in rules, 'rules key nothing on program names')
 
 # ------------------------------------------------------------------ static: Dock from the library
 start = block(content, 'private func startDock(_ game: DockGame, compactPool: Bool')
-require('LibraryView(play: launchLibraryEntry, enableJIT: enableJIT,\n                                startDock: { startDock($0, compactPool: $1) })' in content,
-        "ContentView hands Dock's start to the library")
+require('BCDLiveFrontEnd(play: launchLibraryEntry, enableJIT: enableJIT,\n                                    startDock: { startDock($0, compactPool: $1) })' in content,
+        "ContentView hands Dock's start to BCD's interface")
 held = start.index('LibraryModel.sessionsThisRun > 0, MadeiraConfig.flag("MADEIRA_ONE_SESSION_PER_RUN")')
 require(held < start.index('MadeiraDock.writeHandoff('), 'a held Dock start writes no sign-in transfer')
 require('else { library.begin(.dockSession(title: game.name, width: width, height: height), remember: false, dock: game) }' in start
@@ -217,8 +239,17 @@ import Foundation
                "JIT remains when Steam setup is unavailable")
         // Wine Mono (revision 3): offered when this device has none, before done; after an
         // update from revision 2 only it is shown.
-        expect(R.revision == 3 && R.Step.wineMono.rawValue == "wine-mono" && R.Step.wineMono.introduced == 3
-               && R.Step.localDevVPN.introduced == 2 && R.Step.jit.introduced == 1, "revision 3 adds Wine Mono")
+        expect(R.revision == 4 && R.Step.wineMono.rawValue == "wine-mono" && R.Step.wineMono.introduced == 3
+               && R.Step.localDevVPN.introduced == 2 && R.Step.jit.introduced == 1, "revision 3 added Wine Mono")
+        // The Visual C++ runtime (revision 4): only on builds without it; the owner's builds
+        // bundle it, so an update to revision 4 opens nothing there.
+        expect(R.Step.vcRuntime.rawValue == "vc-runtime" && R.Step.vcRuntime.introduced == 4
+               && R.steps(signIn: true, dock: true, wineMono: true, vcRuntime: true) == [.welcome, .jit, .signIn, .dockClient, .wineMono, .vcRuntime, .done]
+               && R.steps(signIn: true, dock: true, wineMono: true, vcRuntime: true, since: 3) == [.welcome, .vcRuntime, .done]
+               && !R.shouldShow(seen: 3, enabled: true, steps: R.steps(signIn: true, dock: true, wineMono: false, vcRuntime: false, since: 3))
+               && R.shouldShow(seen: 3, enabled: true, steps: R.steps(signIn: true, dock: true, vcRuntime: true, since: 3))
+               && R.hasSetup([.welcome, .vcRuntime, .done]),
+               "revision 4 adds the VC++ runtime page, shown after an update only where the runtime is missing")
         expect(R.steps(signIn: true, dock: true, wineMono: true) == [.welcome, .jit, .signIn, .dockClient, .wineMono, .done],
                "Wine Mono's page comes last, before done")
         expect(R.steps(signIn: true, dock: true, localDevVPN: true, wineMono: true, since: 2) == [.welcome, .wineMono, .done]
@@ -271,10 +302,10 @@ import Foundation
                "two steps without Dock")
         expect(R.position(of: .welcome, in: full) == nil && R.position(of: .done, in: full) == nil, "no counter on welcome and done")
 
-        // The switch: default on; env.MADEIRA_ONBOARDING = 0 in madeira.cfg; the environment.
+        // The switch: default on; env.MADEIRA_ONBOARDING = 0 in bcd.cfg; the environment.
         let docs = MadeiraConfig.documents!
         try? FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
-        let cfg = docs.appendingPathComponent("madeira.cfg")
+        let cfg = docs.appendingPathComponent("bcd.cfg")
         try? FileManager.default.removeItem(at: cfg)
         unsetenv("MADEIRA_ONBOARDING")
         expect(R.enabled, "MADEIRA_ONBOARDING is on by default")
@@ -282,7 +313,7 @@ import Foundation
         expect(!R.enabled, "MADEIRA_ONBOARDING=0 in the environment turns setup off")
         unsetenv("MADEIRA_ONBOARDING")
         try! "# notes\nenv.MADEIRA_ONBOARDING = 0\n".write(to: cfg, atomically: true, encoding: .utf8)
-        expect(!R.enabled, "env.MADEIRA_ONBOARDING = 0 in madeira.cfg turns setup off")
+        expect(!R.enabled, "env.MADEIRA_ONBOARDING = 0 in bcd.cfg turns setup off")
         try! "env.MADEIRA_ONBOARDING = 1\n".write(to: cfg, atomically: true, encoding: .utf8)
         expect(R.enabled, "env.MADEIRA_ONBOARDING = 1 keeps it on")
         exit(failed == 0 ? 0 : 1)

@@ -57,53 +57,53 @@ enum SteamError: LocalizedError, Equatable {
         case .authenticationFailed(let reason):
             return reason
         case .invalidCredentials:
-            return "The account name or password is incorrect."
+            return "Steam didn't accept that account name and password."
         case .rateLimited:
-            return "Too many attempts. Please try again later."
+            return "Steam is limiting sign-in attempts right now. Wait a while, then try again."
         case .accountDisabled:
-            return "This Steam account has been disabled"
+            return "Steam has disabled this account."
         case .rsaKeyFetchFailed:
-            return "Failed to fetch RSA public key for password encryption"
+            return "BCD couldn't get the key Steam uses to protect your password. Try again."
         case .qrCodeExpired:
-            return "QR code has expired. Please try again."
+            return "This QR code timed out. Get a new one to try again."
         case .authSessionExpired:
-            return "The sign-in request expired. Start again."
+            return "The sign-in timed out. Start over to try again."
         case .protobufError(let detail):
-            return "Protocol buffer error: \(detail)"
+            return "Steam sent a reply BCD couldn't read (\(detail))."
         case .noServersAvailable:
-            return "No Steam servers are available."
+            return "BCD couldn't find a Steam server to connect to."
         case .connectionFailed(let reason):
-            return "Connection failed: \(reason)"
+            return "Couldn't connect to Steam: \(reason)"
         case .connectionTimeout:
-            return "Steam did not respond in time. Check your internet connection and try again."
+            return "Steam is taking too long to answer. Check that you're online, then try again."
         case .disconnected:
-            return "Disconnected from Steam."
+            return "The connection to Steam was closed."
         case .logonDenied(let code):
             return SteamError.signInExpiredCodes.contains(code)
-                ? "Your Steam sign-in is no longer valid. Sign in again."
-                : "Steam refused the connection (code \(code)). Try again later."
+                ? "Steam no longer accepts your sign-in. Sign in again."
+                : "Steam turned the connection away (code \(code)). Try again in a little while."
         case .invalidMessage:
-            return "Received an invalid message from Steam."
+            return "Steam sent a message BCD couldn't understand."
         case .appInfoNotFound(let appID):
-            return "Steam has no information for app \(appID)."
+            return "Steam returned no details for app \(appID)."
         case .depotNotFound:
-            return "Steam has no Windows download for this game."
+            return "This game has no Windows version to download on Steam."
         case .manifestFetchFailed(let reason):
-            return "Could not read the game's file list: \(reason)"
+            return "The game's file list didn't load. \(reason)"
         case .chunkDownloadFailed(let reason):
-            return "Download failed: \(reason)"
+            return "The download stopped. \(reason)"
         case .decryptionFailed(let reason):
-            return "Decryption failed: \(reason)"
+            return "Couldn't decrypt the game's data. \(reason)"
         case .decompressionFailed:
-            return "Failed to decompress downloaded data."
+            return "Downloaded data couldn't be unpacked."
         case .chunkDecodeFailed(let format):
-            return "Part of the game could not be decoded (\(format)). Try again; downloaded parts are kept."
+            return "A piece of the game didn't decode (\(format)). Try again. What's already downloaded stays."
         case .checksumMismatch:
-            return "A downloaded part failed its checksum."
+            return "A downloaded piece didn't match its checksum."
         case .depotKeyNotFound:
-            return "Steam did not allow this account to download the game's files. Check that the account owns it."
+            return "Steam won't let this account download the game's files. Make sure the game is on this account."
         case .insufficientDiskSpace(let needed, let available):
-            return String(format: "Not enough free space: the download needs %.1f GB and %.1f GB is available.",
+            return String(format: "This download needs %.1f GB, but only %.1f GB is free on this device.",
                           Double(needed) / 1_000_000_000, Double(available) / 1_000_000_000)
         }
     }

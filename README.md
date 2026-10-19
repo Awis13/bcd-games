@@ -1,174 +1,167 @@
 <p align="center">
-  <img src="docs/assets/banner.png" alt="Madeira — Bringing PC gaming to your iPhone." width="100%">
+  <img src="assets/readme/icon.png" width="128" alt="BCD">
+</p>
+
+<h1 align="center">BCD</h1>
+
+<p align="center">
+  <b>Windows games on iPhone and iPad.</b><br>
+  A fast, controller-friendly launcher with Steam and GOG built in.
 </p>
 
 <p align="center">
-  <a href="https://discord.gg/4t5mNjwCn7"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2F4t5mNjwCn7%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&label=Discord&logo=discord&logoColor=white&color=5865F2&style=for-the-badge" alt="Join the Madeira Discord"></a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/willfaust/Madeira/releases"><img src="https://img.shields.io/github/v/release/willfaust/Madeira?label=Release&style=for-the-badge&color=brightgreen" alt="Latest release"></a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-yellow?style=for-the-badge" alt="License: GPL-3.0-or-later"></a>
+  <a href="https://github.com/thebcd69/bcd-games/releases/latest/download/BCD.ipa"><b>Download the IPA</b></a>
+  &nbsp;·&nbsp; <a href="#install">Install</a>
+  &nbsp;·&nbsp; <a href="#games">Games</a>
+  &nbsp;·&nbsp; <a href="#credits">Credits</a>
 </p>
 
-Madeira runs Windows PC games on an iPhone, with no jailbreak. Games run as they
-are, unmodified, inside a single iOS app.
+<p align="center">
+  <img src="https://img.shields.io/badge/iOS-18%2B-blue" alt="iOS 18+">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0">
+  <img src="https://img.shields.io/badge/graphics-Metal-lightgrey" alt="Metal">
+</p>
 
-> [!NOTE]
-> Madeira is an active research project. Many games start and some play well,
-> but performance and compatibility vary from game to game, and things change
-> quickly. Expect rough edges.
+<table>
+  <tr>
+    <td><img src="assets/readme/library.jpg" alt="Library"></td>
+    <td><img src="assets/readme/settings.jpg" alt="Settings"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/readme/accounts.jpg" alt="Accounts"></td>
+    <td><img src="assets/readme/controllers.jpg" alt="Controllers"></td>
+  </tr>
+</table>
 
-## How it works
+BCD runs Windows PC games on iOS and iPadOS. Wine provides Windows, FEX runs x86 and
+x64 code on Apple's chips, and DXMT plus BCD's Direct3D 12 runtime draw with Metal. BCD
+signs in to Steam, downloads the games you own, and starts them directly or through
+Valve's own Steam client (BCD Dock).
 
-| Layer | What it does |
-|---|---|
-| **[FEX-Emu](https://github.com/FEX-Emu/FEX)** | Translates the game's x86 and x86-64 code to ARM64 as it runs. |
-| **[Wine](https://www.winehq.org/)** 11.4 | Provides Windows. It is built for ARM64EC, so Wine itself runs natively and only the game's own code is translated. 32-bit games run through WoW64. |
-| **[DXMT](https://github.com/3Shain/DXMT)** | Draws Direct3D 9, 10 and 11 with Metal. |
-| **[madeira-d3d12](madeira-d3d12)** | Madeira's own Direct3D 12 implementation on Metal, converting DXIL shaders at run time with Apple's Metal Shader Converter. |
+BCD is a fork of [Madeira](https://github.com/willfaust/Madeira) by Will Faust and its
+contributors (see [Credits](#credits)).
 
-iOS apps cannot start other programs, so everything runs in one process: even
-Wine's server runs as a thread instead of a separate program.
+## What it does
 
-## Features
+- **A whole new app around the games:**
+  - your library with store cover art, search, sorting and a menu on every card;
+  - a page for each game with all its settings in one place;
+  - the controller works everywhere: every screen, the in-game menu, the touch-controls editor;
+  - a lightweight in-game menu, performance overlay and on-screen touch controls.
+- **Steam:** sign in (password with Steam Guard, or a QR code), your owned library,
+  downloads and updates, file checks, Steam Cloud saves. Downloads keep going in the
+  background on iOS 26.
+- **GOG** (new, early): sign in, download and play your GOG games, with no launcher
+  running inside Windows. The Epic Games Store is next.
+- **BCD Dock:** Valve's Steam client starts the games that need Steam, without its window.
+  BCD never circumvents DRM: those games run through Valve's own client, signed in with your
+  account.
+- **Graphics:** Direct3D 9, 10 and 11 through DXMT; Direct3D 12 through BCD's runtime and
+  Apple's Metal Shader Converter.
+- **32-bit and 64-bit games**, controllers (DualSense with rumble, adaptive triggers and light
+  bar; Xbox; Switch Pro; MFi), keyboard and mouse, and a controller-to-keyboard-and-mouse mode.
+- **Recommended settings that stay current:** every known game ships with tuned settings, and
+  one tap on a game's page fetches the newest list. Per-game settings also tune themselves
+  after a crash.
+- **.NET games** through Wine Mono, downloaded in the app.
+- **Feedback from the app:** Settings › Feedback to tell us what is broken or what to improve,
+  and Send Log after a crash.
 
-- **Game library** with artwork, search and a Windows desktop session.
-- **Steam**: sign in, browse the games you own, install and update them, and
-  start them through Valve's own Windows Steam client (Madeira Dock).
-- **Steam Cloud saves**: saves sync with Steam Cloud when Madeira starts and
-  before a game starts, and **Upload saves and close Madeira** in the game
-  menu sends them when you stop playing. Saves that
-  changed on both sides are never overwritten without asking, and anything a
-  sync replaces is backed up.
-- **Controllers**: Bluetooth controllers through XInput, plus customisable
-  on-screen touch controls.
-- **Keyboard, mouse and trackpad** passed through to games as real input.
-- **Video and audio** for cutscenes and music, through FFmpeg, VideoToolbox and AudioToolbox.
+## Games
 
-## Requirements
+Tuned settings are built in for these games. They are the licensed Steam versions, started
+through BCD Dock:
 
-- An iPhone on **iOS 26 or later**, the only version Madeira currently runs
-  on reliably. Development happens on recent Pro iPhones.
-- **JIT**, which iOS only allows while a debugger is attached. Madeira can use
-  [StikDebug](https://github.com/StikDebug/StikDebug) or its built-in StikJIT
-  helper. On iOS 27 the built-in helper can pair the iPhone itself, without a
-  computer.
-- An **Apple ID** to sideload the app. A free account works; its signing
-  expires after 7 days, so the app needs refreshing weekly. Your games and
-  saves are kept across reinstalls.
+- God of War
+- Ghost of Tsushima
+- Horizon Zero Dawn and Horizon Forbidden West
+- Red Dead Redemption 2, including the Rockstar Launcher
+- GTA V, Legacy and Enhanced
+- Crysis Remastered, Crysis 2 Remastered and Crysis 3 Remastered
 
-Because JIT needs a debugger, Madeira cannot be offered on the App Store.
+Also running: Warcraft II: Battle.net Edition. Work in progress: Ratchet & Clank: Rift Apart
+(around 20 FPS, with visual glitches).
 
-## Installing
+How well a game runs varies a lot; many games do not start yet.
 
-1. Download the IPA from the [latest release](https://github.com/willfaust/Madeira/releases).
-2. Sideload it with your own Apple ID using SideStore, AltStore, Sideloadly,
-   Plume or a similar tool.
-3. Open Madeira and enable JIT. Automatic mode uses StikDebug when installed,
-   otherwise it guides you through the built-in setup; see
-   [JIT setup](docs/JIT.md).
-4. In **Settings**, check that **JIT** and **Memory+** both show a green check:
-   Madeira then says **Ready to play**.
+## What you need
 
-Some 64-bit games need Microsoft's Visual C++ runtime, which is not included
-(see [Licensing](#licensing)).
+- **iPhone or iPad on iOS / iPadOS 18 or later, with an A13 chip or newer.** Games that use
+  geometry shaders or tessellation need an A14 or newer; the heaviest games need an
+  A17 Pro or M-series chip and plenty of memory. Devices with an A12 or older chip are not
+  supported (their GPUs lack what Direct3D needs).
+- **JIT.** iOS lets only an app a debugger starts generate code, and BCD needs that for
+  every game:
+  - iOS 26 or later on A15 / M2 and newer: BCD's built-in helper (paired once on the
+    device), or StikDebug;
+  - iOS 18, and iOS 26 on older chips: StikDebug, with its "Always Run Scripts" setting on.
+- **A way to install the IPA:** SideStore or AltStore (a free Apple ID works), LiveContainer,
+  or your own signing. More memory for big games: GetMoreRam adds Increased Memory Limit
+  and extended virtual addressing to BCD's App ID.
+- **Room:** each game needs its full install size on the device.
 
-## Building from source
+## Install
 
-```sh
-git clone --recurse-submodules https://github.com/willfaust/Madeira.git
-```
+1. Download [`BCD.ipa`](https://github.com/thebcd69/bcd-games/releases/latest/download/BCD.ipa)
+   from the latest [release](https://github.com/thebcd69/bcd-games/releases).
+2. Install it with SideStore, AltStore or LiveContainer.
+3. Open BCD. Setup walks you through JIT, LocalDevVPN, Steam and the extra runtimes.
 
-`FEX`, `wine`, `dxmt` and `madeira-dock` are submodules that point at Madeira's
-own forks; upstream checkouts will not build here. The build has several parts
-(the Wine unix libraries, the ARM64EC Windows modules, FEX, DXMT and the app)
-and some inputs that are not in the repository, such as the toolchains.
-[`docs/BUILDING.md`](docs/BUILDING.md) walks through all of it.
+## What is not in the package
 
-### Repository layout
+BCD's packages carry no Microsoft software. The Visual C++ runtime most games need is
+downloaded from Microsoft inside the app, after you accept Microsoft's license terms, and
+kept unchanged on your device. Wine Mono comes from WineHQ the same way.
 
-| Path | Contents |
-|---|---|
-| [`app/`](app) | The iOS app: SwiftUI front end, Wine bridge and bundled resources |
-| [`wine/`](https://github.com/willfaust/wine), [`FEX/`](https://github.com/willfaust/FEX), [`dxmt/`](https://github.com/willfaust/dxmt), [`madeira-dock/`](https://github.com/willfaust/madeira-dock) | Madeira's forks and the Steam client launcher (submodules) |
-| [`madeira-d3d12/`](madeira-d3d12) | The native Direct3D 12 runtime |
-| [`build/`](build) | Build scripts and iOS-side sources, one folder per component |
-| [`tests/`](tests) | Host checks and x86, x86-64 and DXMT test programs |
-| [`tools/`](tools) | Helper scripts |
-| [`docs/`](docs) | Documentation |
-| [`research/`](research) | Experiments that are not part of the app |
+## Building
 
-## Documentation
+The build is the workflow [.github/workflows/build-ipa.yml](.github/workflows/build-ipa.yml)
+and the scripts it runs under `build/` and `tools/`, step by step. Every release also carries
+`BCD-source.tar.xz`, the complete source of that release: this repository and all its
+submodules at the release's pins.
 
-| Topic | Document |
-|---|---|
-| Building from a clean checkout | [`docs/BUILDING.md`](docs/BUILDING.md) |
-| StikDebug and built-in JIT setup | [`docs/JIT.md`](docs/JIT.md) |
-| The game library | [`docs/LIBRARY.md`](docs/LIBRARY.md) |
-| Steam sign-in, library and downloads | [`docs/STEAM_SIGNIN.md`](docs/STEAM_SIGNIN.md), [`docs/STEAM_LIBRARY.md`](docs/STEAM_LIBRARY.md) |
-| Steam Cloud saves | [`docs/STEAM_CLOUD.md`](docs/STEAM_CLOUD.md) |
-| Madeira Dock (the Steam client) | [`docs/MADEIRA_DOCK.md`](docs/MADEIRA_DOCK.md) |
-| 32-bit games (WoW64) | [`docs/WOW64.md`](docs/WOW64.md) |
-| Controllers and touch controls | [`docs/CONTROLLERS.md`](docs/CONTROLLERS.md) |
-| Keyboard, mouse and trackpad | [`docs/KEYBOARD_MOUSE.md`](docs/KEYBOARD_MOUSE.md) |
-| Audio and video | [`docs/MEDIA.md`](docs/MEDIA.md) |
-| Licensing in detail | [`docs/LICENSING.md`](docs/LICENSING.md) |
+## License
 
-## Licensing
+BCD is free software under the GNU General Public License, version 3 ([LICENSE](LICENSE)),
+with the Madeira Converter Exception ([LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md)).
+Madeira's own code is under version 3 or (at your option) any later version; BCD's own
+files (marked "BCD Material" in their headers) are under version 3 only, so BCD as a whole
+can be used under version 3. They also carry additional terms under GPL-3.0 section 7
+([LICENSE-BCD.md](LICENSE-BCD.md)): an app that includes them shows *"Includes work from BCD
+by thebcd69 (https://github.com/thebcd69/bcd-games)"* on its About, Credits or Licences
+screen, keeps their copyright lines, and marks changed files as modified.
+Third-party components and their licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+There is no warranty.
 
-Madeira is licensed under **GPL-3.0-or-later** ([`LICENSE`](LICENSE)) with
-the **Madeira Converter Exception** ([`LICENSE-EXCEPTION.md`](LICENSE-EXCEPTION.md)),
-an additional permission that allows it to work with Apple's Metal Shader
-Converter.
-
-The projects it builds on keep their own licenses upstream, but Madeira's forks
-are not all licensed the same way as their upstreams:
-
-| Component | License |
-|---|---|
-| [Wine fork](https://github.com/willfaust/wine) | LGPL-2.1-or-later, like upstream Wine |
-| [FEX-Emu fork](https://github.com/willfaust/FEX), [DXMT fork](https://github.com/willfaust/dxmt) | Upstream code stays MIT; Madeira's changes are GPL-3.0-or-later with the exception |
-| [rpmalloc fork](https://github.com/willfaust/rpmalloc) | Upstream code stays 0BSD; Madeira's changes are GPL-3.0-or-later with the exception |
-| [Madeira Dock](https://github.com/willfaust/madeira-dock) | GPL-3.0-or-later with the exception |
-
-Anything obtained earlier under a permissive license stays available under it.
-Per-component details, including GnuTLS, Nettle, GMP, FFmpeg and LLVM, are in
-[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md); the license texts are in
-[`LICENSES/`](LICENSES).
-
-Microsoft's Visual C++ runtime DLLs are **not** distributed with Madeira. To
-build with them, supply them yourself as described in
-[`tools/fetch-vcruntime.md`](tools/fetch-vcruntime.md).
-
-## Contributing
-
-Contributions are welcome under GPL-3.0-or-later; see
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-Madeira's forks contain a lot of AI-assisted work. FEX-Emu does not accept
-AI-generated code, so please **do not send changes from these forks upstream**
-to FEX-Emu, and check each upstream project's contribution policy before
-proposing anything to it.
+Steam is a trademark of Valve Corporation. Windows, DirectX, Direct3D and Visual C++ are
+trademarks of the Microsoft group of companies. Apple, iPhone, iPad, iOS, iPadOS and Metal
+are trademarks of Apple Inc. BCD is an independent project, not affiliated with or endorsed
+by Valve, Microsoft, Apple or the authors of Madeira.
 
 ## Credits
 
-- **Will Faust** ([@willfaust](https://github.com/willfaust)): created Madeira
-- **Nick** ([@125hz](https://github.com/125hz)): 32-bit game support, the game library and Madeira Dock
-- **Jfishin** ([@Jfishin](https://github.com/Jfishin)): the original native Steam sign-in, library and downloads
-- **Jesse** ([@JesseLovelace](https://github.com/JesseLovelace)): Steam Cloud saves, faster game launches, and fixes that let more games run
-- **Dan Perks** ([@danperks](https://github.com/danperks)): in-app JIT without StikDebug, and pairing without a computer
-- **bahacan16** ([@bahacan16](https://github.com/bahacan16)): Direct3D 12 and DXMT fixes, game launcher windows, per-game settings, PlayStation controllers, and save backups
-- **spitefulowl** ([@spitefulowl](https://github.com/spitefulowl)): Wine and FEX runtime fixes, DXMT texture and memory fixes, audio, the swap tier, and library launch options
-- **meshoklv** ([@meshoklv](https://github.com/meshoklv)): controller fixes for games that ship their own XInput or need focus, touch taps that stay off the mouse, and a crash-guard fix
-- **TheHadesc** ([@TheHadesc](https://github.com/TheHadesc)): Madeira Dock starts for games whose Steam launch entries do not start at zero, and a touch gamepad that survives the in-game keyboard
+**Madeira**, which BCD is a fork of:
 
-Madeira is built on [Wine](https://www.winehq.org/), [FEX-Emu](https://github.com/FEX-Emu/FEX),
-[DXMT](https://github.com/3Shain/DXMT) by Feifan He (3Shain) with the Direct3D 9
-frontend by David Acevedo (dacevedo12), [rpmalloc](https://github.com/mjansson/rpmalloc)
-by Mattias Jansson, [StikDebug](https://github.com/StikDebug/StikDebug),
-[StikJIT](https://github.com/StikDebug/StikJIT) and
-[idevice](https://github.com/jkcoxson/idevice) for enabling JIT. Thank you to everyone who contributes to them.
+- **Will Faust** ([willfaust](https://github.com/willfaust)): created Madeira
+- **Nick** ([125hz](https://github.com/125hz)): 32-bit game support, the game library and
+  Madeira Dock (BCD Dock here)
+- **Jfishin** ([Jfishin](https://github.com/Jfishin)): the original native Steam sign-in,
+  library and downloads
+- **Jesse** ([JesseLovelace](https://github.com/JesseLovelace)): Steam Cloud saves, faster
+  game launches, and fixes that let more games run
+- **Dan Perks** ([danperks](https://github.com/danperks)): in-app JIT without StikDebug, and
+  pairing without a computer
+- **spitefulowl** ([spitefulowl](https://github.com/spitefulowl)): Wine and FEX runtime
+  fixes, DXMT texture and memory fixes, audio, the swap tier, and library launch options
+- **meshoklv** ([meshoklv](https://github.com/meshoklv)): controller fixes, touch taps that
+  stay off the mouse, and a crash-guard fix
+- **TheHadesc** ([TheHadesc](https://github.com/TheHadesc)): Madeira Dock starts for more
+  games, and a touch gamepad that survives the in-game keyboard
 
-<p align="center">
-  <a href="https://discord.gg/4t5mNjwCn7"><b>Join the community on Discord</b></a>
-</p>
+**The projects underneath:** [Wine](https://www.winehq.org), [FEX-Emu](https://github.com/FEX-Emu/FEX),
+[DXMT](https://github.com/3Shain/dxmt) by Feifan He (3Shain) with the Direct3D 9 frontend by
+David Acevedo (dacevedo12), rpmalloc by Mattias Jansson, StikDebug, StikJIT, idevice,
+FreeType, and every library listed in THIRD-PARTY-NOTICES.md. Thank you to everyone who
+works on them.
+
+**BCD** by thebcd69.

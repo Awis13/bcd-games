@@ -1106,7 +1106,7 @@ int read_process_memory( struct process *process, client_ptr_t ptr, data_size_t 
         static int local_read_off = -1;
         if (local_read_off < 0)
         {
-            local_read_off = madeira_cfg_bool( "no-local-read", 0 );   /* ml1095: madeira.cfg no-local-read = 1 */
+            local_read_off = madeira_cfg_bool( "no-local-read", 0 );   /* ml1095: bcd.cfg no-local-read = 1 */
             fprintf( stderr, "ml1003: local pseudo-process reads %s\n",
                      local_read_off ? "DISABLED by no-local-read"
                                     : "ENABLED (reads only; writes still denied)" );

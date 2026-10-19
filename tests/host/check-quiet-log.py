@@ -23,11 +23,13 @@ Checks:
     MADEIRA_SRV_FGETPATH=1 after the game's env lines (the server is running
     before them) and falls back to realpath; the function, compiled on this
     host with a stand-in fcntl, behaves that way; the session end clears the
-    switch and unsets it so a later game of the same app run does not inherit it;
+    switch and unsets it and MADEIRA_UCRT_X64_MATH so a later game of the same
+    app run does not inherit them;
   - the catalog documents both switches; Horizon Zero Dawn's list (version 16)
     sets both and no other game's list does.
 """
 from pathlib import Path
+import json
 import os
 import re
 import shutil
@@ -38,7 +40,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 D3D = ROOT / "madeira-d3d12/src/pe/madeira_d3d12.c"
 FD = ROOT / "build/wineserver/fd_ios.c"
-REC = ROOT / "app/Madeira/GameRecommendations.swift"
+REC = ROOT / "recommended/recommendations.json"   # the game lists (2026-10-18)
 CAT = ROOT / "app/Madeira/ConfigCatalog.generated.swift"
 CI = ROOT / ".github/workflows/build-ipa.yml"
 BRIDGE = ROOT / "app/Madeira/WineProcessBridge.m"
@@ -129,10 +131,10 @@ i_env = br.find('fprintf(stderr, "[madeira-env] game %s=%s\\n", k.UTF8String, v.
 i_set = br.find('g_madeira_srv_fgetpath = (fp && fp[0] == \'1\') ? 1 : 0;')
 check(0 <= i_env < i_set and 'const char *fp = getenv("MADEIRA_SRV_FGETPATH");' in br[i_env:i_set + 10],
       "the bridge sets it from MADEIRA_SRV_FGETPATH after the game's env lines are applied")
-i_end = br.find('unsetenv("MADEIRA_SRV_FGETPATH");')
+i_end = br.find('unsetenv("MADEIRA_UCRT_X64_MATH"); unsetenv("MADEIRA_SRV_FGETPATH");')
 i_stop = br.find('wineserver_stop();', i_end)
 check(i_end > i_set and 0 <= br.find("g_madeira_srv_fgetpath = 0;", i_end) < i_stop,
-      "the session end unsets MADEIRA_SRV_FGETPATH and clears the global before the server stops")
+      "the session end unsets MADEIRA_UCRT_X64_MATH and MADEIRA_SRV_FGETPATH and clears the global before the server stops")
 
 # Compile the function on this host with a stand-in fcntl that returns a fixed path.
 cc = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
@@ -182,23 +184,36 @@ else:
 cat = CAT.read_text(encoding="utf-8")
 check('key: "quiet-log"' in cat and 'key: "env.MADEIRA_SRV_FGETPATH"' in cat, "the catalog documents both switches")
 
-rec = REC.read_text(encoding="utf-8")
-m = re.search(r'static let horizonZeroDawn = GameRecommendation\(\s*id: "horizon-zero-dawn", title: "Horizon Zero Dawn", version: (\d+),'
-              r'.*?config: """(.*?)"""', rec, re.S)
-check(bool(m), "Horizon Zero Dawn's list found")
+rec = json.loads(REC.read_text(encoding="utf-8"))
+rules = {r["id"]: r for r in rec["rules"]}
+
+
+def config(rule):
+    return [line if isinstance(line, str) else line["line"] for line in rule["config"] + rule.get("smallRAMConfig", [])]
+
+
+m = rules.get("horizon-zero-dawn")
+check(bool(m) and m["title"] == "Horizon Zero Dawn", "Horizon Zero Dawn's list found")
 if m:
-    check(int(m.group(1)) == 16, "Horizon Zero Dawn's list is version 16")
-    cfg = m.group(2)
-    check(re.search(r"^\s*quiet-log = 1$", cfg, re.M) is not None, "Horizon Zero Dawn's list sets quiet-log = 1")
-    check(re.search(r"^\s*env\.MADEIRA_SRV_FGETPATH = 1$", cfg, re.M) is not None,
-          "Horizon Zero Dawn's list sets env.MADEIRA_SRV_FGETPATH = 1")
-others = rec.replace(m.group(0), "") if m else rec
-check("quiet-log" not in re.sub(r"///.*", "", others) and "MADEIRA_SRV_FGETPATH" not in re.sub(r"///.*", "", others),
+    check(m["version"] == 16, "Horizon Zero Dawn's list is version 16")
+    check("quiet-log = 1" in config(m), "Horizon Zero Dawn's list sets quiet-log = 1")
+    check("env.MADEIRA_SRV_FGETPATH = 1" in config(m), "Horizon Zero Dawn's list sets env.MADEIRA_SRV_FGETPATH = 1")
+hfw = rules.get("horizon-forbidden-west")
+check(bool(hfw) and hfw["title"] == "Horizon Forbidden West", "Horizon Forbidden West's list found")
+if hfw:
+    check("quiet-log = 1" in config(hfw) and "env.MADEIRA_SRV_FGETPATH = 1" in config(hfw),
+          "Horizon Forbidden West's list sets both switches (again since v4)")
+rca = rules.get("ratchet-clank-rift-apart")
+check(bool(rca) and rca["title"] == "Ratchet & Clank: Rift Apart", "Ratchet & Clank: Rift Apart's list found")
+if rca:
+    check("quiet-log = 1" in config(rca) and "env.MADEIRA_SRV_FGETPATH = 1" in config(rca),
+          "Rift Apart's list sets both switches (HFW's general lines, v1)")
+others = [line for ident, rule in rules.items() if ident not in ("horizon-zero-dawn", "horizon-forbidden-west", "ratchet-clank-rift-apart")
+          for line in config(rule)]
+check(not any("quiet-log" in line or "MADEIRA_SRV_FGETPATH" in line for line in others),
       "no other game's list sets either switch")
 
-# The CI step exists only in the fork's workflow; upstream has no .github.
-if CI.exists():
-    check("python3 tests/host/check-quiet-log.py" in CI.read_text(encoding="utf-8"), "CI runs this check")
+check("python3 tests/host/check-quiet-log.py" in CI.read_text(encoding="utf-8"), "CI runs this check")
 
 print()
 if failures:

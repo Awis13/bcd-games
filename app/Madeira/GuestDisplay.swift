@@ -278,7 +278,7 @@ enum ResolutionChoices {
     }
 
     /// A stored "WxH" that none of `groups` offers (a size chosen on another
-    /// device, or typed into madeira.cfg), so a picker never shows a blank
+    /// device, or typed into bcd.cfg), so a picker never shows a blank
     /// choice; nil when it is offered or does not parse.
     static func extra(_ value: String, in groups: [Group], note: String) -> Choice? {
         let p = value.lowercased().split(separator: "x").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }

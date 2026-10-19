@@ -1,0 +1,27 @@
+[10:00:00.000] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[10:00:00.001] [INFO] SIGTRAP handler installed (no debugger)
+[10:00:00.010] [INFO] [build] v0.1.573 (573)
+[10:00:00.011] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8170MB cores=6
+[10:00:00.011] [INFO] [device] address-map=[0x102940000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:00:00.012] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=360d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[10:00:20.000] [INFO] Opening StikDebug to enable JIT...
+[10:00:26.500] [SUCCESS] JIT enabled and debugger attached.
+[10:00:31.000] [INFO] [bcd] library launch RDR2.exe: avx=1 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[10:00:31.100] [INFO] [device] launch: cs-flags=0x32003305 get-task-allow=1 cs-debugged=1 debugger-attached=1 address-map=[0x102940000,0x8000000000) 512GB available=8059MB low-power=0 thermal=nominal
+[10:00:31.300] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[10:00:31.301] [INFO] Allocating 896MB JIT pool via debugger...
+[10:00:31.302] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[10:00:31.303] [INFO] [jit-debugger] attached=1 at the pool request
+[10:00:31.304] [INFO] [pool-bss] this build holds a JIT pool reservation [0x107258000,0x14f258000) 1152MB (BCD_POOL_BSS_MB); image end 0x150658000, main thread stack [0x16d3c0000,0x16da38000), 461MB between them; held since image load
+[10:00:31.305] [INFO] [pool-bss] pool-bss is not 1 for this game: the reservation goes back but the executable window, and the pool is placed as before
+[10:00:31.306] [INFO] JIT-pool pin chunk 0 at 0x107258000 (16MB)
+[10:00:31.320] [SUCCESS] ml1040: executable window [0x140000000,+128MB) held since image load
+[10:00:31.340] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x119000000+624MB 0x16da38000+293MB
+[10:00:31.341] [ERROR] ml1036: no hole fits a 896MB pool — SHRINKING to 624MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[10:00:33.000] [INFO] RX pool at 0x119000000
+[phase] wine-start             t+  0.639s rev=ml526
+D 24 Load module RDR2.exe (rdr2.exe-0123456789abcdef): 140000000
+[footprint] rev=ml358 phys=2410 MB (peak 2410) internal=2101 MB compressed=0 MB external=300 MB reusable=12 MB (cycle=40)
+[jit-pool] EXHAUSTED (image 0x71ec0d0000+0x3c4000): want=0x3c8000 bump=0x23f00000/0x27000000 tail_resv=0x9000000 freelist=24 — FAILING the load (was: silent BUS loop)
+[win-name] #41 hwnd=0x10104 class='' text="ERR_GFX_INIT: Failed to initialize graphics device. Please reboot or reinstall latest drivers." rev=ml853
+0028:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000409) syscalls=0 unix_calls=7718

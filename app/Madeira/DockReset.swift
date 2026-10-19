@@ -22,7 +22,7 @@
 //  away: prefix-template.tar.gz marks VC++ 14.42 installed. With sign-out the
 //  launcher's and Social Club's sign-in data goes too.
 //  Nothing is deleted. Folders and files move into
-//  Documents/madeira-reset-backup/<time>-app<id>/drive_c/, next to copies of
+//  Documents/bcd-reset-backup/<time>-app<id>/drive_c/, next to copies of
 //  system.reg and user.reg taken before the change and a list of what moved.
 //  The game, its Steam files and its saves are never touched. Only while no
 //  session runs: the wineserver keeps the registry in memory while one does.
@@ -511,9 +511,9 @@ enum DockReset {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let name = formatter.string(from: now) + "-app\(appID)"
-        let backup = documents.appendingPathComponent("madeira-reset-backup", isDirectory: true)
+        let backup = documents.appendingPathComponent("bcd-reset-backup", isDirectory: true)
             .appendingPathComponent(name, isDirectory: true)
-        summary.backup = "madeira-reset-backup/" + name
+        summary.backup = "bcd-reset-backup/" + name
         let systemFile = prefix.appendingPathComponent("system.reg")
         let userFile = prefix.appendingPathComponent("user.reg")
         guard let systemData = try? Data(contentsOf: systemFile), !systemData.isEmpty else {
@@ -565,13 +565,13 @@ enum DockReset {
             }
         }
 
-        var list = ["Madeira Dock reset of app \(appID), " + name, "",
-                    "Moved here from drive_c (put a folder back to undo):"]
+        var list = ["Backup of a BCD Dock reset, app \(appID), " + name, "",
+                    "Taken out of drive_c and kept here (to undo, move an item back):"]
         list += summary.moved.map { "  " + $0 }
-        list += ["", "Uninstall entries removed from system.reg:"] + summary.entries.map { "  " + $0 }
-        list += ["", "Registry: \(summary.keys) keys and \(summary.values) values removed, \(summary.restored) keys set back to a new prefix's values.",
-                 "system.reg and user.reg here are the files as they were before the reset."]
-        if !summary.failures.isEmpty { list += ["", "Failed:"] + summary.failures.map { "  " + $0 } }
+        list += ["", "system.reg no longer lists these uninstall entries:"] + summary.entries.map { "  " + $0 }
+        list += ["", "Registry changes: \(summary.keys) keys and \(summary.values) values deleted; \(summary.restored) keys restored to a fresh prefix's values.",
+                 "The system.reg and user.reg in this folder are copies from before the reset."]
+        if !summary.failures.isEmpty { list += ["", "Problems:"] + summary.failures.map { "  " + $0 } }
         try? Data((list.joined(separator: "\n") + "\n").utf8).write(to: backup.appendingPathComponent("reset.txt"))
         return summary
     }
@@ -597,7 +597,7 @@ enum DockReset {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyyMMdd-HHmmss"
-        let destination = documents.appendingPathComponent("madeira-reset-backup", isDirectory: true)
+        let destination = documents.appendingPathComponent("bcd-reset-backup", isDirectory: true)
             .appendingPathComponent(formatter.string(from: now) + "-vulkan-loader", isDirectory: true)
             .appendingPathComponent("drive_c", isDirectory: true).appendingPathComponent(path)
         do {

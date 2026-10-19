@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "metal-layer-format"
+ ],
+ "next": [],
+ "note": "Warcraft III (war3.exe, 32-bit D3D9), build 559, tester iPad16,5 (15416 MB): an 800x600 R5G6B5 device; the first Present set B5G6R5Unorm on the CAMetalLayer and iOS ended the app ('invalid pixel format 40'). Fixed in code in 560 (tools/patch-dxmt-layer-format.py); the tester's auto-tune had spent three attempts",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

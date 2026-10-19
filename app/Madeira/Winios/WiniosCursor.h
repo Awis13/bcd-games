@@ -11,7 +11,14 @@
  * the program hides it and where Wine's cursor is, and HardwareInput.swift draws
  * it over the game view while the mouse is in use. The driver only reports;
  * nothing the program sees changes. Until the app calls
- * winios_direct_cursor_enable the driver does no extra work at all. */
+ * winios_direct_cursor_enable the driver does no extra work at all.
+ *
+ * Modified by BCD (thebcd69), 2026-10-18: the driver also reports the server's
+ * cursor clip rectangle and each SetCursorPos warp, and the wineserver what the
+ * foreground program reads the mouse with (raw input without legacy messages,
+ * a low-level hook), so the app can tell a program that draws its own cursor
+ * at Wine's cursor from one that reads motion (HardwareInput.swift,
+ * MouseCapture). */
 #ifndef WINIOS_CURSOR_H
 #define WINIOS_CURSOR_H
 
@@ -30,6 +37,18 @@ void winios_direct_cursor_set(unsigned int id, int w, int h, int hot_x, int hot_
 void winios_direct_cursor_show(int show);
 /* Wine's cursor position in screen pixels, after clipping. */
 void winios_direct_cursor_pos(int x, int y);
+/* BCD: the server's cursor clip rectangle (right and bottom exclusive, as
+ * ClipCursor's), read with each position report. Notifies when it changes. */
+void winios_direct_cursor_clip(int left, int top, int right, int bottom);
+/* BCD: the program moved its cursor itself (SetCursorPos). Stores the position,
+ * counts the warp and always notifies. */
+void winios_direct_cursor_warp(int x, int y);
+/* BCD, wineserver side (build/wineserver/queue_ios.c), on each mouse event:
+ * what the foreground program reads the mouse with, WINIOS_READER_* bits.
+ * Notifies when it changes. */
+#define WINIOS_READER_RAW_CAPTURE 1u   /* raw input with RIDEV_NOLEGACY or RIDEV_CAPTUREMOUSE */
+#define WINIOS_READER_LL_HOOK     2u   /* a WH_MOUSE_LL hook of the foreground process */
+void winios_direct_cursor_reader(unsigned int flags);
 
 /* ---- app side ---- */
 
@@ -49,6 +68,10 @@ struct winios_direct_cursor_state {
     int w, h, hot_x, hot_y;    /* current image; w == 0: none yet */
     unsigned int image_serial; /* bumps on every new image */
     unsigned int reports;      /* counts notifying reports: a program is live */
+    /* BCD, appended: */
+    int clip_left, clip_top, clip_right, clip_bottom;   /* all 0 until a clip was reported */
+    unsigned int warps;        /* SetCursorPos calls that moved Wine's cursor */
+    unsigned int reader;       /* WINIOS_READER_* of the foreground program */
 };
 
 /* Snapshot the state and re-arm the notification. */

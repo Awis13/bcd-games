@@ -52,7 +52,11 @@ def check(condition, label):
 reset = (app / 'DockReset.swift').read_text(encoding='utf-8')
 installers = (app / 'DockInstallers.swift').read_text(encoding='utf-8')
 content = (app / 'ContentView.swift').read_text(encoding='utf-8')
-view = (app / 'MadeiraDockView.swift').read_text(encoding='utf-8')
+view = (app / 'MadeiraDockModel.swift').read_text(encoding='utf-8')
+# Wave 3 (2026-10-19): the classic Dock sheet (MadeiraDockView) is deleted; its Reset dialog is BCD's (BCDDock.swift,
+# mapped to the engine's requests by BCDDockLive.swift). MadeiraDockModel, which stays, holds the model assertions.
+bcd_dock = (app / 'BCDDock.swift').read_text(encoding='utf-8')
+bcd_dock_live = (app / 'BCDDockLive.swift').read_text(encoding='utf-8')
 dock = (app / 'MadeiraDock.swift').read_text(encoding='utf-8')
 screen = (app / 'DockStartScreen.swift').read_text(encoding='utf-8')
 library = (app / 'Library.swift').read_text(encoding='utf-8')
@@ -75,7 +79,7 @@ check('installSessionDroppedKeys: Set<String> = ["env.MADEIRA_SC_PA_POOLS", "env
 check('setenv("MADEIRA_DOCK_INSTALLS_SESSION", "1", 1)' in content and 'unsetenv("MADEIRA_DOCK_INSTALLS_SESSION")' in content and
       content.index('profile.applyEnvironment()') < content.index('DockInstallers.applyInstallSessionConfig()'),
       'only an installs-only Dock start marks its session; the copy without them replaces the game file after the profile wrote it')
-check('setenv("MADEIRA_CFG_GAME", copy.path, 1)' in installers and 'madeira-game-installs.cfg' in installers,
+check('setenv("MADEIRA_CFG_GAME", copy.path, 1)' in installers and 'bcd-game-installs.cfg' in installers,
       'the session reads the copy (MADEIRA_CFG_GAME); the game\'s own file stays as it is')
 check('case .reset?, .resetSignOut?:' in installers and 'DockReset.clean(drive: drive, prefix: prefix' in installers,
       'a reset (with or without sign-out) runs DockReset.clean')
@@ -90,9 +94,11 @@ check(m is not None and 'keys.contains(key(process.run)) || files.contains(file(
       'SteamInstallScripts.unmark(shared, prefix: prefix)' in m.group(0) and 'ledger.runNext[String(other.id)] = nil' in m.group(0),
       'another game recording under the same keys or running the same installer loses those records and gets Run at next start')
 check('others: MadeiraDock.games(drive: MadeiraDock.drive)' in content, 'the Dock start passes the other games')
-check('Button("Reset and sign out of Rockstar", role: .destructive) { dock.setInstallRequest(appID, .resetSignOut) }' in view,
-      'the Reset dialog offers sign-out')
-check('madeira-reset-backup' in view and 'madeira-reset-backup' in reset, 'the dialog names the backup folder')
+check('.init(title: "Reset and sign out of Rockstar", kind: .danger, id: id + "signout")' in bcd_dock
+      and 'backend.setRequest(game.id, .resetAndSignOut)' in bcd_dock and 'case .resetAndSignOut: return .resetSignOut' in bcd_dock_live,
+      'the Reset dialog offers sign-out (BCD\'s, mapped to the engine\'s resetSignOut)')
+check("a backup folder in BCD's Documents" in bcd_dock and 'bcd-reset-backup' in reset and 'madeira-reset-backup' not in bcd_dock + reset,
+      'the dialog names the backup folder (BCD\'s Documents; the folder is bcd-reset-backup)')
 check('installsOnly = flag("MADEIRA_DOCK_INSTALL_SEPARATE")' in installers, 'only a start that writes a batch runs installs only')
 check('host: !DockInstallers.installsOnly' in content, 'the session command line follows installsOnly')
 m = re.search(r'static func launchArguments\(width: Int, height: Int, installers: String\? = nil, host: Bool = true\) -> String \{(.*?)\n    \}', dock, re.S)
@@ -103,13 +109,13 @@ check(re.search(r'if DockInstallers\.installsOnly \{\s*// No host runs in this s
 check('LibraryModel.shared.restartNotice = DockInstallers.restartNotice(DockInstallers.poll(drive: MadeiraDock.drive))' in view and
       'LibraryModel.shared.restartNotice = DockInstallers.restartNotice(ended)' in view,
       'the end of an installs-only session asks for a restart')
-check('if allSucceeded { return "One-time installs completed successfully. Close Madeira and open it again to play the game." }' in installers and
+check('if allSucceeded { return "One-time installs completed successfully. Close BCD and open it again to play the game." }' in installers and
       'allSucceeded = total > 0 && succeeded == total' in installers and 'allSucceeded = false' in installers,
       'the alert in the owner\'s words when every install succeeded; otherwise the count and the failed ones')
 check(re.search(r'if DockInstallers\.installsOnly, running, !offered, let finished = DockInstallers\.finishedAt,\s*'
                 r'Date\(\)\.timeIntervalSince\(finished\) >= 45 \{\s*offered = true', view) is not None,
       'a session an installer\'s program keeps open: the restart is offered 45 s after the installs (after a registry save)')
-check('restartHint: DockInstallers.installsOnly ? DockInstallers.closingWords : nil' in library and
+check('restartHint: DockInstallers.installsOnly ? DockInstallers.closingWords : nil' in (app / 'BCDSessionLive.swift').read_text(encoding='utf-8') and
       'if let restartHint { return' in screen,
       'the starting screen says the session closes (no restart before Wine has saved the registry)')
 check('restartWords' not in library and 'restartWords' not in screen, 'only the end of the session asks for the restart')
@@ -348,8 +354,8 @@ with tempfile.TemporaryDirectory(prefix='madeira-dock-reset-') as directory:
         moved = lower(out.get('moved', []))
         check(moved == lower(MOVED), 'moved exactly the chain (got %s)' % sorted(moved ^ lower(MOVED)))
         backup = base / 'Documents' / out['backup'][0]
-        check(out['backup'][0] == 'madeira-reset-backup/' + backup.name and backup.name.endswith('-app1174180'),
-              'the backup folder is in Documents/madeira-reset-backup, named by time and app')
+        check(out['backup'][0] == 'bcd-reset-backup/' + backup.name and backup.name.endswith('-app1174180'),
+              'the backup folder is in Documents/bcd-reset-backup, named by time and app')
         check(all((backup / 'drive_c' / m).exists() and not (drive / m).exists() for m in MOVED),
               'each moved path is in the backup and gone from drive_c')
         kept = ['windows/system32/kernel32.dll', 'windows/syswow64/notes.txt',
@@ -442,7 +448,7 @@ with tempfile.TemporaryDirectory(prefix='madeira-dock-reset-') as directory:
             out = subprocess.run([str(binary)], env=env, capture_output=True, text=True, check=True).stdout.strip()
             return drive, out
         drive, out = standin(temporary / 'five', regular=True, app_has_standin=True)
-        kept = list((temporary / 'five/Documents/madeira-reset-backup').glob('*-vulkan-loader/drive_c/windows/system32/vulkan-1.dll'))
+        kept = list((temporary / 'five/Documents/bcd-reset-backup').glob('*-vulkan-loader/drive_c/windows/system32/vulkan-1.dll'))
         check(out == 'moved=windows/system32/vulkan-1.dll' and not (drive / 'windows/system32/vulkan-1.dll').exists() and
               len(kept) == 1 and kept[0].read_text() == 'khronos',
               "an installer's Vulkan loader moves from system32 into the backup (got %s)" % out)

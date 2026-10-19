@@ -13,7 +13,7 @@ MADEIRA_SRV_IDLE_US (ios_srv_idle_ns) sets the loop's longest sleep, 1 ms by def
 Compiles ios_srv_qos_follow and ios_srv_idle_ns on this host with stand-ins for
 pthread_set_qos_class_self_np, madeira_get_eco and ntdll's ECO generation, and checks:
   - switch off: across ECO changes nothing is called at all (no QoS change, and
-    madeira_get_eco, which latches madeira.cfg on its first call, is never called);
+    madeira_get_eco, which latches bcd.cfg on its first call, is never called);
   - switch on with ECO off: no change; ECO on: utility, once (never background, which
     could stall every request); repeated passes call nothing; ECO off again:
     user-interactive;
@@ -37,8 +37,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FD = (ROOT / "build/wineserver/fd_ios.c").read_text(encoding="utf-8")
 BRIDGE = (ROOT / "app/Madeira/WineProcessBridge.m").read_text(encoding="utf-8")
 CAT = (ROOT / "app/Madeira/ConfigCatalog.generated.swift").read_text(encoding="utf-8")
-CI_FILE = ROOT / ".github/workflows/build-ipa.yml"   # the fork's CI only; upstream has no .github
-CI = CI_FILE.read_text(encoding="utf-8") if CI_FILE.exists() else None
+CI = (ROOT / ".github/workflows/build-ipa.yml").read_text(encoding="utf-8")
 
 failures = []
 
@@ -160,7 +159,7 @@ check("ios_srv_qos_set = 0;" in exit_ and "ios_srv_qos_follow_seen = ios_srv_qos
 check("extern volatile int ios_eco_gen;" in FD and "extern int madeira_get_eco( void );" in FD,
       "ECO comes from ntdll's generation counter and madeira_get_eco")
 check(follow.find("if (!follow && !ios_srv_qos_set) return;") < follow.find("madeira_get_eco()"),
-      "madeira_get_eco is reached only with the switch on (it latches madeira.cfg on its first call)")
+      "madeira_get_eco is reached only with the switch on (it latches bcd.cfg on its first call)")
 check("getenv" not in follow and "getenv" not in idle, "the server reads neither switch from the environment itself")
 i_env = BRIDGE.find('fprintf(stderr, "[madeira-env] game %s=%s\\n", k.UTF8String, v.UTF8String);')
 i_set = BRIDGE.find("g_madeira_srv_eco_follow = (ef && ef[0] == '1') ? 1 : 0;")
@@ -177,8 +176,7 @@ check(re.search(r'key: "env.MADEIRA_SRV_ECO_FOLLOW", title: "[^"]+", kind: \.boo
       "the catalog documents env.MADEIRA_SRV_ECO_FOLLOW, default 0")
 check(re.search(r'key: "env.MADEIRA_SRV_IDLE_US", title: "[^"]+", kind: \.int, defaultValue: "1000"', CAT) is not None,
       "the catalog documents env.MADEIRA_SRV_IDLE_US, default 1000")
-if CI is not None:
-    check("python3 tests/host/check-srv-eco-follow.py" in CI, "CI runs this check")
+check("python3 tests/host/check-srv-eco-follow.py" in CI, "CI runs this check")
 
 print()
 if failures:

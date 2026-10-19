@@ -1188,7 +1188,7 @@ static BOOL wma_packet_ok( struct wma_transform *transform, int err, UINT nibble
  *
  * The device cannot decode these streams and the host has no copy of them, so
  * every round so far has been an argument about bytes nobody could look at.
- * With MADEIRA_WMA_DUMP=1 in Documents/madeira-env.txt each decoder writes
+ * With env.MADEIRA_WMA_DUMP = 1 in bcd.cfg each decoder writes
  * Documents/wma-dump-<n>.bin:
  *
  *   magic "MADWMA01" (8)      -- so a truncated or mixed-up file is obvious

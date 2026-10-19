@@ -46,8 +46,7 @@ REQ = (ROOT / "build/wineserver/request_ios.c").read_text(encoding="utf-8")
 NTDLL = (ROOT / "build/ntdll-unix/server_ios.c").read_text(encoding="utf-8")
 BRIDGE = (ROOT / "app/Madeira/WineProcessBridge.m").read_text(encoding="utf-8")
 CAT = (ROOT / "app/Madeira/ConfigCatalog.generated.swift").read_text(encoding="utf-8")
-CI_FILE = ROOT / ".github/workflows/build-ipa.yml"   # the fork's CI only; upstream has no .github
-CI = CI_FILE.read_text(encoding="utf-8") if CI_FILE.exists() else None
+CI = (ROOT / ".github/workflows/build-ipa.yml").read_text(encoding="utf-8")
 
 failures = []
 
@@ -561,8 +560,7 @@ i_abort = cu.find("if (ios_section_state() & IOS_SECTION_ABORT) return STATUS_TH
 i_bg = cu.find("ios_bg_qos_check();")
 i_direct = cu.find("if (__atomic_load_n( &g_madeira_srv_direct, __ATOMIC_RELAXED ) > 0 && ios_srv_try_direct( req, &ret ))\n        return ret;")
 i_send = cu.find("if ((ret = send_request( req ))) return ret;")
-check(0 <= i_abort < i_direct < i_send and (i_bg < 0 or i_bg < i_direct),
-      "the client tries a direct request after the abort check (and the [bg-qos] check, where there is one), "
+check(0 <= i_abort < i_bg < i_direct < i_send, "the client tries a direct request after the abort and [bg-qos] checks, "
       "before writing to its pipe, and only with the switch on")
 td = func_body(NTDLL, "static BOOL ios_srv_try_direct( struct __server_request_info *req, unsigned int *status )")
 check("if (ret <= 0) return FALSE;" in td and "*status = req->u.reply.reply_header.error;" in td and
@@ -584,8 +582,7 @@ check(i_set < i_end < i_clear < i_stop, "the session end unsets it and clears th
 check('key: "env.MADEIRA_SRV_DIRECT"' in CAT and re.search(r'key: "env.MADEIRA_SRV_DIRECT", title: "[^"]+", kind: \.text, '
                                                           r'defaultValue: "0"', CAT) is not None,
       "the catalog documents env.MADEIRA_SRV_DIRECT, default 0")
-if CI is not None:
-    check("python3 tests/host/check-srv-direct.py" in CI, "CI runs this check")
+check("python3 tests/host/check-srv-direct.py" in CI, "CI runs this check")
 
 print()
 if failures:

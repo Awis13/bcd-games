@@ -1,5 +1,5 @@
-// madeira-bcd: helper kernels for madeira_d3d12.dll, compiled to a metallib by
-// build/madeira-d3d12/build-pe.sh and embedded in the DLL.
+// madeira-bcd: helper kernels for madeira_d3d12.dll, compiled to a metallib in
+// CI (tools/build-madeira-d3d12-dll.sh) and embedded in the DLL.
 #include <metal_stdlib>
 using namespace metal;
 
@@ -62,6 +62,36 @@ kernel void mad_texbuf_probe(texture_buffer<uint, access::read> t32 [[texture(0)
     out[2] = t32b.read(0u).x;
     out[3] = t16.read(0u).x;
     out[4] = t8.read(0u).x;
+}
+#endif
+
+// madeira-bcd fi-nan-clean: FSR 3's frame-interpolation vector fields are
+// R32Uint textures whose texels keep a half-float vector component in bits
+// 0..15 and priority bits above it. A texel whose vector half is a NaN or Inf
+// half-float (exponent bits all set) blacks out a 16x16 block of a generated
+// frame; the runtime runs this after a FidelityFX dispatch that wrote such a
+// field. Zeroes those texels (mode 2: also when bits 16..31 read as one) and
+// counts them in cnt[0] (vector half) and cnt[1] (upper half only). Compiled
+// again without it (-DMAD_NO_NAN_CLEAN) if it does not compile.
+#ifndef MAD_NO_NAN_CLEAN
+struct mad_nan_clean_params {
+    uint w, h, mode, pad;
+};
+
+kernel void mad_fi_nan_clean(texture2d_array<uint, access::read_write> t [[texture(0)]],
+                             constant mad_nan_clean_params &p [[buffer(0)]],
+                             device atomic_uint *cnt [[buffer(1)]],
+                             uint3 gid [[thread_position_in_grid]])
+{
+    if (gid.x >= p.w || gid.y >= p.h)
+        return;
+    uint v = t.read(gid.xy, gid.z).x;
+    bool lo = (v & 0x7c00u) == 0x7c00u;
+    bool hi = p.mode >= 2u && (v & 0x7c000000u) == 0x7c000000u;
+    if (!lo && !hi)
+        return;
+    t.write(uint4(0u), gid.xy, gid.z);
+    atomic_fetch_add_explicit(&cnt[lo ? 0 : 1], 1u, memory_order_relaxed);
 }
 #endif
 

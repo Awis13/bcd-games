@@ -10,7 +10,7 @@ library list, launch validation, the one-use transfer envelope, the host's
 environment (including the Dock-only image-retire switch) and launch arguments,
 the one-launch request, and static rules:
 no program-name lists, no credential in a log line, the compact pool off by
-default, madeira.cfg `pool` still winning, and no built Dock binary tracked.
+default, bcd.cfg `pool` still winning, and no built Dock binary tracked.
 """
 from pathlib import Path
 import os, re, shutil, subprocess, sys, tempfile
@@ -28,13 +28,13 @@ def require(condition, label):
 
 
 dock = (app / 'MadeiraDock.swift').read_text()
-view = (app / 'MadeiraDockView.swift').read_text()
+view = (app / 'MadeiraDockModel.swift').read_text()
 runtime = (app / 'SteamRuntime.swift').read_text()
 content = (app / 'ContentView.swift').read_text()
 installers = (app / 'DockInstallers.swift').read_text()
 
 # ------------------------------------------------------------------ static
-for name, text in [('MadeiraDock.swift', dock), ('MadeiraDockView.swift', view), ('SteamRuntime.swift', runtime),
+for name, text in [('MadeiraDock.swift', dock), ('MadeiraDockModel.swift', view), ('SteamRuntime.swift', runtime),
                    ('DockInstallers.swift', installers)]:
     literals = set(re.findall(r'"([^"\n]*?\.exe)\\?"', text)) | set(re.findall(r'\\"([^"\n]*?\.exe)\\"', text))
     names = {l.replace('/', '\\').split('\\')[-1].lower() for l in literals}
@@ -47,21 +47,21 @@ for name, text in [('MadeiraDock.swift', dock), ('MadeiraDockView.swift', view),
                     f'{name}: no credential or path in "{line.strip()[:60]}"')
 require('SteamSignIn.flag("MADEIRA_DOCK_COMPACT_POOL", default: false)' in view, 'compact pool is off unless opted in')
 pool = content.index('let dockLaunch = MadeiraDock.takeLaunchRequest()')
-require(pool < content.index('if let txt = MadeiraConfig.get("pool")', pool), 'madeira.cfg pool is applied after the Dock policy (explicit wins)')
+require(pool < content.index('if let txt = MadeiraConfig.get("pool")', pool), 'bcd.cfg pool is applied after the Dock policy (explicit wins)')
 require('DockPerformancePolicy.sessionPoolMB(standard: 896, dock: dockLaunch.dock, compact: dockLaunch.compact)' in content,
         'the standard 896 MB pool is unchanged outside a compact Dock launch')
 require(content.count('MadeiraDock.requestLaunch(') == 1, 'only the Dock launch requests the Dock pool policy')
 require('SteamSignIn.credentialsForDock()' in content, 'the launch uses the sign-in API')
 # Image retire is a Dock-session switch: only MadeiraDock.configure sets it, and
 # only the Dock launch calls configure.
-for name, text in [('ContentView.swift', content), ('MadeiraDockView.swift', view), ('SteamRuntime.swift', runtime)]:
+for name, text in [('ContentView.swift', content), ('MadeiraDockModel.swift', view), ('SteamRuntime.swift', runtime)]:
     require('MADEIRA_JIT_IMAGE_RETIRE' not in text, f'{name}: does not set the image-retire switch')
 require(dock.count('setenv("MADEIRA_JIT_IMAGE_RETIRE"') == 1 and
         dock.index('setenv("MADEIRA_JIT_IMAGE_RETIRE"') > dock.index('static func configure('),
         'the image-retire switch is set only in the Dock launch environment')
 require(content.count('MadeiraDock.configure(') == 1, 'only the Dock launch configures the host environment')
 # The image-map guard is also a Dock-session switch, set only by MadeiraDock.configure.
-for name, text in [('ContentView.swift', content), ('MadeiraDockView.swift', view), ('SteamRuntime.swift', runtime)]:
+for name, text in [('ContentView.swift', content), ('MadeiraDockModel.swift', view), ('SteamRuntime.swift', runtime)]:
     require('MADEIRA_IMAGE_MAP_GUARD' not in text, f'{name}: does not set the image-map guard')
 require(dock.count('setenv("MADEIRA_IMAGE_MAP_GUARD"') == 1 and
         dock.index('setenv("MADEIRA_IMAGE_MAP_GUARD"') > dock.index('static func configure('),
@@ -151,7 +151,7 @@ func jwt(_ claims: String) -> String {
         require(game.id == 4000 && game.name == "Fixture" && game.installed && game.customExecutables, "installed manifest with custom executables")
         require(game.windowsInstallPath == "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Fixture Game", "expected install path for the host")
         let updating = MadeiraDock.game(manifest: manifest(#""appid" "4001" "installdir" "B" "StateFlags" "6""#), library: "L")!
-        require(updating.installed && !updating.customExecutables && updating.name == "App 4001", "installed plus update-required counts as installed; unnamed apps get a label")
+        require(updating.installed && !updating.customExecutables && updating.name == "Steam app 4001", "installed plus update-required counts as installed; unnamed apps get a label")
         require(!MadeiraDock.game(manifest: manifest(#""appid" "4002" "installdir" "C" "StateFlags" "2""#), library: "L")!.installed, "not fully installed")
         for (label, body) in [("parent folder", #""appid" "1" "installdir" "..""#), ("separator", #""appid" "1" "installdir" "a\\b""#),
                               ("slash", #""appid" "1" "installdir" "a/b""#), ("drive", #""appid" "1" "installdir" "C:x""#),
@@ -202,7 +202,7 @@ func jwt(_ claims: String) -> String {
         func refused(_ run: () throws -> Void, _ text: String) -> Bool {
             do { try run(); return false } catch { return (error as? DockError)?.errorDescription?.contains(text) == true }
         }
-        require(refused({ try MadeiraDock.validate(alpha, drive: drive, bundled: false) }, "not built"), "no built host: refused")
+        require(refused({ try MadeiraDock.validate(alpha, drive: drive, bundled: false) }, "built without BCD Dock"), "no built host: refused")
         require(refused({ try MadeiraDock.validate(alpha, drive: drive, bundled: true) }, "client files"), "no client DLL: refused")
         try write(drive.appendingPathComponent("Program Files (x86)/Steam/steamclient64.dll"), "MZ")
         require(refused({ try MadeiraDock.validate(alpha, drive: drive, bundled: true) }, "fully installed"), "missing game folder: refused")
