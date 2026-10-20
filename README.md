@@ -13,6 +13,7 @@
   <a href="https://github.com/thebcd69/bcd-games/releases/latest/download/BCD.ipa"><b>Download the IPA</b></a>
   &nbsp;·&nbsp; <a href="#install">Install</a>
   &nbsp;·&nbsp; <a href="#games">Games</a>
+  &nbsp;·&nbsp; <a href="https://discord.gg/43TmupTVug">Discord</a>
   &nbsp;·&nbsp; <a href="#credits">Credits</a>
 </p>
 
@@ -122,6 +123,7 @@ How well a game runs varies a lot; many games do not start yet.
 2. When auto-tune gives up, its message offers **Send Log**. Send that log: it has what is needed
    to look into the game.
 3. For ideas and everything else, use **Settings › Feedback**.
+4. Install help, game reports and ideas are also welcome on the [BCD-Games Discord](https://discord.gg/43TmupTVug).
 
 ## What is not in the package
 
