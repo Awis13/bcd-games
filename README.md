@@ -34,6 +34,14 @@
   </tr>
 </table>
 
+<a href="https://thebcd69.github.io/bcd-media/368b91fe3eed2ec6.html"><img src="assets/readme/4be504c431c8.jpg" alt="Crysis 2 Remastered running in BCD on an iPhone 17 Pro Max" width="100%"></a>
+
+*Crysis 2 Remastered (Steam), recorded on an iPhone 17 Pro Max. Click the picture to play the clip; the overlay shows the live frame rate and memory use.*
+
+<a href="https://thebcd69.github.io/bcd-media/cf75ecb03de188bb.html"><img src="assets/readme/908d936c7497.jpg" alt="Grand Theft Auto V Legacy running in BCD on an iPhone 17 Pro Max" width="100%"></a>
+
+*Grand Theft Auto V Legacy (Steam), recorded on an iPhone 17 Pro Max. Click the picture to play the clip; the overlay shows the live frame rate and memory use.*
+
 BCD runs Windows PC games on iOS and iPadOS. Wine provides Windows, FEX runs x86 and
 x64 code on Apple's chips, and DXMT plus BCD's Direct3D 12 runtime draw with Metal. BCD
 signs in to Steam, downloads the games you own, and starts them directly or through
