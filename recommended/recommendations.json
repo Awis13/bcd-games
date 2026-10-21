@@ -1,12 +1,12 @@
 {
   "format": 1,
-  "version": 2,
+  "version": 4,
   "generated": "2026-10-21",
   "rules": [
     {
       "id": "rdr2-steam",
       "title": "Red Dead Redemption 2 (Steam)",
-      "version": 10,
+      "version": 11,
       "match": {
         "steamAppIDs": [1174180],
         "steamFolders": ["red dead redemption 2"],
@@ -53,6 +53,7 @@
         "env.DXMT_WSI_MODE_TABLE = 1",
         "env.DXMT_SMALL_RINGS = Launcher.exe;SocialClubHelper.exe",
         "env.MADEIRA_EXECREQ_LEAVE = 1",
+        "env.MADEIRA_FEX_AVX = 0",
         "env.MADEIRA_LOCK_ORPHAN = stamped",
         "env.MADEIRA_PIN_GRAPHICS_DLLS = 1",
         "env.MADEIRA_PRELOAD_DLLS = xinput1_4.dll",
@@ -99,7 +100,13 @@
         "2026-10-12): the first install's VC++ setup may not start its elevated",
         "engine (.be\\vc_redist), which crashed with a lock held while the setup",
         "waited for it forever (12:43). With the line the setup fails at once and",
-        "the installs pass (12:57); the session links its own VC++ DLLs anyway."
+        "the installs pass (12:57); the session links its own VC++ DLLs anyway.",
+        "Version 11 (2026-10-21): env.MADEIRA_FEX_AVX = 0. Auto-tune's `fex-avx-on` line (AVX and AVX2) turns AVX on in the",
+        "Rockstar Launcher's own process only; RockstarService.exe gets the registry's environment and keeps it off, and every",
+        "session that had the line ended at the Launcher's \"Failed to connect to the Rockstar Games Library Service\"",
+        "(builds 574 and 576, logs GBY65K, Y5MEB6, A50T0Q) while the same game connected with it off (8JXT6Q on the same",
+        "phone, DGNRT5). The line pins AVX off, so a kept auto-tune line cannot switch it on again (the game's own file wins over",
+        "auto-tune's layer and a key the game's file sets is never proposed). Not tried on a device with a played session after it."
       ]
     },
     {
@@ -180,7 +187,7 @@
     {
       "id": "gta5e-steam",
       "title": "GTA V Enhanced (Steam)",
-      "version": 3,
+      "version": 4,
       "match": {
         "steamAppIDs": [3240220],
         "steamFolders": ["grand theft auto v enhanced"],
@@ -211,6 +218,7 @@
         "env.MADEIRA_DOCK_KEEP_ALIVE = Launcher.exe;GTA5_Enhanced.exe",
         "env.MADEIRA_DXGI_SRC = 1",
         "env.MADEIRA_EXECREQ_LEAVE = 1",
+        "env.MADEIRA_FEX_AVX = 0",
         "env.MADEIRA_KMT_ADAPTER = 1",
         "env.MADEIRA_LOCK_ORPHAN = stamped",
         "env.MADEIRA_PIN_GRAPHICS_DLLS = 1",
@@ -238,7 +246,13 @@
         "helper died at Story Mode and the launcher's window stayed grey (log",
         "10:53, after a reset and a new Rockstar sign-in). Version 3: the first",
         "install's VC++ setup may not start its elevated engine, as for RDR2",
-        "(with the line GTA's installs passed, 13:08)."
+        "(with the line GTA's installs passed, 13:08).",
+        "Version 4 (2026-10-21): env.MADEIRA_FEX_AVX = 0. Auto-tune's `fex-avx-on` line (AVX and AVX2) turns AVX on in the",
+        "Rockstar Launcher's own process only; RockstarService.exe gets the registry's environment and keeps it off, and every",
+        "session that had the line ended at the Launcher's \"Failed to connect to the Rockstar Games Library Service\"",
+        "(builds 574 and 576, logs GBY65K, Y5MEB6, A50T0Q) while the same game connected with it off (8JXT6Q on the same",
+        "phone, DGNRT5). The line pins AVX off, so a kept auto-tune line cannot switch it on again (the game's own file wins over",
+        "auto-tune's layer and a key the game's file sets is never proposed). Not tried on a device with a played session after it."
       ]
     },
     {
@@ -283,7 +297,7 @@
     {
       "id": "gta5l-steam",
       "title": "GTA V Legacy (Steam)",
-      "version": 2,
+      "version": 3,
       "match": {
         "steamAppIDs": [271590],
         "steamFolders": ["grand theft auto v"],
@@ -304,6 +318,7 @@
         "env.MADEIRA_DOCK_KEEP_ALIVE = Launcher.exe;GTA5.exe",
         "env.MADEIRA_DXGI_SRC = 1",
         "env.MADEIRA_EXECREQ_LEAVE = 1",
+        "env.MADEIRA_FEX_AVX = 0",
         "env.MADEIRA_KMT_ADAPTER = 1",
         "env.MADEIRA_LOCK_ORPHAN = stamped",
         "env.MADEIRA_POOL_HEAD_RESERVE_MB = 128",
@@ -340,7 +355,13 @@
         "them the first try had sudden drops and stalls; without them it played",
         "smoothly on the owner's 12 GB phone (DXGI budget 1536 MB, the default).",
         "A device with less than 12 GB of RAM still gets the 3 GB RAM swap",
-        "(`smallRAMConfig`, owner's decision); a 12 GB phone or a 16 GB iPad does not."
+        "(`smallRAMConfig`, owner's decision); a 12 GB phone or a 16 GB iPad does not.",
+        "Version 3 (2026-10-21): env.MADEIRA_FEX_AVX = 0. Auto-tune's `fex-avx-on` line (AVX and AVX2) turns AVX on in the",
+        "Rockstar Launcher's own process only; RockstarService.exe gets the registry's environment and keeps it off, and every",
+        "session that had the line ended at the Launcher's \"Failed to connect to the Rockstar Games Library Service\"",
+        "(builds 574 and 576, logs GBY65K, Y5MEB6, A50T0Q) while the same game connected with it off (8JXT6Q on the same",
+        "phone, DGNRT5). The line pins AVX off, so a kept auto-tune line cannot switch it on again (the game's own file wins over",
+        "auto-tune's layer and a key the game's file sets is never proposed). Not tried on a device with a played session after it."
       ]
     },
     {
@@ -934,7 +955,7 @@
     {
       "id": "spelunky-2",
       "title": "Spelunky 2",
-      "version": 1,
+      "version": 2,
       "match": {
         "steamAppIDs": [418530],
         "steamFolders": ["spelunky 2"],
@@ -946,13 +967,18 @@
         "# BCD's recommended settings for Spelunky 2.",
         "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
         "env.MADEIRA_EC_HOOK_TRACE = 0",
-        "pool-split = 1"
+        "pool-split = 1",
+        "env.DXMT_WSI_MONITOR_IDENTITY = 1",
+        "env.DXMT_WSI_MODE_TABLE = 1"
       ],
       "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
       "notes": [
         "Spelunky 2 (Steam 418530), build 574, iPad16,3 (Send Log J2YJF8, 2026-10-20): the JIT pool shrank",
         "(no hole for 896 MB) and filled while the game's DLLs loaded ([jit-pool] EXHAUSTED, exit c0000017),",
-        "as Counter-Strike 2, which pool-split = 1 started. The standard line plus the split pool."
+        "as Counter-Strike 2, which pool-split = 1 started. The standard line plus the split pool.",
+        "v2 (2026-10-21): Send Log XKGV37 (build 574) stopped at the game's own \"Renderer error retrieving monitor info\" /",
+        "\"Device initialization failed\"; JBNAZ1 (NVIDIA switch on, which exports DXMT_WSI_MONITOR_IDENTITY) printed",
+        "\"Output 0 ... attached as primary\" and \"Display initialized\". The two DXMT lines RDR2's list uses; not tried alone."
       ]
     },
     {
@@ -1265,7 +1291,7 @@
     {
       "id": "no-rest-for-the-wicked",
       "title": "No Rest for the Wicked",
-      "version": 1,
+      "version": 2,
       "match": {
         "steamAppIDs": [1371980],
         "steamFolders": ["norestforthewicked"],
@@ -1277,7 +1303,8 @@
         "# BCD's recommended settings for No Rest for the Wicked.",
         "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
         "env.MADEIRA_EC_HOOK_TRACE = 0",
-        {"line": "env.MADEIRA_FEX_BAND_KEEP_MB = 6144", "minBuild": 576}
+        {"line": "env.MADEIRA_FEX_BAND_KEEP_MB = 6144", "minBuild": 576},
+        {"line": "dxmt = d3d11.mipClampBC=1", "minBuild": 577}
       ],
       "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
       "notes": [
@@ -1286,7 +1313,16 @@
         "ranges of 511 MB; the steer valve put 23 of them in the emulator's 16 GB range (11.7 GB of it) and no 4 MB-",
         "aligned gap was left for the emulator, which held 3.8 GB at the first refusal and 4.0 GB 4500 lines later.",
         "env.MADEIRA_FEX_BAND_KEEP_MB = 6144 (build 576) keeps the lowest 6 GB of that range for the emulator; the",
-        "reservations that no longer fit go to the range below it. Not tried on a device yet."
+        "reservations that no longer fit go to the range below it. Not tried on a device yet.",
+        "Build 576, iPhone18,1 (Send Log 2NW5PY, 2026-10-21): with that line the game presents (654 frames at 30 s, 4021",
+        "at 150 s of the wait) and then its footprint climbs to 8.05 GB of the 8.19 GB limit during a texture",
+        "streaming burst from about 90 s (the game's textures 2.1 -> 7.4 GB requested, Metal's allocation 1.3 -> 3.2 GB,",
+        "compressed memory 1.7 -> 3.3 GB); from 120 s it presents 2 frames a second and the player closed it at 150 s.",
+        "7,816 of its textures are block-compressed, default-usage and shader-resource-only, with up to 14 levels; they",
+        "hold most of the 1.71 GB of block-compressed data (0.68 GB before the burst), and this GPU takes BC as it is.",
+        "dxmt = d3d11.mipClampBC=1 (build 577) drops the top level of each of them, three quarters of their bytes:",
+        "about 1.2 GB less at the end of that log. God of War's list uses the same option (its 4.0 GB of textures became",
+        "1.05 GB in a 2026-09-29 run). Not tried on a device yet."
       ]
     },
     {
@@ -1313,6 +1349,246 @@
         "It keeps its code in two views of one memory section (write-xor-execute); BCD gives the executable view a",
         "copy of its own, so what the runtime writes never shows there. env.DOTNET_EnableWriteXorExecute = 0 (build 576)",
         "makes the runtime use plain executable memory. Not tried on a device yet."
+      ]
+    },
+    {
+      "id": "dying-light",
+      "title": "Dying Light",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [239140],
+        "steamFolders": ["dying light"],
+        "programs": [
+          {"name": "dyinglightgame.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Dying Light.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_OPTIN_DLLS = setupapi", "minBuild": 577}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Dying Light (Steam 239140), build 576, iPhone18,2 (Send Log 1c807435, 2026-10-21): the game's controller",
+        "library libpad.dll listed HID devices on one thread while the main thread loaded dinput8.dll, and both",
+        "registered their first device in Wine's setupapi at the same moment; the table of device nodes had no lock",
+        "and its size was set before the table existed, so one thread read a NULL table (setupapi.dll+0x132bc).",
+        "Build 577 ships setupapi-optin.dll, the same DLL with a lock round that table, linked as setupapi.dll for",
+        "a game that lists setupapi in env.MADEIRA_OPTIN_DLLS; every other game keeps the shipped setupapi.dll.",
+        "Not tried on a device yet."
+        ]
+      },
+      {
+      "id": "beamng-drive",
+      "title": "BeamNG.drive",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [284160],
+        "steamFolders": ["beamng.drive"],
+        "programs": [
+          {"name": "beamng.drive.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for BeamNG.drive.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_X64_MACHINE = 1", "minBuild": 577}
+      ],
+      "notes": [
+        "BeamNG.drive (Steam 284160), builds 574 and 576, iPhone16,2 on iOS 27.2 (Send Log VV1FQ4, PEVMEQ, DZ6BN4,",
+        "SYDJDY): the 32-bit launcher (BeamNG.drive.exe) reads the machine as ARM (\"Current mode: native ARM\") and",
+        "starts BinArm64\\BeamNG.drive.arm64.exe, a native ARM64 program; BCD's native ARM64 set has no",
+        "D3DCOMPILER_47.dll, so it ends with c0000135 and the launcher shows STATUS_DLL_NOT_FOUND. On iPhone18,2",
+        "(SRWY27) the same launcher chose \"emulated x64\" by itself and started Bin64\\BeamNG.drive.x64.exe.",
+        "env.MADEIRA_X64_MACHINE = 1 (build 577) tells a 32-bit program the native machine is AMD64 (IsWow64Process2,",
+        "PROCESSOR_ARCHITEW6432), so the launcher should offer its x64 program. NOT tried on a device: which question",
+        "the launcher asks is not in any log; the next log shows \"[x64-machine] IsWow64Process2\" lines if it asks that one.",
+        "The launcher's own link \"Current mode: native ARM (click to change)\" switches it by hand and is remembered.",
+        "Not fixed by this line: on an iOS 26 device (63 GB address map) the x64 program stops in Chromium's allocator",
+        "(SRWY27); the whole-app crash that followed the launcher's exit (req_cancel_async) is addressed in build 577 (host-tested only)."
+        ]
+      },
+      {
+      "id": "monster-hunter-stories-3-trial",
+      "title": "Monster Hunter Stories 3: Twisted Reflection Trial Version",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [3470630],
+        "steamFolders": ["monster_hunter_stories_3_twisted_reflection_trial"],
+        "programs": [
+          {"name": "monster_hunter_stories_3_twisted_reflection_trial.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Monster Hunter Stories 3: Twisted Reflection Trial Version.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576}
+      ],
+      "notes": [
+        "Monster Hunter Stories 3: Twisted Reflection Trial Version (Steam 3470630), build 576, iPad16,5 (owner's log, 2026-10-21):",
+        "the 64-bit program (PE name runtime_il2cpp.exe) stops 13 s after its start with c0000005 in the first instructions of its",
+        "protector, an unnamed 6 MB RWX section whose entry stub decrypts its own code with a byte-wise xor loop. Monster Hunter",
+        "Rise (build 574) shows the same stub and the same stop; its log holds a translation made from the bytes before the loop",
+        "ran. The program runs with a JIT-pool copy, and the emulator tracks code rewrites through page protections.",
+        "env.MADEIRA_X64_IMAGE_NOCOPY = 1 (known since build 423) runs a pure x64 program from its loaded image, as GTA V Enhanced,",
+        "Red Dead Redemption 2 and Horizon Forbidden West do. Not tried on a device yet. No switches: the game keeps what it has."
+      ]
+    },
+    {
+      "id": "pwaat",
+      "title": "Phoenix Wright: Ace Attorney Trilogy",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [787480],
+        "steamFolders": ["phoenix wright ace attorney trilogy"],
+        "programs": [
+          {"name": "pwaat.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Phoenix Wright: Ace Attorney Trilogy.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        "env.MADEIRA_WOW_RWX_PLAIN = 1"
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Phoenix Wright: Ace Attorney Trilogy (Steam 787480), a 32-bit Unity game, build 574, iPad16,3 (Send Log BKV853,",
+        "2026-10-20): the same ending as Breakneck's: Mono's JIT patches its RWX code chunks with an unaligned atomic swap",
+        "that the store emulator refuses, a redelivery storm, then termination. Breakneck runs with the same line (build 563,",
+        "owner). Auto-tune's rule wow-rwx-plain-unaligned-atomic already names this line. Not tried on this game yet."
+      ]
+    },
+    {
+      "id": "lego-party",
+      "title": "LEGO Party!",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1969370],
+        "steamFolders": ["lego party"],
+        "programs": [
+          {"name": "lego party.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for LEGO Party!.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_WINTYPES = 1", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "LEGO Party! (Steam 1969370), Unity IL2CPP, build 574, iPad17,3 (Send Log HQXD0E, 2026-10-20): GameAssembly.dll",
+        "imports api-ms-win-core-winrt-robuffer-l1-1-0.dll (Wine's apiset: wintypes.dll), which the 64-bit set ships only",
+        "as wintypes-optin.dll since build 575, as for Megabonk. Not tried on this game yet."
+      ]
+    },
+    {
+      "id": "1000xresist",
+      "title": "1000xRESIST",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1675830],
+        "steamFolders": ["1000xresist"],
+        "programs": [
+          {"name": "1000xresist.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for 1000xRESIST.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_WINTYPES = 1", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "1000xRESIST (Steam 1675830), Unity IL2CPP, build 569, iPhone17,2 (Send Log Z4VF5W, 2026-10-20): the same",
+        "missing wintypes.dll as Megabonk; build 575 and later link Wine's own copy for a game with this line.",
+        "Not tried on this game yet."
+      ]
+    },
+    {
+      "id": "american-truck-simulator",
+      "title": "American Truck Simulator",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [270880],
+        "steamFolders": ["american truck simulator"],
+        "programs": [
+          {"name": "amtrucks.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for American Truck Simulator.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_TINY_WINDOW_FIX = 1", "minBuild": 578}
+      ],
+      "notes": [
+        "American Truck Simulator (Steam 270880), build 576, iPad16,10 (a tester's two logs, 2026-10-21): the game's window",
+        "opens as 132x38, Wine's minimum window size, and nothing ever sizes it, so its 1024x768 picture shows in a",
+        "window the size of a postage stamp. Build 578 sizes such a window to the screen when its swapchain asks for",
+        "fullscreen (no line needed), and the line adds a second way for a swapchain that never asks: a swapchain window",
+        "that stays that small for three seconds is sized to the virtual screen. The [tiny-win], [win-create] and",
+        "[wsi-fullscreen] log lines say which one ran and what the game asked for. Not tried on a device yet."
+        ]
+      },
+      {
+      "id": "marvels-spider-man-miles-morales",
+      "title": "Marvel's Spider-Man: Miles Morales",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1817190],
+        "steamFolders": ["marvel's spider-man miles morales"],
+        "programs": [
+          {"name": "milesmorales.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Marvel's Spider-Man: Miles Morales.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "mip0-full = 1",
+        "quiet-log = 1",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+      ],
+      "switches": {"avx": false, "nvidia": true, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Marvel's Spider-Man: Miles Morales (Steam 1817190), a Direct3D 12 game (Nixxes engine lines in its own log). Seven logs: an",
+        "iPad16,5 (M4, 16 GB; build 548, build 574 PD7S1E and HQFPWG, build 576 of 2026-10-21 10:37) and an iPhone19,2 (12 GB; build",
+        "574 V4JGSJ, VWKPTS, X1TNT2). The list is written from those logs and not tried on a device.",
+        "  - mip0-full = 1: the build 576 log and PD7S1E (574) end the same way, about 55 s in at the first 3D scene. The game makes",
+        "    a 256x256 RGBA32F render-target and UAV texture with MipLevels 0 (D3D12: the full chain, 9 levels); this runtime made one",
+        "    level and GetDesc answered 0 (the log's \"[mip0] r#12699 ... GetDesc answers 0\" line, L83617). The game then made a UAV of",
+        "    level 1, and Metal's own validation (\"newLevelRange.location + newLevelRange.length (2) must be <= mipmapLevelCount (1)\",",
+        "    L83618) ended the process (exception 80000101, L83627). About 1,980 frames at 40-60 fps had been presented before that, so",
+        "    this is not a rendering fix. Horizon Forbidden West (build 533) and Rift Apart carry the line; auto-tune's rule",
+        "    mip0-texture-view-beyond-levels adds it after such a crash. Three textures in these logs are made this way (704x324,",
+        "    556x416, 256x256).",
+        "  - quiet-log = 1: the draw dump of presents 1520-1560 (lists 12000-12400, 39,162 log lines) stalled the game for 2.4 s at",
+        "    +45 s in the same log, ten seconds before its end; the switch turns that dump off. It only changes what is logged.",
+        "  - env.MADEIRA_X64_IMAGE_NOCOPY = 1: auto-tune's own line for this game since build 548 (the JIT pool ran out while DLLs",
+        "    were copied into it, c0000017: tests/fixtures/autotune/spider-man-miles-morales-2026-10-15-20-07-48); every later log",
+        "    carries it. Listed so that Reset to Recommended keeps it.",
+        "  - env.MADEIRA_EC_HOOK_TRACE = 0: the standard line.",
+        "  - nvidia on: six of the seven logs had it, and all five that rendered (the game reads a 10de vendor id; Rift Apart's list",
+        "    has it too). The one without (X1TNT2, iPhone) stopped at start on a zero-size layer (Metal: width and height of zero), not",
+        "    shown to be the vendor. AVX off in all seven logs, Wine's C++ runtime off in the six since build 574 (build 548 had it on).",
+        "Left out on purpose (Rift Apart's other lines, checked against the build 576 log): vram-mb, swap-mb, swap-mode, swap-min-mb,",
+        "swap-images (no kill on the 16 GB iPad: footprint 9.8 GB, compressed 2.4 GB, DXMT's cap 13.9 GB; the iPhone's two kills at",
+        "8,154 of 8,192 MB belong to auto-tune's swap rules); typed-view-rgb32 and pso-lazy-libs (no R32G32B32 typed view, about 330",
+        "pipelines); fence-early and the DXGI source lines (no DirectStorage, no fence wait: the game was blocked 0.0 ms a frame);",
+        "MADEIRA_CAGE_RELEASE (a Dock launch hands the holdback over itself, L28404); JUMBO_HALF (four jumbo reservations, 2,044",
+        "and 3 x 1,024 MB, all granted); ALIAS_RELEASE (no [alias-tomb] line); LC_ALL (this tester's language is Italian: code pages",
+        "1252, 437 and 850 only, none of Rift Apart's Turkish 857); MADEIRA_VA_PRESSURE_GAP_OK (the pressure latch is false here too,",
+        "free 7,149 MB at L8295, 16 steered reservations, 3,066 MB, but its memory effect on Rift Apart came from the swap tier not",
+        "backing the steered range, and this list has no swap file); the pad, input and WINEDEBUG lines.",
+        "env.MADEIRA_OPTIN_DLLS = evr is not listed: the crash reporter's helper crs-video.exe ends with c0000135 because EVR.dll is",
+        "missing (L15712) and the game plays on without it (HQFPWG too); the line would make that helper run its 5 s video capture",
+        "inside a memory-bound session, which no log shows to be harmless."
       ]
     },
     {

@@ -93,8 +93,8 @@ bump = alloc[alloc.index('if (off == (size_t)-1)'):]
 assert 'size_t cand = ios_pool_holes_head_place( jit_pool_offset, alloc_size,' in bump   # pool-mid: both holes
 assert 'if (cand + alloc_size <= pool_limit\n            && IOS_POOL_IN_REACH(cand))' in bump, 'bump_ok mirrors the bump'
 
-nt = native[native.index('NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process'):]
-nt = nt[:nt.index('NTSTATUS WINAPI NtAllocateVirtualMemoryEx(')]
+nt = native[native.index('static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemory( HANDLE process'):]
+nt = nt[:nt.index('static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemoryEx(')]
 assert 'if (is_jumbo && ios_sc_grant_dead_n && ios_sc_cef_enabled() && ios_sc_current_is_helper())' in nt
 assert nt.index('ios_sc_reap_dead();') < nt.index('ios_sc2_route(')
 assert 'if (sc2 && ios_sc2_route( hint, *size_ptr, type, protect, &pick, &sz, &st2 ))' in nt
@@ -104,7 +104,7 @@ assert "&& *size_ptr >= 0x400000000ULL && !sc_helper)" in nt, 'no soft grant for
 assert "*size_ptr == 0x100000000ULL && !sc_helper)" in nt, 'no soft 4 GB cage for the helper'
 assert 'ios_sc_grant_note( *ret, *size_ptr );' in nt and 'ios_sc2_note_commit( *ret, *size_ptr );' in nt
 assert 'st2 = ios_cage_grant( type, protect, *size_ptr, &pick, &sz, "ml433" );' in nt, 'one cage grant for both paths'
-ex = native[native.index('NTSTATUS WINAPI NtAllocateVirtualMemoryEx('):]
+ex = native[native.index('static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemoryEx('):]
 ex = ex[:ex.index('\n}\n')]
 exb = ex[ex.index('/* madeira-bcd: Social Club layout 2. SocialClubHelper.exe\'s V8 reserves'):]
 assert ex.index('if (process != NtCurrentProcess())') < ex.index('/* madeira-bcd: Social Club layout 2. SocialClubHelper.exe')

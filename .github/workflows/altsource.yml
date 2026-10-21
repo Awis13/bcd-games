@@ -1,0 +1,87 @@
+name: Publish AltStore source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/altsource.yml
+      - tools/update-altsource.py
+      - tests/host/check-altsource.py
+  pull_request:
+    paths:
+      - .github/workflows/altsource.yml
+      - tools/update-altsource.py
+      - tests/host/check-altsource.py
+  release:
+    types: [published, edited, deleted]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: altsource-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+          persist-credentials: false
+          sparse-checkout: |
+            tools
+            tests/host
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Check source generator
+        run: python3 tests/host/check-altsource.py
+
+  build:
+    needs: check
+    if: github.repository == 'thebcd69/bcd-games' && github.event_name != 'pull_request'
+    runs-on: macos-15
+    timeout-minutes: 15
+    outputs:
+      changed: ${{ steps.source.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: tools
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Generate source from the latest stable release
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/update-altsource.py
+      - name: Upload Pages files
+        if: steps.source.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build-out/altsource
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

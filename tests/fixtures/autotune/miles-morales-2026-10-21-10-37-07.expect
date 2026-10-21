@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "mip0-texture-view-beyond-levels"
+ ],
+ "next": [
+  "mip0-full = 1"
+ ],
+ "note": "Marvel's Spider-Man: Miles Morales, build 576, iPad16,5 (15416 MB): a 256x256 RGBA32F UAV texture made with MipLevels 0 (one level without mip0-full), then a view of level 1: Metal's assertion ends the game at about 55 s (80000101)",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "trying"
+}

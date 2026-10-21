@@ -9,7 +9,8 @@
 # Also ucrtbase-x64math.dll, an opt-in variant of ucrtbase (see UCX below), and
 # kernelbase-fibertrace.dll, an opt-in diagnostic kernelbase (see FBT below), and
 # wer-optin.dll, Wine's own wer.dll for the one game that imports it (see WER below), and
-# wintypes-optin.dll, Wine's own wintypes.dll for the games that import it (see WTY below).
+# wintypes-optin.dll, Wine's own wintypes.dll for the games that import it (see WTY below), and
+# setupapi-optin.dll, the shipped setupapi.dll with a lock round its device node table (see SDL below).
 # A DLL upstream already ships is never replaced. Run from the repository
 # root; needs llvm-mingw on PATH (or MINGW) and the native wine tools.
 #   usage: build-wine-extra-dlls.sh [native tools dir]
@@ -135,7 +136,20 @@ if [ "${MADEIRA_OPTIN_BUILD:-1}" != 0 ]; then
         targets="$targets dlls/$d/arm64ec-windows/$d.dll"; OPT="$OPT $d"
     done
 fi
-[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER$WTY$OPT" ] || { echo "nothing to build"; exit 0; }
+# madeira-bcd: setupapi-optin.dll, a patched copy of a DLL that IS shipped, so it cannot use the OPT list
+# above (which skips shipped names). Wine's setupapi has no lock round its device node table and
+# publishes the table's size before the table: Dying Light's libpad.dll and the game's main thread listed
+# devices at the same moment and one read a NULL table (setupapi.dll+0x132bc, log 1c807435, build 576).
+# tools/patch-wine-setupapi-devinst-lock.py adds the lock; the result ships NEXT TO the shipped
+# setupapi.dll, which stays byte for byte, and only a game with env.MADEIRA_OPTIN_DLLS = setupapi runs it
+# (app/Madeira/WineProcessBridge.m links it as setupapi.dll for that session; the next session's farm
+# relink restores the shipped one). Built in a make of its own after the patches above are undone (see
+# below). MADEIRA_SETUPAPI_BUILD=0 skips it.
+SDL=""
+if [ "${MADEIRA_SETUPAPI_BUILD:-1}" != 0 ] && [ -f "$R/wine/dlls/setupapi/devinst.c" ] && [ -f "$SHIP/setupapi.dll" ]; then
+    SDL=setupapi
+fi
+[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER$WTY$OPT$SDL" ] || { echo "nothing to build"; exit 0; }
 
 # The cached tree may have disabled winegstreamer because macOS has no
 # GStreamer headers. Only its real PE frontend is needed here; the iOS unix
@@ -254,6 +268,44 @@ if [ -n "$FBT" ]; then
     # shellcheck disable=SC2086 # the list is five fixed paths
     git -C "$R/wine" checkout -- $kbsrc
     rm -f "$kb" "$B"/dlls/kernelbase/arm64ec-windows/*.o
+fi
+# madeira-bcd: setupapi-optin.dll (see SDL above), from the restored tree. Stripped the way
+# build/wine-pe/build-modules.sh strips the shipped one (--strip-debug), padded to at least SizeOfImage
+# + 0x10000 like the other extra DLLs, and verified (the lock's marker, the shipped setupapi.dll's
+# exports) before it ships. Its delay imports stay, as in the shipped setupapi.dll. The tree and the
+# patched objects are restored afterwards (wine/build-arm64ec is cached).
+if [ -n "$SDL" ]; then
+    sa="$B/dlls/setupapi/arm64ec-windows/setupapi.dll"
+    sdl_tmp="$SHIP/setupapi-optin.dll.tmp"
+    if python3 "$R/tools/patch-wine-setupapi-devinst-lock.py" "$R/wine"; then
+        rm -f "$sa" "$B"/dlls/setupapi/arm64ec-windows/*.o
+        make -C "$B" -j"$JOBS" dlls/setupapi/arm64ec-windows/setupapi.dll > "$B.setupapi.log" 2>&1
+        if [ -f "$sa" ] && cp "$sa" "$sdl_tmp" && "$MINGW/arm64ec-w64-mingw32-strip" --strip-debug "$sdl_tmp"; then
+            python3 - "$sdl_tmp" <<'PY'
+import struct, sys
+p = sys.argv[1]; d = open(p, 'rb').read()
+pe = struct.unpack_from('<I', d, 0x3c)[0]
+target = struct.unpack_from('<I', d, pe + 24 + 56)[0] + 0x10000
+if len(d) < target:
+    open(p, 'ab').write(b'\0' * (target - len(d)))
+PY
+            if python3 "$R/tools/patch-wine-setupapi-devinst-lock.py" --verify "$sdl_tmp" "$SHIP/setupapi.dll"; then
+                mv "$sdl_tmp" "$SHIP/setupapi-optin.dll"
+                echo "::notice::setupapi-optin.dll (the shipped setupapi.dll with a lock round the device node table; linked as setupapi.dll only for a game with setupapi in env.MADEIRA_OPTIN_DLLS): built next to the shipped setupapi.dll"
+            else
+                rm -f "$sdl_tmp"
+                echo "::warning::setupapi-optin.dll failed its check; not shipped (env.MADEIRA_OPTIN_DLLS = setupapi does nothing)"
+            fi
+        else
+            rm -f "$sdl_tmp"
+            echo "::warning::setupapi-optin.dll did not build; env.MADEIRA_OPTIN_DLLS = setupapi does nothing"
+            grep -m 10 "error" "$B.setupapi.log"
+        fi
+    else
+        echo "::warning::setupapi devinst-lock patch did not apply; setupapi-optin.dll not shipped"
+    fi
+    git -C "$R/wine" checkout -- dlls/setupapi/devinst.c
+    rm -f "$sa" "$B"/dlls/setupapi/arm64ec-windows/*.o
 fi
 # madeira-bcd: ntdll-sync.dll (see NTS above), from the restored tree. First the
 # unpatched ntdll.dll, which must equal the shipped one apart from its time

@@ -12,6 +12,10 @@ under AddressSanitizer and checks:
     path rules;
   * the plan: done / missing / unsupported (by package type and PE machine
     against the bundle, never by name) / pending / per-start limit, and its note;
+    madeira-bcd: a .NET Framework setup (told by Microsoft's file name, the one
+    program name the plan reads) is "provided" by Wine Mono: not run, its record
+    written like a finished run's; without Wine Mono it waits ("needs Wine Mono");
+    MADEIRA_DOCK_DOTNET_MONO=0 runs it as before;
   * the batch: result file, service-manager step (or "services off"), every
     redirection after a space, nothing written to the registry by the batch;
   * the result parser and the progress text;
@@ -55,12 +59,18 @@ steam_games = (app / 'SteamGames.swift').read_text(encoding='utf-8')
 madsync = (root / 'build/madsync/madsync.c').read_text(encoding='utf-8')
 
 # ------------------------------------------------------------------ static rules
-lower = installers.lower()
+# madeira-bcd: the one program name the plan reads is Microsoft's .NET Framework file name (isDotNetFramework, with its
+# comment): these setups never finished under Wine, and Wine Mono is the runtime. Every other redistributable stays unnamed.
+net_fn = re.search(r'(?:    ///[^\n]*\n)+    static func isDotNetFramework\(.*?\n    \}\n', installers, re.S)
+require(net_fn is not None, 'isDotNetFramework is one function with its comment')
+lower = installers.replace(net_fn.group(0), '').lower() if net_fn else installers.lower()
 require(not any(n in lower for n in ('dxsetup', 'vcredist', 'vc_redist', 'dotnetfx', 'dxwebsetup', 'physx', 'ndp4')),
-        'no redistributable names: nothing is decided by program name')
+        'no redistributable names outside isDotNetFramework: nothing else is decided by program name')
+require(net_fn is not None and not any(n in net_fn.group(0).lower() for n in ('dxsetup', 'vcredist', 'vc_redist', 'dxwebsetup', 'physx')),
+        'isDotNetFramework names only .NET Framework files')
 require('SteamSignIn.flag(name, default: true)' in installers, 'every installer switch defaults on and reads env.NAME')
 for switch in ('MADEIRA_DOCK_INSTALLERS', 'MADEIRA_INSTALL_DEFAULT_KEY', 'MADEIRA_DOCK_INSTALL_CHOICE',
-               'MADEIRA_DOCK_INSTALL_SCM', 'MADEIRA_DOCK_INSTALL_SERVER_SYNC', 'MADEIRA_DOTNET_FUSION'):
+               'MADEIRA_DOCK_INSTALL_SCM', 'MADEIRA_DOCK_INSTALL_SERVER_SYNC', 'MADEIRA_DOTNET_FUSION', 'MADEIRA_DOCK_DOTNET_MONO'):
     require(f'flag("{switch}")' in installers, f'switch {switch} is read')
 require('reg.exe' not in installers, 'the batch never writes the registry (no reg.exe in the bundle)')
 require(content.count('setenv("MADEIRA_MADSYNC_SESSION", "0", 1)') == 1 and
@@ -115,6 +125,7 @@ struct LogEntry { enum Level { case info, success, error, debug } }
     func log(_ message: String, level: LogEntry.Level = .info) { lines.append(message) }
 }
 enum MadeiraDock { static let executable = "C:\\windows\\system32\\dockhost.exe" }
+enum WineMonoModel { static var available: Bool { false } }
 ''' + game_src
 
 checks = r'''
@@ -328,6 +339,12 @@ func pe(_ url: URL, machine: UInt16) throws {
                 firstNote.contains("Installer not found: gone") && firstNote.contains("Done earlier: shared runtime") && firstNote.contains("standard synchronization"),
                 "the sheet's note (\(firstNote))")
         require(logged("dotnet-fusion=no-source") && logged("program=runtime a file=setup32.exe status=unsupported reason=32-bit-installer"), "fusion and per-program log lines")
+        // madeira-bcd (ajan5-mhs3): the plan line names each program's PE machine (a failed installer of unknown kind, InstallerMessage.exe
+        // of Monster Hunter Stories 3 Trial, left the log nothing to say whether it was 32-bit, x64 or ARM64).
+        require(DockInstallers.machineText(tool, drive: drive) == "0x8664" && DockInstallers.machineText(runtime, drive: drive) == "0x14c" &&
+                DockInstallers.machineText(package, drive: drive) == "-", "the PE machine of a program, a dash when it is not a PE file")
+        require(logged("program=runtime a file=setup32.exe status=unsupported reason=32-bit-installer key=") && logged(" machine=0x14c") &&
+                logged(" machine=0x8664") && logged("program=gone file=") && logged("status=missing") && logged(" machine=-"), "the plan lines end with the machine")
         require(MadeiraDockLaunch.arguments(DockInstallers.script) ==
                 "/desktop=madeira,1280x720 C:\\windows\\system32\\cmd.exe /c call C:\\bcd-dock-installers.cmd & C:\\windows\\system32\\dockhost.exe",
                 "installers first, then the host, in one session, no quoted tokens")
@@ -349,6 +366,21 @@ func pe(_ url: URL, machine: UInt16) throws {
                   "begin 3 \r\nservices started\r\nstart 1 tool \r\nexit 1 0 \r\nstart 2 b \r\nexit 2 5 \r\nstart 3 c \r\nexit 3 -1073741819 \r\nend \r\n")
         require(DockInstallers.poll(drive: drive) == "Done with the one-time installs: 1 of 3 succeeded.\nFailed: b (exit 5), c (exit -1073741819)",
                 "finished with failures: how many succeeded, which failed")
+        // madeira-bcd (ajan5-mhs3): the failure's log line carries the status in hex and what it means; a program's own small exit code
+        // stays as it was; the restart alert says a failed program is not run again (the choice turned to Skip) and how to try again.
+        require(logged("program=b status=5 failed; not recorded") && !logged("program=b status=5 failed; not recorded;") &&
+                logged("program=c status=-1073741819 failed; not recorded; exit 0xC0000005"), "a failed exit: the status in hex, nothing added for a small code")
+        require(DockInstallScripts.failureDetail(0) == "" && DockInstallScripts.failureDetail(5) == "" &&
+                DockInstallScripts.failureDetail(-1073741701).hasPrefix("; exit 0xC000007B (STATUS_INVALID_IMAGE_FORMAT: ") &&
+                DockInstallScripts.failureDetail(-1073741515).hasPrefix("; exit 0xC0000135 (STATUS_DLL_NOT_FOUND") &&
+                DockInstallScripts.failureDetail(-1073741819) == "; exit 0xC0000005", "failureDetail names the load failures and nothing else")
+        let failedWords = "Done with the one-time installs: 0 of 1 succeeded.\nFailed: tool (exit -1073741701)"
+        require(DockInstallers.skipsNextStart && DockInstallers.restartNotice(failedWords).hasPrefix(failedWords) &&
+                DockInstallers.restartNotice(failedWords).contains("A program that failed is not run again: the game starts without it at the next start. To try it again, pick Run at next start under One-time installs.") &&
+                DockInstallers.restartNotice(failedWords).hasSuffix("\nClose BCD and open it again to play the game."), "the restart alert after a failed install")
+        require(!DockInstallers.restartNotice("Done with the one-time installs: 2 of 2 succeeded.").contains("not run again") &&
+                DockInstallers.restartNotice(nil) == "The session for the one-time installs has ended.\nClose BCD and open it again to play the game.",
+                "no such sentence without a failure")
         try write(drive.appendingPathComponent("bcd-dock-installers.result"), finished)
 
         // ---- the next start records the result and plans again: nothing is left to run
@@ -515,6 +547,115 @@ func pe(_ url: URL, machine: UInt16) throws {
                 "the reset's installs go back to Run for games under the same key or with the same installer, not for others")
         require(DockInstallers.script != nil && rerun.contains("echo start 1 setup") && !DockInstallLedger.load(prefix: prefix).runsNext(7002) &&
                 DockInstallLedger.load(prefix: prefix).requests == nil, "after Reset the installer runs at that start, then the choice is Skip again")
+
+        // ---- madeira-bcd: a .NET Framework setup is provided by Wine Mono (not run, its record written); without Wine Mono it waits
+        let netNames: [(String, Bool)] = [
+            ("C:\\Program Files (x86)\\Steam\\steamapps\\common\\G\\Setup\\DotNetFx35.exe", true), ("C:\\x\\dotnetfx35.exe", true),
+            ("C:\\x\\dotNetFx35setup.exe", true), ("C:\\x\\dotNetFx40_Full_setup.exe", true), ("C:\\x\\dotnetfx.exe", true),
+            ("C:\\x\\NDP472-KB4054530-x86-x64-AllOS-ENU.exe", true), ("C:\\x\\ndp48-x86-x64-allos-enu.exe", true), ("C:\\x\\NetFx20SP2_x86.exe", true),
+            ("C:\\x\\dotnetfx.msi", false), ("C:\\x\\dotnet-runtime-8.0.1-win-x64.exe", false), ("C:\\x\\windowsdesktop-runtime-6.0.0-win-x64.exe", false),
+            ("C:\\x\\ndpsetup.exe", false), ("C:\\x\\netfxsomething.exe", false), ("C:\\x\\vcredist_x86.exe", false), ("C:\\x\\dxsetup.exe", false),
+            ("C:\\x\\mydotnetfx.exe", false), ("C:\\dotnetfx\\setup.exe", false), ("C:\\x\\setup32.exe", false),
+        ]
+        require(netNames.allSatisfy { DockInstallScripts.isDotNetFramework($0.0) == $0.1 },
+                ".NET Framework setups are told by Microsoft's file name; modern runtimes, packages and other redistributables are not (\(netNames.filter { DockInstallScripts.isDotNetFramework($0.0) != $0.1 }.map(\.0)))")
+        func netScript(_ ndpKey: String) -> String {
+            "\"installscript\" { \"run process\" {" +
+            " \"dotnet\" { \"process 1\" \"%INSTALLDIR%\\\\Setup\\\\DotNetFx35.exe\" \"command 1\" \"/q\" }" +
+            " \"runtime\" { \"process 1\" \"%INSTALLDIR%\\\\Setup\\\\vc.exe\" }" +
+            " \"mixed\" { \"process 1\" \"%INSTALLDIR%\\\\Setup\\\\dotnetfx.exe\" \"process 2\" \"%INSTALLDIR%\\\\Setup\\\\after.exe\" }" +
+            " \"modern\" { \"process 1\" \"%INSTALLDIR%\\\\Setup\\\\dotnet-runtime-8.0.1-win-x64.exe\" }" +
+            " \"ndp\" { \"HasRunKey\" \"HKEY_LOCAL_MACHINE\\\\" + ndpKey + "\" \"process 1\" \"%INSTALLDIR%\\\\Setup\\\\NDP472-KB4054530-x86-x64-AllOS-ENU.exe\" }" +
+            " } }"
+        }
+        // Game 7010 uses Microsoft's own NDP key as its HasRunKey (Terraria does); the others each have a key of their own.
+        func netGame(_ id: Int, _ name: String) throws -> DockGame {
+            let g = DockGame(id: id, name: name, installDir: name, library: "Program Files (x86)/Steam/steamapps", installed: true, customExecutables: false)
+            try write(common.appendingPathComponent(name + "/installscript.vdf"),
+                      netScript(id == 7010 ? "SOFTWARE\\\\Microsoft\\\\NET Framework Setup\\\\NDP\\\\v4\\\\Full" : "SOFTWARE\\\\Fixture NDP \(id)"))
+            for file in ["DotNetFx35.exe", "vc.exe", "dotnetfx.exe", "after.exe", "dotnet-runtime-8.0.1-win-x64.exe", "NDP472-KB4054530-x86-x64-AllOS-ENU.exe"] {
+                try pe(common.appendingPathComponent(name + "/Setup/" + file), machine: 0x14c)
+            }
+            return g
+        }
+        let netFound = DockInstallers.found(try netGame(7010, "Net"), drive: drive, defaultKey: true).processes
+        var netPlan = DockInstallScripts.plan(netFound, done: { _ in false }, exists: { _ in true },
+                                              provided: { DockInstallScripts.isDotNetFramework($0.executable) })
+        require(netPlan.map(\.status) == [.provided, .pending, .provided, .pending, .pending, .provided, .pending],
+                "plan: the .NET Framework setups are provided, the rest pending (\(netPlan.map(\.status.rawValue)))")
+        netPlan = DockInstallScripts.plan(netFound, done: { $0.name == "dotnet" }, exists: { _ in true }, provided: { _ in true })
+        require(netPlan.first?.status == .done && netPlan[1].status == .provided, "plan: done comes before provided")
+        netPlan = DockInstallScripts.plan(netFound, done: { _ in false }, exists: { !$0.hasSuffix("DotNetFx35.exe") },
+                                          provided: { DockInstallScripts.isDotNetFramework($0.executable) })
+        require(netPlan.first?.status == .missing, "plan: a setup that is not on disk is missing, not provided")
+        let netNote = DockInstallScripts.note(DockInstallScripts.plan(netFound, done: { _ in false }, exists: { _ in true },
+                                                                       provided: { DockInstallScripts.isDotNetFramework($0.executable) })) ?? ""
+        require(netNote.contains("Provided by Wine Mono, not run: dotnet, mixed, ndp") && netNote.contains("To run: runtime, mixed, modern"), "the note names what Wine Mono provides (\(netNote))")
+        let runs = DockInstallScripts.providedRuns(DockInstallScripts.plan(netFound, done: { _ in false }, exists: { _ in true },
+                                                                           provided: { DockInstallScripts.isDotNetFramework($0.executable) }))
+        require(runs.record.map(\.name) == ["dotnet", "ndp"] && runs.held.map(\.name) == ["mixed"],
+                "an entry is recorded only when all its programs are provided or done; the others are held back (\(runs.record.map(\.name)) \(runs.held.map(\.name)))")
+
+        // prepare(): with Wine Mono the .NET setups are not in the batch and are recorded in both views
+        let netGameWith = try netGame(7010, "Net")
+        DockInstallers.prepare(netGameWith, drive: drive, prefix: prefix, has32Bit: true, hasMsiexec: true, hasWineMono: true, fusionSource: nil)
+        let netBatch = (try? String(contentsOf: drive.appendingPathComponent("bcd-dock-installers.cmd"), encoding: .utf8)) ?? ""
+        require(DockInstallers.script != nil && netBatch.contains("vc.exe") && netBatch.contains("after.exe") && netBatch.contains("dotnet-runtime-8.0.1-win-x64.exe") &&
+                !netBatch.lowercased().contains("dotnetfx") && !netBatch.contains("NDP472"), "the batch holds the other programs and no .NET Framework setup")
+        var netSystem = (try? String(contentsOf: prefix.appendingPathComponent("system.reg"), encoding: .utf8)) ?? ""
+        let netRuns = netFound.map(\.run)
+        require(DockInstallScripts.marked(netRuns[0], in: netSystem) && netSystem.contains("[Software\\\\Wow6432Node\\\\Valve\\\\Steam\\\\Apps\\\\7010]") &&
+                netSystem.contains("[Software\\\\Valve\\\\Steam\\\\Apps\\\\7010]"), "dotnet: recorded under Valve's per-app key, both views")
+        require(DockInstallScripts.marked(netRuns[5], in: netSystem) && netSystem.contains("[SOFTWARE\\\\Microsoft\\\\NET Framework Setup\\\\NDP\\\\v4\\\\Full]"),
+                "ndp: recorded under its own HasRunKey (Microsoft's NDP key)")
+        require(!DockInstallScripts.marked(netRuns[1], in: netSystem) && !DockInstallScripts.marked(netRuns[2], in: netSystem) &&
+                !DockInstallScripts.marked(netRuns[4], in: netSystem), "the programs that still run, and an entry with one of them, are not recorded")
+        require(logged("app=7010 program=dotnet skipped: provided by Wine Mono; file=DotNetFx35.exe") && logged("record: yes, ") &&
+                logged("app=7010 program=mixed skipped: provided by Wine Mono; file=dotnetfx.exe") && logged("record: no, another program of this entry still has to run") &&
+                logged("program=dotnet file=DotNetFx35.exe status=provided key=HKLM\\Software\\Valve\\Steam\\Apps\\7010 recorded=- minimum=1") &&
+                logged("app=7010 scripts=2 programs=7 pending=3 done=1 missing=0 unsupported=0 provided=3 "), "the log names each skipped program and the summary counts them")
+        require((DockInstallers.note ?? "").contains("Provided by Wine Mono, not run: dotnet, mixed, ndp"), "the sheet's note says what Wine Mono provides")
+        // The next start: what was recorded is done, nothing is skipped again.
+        let beforeLines = LogStore.shared.lines.count
+        DockInstallers.prepare(netGameWith, drive: drive, prefix: prefix, has32Bit: true, hasMsiexec: true, hasWineMono: true, fusionSource: nil)
+        let afterLines = LogStore.shared.lines.dropFirst(beforeLines).joined(separator: "\n")
+        require(afterLines.contains("program=dotnet file=DotNetFx35.exe status=done") && afterLines.contains("program=ndp file=NDP472-KB4054530-x86-x64-AllOS-ENU.exe status=done") &&
+                afterLines.contains("program=mixed file=dotnetfx.exe status=provided") && !afterLines.contains("program=dotnet skipped"), "the next start: recorded setups are done, an entry held back is provided again")
+        // Without Wine Mono the setup is held back, not recorded, and the note says where to get it.
+        let noMono = try netGame(7011, "NoMono")
+        DockInstallers.prepare(noMono, drive: drive, prefix: prefix, has32Bit: true, hasMsiexec: true, hasWineMono: false, fusionSource: nil)
+        let noMonoBatch = (try? String(contentsOf: drive.appendingPathComponent("bcd-dock-installers.cmd"), encoding: .utf8)) ?? ""
+        netSystem = (try? String(contentsOf: prefix.appendingPathComponent("system.reg"), encoding: .utf8)) ?? ""
+        let noMonoRuns = DockInstallers.found(noMono, drive: drive, defaultKey: true).processes.map(\.run)
+        require(!noMonoBatch.lowercased().contains("dotnetfx") && !noMonoBatch.contains("NDP472") && noMonoBatch.contains("vc.exe") &&
+                DockInstallScripts.recorded(noMonoRuns[0], in: netSystem) == nil && DockInstallScripts.recorded(noMonoRuns[5], in: netSystem) == nil,
+                "no Wine Mono: the .NET Framework setups do not run and are not recorded")
+        require(logged("app=7011 program=dotnet file=DotNetFx35.exe status=unsupported reason=needs-Wine-Mono;-download-it-in-Settings-›-.NET-Framework") &&
+                logged("app=7011 program=dotnet skipped: file=DotNetFx35.exe is a .NET Framework setup and this device has no Wine Mono") &&
+                (DockInstallers.note ?? "").contains("Not supported by this build: dotnet (needs Wine Mono; download it in Settings › .NET Framework)") &&
+                !logged("app=7011 program=dotnet skipped: provided by Wine Mono"), "no Wine Mono: the note and the log say to download it in Settings › .NET Framework")
+        // MADEIRA_DOCK_DOTNET_MONO=0: as before, the setups run.
+        setenv("MADEIRA_DOCK_DOTNET_MONO", "0", 1)
+        let legacy = try netGame(7012, "Legacy")
+        DockInstallers.prepare(legacy, drive: drive, prefix: prefix, has32Bit: true, hasMsiexec: true, hasWineMono: true, fusionSource: nil)
+        let legacyBatch = (try? String(contentsOf: drive.appendingPathComponent("bcd-dock-installers.cmd"), encoding: .utf8)) ?? ""
+        require(legacyBatch.contains("DotNetFx35.exe") && legacyBatch.contains("NDP472") && !logged("app=7012 program=dotnet skipped") &&
+                logged("app=7012 scripts=2 programs=7 pending=6 done=1 missing=0 unsupported=0 provided=0 "), "MADEIRA_DOCK_DOTNET_MONO=0: the .NET Framework setups run as before")
+        // A stalled installer: the way out is named (the choice is Skip for the next start).
+        try write(drive.appendingPathComponent("bcd-dock-installers.result"), "begin 6 \r\nservices started\r\nstart 1 dotnet \r\n")
+        let tNet = Date()
+        _ = DockInstallers.poll(drive: drive, now: tNet)
+        let stalledNet = DockInstallers.poll(drive: drive, now: tNet.addingTimeInterval(601)) ?? ""
+        require(stalledNet.contains("If it never finishes, close BCD (swipe it away in the app switcher) and open it again: the next start skips the installs and starts the game."),
+                "a stalled installer: the text names the way out")
+        unsetenv("MADEIRA_DOCK_DOTNET_MONO")
+        // An entry an earlier build left "unfinished" is cleared once it is recorded as provided.
+        let stale = try netGame(7013, "Stale")
+        var staleLedger = DockInstallLedger.load(prefix: prefix); staleLedger.setUnfinished(7013, ["dotnet", "runtime"]); try staleLedger.save(prefix: prefix)
+        DockInstallers.prepare(stale, drive: drive, prefix: prefix, has32Bit: true, hasMsiexec: true, hasWineMono: true, fusionSource: nil)
+        require(DockInstallLedger.load(prefix: prefix).unfinishedRuns(7013) == ["runtime"],
+                "an entry recorded as provided is no longer unfinished")
+        require(!(DockInstallers.note ?? "").contains("Not finished last time: dotnet"), "the note does not call a provided setup unfinished")
 
         // Fixture batch for the optional real cmd.exe run: stand-in programs under @DIR@.
         func fixture(_ name: String, _ file: String) -> SteamInstallProcess {

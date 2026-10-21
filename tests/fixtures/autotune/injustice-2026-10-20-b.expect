@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x87-int64-roundtrip"
+ ],
+ "next": [
+  "env.FEX_X87REDUCEDPRECISION = 0"
+ ],
+ "note": "Injustice (build 574, iPhone18,2, Send Log ND8YNB): the same fault at 0x7928100000, the end of a 4 MB view the main thread had freed 3.4 s earlier (view 0x7927d00000+0x410000). Attempt env.FEX_X87REDUCEDPRECISION = 0, not proven",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "trying"
+}

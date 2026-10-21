@@ -454,6 +454,8 @@ c_src = r'''
 start = bridge.index('static uint64_t g_launch_exit')
 end = bridge.index('static char *g_prefix_path')
 c_src += 'void wine_launched_process_did_exit(int status);\nvoid wine_exit_status_reset(void);\nint wine_crash_exit_status(uint32_t *status);\n'
+# round 577: the hook also hands the end to wine_session_note_launch_exit (checked in check-session-end.py); a stub here
+c_src += 'static int g_noted_status = -1;\nvoid wine_session_note_launch_exit(int status) { g_noted_status = status; }\n'
 c_src += bridge[start:end]
 c_src += r'''
 static int failed;
@@ -463,6 +465,7 @@ int main(void) {
     wine_exit_status_reset();
     expect(!wine_crash_exit_status(&status), "nothing recorded at the start of a session");
     wine_launched_process_did_exit(0);
+    expect(g_noted_status == 0, "round 577: every end, error or not, is also handed to the session-end bookkeeping");
     expect(!wine_crash_exit_status(&status), "clean exit: no report");
     wine_launched_process_did_exit(0x40010004);
     expect(!wine_crash_exit_status(&status), "an informational status is not an error");
@@ -501,7 +504,9 @@ wrapper = block(server, 'void process_exit_wrapper( int status )')
 initial = wrapper[wrapper.index('    else\n    {'):]
 check('wine_launched_process_did_exit( status );' in initial and wrapper.count('wine_launched_process_did_exit( status );') == 1,
       'ntdll reports only the initial (app-launched) process exit, from the no-slot branch')
-check('__attribute__((weak))' in initial and 'ImagePathName' not in server and 'wine_process_did_' not in server,
+# (Scoped to the initial-process branch, which is what the hook is called from: the whole file names ImagePathName
+# elsewhere since the spawn-cwd line, so the old whole-file test had been failing without anything being wrong.)
+check('__attribute__((weak))' in initial and 'ImagePathName' not in initial and 'wine_process_did_' not in server,
       'the hook is weak and gets no image name')
 check('madeira_exit_is_helper' not in bridge and '.exe"' not in bridge[bridge.index('static uint64_t g_launch_exit'):bridge.index('static char *g_prefix_path')],
       'no program-name list in the exit report')
@@ -530,7 +535,8 @@ check(0 <= snap < loop and 'getenv(per_launch[i])' not in bridge[loop:bridge.ind
 # ml1184: every switch a game's page exports is one of those keys, and is cleared when the session ends.
 per_launch = set(re.findall(r'"([A-Z0-9_]+)"', block(bridge, 'static const char *const per_launch[] =')))
 exported = set(re.findall(r'setenv\("([A-Z0-9_]+)"', block(lib, 'func applyEnvironment()')))
-ended = bridge[bridge.index('g_wine_running = 0;\n        /* ml1184'):]
+# round 577: the end work lives in wine_session_end (shared by the boot thread's tail and wine_session_abandon)
+ended = bridge[bridge.index('static void wine_session_end(void)\n{'):]
 ended = set(re.findall(r'unsetenv\("([A-Z0-9_]+)"\)', ended[:ended.index('stopping wineserver')]))
 check(exported and exported <= per_launch and per_launch <= ended,
       "ml1184: the per-launch list holds every key applyEnvironment exports, and the session's end unsets them "

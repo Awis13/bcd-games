@@ -208,7 +208,13 @@ check(bool(rca) and rca["title"] == "Ratchet & Clank: Rift Apart", "Ratchet & Cl
 if rca:
     check("quiet-log = 1" in config(rca) and "env.MADEIRA_SRV_FGETPATH = 1" in config(rca),
           "Rift Apart's list sets both switches (HFW's general lines, v1)")
-others = [line for ident, rule in rules.items() if ident not in ("horizon-zero-dawn", "horizon-forbidden-west", "ratchet-clank-rift-apart")
+mm = rules.get("marvels-spider-man-miles-morales")
+check(bool(mm) and mm["title"] == "Marvel's Spider-Man: Miles Morales", "Marvel's Spider-Man: Miles Morales' list found")
+if mm:
+    check("quiet-log = 1" in config(mm) and not any("MADEIRA_SRV_FGETPATH" in line for line in config(mm)),
+          "Miles Morales' list sets quiet-log only (its draw dump of presents 1520-1560 stalled the game 2.4 s, build 576 log)")
+others = [line for ident, rule in rules.items()
+          if ident not in ("horizon-zero-dawn", "horizon-forbidden-west", "ratchet-clank-rift-apart", "marvels-spider-man-miles-morales")
           for line in config(rule)]
 check(not any("quiet-log" in line or "MADEIRA_SRV_FGETPATH" in line for line in others),
       "no other game's list sets either switch")

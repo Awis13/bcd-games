@@ -1,0 +1,14 @@
+{
+ "dialogs": [
+  "Copy error to clipboard"
+ ],
+ "end": {},
+ "matched": [
+  "wineserver-cancel-async-freed"
+ ],
+ "next": [],
+ "note": "BeamNG.drive launcher's cancel_async ended the whole app in the in-app wineserver (req_cancel_async+0x158); build 576. Fixed in 577 by tools/patch-wineserver-async-cancel.py.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

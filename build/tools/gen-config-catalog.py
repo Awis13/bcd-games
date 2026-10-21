@@ -567,6 +567,14 @@ OVERLAY = {
     "env.MADEIRA_ONBOARDING": {"title": "First-run Steam setup"},
     "env.MADEIRA_XINPUT": {"title": "Physical controllers (XInput)"},
     "env.MADEIRA_TOUCH_XINPUT": {"title": "Touch controller as XInput player 1"},
+    # 578: app/Madeira/TouchControlPresets.swift (ControlPresetsModel.applyGameDefault).
+    "env.MADEIRA_TOUCH_GAME_DEFAULT": {"category": "Controllers", "title": "Built-in touch layout for a game with none",
+                "kind": "bool", "default": "1",
+                "note": "On by default. A library game whose touch controls are on with nothing on screen (no controls and "
+                        "no layout, at its start or when you turn them on in its menu) gets a built-in layout for its kind: "
+                        "the controller layout for a Steam game, the PC keyboard layout for any other. Controls or a "
+                        "layout you have are never replaced. 0: the overlay stays empty until you pick a layout.",
+                "sources": ["app/Madeira/TouchControlPresets.swift"]},
     "env.MADEIRA_DINPUT_PAD": {"title": "DirectInput joystick from the host gamepad"},
     # ml2100: the HID controller (build/wineserver/hidpad_ios.c, docs/CONTROLLERS.md).
     "env.MADEIRA_PAD_MODE": {"category": "Controllers", "title": "Controller API (player 1)", "kind": "choice",
@@ -714,6 +722,15 @@ OVERLAY = {
                         "(Dead Space, Star Wars: The Force Unleashed ended there). A buffer that can execute is "
                         "granted as before. 0: every buffer is granted, as in build 575 and earlier. Read once per "
                         "session.",
+                "sources": ["build/ntdll-unix/virtual_ios.c"]},
+    "env.MADEIRA_POOL_CLAMP_SECTIONS": {"category": "Memory & JIT pool",
+                "title": "Keep a writable section inside its DLL copy", "kind": "bool", "default": "0",
+                "note": "Default off. 1: the mprotect that makes a copied program's writable section (.data) "
+                        "writable stops at the end of the copy. A 32-bit program whose section table claims 256 MB "
+                        "(GTA Vice City's) otherwise made every JIT-pool page after the copy lose execute permission "
+                        "for good, and the next DLL copy placed there could not run. Does nothing for a normal "
+                        "image. Off by default because LEGO Batman 2 runs with the dead run in place. Read once "
+                        "per session.",
                 "sources": ["build/ntdll-unix/virtual_ios.c"]},
     "exe-window-mb": {"category": "Memory & JIT pool", "title": "Room for a fixed-address program (MB)",
                 "kind": "int", "default": "128",
@@ -923,13 +940,18 @@ OVERLAY = {
                         "diagnostic with some GPU cost; off (default): unchanged. Set it in the game's own file."},
     "env.MADEIRA_OPTIN_DLLS": {"category": "Wine libraries", "title": "Give the game more of Wine's DLLs",
                 "kind": "text", "default": "",
-                "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
-                "note": "A comma-separated list (dxva2, evr, xpsprint): each named DLL, which BCD ships as <name>-optin.dll and "
-                        "never for every game, runs as <name>.dll for this game. For a program that imports one and "
-                        "exits at once with c0000135 (\"Library dxva2.dll ... not found\"; Fort Solis, DRAGON BALL "
-                        "Sparking! ZERO). Programs that load these DLLs optionally keep running without them. An "
-                        "earlier session's links are removed when a name is gone. Set it in the game's own file; read "
-                        "at session start. Auto-tune adds it after that failure."},
+                "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh",
+                            "tools/patch-wine-setupapi-devinst-lock.py"],
+                "note": "A comma-separated list (dxva2, evr, xpsprint, setupapi): each named DLL, which BCD ships as "
+                        "<name>-optin.dll and never for every game, runs as <name>.dll for this game. For a program that "
+                        "imports one and exits at once with c0000135 (\"Library dxva2.dll ... not found\"; Fort Solis, "
+                        "DRAGON BALL Sparking! ZERO). Programs that load these DLLs optionally keep running without them. "
+                        "setupapi is the one name BCD already ships for every game: setupapi-optin.dll is the same DLL "
+                        "with a lock round its list of device nodes, for a game whose controller library and main thread "
+                        "list devices at the same moment (Dying Light crashed in setupapi.dll on build 576); without the "
+                        "line the shipped setupapi.dll runs. An earlier session's links are removed when a name is gone. "
+                        "Set it in the game's own file; read at session start. Auto-tune adds dxva2, xpsprint and "
+                        "setupapi after their failures."},
     "env.MADEIRA_WINTYPES": {"category": "Wine libraries", "title": "Give the game Wine's wintypes.dll",
                 "kind": "bool", "default": "0",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
@@ -939,6 +961,25 @@ OVERLAY = {
                         "no 64-bit wintypes.dll for every game: Steam's web helper loads it optionally and works "
                         "without it. An earlier session's link is removed when the line is gone. Set it in the "
                         "game's own file; read at session start. Auto-tune adds it after that failure."},
+    "env.MADEIRA_X64_MACHINE": {"category": "Wine core (ntdll)", "title": "Tell 32-bit programs the machine is x64",
+                "kind": "bool", "default": "0", "sources": ["tools/patch-wine-x64-machine.py"],
+                "note": "1: a 32-bit program that asks which machine is native (IsWow64Process2, the PROCESSOR_ARCHITEW6432 "
+                        "variable) hears AMD64 instead of ARM64. For BeamNG.drive's launcher, which on an ARM64 answer starts "
+                        "its native ARM64 build (BinArm64) and ends with c0000135 (D3DCOMPILER_47.dll, which BCD's native "
+                        "ARM64 set does not have); on an AMD64 answer it starts the x64 build. Programs that never ask see "
+                        "no change, and what WoW64 itself reads is unchanged. Set it in the game's own file; read at "
+                        "session start. Auto-tune adds it after that failure. [x64-machine] in the log names each "
+                        "answer given."},
+    "env.MADEIRA_TINY_WINDOW_FIX": {"category": "Windows, display & input", "title": "Size a tiny game window to the screen",
+                "kind": "bool", "default": "0", "sources": ["build/win32u-unix/driver_ios.c"],
+                "note": "1: a window a Direct3D swapchain presents into, whose client area stays under 160x120 for 3 seconds while "
+                        "the swapchain draws 320x200 or more into it, is sized to the virtual screen (at most twice per window). "
+                        "American Truck Simulator opens as a 132x38 window that way (its picture is 1024x768) and nothing ever "
+                        "sizes it; on Windows a fullscreen swapchain does, and from build 578 so does DXMT's fullscreen path "
+                        "(a client area under 160x120, no switch); this line covers a swapchain that never asks for "
+                        "fullscreen. Needs a desktop (Dock) session. Without it the log says [tiny-win] once and nothing "
+                        "changes. [win-create] in the log shows what size each program asked its window for. Set it in the "
+                        "game's own file; read at session start."},
     "env.MADEIRA_WER": {"category": "Wine libraries", "title": "Give the game Wine's wer.dll",
                 "kind": "bool", "default": "0",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
@@ -1093,6 +1134,17 @@ OVERLAY = {
                         "call counted per thread instead of with an atomic, and the alias lookup starting at the thread's "
                         "own last hit; 31 instructions instead of 44. [xp-api] x64->EC rates lag by under 64 calls per "
                         "thread. 0: ExitFunctionEC as before. Read when a program starts."},
+    # ajan6-arkham (2026-10-21): FEX's own switch, read by the emulator (FEX WOW64 Module.cpp, ml950), not by BCD's code, so the overlay
+    # carries the whole entry. Auto-tune's rule x87-int64-roundtrip adds "0"; WineProcessBridge.m already treats the name as a
+    # per-launch key (a game's own line wins over bcd.cfg's).
+    "env.FEX_X87REDUCEDPRECISION": {"category": "x86 emulation (FEX)", "title": "Fast 64-bit x87 math (FEX_X87REDUCEDPRECISION)",
+                "kind": "bool", "default": "1", "sources": ["app/Madeira/WineProcessBridge.m"],
+                "note": "FEX's reduced-precision x87 does floating point in 64 bits instead of x87's 80, which is faster. A 32-bit "
+                        "game runs with it ON unless this line says 0 (BCD's default for 32-bit games, set when the 32-bit emulator "
+                        "starts); a 64-bit game runs with it OFF unless it says 1 (the game's own \"Faster x87 math\" switch sets it). "
+                        "0 turns exact x87 on: slower, but an 8-byte integer read through FILD/FISTP (how MSVC reads an __int64 "
+                        "atomically; Unreal Engine 3's lock-free lists) is no longer rounded to 53 bits. Auto-tune adds 0 when a "
+                        "game's last fault follows that conversion. Read when a program starts."},
     "dxmt": {"title": "DXMT options (a=b;c=d)",
              "note": "Exported as DXMT_CONFIG with the options joined by ';', a library game's own dxmt options after these: "
                      "e.g. d3d11.mipClampBC=1;d3d11.preferredMaxFrameRate=30. DXMT reads at most 259 characters of it, "

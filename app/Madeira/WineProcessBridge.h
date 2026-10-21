@@ -24,6 +24,19 @@ int wine_crash_exit_status(uint32_t *status);
 // Forget the recorded status; called when a session begins.
 void wine_exit_status_reset(void);
 
+// Session end (madeira-bcd, round 577; WineProcessBridge.m "Session end"). The session ends when __wine_main
+// returns on the boot thread. A program that ends on another thread never gets it back there.
+// wine_launched_exit_stuck: 1 when the program (the session's initial process) ended on a thread other than
+// the boot thread and __wine_main has not returned; *code is its exit status, *seconds how long ago.
+// wine_session_abandon: the end-of-session work the boot thread would have done (g_wine_running = 0,
+// the wineserver stopped). Blocks until the wineserver thread is joined: call it off the main queue.
+int wine_launched_exit_stuck(int32_t *code, double *seconds);
+void wine_session_abandon(void);
+// Processes the program started that still run, not counting Wine's own (explorer, services, winedevice,
+// conhost, plugplay, rpcss, svchost, the Dock host) or crash reporters and helpers (process_ios.c). Their
+// file names go to names. A child that could not be tracked counts as running.
+int madeira_live_user_processes(char *names, int len);
+
 // Steam S0 net-test VPN gate: write C:\madeira-continue.flag into the
 // prefix's drive_c so the paused winhttp-test.exe resumes to the Steam
 // stage. Called by the "Continue Net Test" UI button after the user has

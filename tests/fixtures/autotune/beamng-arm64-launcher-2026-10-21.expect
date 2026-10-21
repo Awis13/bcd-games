@@ -1,0 +1,16 @@
+{
+ "dialogs": [
+  "Copy error to clipboard"
+ ],
+ "end": {},
+ "matched": [
+  "x64-machine-arm64-launcher"
+ ],
+ "next": [
+  "env.MADEIRA_X64_MACHINE = 1"
+ ],
+ "note": "BeamNG.drive launcher (32-bit) starts BinArm64\\BeamNG.drive.arm64.exe; D3DCOMPILER_47.dll c000007b, exit c0000135. SYDJDY (build 576) cut before the wineserver crash, which build 577 no longer has; the line asks the launcher for its x64 build.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

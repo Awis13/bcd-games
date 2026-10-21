@@ -1,0 +1,43 @@
+[12:20:14.634] [INFO] [build] v0.1.576 (576)
+[12:20:14.635] [INFO] [device] model=iPhone13,4 idiom=phone os=iOS Version 18.6.2 (Build 22G100) ram=5693MB available=4081MB cores=6
+[12:20:14.635] [INFO] [device] address-map=[0x1004b8000,0xfc0000000) 63GB increased-memory=1 extended-va=0
+[12:20:14.636] [INFO] [jit-nodebug] debugger-less JIT pool: allowed (iOS 18: TXM restricts JIT memory only from iOS 26); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[12:20:14.652] [INFO] [device] gpu="Apple A14 GPU" family=apple7 argument-buffers=tier2 mesh=1 bc=0 atomics64=0 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[12:21:11.482] [INFO] [bcd] library launch game32.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[12:21:11.502] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x1004b8000,0xfc0000000) 63GB available=4068MB low-power=0 thermal=nominal
+[12:21:11.508] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[12:21:11.508] [INFO] [jit-debugger] attached=1 at the pool request
+[12:21:13.390] [INFO] RX pool at 0x300000000
+[phase] wine-start             t+  2.051s rev=ml526
+[wow-window] small address map: it ends at 0xfc0000000, below the normal guest-window band -- candidates come from [0x400000000,0xb00000000), at most 2 window(s) at once
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x300008000)
+[copy-verify] wow64.dll: OK, 5 .text pages executable (copy @0x300128000)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[copy-verify] libwow64fex.dll: OK, 119 .text pages executable (copy @0x30019d000)
+[copy-verify] ucrtbase.dll: OK, 39 .text pages executable (copy @0x300560000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x300684000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x30072c000)
+[copy-verify] wow64win.dll: OK, 8 .text pages executable (copy @0x3008ac000)
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x300930000)
+[footprint] rev=ml358 phys=977 MB (peak 977) internal=976 MB compressed=0 MB external=68 MB reusable=10 MB (cycle=1)
+D 24 Load module game32.exe (game32.exe-50a38cba78e7a406): 400400000
+D 24 Load module ntdll.dll (ntdll.dll-3903196a83fdb5ea): 4FFF40000
+D 24 Load module kernel32.dll (kernel32.dll-3a7c334be1e04114): 47BED0000
+D 24 Load module kernelbase.dll (kernelbase.dll-1bada4728a9853c2): 47BC40000
+D 24 Load module advapi32.dll (advapi32.dll-e40424e11a2e73f7): 47BBF0000
+D 24 Load module sechost.dll (sechost.dll-b367444c07974a9a): 47BBC0000
+D 24 Load module ucrtbase.dll (ucrtbase.dll-c2fc888ed0271e09): 47BAD0000
+D 24 Load module msvcrt.dll (msvcrt.dll-23622f236da461e5): 47BA20000
+D 24 Load module user32.dll (user32.dll-7d7be97280ec78cd): 47B860000
+D 24 Load module gdi32.dll (gdi32.dll-c59f4f8a5a8c3dec): 47B7D0000
+D 24 Load module win32u.dll (win32u.dll-e453971e402f3fdd): 47B780000
+[laa] ml1070 SPILL #1: no room below guest 2 GB for 0x11000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x11000 align=0x10000 bottom-up tries=36 skips=36 | seen=0x400112000..0x500000000 views=32 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x401310000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[map-sec] virtual_map_section handle=0x50 prot=0x2 size=0x11000 -> 0xc0000017
+0024:err:module:loader_init "ucrtbase.dll" failed to initialize, aborting
+0024:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000142) syscalls=0 unix_calls=179
+[12:21:14.516] [INFO] [exit-report] status=0xc0000142
+[frontend] returned to library
+[footprint] rev=ml358 phys=978 MB (peak 978) internal=977 MB compressed=0 MB external=70 MB reusable=11 MB (cycle=2)
+[footprint] rev=ml358 phys=979 MB (peak 979) internal=978 MB compressed=0 MB external=70 MB reusable=11 MB (cycle=3)

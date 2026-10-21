@@ -118,10 +118,15 @@ How well a game runs varies a lot; many games do not start yet.
 
 ## Install
 
-1. Download [`BCD.ipa`](https://github.com/thebcd69/bcd-games/releases/latest/download/BCD.ipa)
-   from the latest [release](https://github.com/thebcd69/bcd-games/releases).
-2. Install it with SideStore, AltStore or LiveContainer.
-3. Open BCD. Setup walks you through JIT, LocalDevVPN, Steam and the extra runtimes.
+1. Get BCD one of two ways:
+   - **From the AltStore / SideStore source** (installs BCD and keeps it updated): in AltStore
+     Classic or SideStore, add `https://thebcd69.github.io/bcd-games/source.json` under Sources,
+     or open the [source page](https://thebcd69.github.io/bcd-games/) on your iPhone or iPad for
+     one-tap Add buttons. The source is by [le0-VV](https://github.com/le0-VV).
+   - **From the IPA:** download [`BCD.ipa`](https://github.com/thebcd69/bcd-games/releases/latest/download/BCD.ipa)
+     from the latest [release](https://github.com/thebcd69/bcd-games/releases) and install it with
+     SideStore, AltStore or LiveContainer.
+2. Open BCD. Setup walks you through JIT, LocalDevVPN, Steam and the extra runtimes.
 
 ## Reporting a problem
 
@@ -191,4 +196,4 @@ David Acevedo (dacevedo12), rpmalloc by Mattias Jansson, StikDebug, StikJIT, ide
 FreeType, and every library listed in THIRD-PARTY-NOTICES.md. Thank you to everyone who
 works on them.
 
-**BCD** by thebcd69.
+**BCD** by thebcd69, with the AltStore and SideStore source by **le0-VV** ([le0-VV](https://github.com/le0-VV)).

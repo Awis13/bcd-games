@@ -40,7 +40,11 @@ for name, text in [('MadeiraDock.swift', dock), ('MadeiraDockModel.swift', view)
     names = {l.replace('/', '\\').split('\\')[-1].lower() for l in literals}
     # DockInstallers.swift checks the ".exe" suffix of install-script programs and whether the
     # bundle has Windows Installer (msiexec.exe); it keys nothing on a program's name.
-    require(names <= {'dockhost.exe', 'explorer.exe', 'steam.exe', '.exe', 'msiexec.exe'}, f'{name}: no program-name list ({sorted(names)})')
+    # madeira-bcd (round 578): DockCEGService names Valve's own client service program, the one path Valve's installer
+    # registers (SteamService.exe under the client's bin folder and Common Files\Steam); it is not a game's program
+    # and nothing is decided by it (tests/host/check-dock-ceg-service.py).
+    require(names <= {'dockhost.exe', 'explorer.exe', 'steam.exe', '.exe', 'msiexec.exe', 'steamservice.exe'},
+            f'{name}: no program-name list ({sorted(names)})')
     for line in text.splitlines():
         if re.search(r'SteamLog\.(event|trace)|LogStore|print\(|NSLog', line):
             require(re.search(r'\\\((account|token|signIn|secret|data|url|name)\b', line) is None,

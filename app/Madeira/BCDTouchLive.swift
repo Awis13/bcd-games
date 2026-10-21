@@ -199,7 +199,13 @@ extension BCDTouchItem {
         model.editing = false
     }
 
-    func setVisible(_ on: Bool) { model.visible = on }
+    func setVisible(_ on: Bool) {
+        model.visible = on
+        // Touch controls turned on in a game with nothing on screen: the built-in that suits the game, not an empty overlay.
+        if on, let entry = library.activeEntry, inLibrarySession {
+            presets.applyGameDefault(steam: entry.steamAppID != nil || entry.id == LibraryEntry.dockSessionID, reason: "touch-on")
+        }
+    }
 
     func editControls() {
         model.visible = true

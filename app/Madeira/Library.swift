@@ -639,10 +639,20 @@ final class LibraryModel: ObservableObject {
     // exited with a Windows error (wine_crash_exit_status, WineProcessBridge.m).
     // MADEIRA_EXIT_REPORT=0 returns to the library without a message.
     private var quitRequested = false
+    /// madeira-bcd (round 577, GTA IV freeze): the program's exit code when the library itself ended the session
+    /// because the engine never reported the program's end (watchProgramEnd); nil otherwise.
+    private var endedByWatch: Int32?
+    /// What watchProgramEnd logged last, so each state is logged once.
+    private var endWatchNote = ""
     private func exitReport() -> String? {
         guard !quitRequested, MadeiraConfig.flag("MADEIRA_EXIT_REPORT") else { return nil }
         var status: UInt32 = 0
-        guard wine_crash_exit_status(&status) != 0 else { return nil }
+        guard wine_crash_exit_status(&status) != 0 else {
+            // madeira-bcd (round 577): a plain nonzero exit code of a session the library ended itself
+            guard let code = endedByWatch, let words = SessionEndRules.message(exitCode: code) else { return nil }
+            LogStore.shared.log("[exit-report] code=\(code) (the session-end watch)")
+            return words
+        }
         LogStore.shared.log("[exit-report] status=0x\(String(status, radix: 16))")
         let kind = status == 0xC0000005 ? " (access violation)" : status == 0xC0000017 ? " (not enough memory)" : ""
         return "The game quit with Windows error 0x\(String(status, radix: 16, uppercase: true))\(kind). To report the problem, export the diagnostic log."
@@ -999,6 +1009,7 @@ final class LibraryModel: ObservableObject {
     func begin(_ entry: LibraryEntry, remember: Bool = true, dock: DockGame? = nil) {
         wine_exit_status_reset()
         quitRequested = false
+        endedByWatch = nil; endWatchNote = ""
         // madeira-bcd: auto-tune's session marker (AutoTune.swift); off, nothing.
         if AutoTune.enabled { AutoTune.sessionBegan(entry, remember: remember, dockWithoutEntry: dock != nil && !remember) }
         LibraryController.shared.configure(enabled: true, ownsInput: false)
@@ -1025,6 +1036,10 @@ final class LibraryModel: ObservableObject {
         }
         controls.visible = entry.touchControls
         controls.sizeScale = min(max(entry.controlSize ?? 1, 0.5), 2)
+        // madeira-bcd 578 (lead): the built-in default is NOT put on screen at session start: a player may keep touch
+        // controls on with an empty overlay and use the touches as the mouse. It comes only when the player turns touch
+        // controls on in the in-game menu (BCDTouchLive.setVisible), an explicit request for controls.
+        ControlPresetsModel.shared.sessionBegan()
         controllerBinds = GamepadInput.keyboardMouseAvailable ? (entry.controllerBinds ?? [:]) : [:]
         padMouseVertical = GamepadInput.keyboardMouseAvailable ? (entry.padMouseVertical ?? 1) : 1
         controllerMode = GamepadInput.keyboardMouseAvailable ? entry.controllerMode : nil
@@ -1057,11 +1072,45 @@ final class LibraryModel: ObservableObject {
         if wine_process_is_running() != 0 {
             sawProcess = true
             if sessionMessage == "Starting…" { sessionMessage = "" }
+            watchProgramEnd()
         } else if sawProcess && wineserver_is_running() == 0 { finish() }
         // The first frame gives Aspect and Fill height the drawable's shape.
         if current != nil, !laidOutAfterFirstPresent, madeira_get_present_count() != MetalBackedView.presentCountAtLaunch {
             laidOutAfterFirstPresent = true
             MetalBackedView.refreshDisplayMode(reason: "first-present")
+        }
+    }
+    /// madeira-bcd (round 577, GTA IV freeze): the program the app launched ended on a thread other than the engine's
+    /// boot thread, so the engine never reports the end and the last frame would stay for good (the session ends when
+    /// __wine_main returns, WineProcessBridge.m "Session end"). The library leaves it when none of the program's own
+    /// processes is left (SessionEndRules). Only a session the engine already knows is over and cannot end by itself:
+    /// a program that is running, or ended on the boot thread (the normal path), is never touched here.
+    private func watchProgramEnd() {
+        guard endedByWatch == nil else { return }
+        var code: Int32 = 0
+        var seconds = 0.0
+        guard wine_launched_exit_stuck(&code, &seconds) != 0 else { return }
+        let dock = DockStartScreen.shared.active
+        var names = [CChar](repeating: 0, count: 256)
+        let running = Int(madeira_live_user_processes(&names, Int32(names.count)))
+        switch SessionEndRules.verdict(secondsSinceExit: seconds, userProcesses: running, dockSession: dock) {
+        case .wait:
+            if dock, endWatchNote != "dock" {
+                endWatchNote = "dock"
+                LogStore.shared.log("[session-end] main program exited code=\(code); a BCD Dock session is left as it is")
+            }
+        case .keep(let count):
+            let note = "keep \(count)"
+            if endWatchNote != note {
+                endWatchNote = note
+                let list = String(decoding: names.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+                LogStore.shared.log("[session-end] main program exited code=\(code); \(count) process(es) of its own still run (\(list)); the session goes on")
+            }
+        case .leave:
+            endedByWatch = code
+            LogStore.shared.log("[session-end] main program exited code=\(code); no game process left; returning")
+            // The engine's own end work: it joins the wineserver thread, which is not for the main queue.
+            DispatchQueue.global(qos: .userInitiated).async { wine_session_abandon() }
         }
     }
     /// `reason`: what stopped the launch, when the caller knows (the JIT pool's failure).
@@ -1188,6 +1237,41 @@ final class LibraryModel: ObservableObject {
                                                  crashStatus: crashed ? status : nil,
                                                  presents: now >= launchPresent ? Int(now - launchPresent) : 0,
                                                  seconds: Date().timeIntervalSince(launchStarted)))
+    }
+}
+
+// MARK: - Rules (session end)
+
+/// madeira-bcd (round 577, GTA IV freeze): when the library leaves a session whose program has ended but whose engine never
+/// reported it (LibraryModel.watchProgramEnd). Pure: what the engine says goes in, a verdict comes out
+/// (tests/host/check-session-end.py).
+enum SessionEndRules {
+    /// Seconds the program must have been gone: the boot thread coming back by itself, a process it started a
+    /// moment before it ended, its last log lines: all settle in less.
+    static let grace = 4.0
+
+    enum Verdict: Equatable {
+        /// Nothing to do yet: inside the grace time, or a BCD Dock session (left as it is).
+        case wait
+        /// Processes the program started still run: the session goes on until they end.
+        case keep(Int)
+        /// Nothing of the program's own is left.
+        case leave
+    }
+
+    /// `userProcesses`: the program's own processes that still run (not Wine's own, not helpers; a process the
+    /// engine could not track counts). A BCD Dock session has its own start and end, and its processes are
+    /// Valve's client's: never ended from here.
+    static func verdict(secondsSinceExit: Double, userProcesses: Int, dockSession: Bool) -> Verdict {
+        guard !dockSession, secondsSinceExit >= grace else { return .wait }
+        return userProcesses > 0 ? .keep(userProcesses) : .leave
+    }
+
+    /// What the user reads: a plain exit code, in a few words (an NTSTATUS error has its own report). Nil for 0.
+    static func message(exitCode: Int32) -> String? {
+        guard exitCode != 0 else { return nil }
+        let shown = exitCode > 0 && exitCode < 65536 ? String(exitCode) : "0x" + String(UInt32(bitPattern: exitCode), radix: 16, uppercase: true)
+        return "The game closed (exit code \(shown)). If it keeps happening, open its page and send its log."
     }
 }
 

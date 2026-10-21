@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "No Man's Sky (NMS.exe, Steam) build 574, iPhone19,3: alive 151 s at stage 2 with presents=0 (it never presented a frame): not a session that ran",
+ "outcome": "exited-early",
+ "stage": 2,
+ "status": "stuck"
+}

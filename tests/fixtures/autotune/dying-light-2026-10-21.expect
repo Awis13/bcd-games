@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "setupapi-devinst-race",
+  "locale-en-us-ansi"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = setupapi"
+ ],
+ "note": "Dying Light (Steam 239140), the owner's iPhone18,2, build 576 (Send Log 1c807435): libpad.dll lists HID devices on thread 00fc while the main thread loads dinput8.dll; setupapi.dll+0x132bc reads Wine's device node table before its allocation (size 256, table NULL): [av-args] RSI = HID\\VID_845E&PID_0001. env.MADEIRA_OPTIN_DLLS = setupapi links setupapi-optin.dll (a lock round the table, build 577). The experiment locale-en-us-ansi matches the same log and comes after.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

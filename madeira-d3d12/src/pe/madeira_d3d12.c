@@ -12991,6 +12991,11 @@ static int mad_raw_typed_sibling(struct mad_device *d, struct mad_resource *r, U
 /* ml918: pf = 0 keeps the texture's own format; swz packs four
  * WMTTextureSwizzle values (r | g<<8 | b<<16 | a<<24), 0 = identity. */
 /* MAD_SWZ_IDENTITY (the identity swizzle) is defined at the top (madeira-bcd: the capture walker uses it too). */
+/* mip0-view-test:begin */
+/* True when a view that starts at lvl0 cannot fit in a texture of tex_mips levels, whatever its length: the one case the clamp below
+ * leaves invalid (it only shortens the length). tests/host/check-mip0-view-diag.py runs this against the clamp. */
+static int mad_view_level_beyond(UINT lvl0, UINT tex_mips) { return tex_mips && lvl0 >= tex_mips; }
+/* mip0-view-test:end */
 static UINT64 mad_texture_view_id(struct mad_device *d, struct mad_resource *r, enum WMTTextureType want,
                                   UINT lvl0, UINT nlvl, UINT sl0, UINT nsl, enum WMTPixelFormat pf, UINT swz) {
     unsigned k; UINT64 id = 0; obj_handle_t tex;
@@ -13001,6 +13006,19 @@ static UINT64 mad_texture_view_id(struct mad_device *d, struct mad_resource *r, 
     if (!pf || (r->is_depth && pf != WMTPixelFormatX32_Stencil8)) pf = r->tex_pf;   /* depth textures keep their format: sampled as depth; ml1101: unless a stencil view */
     if (nlvl == 0 || nlvl == ~0u || lvl0 + nlvl > r->tex_mips) nlvl = r->tex_mips > lvl0 ? r->tex_mips - lvl0 : 1;
     if (nsl == 0 || nsl == ~0u || sl0 + nsl > r->tex_layers) nsl = r->tex_layers > sl0 ? r->tex_layers - sl0 : 1;
+    /* madeira-bcd mip0-view: a log line on the failure path only, nothing else changes. A view whose first level lies beyond the
+     * texture's levels is refused by Metal's own validation ("(newLevelRange.location + newLevelRange.length)(2) must be <=
+     * [texture mipmapLevelCount](1)"), which ends the process. Marvel's Spider-Man: Miles Morales: a 256x256 RGBA32F UAV texture
+     * made with MipLevels 0 (one level here unless mip0-full = 1), then a UAV of level 1 (build 576 log 2026-10-21, L83617-83627;
+     * PD7S1E, build 574). The call below is unchanged; this names the resource before it. */
+    if (mad_view_level_beyond(lvl0, r->tex_mips)) {
+        static LONG said_beyond;
+        if (InterlockedIncrement(&said_beyond) <= 8)
+            d3d12_log("[mip0-view] r#%u %s %ux%u: a view of level %u of a texture with %u level(s) (made with MipLevels %u): Metal refuses it "
+                      "and ends the game%s\n", r->serial, r->name ? r->name : "?", r->width, r->height, lvl0, r->tex_mips,
+                      (unsigned)r->desc.MipLevels,
+                      r->desc.MipLevels ? "" : "; bcd.cfg mip0-full = 1 gives a MipLevels 0 texture its full chain");
+    }
     if (want == r->tex_type && lvl0 == 0 && nlvl == r->tex_mips && sl0 == 0 && nsl == r->tex_layers && pf == r->tex_pf && swz == MAD_SWZ_IDENTITY)
         return r->gpu_resource_id;
     if (want == WMTTextureTypeCube) nsl = 6;

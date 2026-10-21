@@ -1669,6 +1669,87 @@ static int ws_rgsc_name( const struct unicode_str *name, char *out, size_t cap )
     return 0;
 }
 
+/* madeira-bcd: [map-name] -- every named section a process creates or opens, and what became of it.
+ *
+ * The Rockstar Launcher shares a 2 MB block with its service ("[svc_mem] Service reports allocation
+ * success: 2097152 bytes" in a session that works); in the failing runs of builds 574/576 the service
+ * never mapped it and the Launcher said "Failed to allocate shared memory", and the log held no name,
+ * no status and no process for any section: [srv-map] says only that a create failed (no name), an
+ * open that failed was not logged at all, and [sc-shm] knows only Social Club's "rgsc_" names.
+ *
+ *   [map-name] #N create|open "<name, its last 100 characters>" err=XXXXXXXX pid=XXXX tid=XXXX
+ *              [size=N flags=XXXXXXXX] handle=XXXX hits=K
+ *
+ * once per (operation, name, status): the first, 2nd, 4th, 8th and 16th time it happens; 160 lines in
+ * all. Names only, no answer changes. err is the status the call ended with (0 for a new section,
+ * 40000000 for one that existed, c0000034 for an open of a name that is not there). */
+/* mapname-test:begin (tests/host/check-map-name-log.py compiles this region) */
+#define WS_MAPNAME_KEYS  160
+#define WS_MAPNAME_LINES 160
+
+static struct { unsigned long long key; unsigned int hits; } ws_mapname_tab[WS_MAPNAME_KEYS];
+static unsigned int ws_mapname_lines;
+
+/* `str`/`len`: the name as the server has it (UTF-16, `len` in BYTES). Printable ASCII, '?' for the rest; the last
+ * `cap - 1` characters when it is longer. Returns the number of characters written. */
+static size_t ws_mapname_ascii( const unsigned short *str, size_t len, char *out, size_t cap )
+{
+    size_t n = len / sizeof(unsigned short), from = 0, i, k = 0;
+
+    if (!cap) return 0;
+    if (n > cap - 1) from = n - (cap - 1);
+    for (i = from; i < n; i++)
+        out[k++] = (str[i] >= 0x20 && str[i] < 0x7f) ? (char)str[i] : '?';
+    out[k] = 0;
+    return k;
+}
+
+/* 1 when this (operation, name, status) is to be printed now; *hits is its count, *line the line number. */
+static int ws_mapname_take( const char *op, const char *name, unsigned int err, unsigned int *hits, unsigned int *line )
+{
+    unsigned long long key = 14695981039346656037ULL;
+    unsigned int i, start, n, l;
+    const char *c;
+
+    for (c = op; *c; c++) key = (key ^ (unsigned char)*c) * 1099511628211ULL;
+    for (c = name; *c; c++) key = (key ^ (unsigned char)*c) * 1099511628211ULL;
+    key = (key ^ err) * 1099511628211ULL;
+    key |= 1;
+    start = (unsigned int)(key % WS_MAPNAME_KEYS);
+    for (i = 0; i < WS_MAPNAME_KEYS; i++)
+    {
+        unsigned int s = (start + i) % WS_MAPNAME_KEYS;
+        unsigned long long cur = __atomic_load_n( &ws_mapname_tab[s].key, __ATOMIC_RELAXED );
+
+        if (!cur && __atomic_compare_exchange_n( &ws_mapname_tab[s].key, &cur, key, 0, __ATOMIC_RELAXED,
+                                                 __ATOMIC_RELAXED )) cur = key;
+        if (cur != key) continue;
+        n = __atomic_add_fetch( &ws_mapname_tab[s].hits, 1, __ATOMIC_RELAXED );
+        *hits = n;
+        if (n > 16 || (n & (n - 1)) != 0) return 0;
+        l = __atomic_fetch_add( &ws_mapname_lines, 1, __ATOMIC_RELAXED );
+        *line = l + 1;
+        return l < WS_MAPNAME_LINES;
+    }
+    return 0;   /* the table is full of other kinds */
+}
+/* mapname-test:end */
+
+static void ws_map_name_log( const char *op, const struct unicode_str *name, unsigned int err,
+                             unsigned long long size, unsigned int flags, int has_size, obj_handle_t handle )
+{
+    char nm[104], extra[48];
+    unsigned int hits = 0, line = 0;
+
+    if (!name || !name->len) return;
+    ws_mapname_ascii( (const unsigned short *)name->str, name->len, nm, sizeof(nm) );
+    if (!ws_mapname_take( op, nm, err, &hits, &line )) return;
+    extra[0] = 0;
+    if (has_size) snprintf( extra, sizeof(extra), " size=%llu flags=%08x", size, flags );
+    ws_log("[map-name] #%u %s \"%s\" err=%08x pid=%04x tid=%04x%s handle=%04x hits=%u\n",
+           line, op, nm, err, current->process->id, current->id, extra, (unsigned int)handle, hits);
+}
+
 DECL_HANDLER(create_mapping)
 {
     struct object *root;
@@ -1691,6 +1772,7 @@ DECL_HANDLER(create_mapping)
     }
     else ws_log("[srv-map] create_mapping FAILED err=%08x flags=%08x size=%llu pid=%04x\n",
                 get_error(), req->flags, (unsigned long long)req->size, current->process->id);
+    ws_map_name_log( "create", &name, get_error(), req->size, req->flags, 1, reply->handle );
     {
         static int rgsc_n;
         char nm[160];
@@ -1713,6 +1795,7 @@ DECL_HANDLER(open_mapping)
 
     reply->handle = open_object( current->process, req->rootdir, req->access,
                                  &mapping_ops, &name, req->attributes );
+    ws_map_name_log( "open", &name, get_error(), 0, 0, 0, reply->handle );
     {
         static int rgsc_n;
         char nm[160];

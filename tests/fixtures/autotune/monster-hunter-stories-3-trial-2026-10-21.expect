@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x64-image-rwx-protector-nocopy"
+ ],
+ "next": [
+  "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+ ],
+ "note": "Monster Hunter Stories 3 Trial (Steam 3470630), the owner's iPad16,5, build 576: the 64-bit program stops 13 s after its start in the entry stub of its protector (unnamed RWX section, xor decrypt loop); JIT-pool copy, no [x64-image] line. The line is an attempt, not proven.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

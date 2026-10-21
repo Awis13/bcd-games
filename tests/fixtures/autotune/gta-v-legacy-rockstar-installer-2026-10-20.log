@@ -1,0 +1,142 @@
+[11:20:00.330] [INFO] [build] v0.1.574 (574)
+[11:20:00.331] [INFO] [device] model=iPhone17,2 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=7622MB available=3358MB cores=6
+[11:20:00.331] [INFO] [device] address-map=[0x102c04000,0x7180000000) 454GB increased-memory=0 extended-va=0
+[11:20:00.346] [INFO] [device] gpu="Apple A18 Pro GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[11:20:24.354] [INFO] [bcd] library launch Grand Theft Auto V: avx=0 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[11:20:25.879] [INFO] [dock-launch] image-retire=1
+[11:20:25.879] [INFO] [dock-launch] image-map-guard=1
+[11:20:26.038] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102c04000,0x7180000000) 454GB available=3323MB low-power=0 thermal=nominal
+[11:20:26.042] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[11:20:26.043] [INFO] [jit-debugger] attached=1 at the pool request
+[11:20:26.044] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[11:20:26.823] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  1.658s rev=ml526
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=1264 MB (peak 1264) internal=1263 MB compressed=0 MB external=81 MB reusable=21 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #6 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\cmd.exe" t+  3.793s rev=ml526
+[footprint] rev=ml358 phys=1300 MB (peak 1300) internal=1299 MB compressed=0 MB external=107 MB reusable=21 MB (cycle=2)
+[swap] ml1077 stats: 0 MB file-backed now (peak 0), 0 extents, file used 0 of 3072 MB, backs 0 releases 0 unbacks 0 refused 0 | coverage classic: disk 0 MB of 3072 cap, reservations 0, holes 0, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  5.028s rev=ml526
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  5.972s rev=ml526
+[x64-image] L"\\??\\C:\\windows\\system32\\dockhost.exe" 0x123d00000+0x99000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #1 0x123d00000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x123d00000+0x8000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x123d08000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x123d08000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x123d0c000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[footprint] rev=ml358 phys=1337 MB (peak 1337) internal=1336 MB compressed=0 MB external=134 MB reusable=23 MB (cycle=3)
+D 4C Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 123D00000
+D 4C Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 717C900000
+[swap] ml1077 backed 0x7054804000+0x7fc000 (file off 0 MB): 7 MB in 1 extents, peak 7 MB, 0 refused
+D 4C Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 717AEF0000
+D 4C Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 717AE70000
+D 4C Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 717AD60000
+[x64-image] #20 0x123d08000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #21 0x123d08000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #22 0x123d08000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #23 0x123d08000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #24 0x123d08000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[swap] ml1077 backed 0x7055010000+0x1000000 (file off 7 MB): 23 MB in 2 extents, peak 23 MB, 0 refused
+[swap] ml1077 backed 0x7056010000+0x800000 (file off 23 MB): 31 MB in 3 extents, peak 31 MB, 0 refused
+[swap] ml1077 backed 0x7058804000+0x7fc000 (file off 31 MB): 39 MB in 4 extents, peak 39 MB, 0 refused
+[swap] ml1077 backed 0x7059010000+0x1000000 (file off 39 MB): 55 MB in 5 extents, peak 55 MB, 0 refused
+[swap] ml1077 backed 0x705a010000+0x800000 (file off 55 MB): 63 MB in 6 extents, peak 63 MB, 0 refused
+D 50 Load module rpcrt4.dll (rpcrt4.dll-5ef8bc180117faf4): 717AC30000
+[phase] spawn:L"C:\\windows\\system32\\services.exe" t+  7.307s rev=ml526
+[footprint] rev=ml358 phys=1379 MB (peak 1379) internal=1379 MB compressed=0 MB external=166 MB reusable=23 MB (cycle=4)
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=945
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=959
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Grand Theft Auto V\\Redistributables\\Social-Club-Setup.exe" t+  8.440s rev=ml526
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Grand Theft Auto V\\Redistributables\\Social-Club-Setup.exe" 0x140000000+0x7a7d000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[phase] spawn:L"C:\\windows\\system32\\rpcss.exe" t+  8.606s rev=ml526
+[footprint] rev=ml358 phys=1558 MB (peak 1558) internal=1557 MB compressed=0 MB external=197 MB reusable=23 MB (cycle=5)
+D 70 Load module gdiplus.dll (gdiplus.dll-9e10e44f0c88eb20): 7170810000
+[footprint] rev=ml358 phys=1569 MB (peak 1569) internal=1567 MB compressed=0 MB external=206 MB reusable=23 MB (cycle=6)
+D 70 Load module mlang.dll (mlang.dll-c9ca3bb38c68f055): 7170770000
+D 70 Load module windowscodecs.dll (windowscodecs.dll-5f3613b68f058a67): 71700D0000
+D 70 Load module propsys.dll (propsys.dll-2e9532b8b98aeb4c): 7170030000
+00a0:err:module:load_dll [dll-missing] rev=ml336 #1 L"C:\\windows\\system32\\explorerframe.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D 70 Load module WINMM.dll (winmm.dll-115ae751355fb7b9): 716FED0000
+D 70 Load module msacm32.dll (msacm32.dll-6badd8b32a7d355b): 716FE40000
+[swap] ml1077 backed 0x705e004000+0x7fc000 (file off 55 MB): 55 MB in 6 extents, peak 71 MB, 0 refused
+[swap] ml1077 backed 0x705e810000+0x1000000 (file off 39 MB): 71 MB in 7 extents, peak 71 MB, 0 refused
+[swap] ml1077 backed 0x705f810000+0x800000 (file off 71 MB): 79 MB in 8 extents, peak 79 MB, 0 refused
+[swap] ml1077 backed 0x7061004000+0x7fc000 (file off 79 MB): 87 MB in 9 extents, peak 87 MB, 0 refused
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0xedd0000 align=0x10000 bottom-up tries=258340 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0xedd0000 align=0x10000 bottom-up tries=258340 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #1 size=0xedd0000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[swap] ml1077 backed 0x71603a0000+0xedd0000 (file off 87 MB): 325 MB in 10 extents, peak 325 MB, 0 refused
+[swap] ml1077 backed 0x716f170000+0x8d0000 (file off 325 MB): 334 MB in 11 extents, peak 334 MB, 0 refused
+[va-scan] FAILED window=0x705388c000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=163743 skips=31 | seen=0x705388c000..0x73ffff0000 views=337 maxgap=0x27fff0000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x7062800000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x705388c000..0x73ffff0000 size=0x1890000 align=0x10000 bottom-up tries=163478 skips=31 | seen=0x705388c000..0x73ffff0000 views=339 maxgap=0x27fff0000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x7062c00000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x705388c000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=163743 skips=31 | seen=0x705388c000..0x73ffff0000 views=342 maxgap=0x27fff0000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x7063410000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[va-scan] FAILED window=0x705388c000..0x73ffff0000 size=0xf00000 align=0x10000 bottom-up tries=163631 skips=31 | seen=0x705388c000..0x73ffff0000 views=343 maxgap=0x27fff0000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x7063410000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[alloc-fail] ml814 #1 status=c0000017 hint=0x0 size=0xa60000 type=0x2000 protect=0x4 tid=00b4 | STAGE=fixed-map err=3 at 0x7065400000+0xa60000
+[va-scan] FAILED window=0x705388c000..0x73ffff0000 size=0x800000 align=0x10000 bottom-up tries=163742 skips=30 | seen=0x705388c000..0x73ffff0000 views=357 maxgap=0x27fff0000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x7068c10000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+[thr-create] FAILED at stack: status=0xc0000017 pthread=0(-) reserve=0x0 commit=0x0 creator pid=006c tid=0070 peb=0x110bf4000; task threads 45
+[store-noalias] #1 rev=ml348 addr=0x0 insn=0x00000000 pc=0x160186144 NO pool/anon alias | region 0x102c04000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[fault_rip] cnt=1 rip=0x71712422a0 pc=0x160186144 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) [first] rev=ml555
+[guest-code] rev=ml333 pool_rip=0x14c1ea2a0 (PE 0x71712422a0): 48 8b c4 48 89 58 20 55 5d e9 46 e4 f7 ff cc cc
+[x86_seg] State.gs_cached=0x717ff60000 TEB=0x717ff60000 TEB[0x58]=0x715d923740 *(gs_cached+0x58)=0x715d923740
+[store-noalias] #2 rev=ml348 addr=0x0 insn=0x00000000 pc=0x160186144 NO pool/anon alias | region 0x102c04000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[fault_rip] cnt=2 rip=0x71712422a0 pc=0x160186144 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[guest-code] rev=ml333 pool_rip=0x14c1ea2a0 (PE 0x71712422a0): 48 8b c4 48 89 58 20 55 5d e9 46 e4 f7 ff cc cc
+[x86_seg] State.gs_cached=0x717ff60000 TEB=0x717ff60000 TEB[0x58]=0x715d923740 *(gs_cached+0x58)=0x715d923740
+[va-scan] FAILED window=0x705388c000..0x73ffff0000 size=0x930000 align=0x10000 bottom-up tries=163723 skips=30 | seen=0x705388c000..0x73ffff0000 views=356 maxgap=0x27fff0000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x7068c10000 errno=17(File exists)   --> relaxing ceiling, retrying unclamped
+0070:err:seh:call_seh_handlers [exc] ml811 code=c000001d addr=0000000160186144 flags=0 nparams=0 tid=0070 hit=1
+0070:err:seh:NtRaiseException Unhandled exception code c000001d flags 0 addr 0x160186144
+0070:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc000001d) syscalls=0 unix_calls=1927
+[store-noalias] #3 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x14d1fa000 NO pool/anon alias | region 0x102c04000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[Wine child thread] child exited with code -1073741795
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Grand Theft Auto V\\Redistributables\\Rockstar-Games-Launcher.exe" t+ 14.995s rev=ml526
+[store-noalias] #4 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x14d1fa000 NO pool/anon alias | region 0x102c04000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[va-scan] FAILED window=0x100000000..0x73ffff0000 size=0x6a49000 align=0x10000 bottom-up tries=162958 skips=114 | seen=0x100000000..0x73ffff0000 views=404 maxgap=0x6f0be10000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x100000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x10000..0x73ffff0000 size=0x6a49000 align=0x10000 bottom-up tries=228493 skips=114 | seen=0x10000..0x73ffff0000 views=404 maxgap=0x6f0be10000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x10000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+00c4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000017) syscalls=0 unix_calls=1971
+[Wine child thread] child exited with code -1073741801
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Grand Theft Auto V\\Redistributables\\Rockstar-Games-Launcher.exe" t+ 15.253s rev=ml526
+[va-scan] FAILED window=0x100000000..0x73ffff0000 size=0x6a49000 align=0x10000 bottom-up tries=162958 skips=114 | seen=0x100000000..0x73ffff0000 views=405 maxgap=0x6f0be10000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x100000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x10000..0x73ffff0000 size=0x6a49000 align=0x10000 bottom-up tries=228493 skips=114 | seen=0x10000..0x73ffff0000 views=405 maxgap=0x6f0be10000 tailgap=0x27fff0000 stop=walked-all-views | firstfail=0x10000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+00cc:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000017) syscalls=0 unix_calls=1985
+[Wine child thread] child exited with code -1073741801
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x6) syscalls=0 unix_calls=1995
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x6) syscalls=0 unix_calls=1998
+[store-noalias] #5 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x14d1fa000 NO pool/anon alias | region 0x102c04000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=35 resident=2137MB dbg=DEBUGGED rev=ml525
+[11:20:57.812] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=36 resident=2131MB dbg=DEBUGGED rev=ml525
+[11:21:27.953] [INFO] detach-wait: presents=0 running=1 elapsed=60s
+[freeze] alive t+90s beats=3 gaps=0 iter=357 gen=1 threads=35 resident=2131MB dbg=DEBUGGED rev=ml525
+[11:21:58.064] [INFO] detach-wait: presents=0 running=1 elapsed=90s
+[11:22:28.216] [INFO] detach-wait: presents=0 running=1 elapsed=120s
+[freeze] alive t+121s beats=4 gaps=0 iter=476 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[11:22:58.349] [INFO] detach-wait: presents=0 running=1 elapsed=150s
+[freeze] alive t+151s beats=5 gaps=0 iter=595 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[11:23:28.453] [INFO] detach-wait: presents=0 running=1 elapsed=180s
+[freeze] alive t+181s beats=6 gaps=0 iter=714 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[11:23:58.623] [INFO] detach-wait: presents=0 running=1 elapsed=210s
+[freeze] alive t+211s beats=7 gaps=0 iter=833 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[11:24:28.838] [INFO] detach-wait: presents=0 running=1 elapsed=241s
+[freeze] alive t+241s beats=8 gaps=0 iter=952 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[11:24:58.973] [INFO] detach-wait: presents=0 running=1 elapsed=271s
+[freeze] alive t+271s beats=9 gaps=0 iter=1071 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[11:25:29.158] [INFO] detach-wait: presents=0 running=1 elapsed=301s
+[freeze] alive t+301s beats=10 gaps=0 iter=1190 gen=1 threads=35 resident=2130MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1646 MB (peak 1649) internal=1644 MB compressed=0 MB external=462 MB reusable=23 MB (cycle=160)
+[footprint] rev=ml358 phys=1646 MB (peak 1649) internal=1644 MB compressed=0 MB external=462 MB reusable=23 MB (cycle=161)
+[footprint] rev=ml358 phys=1646 MB (peak 1649) internal=1644 MB compressed=0 MB external=462 MB reusable=23 MB (cycle=162)
+[footprint] rev=ml358 phys=1646 MB (peak 1649) internal=1644 MB compressed=0 MB external=462 MB reusable=23 MB (cycle=163)
+[footprint] rev=ml358 phys=1646 MB (peak 1649) internal=1644 MB compressed=0 MB external=462 MB reusable=23 MB (cycle=164)
+[launch-view] dismissed reason=show-desktop logs=0
+[footprint] rev=ml358 phys=1646 MB (peak 1649) internal=1644 MB compressed=0 MB external=462 MB reusable=23 MB (cycle=165)
+[11:25:59.282] [INFO] detach-wait: presents=0 running=1 elapsed=331s
+[freeze] alive t+332s beats=11 gaps=0 iter=1309 gen=1 threads=36 resident=2130MB dbg=DEBUGGED rev=ml525

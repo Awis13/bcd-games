@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "small-map-window-no-place"
+ ],
+ "next": [],
+ "note": "32-bit program on a 63 GB address map (iPhone13,4, iOS 18.6.2), build 576: a section map found no place in the guest window although 2 GB was free (STATUS_NO_MEMORY, c0000142); fixed in code in 577, no line",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "program-exit-off-boot-thread"
+ ],
+ "next": [],
+ "note": "GTA IV started from a local folder, build 576, iPad16,5 (log gta4-freeze): the game's own thread ended the program (ExitProcess 3) while the engine's boot thread was 0024; __wine_main never returned, so BCD kept the last frame; a tap 21 s later crashed iOS in AssistantServices on the dangling program-name pointer. Build 578 ends the session itself and returns to the library (known)",
+ "outcome": "hung",
+ "stage": 4,
+ "status": "known"
+}

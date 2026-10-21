@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x64-image-rwx-protector-nocopy"
+ ],
+ "next": [
+  "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+ ],
+ "note": "Monster Hunter Rise (Steam), iPad13,16, build 574 (MKPN2N): the same protector stub as Monster Hunter Stories 3 Trial; the 64-bit program stops 26 s after its start in its protector's RWX section on a bad read; JIT-pool copy, no [x64-image] line. An attempt, not proven.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

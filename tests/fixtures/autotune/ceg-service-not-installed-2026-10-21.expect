@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "ceg-service-not-installed"
+ ],
+ "next": [],
+ "note": "Call of Duty: Black Ops (Steam 42700, CEG) on build 576, iPad16,10: Valve's own bin\\SteamService.exe /install failed inside the session (RpcAssoc_BindConnection receive failed with error 1726, exit 1), ceg-result -5. Fixed in 578: the app installs the service before the session (DockCEGService).",
+ "outcome": "exited-early",
+ "stage": 2,
+ "status": "known"
+}

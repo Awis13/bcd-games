@@ -1,0 +1,98 @@
+[01:26:28.108] [INFO] [build] v0.1.576 (576)
+[01:26:28.108] [INFO] [device] model=iPhone16,2 idiom=phone os=iOS Version 27.2 (Build 24B5099f) ram=7655MB available=6125MB cores=6
+[01:26:28.108] [INFO] [device] address-map=[0x104370000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[01:26:28.126] [INFO] [device] gpu="Apple A17 Pro GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[01:26:29.556] [INFO] [bcd] library launch BeamNG.drive: avx=0 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[01:26:33.400] [INFO] [dock-launch] image-retire=1
+[01:26:33.400] [INFO] [dock-launch] image-map-guard=1
+[01:26:33.418] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104370000,0x8000000000) 512GB available=6108MB low-power=0 thermal=fair
+[01:26:33.422] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[01:26:33.422] [INFO] [jit-debugger] attached=1 at the pool request
+[01:26:33.423] [ERR] ml1036: no hole fits a 1024MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[01:26:34.304] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  1.438s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=927 MB (peak 927) internal=927 MB compressed=0 MB external=86 MB reusable=6 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #6 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 127750000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x7037350000+0xc000
+[steer] #1 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c05400000
+[swap] ml1077 backed 0x70c0240000+0x1010000 (file off 0 MB): 16 MB in 1 extents, peak 16 MB, 0 refused
+[swap] ml1077 backed 0x70c1250000+0x1010000 (file off 16 MB): 32 MB in 2 extents, peak 32 MB, 0 refused
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1226 MB (peak 1226) internal=1225 MB compressed=0 MB external=156 MB reusable=6 MB (cycle=2)
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[swap] ml1077 stats: 0 MB file-backed now (peak 32), 0 extents, file used 32 of 2048 MB, backs 2 releases 2 unbacks 0 refused 0 | coverage classic: disk 0 MB of 2048 cap, reservations 0, holes 0, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[swap] ml1150 pool: 0 MB in use (peak 0), 0 takes, 2 guarded, 0 MB lost to a full free list
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1357 MB (peak 1357) internal=1356 MB compressed=0 MB external=160 MB reusable=6 MB (cycle=3)
+[footprint] rev=ml358 phys=1385 MB (peak 1385) internal=1383 MB compressed=0 MB external=160 MB reusable=6 MB (cycle=4)
+[footprint] rev=ml358 phys=1385 MB (peak 1385) internal=1383 MB compressed=0 MB external=160 MB reusable=6 MB (cycle=5)
+D A4 Load module netapi32.dll (netapi32.dll-67f045b4a99285ff): 797A6B0000
+D A4 Load module netutils.dll (netutils.dll-77547757310f9265): 797A690000
+D A4 Load module uxtheme.dll (uxtheme.dll-4e148963446ea0c5): 797A6C0000
+[footprint] rev=ml358 phys=1477 MB (peak 1477) internal=1475 MB compressed=0 MB external=165 MB reusable=6 MB (cycle=6)
+D A8 Load module Setupapi.dll (setupapi.dll-eb8e8a5cf9bad3ad): 797A680000
+D A8 Load module cfgmgr32.dll (cfgmgr32.dll-9e9ee325c5d90363): 797A650000
+0050:err:module:load_dll [dll-missing] rev=ml336 #43 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #33 hwnd=0x10066 class='' text="Default IME" rev=ml853
+[win-name] #34 hwnd=0x10060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+0050:err:module:load_dll [dll-missing] rev=ml336 #44 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D A4 Load module uxtheme.dll (uxtheme.dll-4e148963446ea0c5): 797A610000
+[win-name] #35 hwnd=0x10060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[launch-view] dismissed reason=game-window logs=0
+[footprint] rev=ml358 phys=1500 MB (peak 1500) internal=1499 MB compressed=0 MB external=166 MB reusable=6 MB (cycle=7)
+[footprint] rev=ml358 phys=1500 MB (peak 1500) internal=1499 MB compressed=0 MB external=166 MB reusable=6 MB (cycle=8)
+[footprint] rev=ml358 phys=1500 MB (peak 1500) internal=1499 MB compressed=0 MB external=166 MB reusable=6 MB (cycle=9)
+[footprint] rev=ml358 phys=1462 MB (peak 1500) internal=1460 MB compressed=0 MB external=166 MB reusable=6 MB (cycle=10)
+[va-scan] FAILED window=0x10000..0xffff0001 size=0x130000 align=0x10000 top-down tries=65516 skips=0 | seen=0x10000..0xffff0001 views=0 maxgap=0x130001 tailgap=0x130001 stop=no-views-in-range | firstfail=0xffec0000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[footprint] rev=ml358 phys=1900 MB (peak 1900) internal=1898 MB compressed=0 MB external=188 MB reusable=6 MB (cycle=11)
+00b8:err:module:load_dll [dll-missing] ml718 UNCAPPED L"D3DCOMPILER_47.dll" status=c000007b (subsystem dependency)
+00b8:err:module:load_dll [dll-missing] rev=ml336 #1 L"D3DCOMPILER_47.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00b8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000135) syscalls=0 unix_calls=8182
+[win-name] #91 hwnd=0x20076 class='' text="Copy error to clipboard" rev=ml853
+[Wine child thread] child exited with code -1073741515
+[footprint] rev=ml358 phys=2216 MB (peak 2216) internal=2214 MB compressed=0 MB external=200 MB reusable=6 MB (cycle=12)
+[win-name] #98 hwnd=0x20060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+[win-name] #99 hwnd=0x20060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+[win-name] #100 hwnd=0x20060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+[win-name] #101 hwnd=0x20060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+[win-name] #102 hwnd=0x20060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+[win-name] #103 hwnd=0x20060 class='' text="BeamNG v0.40.1.0 Launcher" rev=ml853
+[store-noalias] #1 rev=ml348 addr=0x8 insn=0xf9000528 pc=0x10521a320 NO pool/anon alias | region 0x104370000+0x1ff4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[mach-deliver] rev=ml540 NATIVE-THREAD DECLINE pc=0x10521a320 (/private/var/containers/Bundle/Application/<uuid>/Madeira.app/Madeira`req_cancel_async) sp=0x17f4628c0 addr=0x8 -> kernel default handler
+[fault_rip] cnt=1 rip=0x0 pc=0x10521a320 addr=0x8 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x104370000+0x1ff4000 rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x10521a320 addr=0x8 x18=0x0 type=1 lr=0x10521a300 sp=0x17f4628c0 x16=0xa9d9 x17=0x100000000000
+[mach_exc] sym pc=/private/var/containers/Bundle/Application/<uuid>/Madeira.app/Madeira`req_cancel_async+0x158 lr=/private/var/containers/Bundle/Application/<uuid>/Madeira.app/Madeira`req_cancel_async+0x138
+[x86_seg] State.gs_cached=0x0 TEB=0x71fffe0000 TEB[0x58]=0x70b7ba19c0 *(gs_cached+0x58)=0x0
+[store-noalias] #2 rev=ml348 addr=0x8 insn=0xf9000528 pc=0x10521a320 NO pool/anon alias | region 0x104370000+0x1ff4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[mach-deliver] rev=ml540 NATIVE-THREAD DECLINE pc=0x10521a320 (/private/var/containers/Bundle/Application/<uuid>/Madeira.app/Madeira`req_cancel_async) sp=0x17f4628c0 addr=0x8 -> kernel default handler
+[fault_rip] cnt=2 rip=0x0 pc=0x10521a320 addr=0x8 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x104370000+0x1ff4000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x10521a320 addr=0x8 x18=0x0 type=1 lr=0x10521a300 sp=0x17f4628c0 x16=0xa9d9 x17=0x100000000000
+[mach_exc] sym pc=/private/var/containers/Bundle/Application/<uuid>/Madeira.app/Madeira`req_cancel_async+0x158 lr=/private/var/containers/Bundle/Application/<uuid>/Madeira.app/Madeira`req_cancel_async+0x138
+[x86_seg] State.gs_cached=0x0 TEB=0x71fffe0000 TEB[0x58]=0x70b7ba19c0 *(gs_cached+0x58)=0x0

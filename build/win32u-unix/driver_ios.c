@@ -681,6 +681,157 @@ static void ios_apply_fullscreen_foreground(void)
                  hwnd, (unsigned)pid, fg, (unsigned)fg_pid, ok );
 }
 
+/* madeira-bcd: [win-create] and [tiny-win]. Two programs (American Truck
+ * Simulator, Steam 270880, iPad16,10 build 576, tester: "opens in an incredibly
+ * tiny window"; Dying Light, Steam 239140) have a top-level window of exactly
+ * 132x38 -- Wine's minimum size of a captioned window (SM_CXMINTRACK x
+ * SM_CYMINTRACK, hard-coded in sysparams_ios.c) -- and nothing ever sizes it:
+ * ATS's swapchain draws a 1024x768 picture into a 176x51 pt layer. A window
+ * created below that minimum is grown to it by NtUserCreateWindowEx on Windows
+ * as well, and programs then size it themselves (BeamNG's launcher and the
+ * Rockstar installer do: 132x38 first, their real size a moment later). These
+ * two never do, and the logs cannot say whether they asked for a small window
+ * or for a large one that was clamped, so:
+ *
+ *  [win-create]  one line per top-level window (24 at most) whose created size
+ *      differs from what the program asked for: the requested rectangle (the
+ *      window's normal_rect as NtUserCreateWindowEx stored it, before the
+ *      clamp), the actual one, and which way the clamp went. Log only.
+ *  [tiny-win]  a window a swapchain presents into whose client area stays under
+ *      160x120 while the swapchain's drawable is at least 320x200, for 3 s.
+ *      Logged the first time per window, whatever the switch says. With
+ *      env.MADEIRA_TINY_WINDOW_FIX = 1 the window is also sized to the virtual
+ *      screen, which is what a fullscreen swapchain does to its window on
+ *      Windows (DXGI's SetFullscreenState). DXMT's headless WSI used to answer
+ *      "true" and do nothing; tools/patch-dxmt-wsi-tiny-fullscreen.py (build
+ *      578) now sizes such a window when its swapchain asks for fullscreen, and
+ *      this covers a swapchain that never does. Off by default: it only helps a
+ *      game that sits in such a window for seconds, and nothing else is touched.
+ *      At most two resizes per window.
+ *      It needs the desktop compositor's drawable size (Winios.m,
+ *      MadeiraWindowMetalLayer); a game-mode session has none and never reaches
+ *      the resize. */
+extern void *winios_swapchain_hwnd_at( int index ) __attribute__((weak));
+extern int winios_swapchain_drawable( void *hwnd, int *width, int *height ) __attribute__((weak));
+extern unsigned winios_swapchain_slot_generation( int index ) __attribute__((weak));
+#define IOS_TINY_SLOTS 32   /* Winios.m's WINIOS_SWAP_HWNDS */
+
+/* tiny-test:begin (tests/host/check-tiny-window.py compiles this region) */
+/* Read each time (only after a window has been tiny for 3 s): the app clears the variable at the end of a
+ * session and a later session of the same app run sets its own. */
+static int ios_tiny_fix_enabled(void)
+{
+    const char *env = getenv( "MADEIRA_TINY_WINDOW_FIX" );  /* 1: a swapchain's window left under 160x120 is sized to the screen */
+
+    return env && env[0] == '1' && !env[1];
+}
+
+/* A swapchain window's client area is "tiny" when it is under 160x120 while the
+ * swapchain draws a picture of at least 320x200: nothing a program that draws
+ * 320x200 or more means to show in 160x120. */
+static int ios_tiny_window_is_tiny( int client_w, int client_h, int drawable_w, int drawable_h )
+{
+    return client_w < 160 && client_h < 120 && drawable_w >= 320 && drawable_h >= 200;
+}
+/* tiny-test:end */
+
+static unsigned long long ios_tiny_now_ns(void)
+{
+    struct timespec ts;
+
+    clock_gettime( CLOCK_MONOTONIC, &ts );
+    return (unsigned long long)ts.tv_sec * 1000000000ull + (unsigned long long)ts.tv_nsec;
+}
+
+static struct ios_tiny_state
+{
+    HWND hwnd;                    /* the window the slot's state is about */
+    unsigned gen;                 /* Winios.m's slot generation when it was taken (HWND values are reused) */
+    unsigned long long since_ns;  /* first seen tiny; 0 = not tiny */
+    unsigned said;                /* [tiny-win] detection lines */
+    unsigned tries;               /* resizes made */
+} ios_tiny_state[IOS_TINY_SLOTS];
+static __thread unsigned ios_tiny_calls;
+static __thread unsigned long long ios_tiny_next_ns;
+
+/* From winios_drv_process_events, on the window's own thread: about twice a
+ * second, look at the swapchain windows this thread owns. */
+static void ios_tiny_window_poll(void)
+{
+    unsigned long long now;
+    int i;
+
+    if (!winios_swapchain_hwnd_at || !winios_swapchain_drawable || !winios_swapchain_slot_generation) return;
+    if ((++ios_tiny_calls & 63) != 0) return;   /* a poll runs thousands of times a second */
+    now = ios_tiny_now_ns();
+    if (now < ios_tiny_next_ns) return;
+    ios_tiny_next_ns = now + 500000000ull;
+
+    for (i = 0; i < IOS_TINY_SLOTS; i++)
+    {
+        struct ios_tiny_state *st = &ios_tiny_state[i];
+        HWND hwnd = winios_swapchain_hwnd_at( i );
+        RECT client, screen;
+        int dw = 0, dh = 0, cw, ch;
+        DWORD style;
+
+        if (!hwnd || !is_window( hwnd ) || get_window_thread( hwnd, NULL ) != GetCurrentThreadId()) continue;
+        if (st->hwnd != hwnd || st->gen != winios_swapchain_slot_generation( i ))
+        {
+            memset( st, 0, sizeof(*st) );
+            st->hwnd = hwnd;
+            st->gen = winios_swapchain_slot_generation( i );
+        }
+        style = get_window_long( hwnd, GWL_STYLE );
+        if ((style & (WS_CHILD | WS_MINIMIZE)) || !(style & WS_VISIBLE) || !is_window_visible( hwnd ) ||
+            NtUserGetAncestor( hwnd, GA_PARENT ) != get_desktop_window() ||
+            !get_client_rect( hwnd, &client, get_thread_dpi() ) ||
+            !winios_swapchain_drawable( hwnd, &dw, &dh ))
+        {
+            st->since_ns = 0;
+            continue;
+        }
+        cw = client.right - client.left;
+        ch = client.bottom - client.top;
+        if (!ios_tiny_window_is_tiny( cw, ch, dw, dh ))
+        {
+            st->since_ns = 0;
+            continue;
+        }
+        if (!st->since_ns) st->since_ns = now;
+        if (now - st->since_ns < 3000000000ull) continue;
+
+        if (!st->said++)
+            dprintf( 2, "[tiny-win] hwnd=%p style=%08x: the swapchain draws %dx%d px into a window whose client area has "
+                     "stayed %dx%d for %.1f s%s\n", hwnd, (unsigned)style, dw, dh, cw, ch,
+                     (double)(now - st->since_ns) / 1e9,
+                     ios_tiny_fix_enabled() ? "; env.MADEIRA_TINY_WINDOW_FIX = 1 sizes it to the screen"
+                                            : " (env.MADEIRA_TINY_WINDOW_FIX = 1 would size it to the screen)" );
+        if (!ios_tiny_fix_enabled() || st->tries >= 2) continue;
+
+        st->tries++;
+        screen = get_virtual_screen_rect( 0, MDT_DEFAULT );
+        if (screen.right - screen.left < 320 || screen.bottom - screen.top < 200)
+        {
+            dprintf( 2, "[tiny-win] hwnd=%p: the virtual screen %dx%d is too small to size it to\n", hwnd,
+                     (int)(screen.right - screen.left), (int)(screen.bottom - screen.top) );
+            continue;
+        }
+        {
+            BOOL ok = NtUserSetWindowPos( hwnd, 0, screen.left, screen.top, screen.right - screen.left,
+                                          screen.bottom - screen.top, SWP_NOZORDER | SWP_NOACTIVATE );
+            RECT after = {0};
+
+            get_client_rect( hwnd, &after, get_thread_dpi() );
+            dprintf( 2, "[tiny-win] hwnd=%p: sized to the virtual screen {%d,%d,%d,%d} ok=%d, client area now %dx%d "
+                     "(try %u of 2; MADEIRA_TINY_WINDOW_FIX=0 turns this off)\n", hwnd,
+                     (int)screen.left, (int)screen.top, (int)screen.right, (int)screen.bottom, (int)ok,
+                     (int)(after.right - after.left), (int)(after.bottom - after.top), st->tries );
+        }
+        st->since_ns = 0;
+    }
+}
+
 /* pProcessEvents: runs on every message poll of a wine thread (message_ios.c
  * process_driver_events), so a window's own thread gets here right after it
  * was shown. */
@@ -688,7 +839,45 @@ static BOOL winios_drv_process_events( DWORD mask )
 {
     if (ios_show_foreground) ios_apply_fullscreen_foreground();
     ios_foreground_if_none( "a message poll" );
+    ios_tiny_window_poll();
     return winios_pProcessEvents ? winios_pProcessEvents( mask ) : FALSE;
+}
+
+/* pCreateWindow wrapper: the [win-create] line above, then Winios.m's hook. It
+ * runs on the creating thread after NtUserCreateWindowEx's first size and before
+ * WM_CREATE returns to the program; normal_rect still holds the requested
+ * rectangle (only GetWindowPlacement and SetWindowPlacement rewrite it). */
+static BOOL winios_drv_create_window( HWND hwnd )
+{
+    static unsigned said;
+
+    if (__atomic_load_n( &said, __ATOMIC_RELAXED ) < 24 && NtUserGetAncestor( hwnd, GA_PARENT ) == get_desktop_window() &&
+        !(get_window_long( hwnd, GWL_STYLE ) & WS_CHILD))
+    {
+        WND *win = get_win_ptr( hwnd );
+
+        if (win && win != WND_DESKTOP && win != WND_OTHER_PROCESS)
+        {
+            RECT req = win->normal_rect, cur = {0};
+            int rw, rh, cw, ch;
+
+            release_win_ptr( win );
+            get_window_rect( hwnd, &cur, get_thread_dpi() );
+            rw = req.right - req.left;
+            rh = req.bottom - req.top;
+            cw = cur.right - cur.left;
+            ch = cur.bottom - cur.top;
+            if ((rw != cw || rh != ch) && __atomic_fetch_add( &said, 1, __ATOMIC_RELAXED ) < 24)
+                dprintf( 2, "[win-create] hwnd=%p style=%08x ex=%08x requested={%d,%d,%d,%d} (%dx%d) "
+                         "actual={%d,%d,%d,%d} (%dx%d)%s tid=%04x\n", hwnd,
+                         (unsigned)get_window_long( hwnd, GWL_STYLE ), (unsigned)get_window_long( hwnd, GWL_EXSTYLE ),
+                         (int)req.left, (int)req.top, (int)req.right, (int)req.bottom, rw, rh,
+                         (int)cur.left, (int)cur.top, (int)cur.right, (int)cur.bottom, cw, ch,
+                         (cw > rw || ch > rh) ? " grown to the minimum window size" : " cut to the maximum window size",
+                         (int)GetCurrentThreadId() );
+        }
+    }
+    return winios_pCreateWindow ? winios_pCreateWindow( hwnd ) : TRUE;
 }
 
 /* ml505 probe. This hook was a pure stub: wine hands the driver the
@@ -2160,7 +2349,7 @@ static void load_display_driver(void)
          * with no implementation linked (weak ref == NULL) stay NULL
          * and SET_USER_FUNC falls back to nulldrv_*. Real impls live
          * in app/Madeira/Winios/Winios.m and link in via Madeira.app. */
-        if (winios_pCreateWindow)        winios_user_driver.pCreateWindow        = winios_pCreateWindow;
+        if (winios_pCreateWindow)        winios_user_driver.pCreateWindow        = winios_drv_create_window;   /* [win-create] */
         if (winios_pDestroyWindow)       winios_user_driver.pDestroyWindow       = winios_pDestroyWindow;
         if (winios_pProcessEvents)       winios_user_driver.pProcessEvents       = winios_drv_process_events;
         if (winios_desktop_mode())       winios_user_driver.pSetCursor           = winios_drv_set_cursor;

@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x87-int64-roundtrip"
+ ],
+ "next": [
+  "env.FEX_X87REDUCEDPRECISION = 0"
+ ],
+ "note": "Batman: Arkham City GOTY (Steam 200260), build 574, iPad16,5 (Send Log PTKASZ): the same fault as the 576 run (host code identical, EIP 0xBB5362), at 0x790f8f0000; the first ldapr read is followed by the game's own crash filter and a second fault in NtReadVirtualMemory. Attempt env.FEX_X87REDUCEDPRECISION = 0, not proven",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

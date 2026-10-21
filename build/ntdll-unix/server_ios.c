@@ -4852,6 +4852,10 @@ void process_exit_wrapper( int status )
         ios_fdt_note_close( ios_proc_sockets[i].fd, "exit-master", dead_peb );
         close( ios_proc_sockets[i].fd );
         ios_proc_sockets[i].peb = NULL;
+        {   /* madeira-bcd (round 577): this child's process ended; its slot in process_ios.c must not keep a session alive */
+            extern void ios_child_slot_exited( void *peb );
+            ios_child_slot_exited( dead_peb );
+        }
         ios_dead_pebs[__sync_fetch_and_add( &ios_dead_peb_next, 1 ) % IOS_DEAD_PEB_MAX] = dead_peb;
         /* ml571: drop this pseudo-process's fd cache and close what it held.
          * Must happen on the SAME identity used to key it, and before the JIT
@@ -5767,6 +5771,11 @@ size_t server_init_process_child( int child_fd_socket )
     if (fcntl( child_fd_socket, F_SETFD, FD_CLOEXEC ) == -1)
         wine_log_write("[Wine child] WARNING: fcntl FD_CLOEXEC failed on fd %d", child_fd_socket);
     ios_register_proc_socket( ios_jit_current_peb(), child_fd_socket );
+    {   /* madeira-bcd (round 577): the child's slot in process_ios.c learns its PEB, so process_exit_wrapper can mark
+         * it ended whichever thread ends the process (a child that exits off its boot thread never releases it) */
+        extern void ios_child_slot_bind_peb( void *peb );
+        ios_child_slot_bind_peb( ios_jit_current_peb() );
+    }
 
     wine_log_write("[Wine child] server_init_process_child: fd_socket=%d (peb=%p)",
                    child_fd_socket, ios_jit_current_peb());

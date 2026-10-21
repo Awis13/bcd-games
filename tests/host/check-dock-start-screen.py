@@ -107,6 +107,28 @@ require(winios.count('winios_census_note_frame(hwnd, x, y, w, h, visible);') == 
         'the census is fed by the frame, GDI flush and swapchain hooks')
 require('#include "Winios.h"' in winios, 'Winios.m includes the header Swift reads the census struct from')
 
+# A second Play while a Dock start is on its way (Panzer Paladin 9BAP3Q: two taps 1.4 s apart; the second start's
+# fail() cleaned up the first one's transfer and gave the account back while the host signed in: Dock code 30).
+start = content[content.index('    private func startDock(_ game: DockGame, compactPool: Bool, profile: LibraryEntry? = nil) {'):]
+start = start[:start.index('\n    private func startWineserver() {')]
+fail_fn = start[start.index('        func fail(_ error: Error) {'):]
+fail_fn = fail_fn[:fail_fn.index('\n        }\n')]
+require(start.index('guard !DockStartScreen.launchGate.busy(now: ProcessInfo.processInfo.systemUptime)') < start.index('guard jitReadyForLaunch(entry: profile?.id,')
+        and start.index('DockStartScreen.launchGate.begin(now: ProcessInfo.processInfo.systemUptime)') < start.index('func fail(_ error: Error) {')
+        and fail_fn.index('DockStartScreen.launchGate.end()') < fail_fn.index('MadeiraDock.cleanup()'),
+        'startDock: a start asked for while another is on its way returns first (before any guard or clean-up); a start marks itself; its failure ends the mark before it cleans up')
+require(start.index('library.begin(.dockSession') < start.index('DockStartScreen.launchGate.end()   //') < start.index('runWineFullSequence(profile: profile)')
+        and start.count('DockStartScreen.launchGate.end()') == 2 and start.count('DockStartScreen.launchGate.begin(') == 1,
+        "startDock: the mark ends when the library session has begun (the library's own guards answer a later Play), and nowhere else")
+entry = content[content.index('    private func launchLibraryEntry(_ entry: LibraryEntry) {'):]
+entry = entry[:entry.index('\n    }\n')]
+require(entry.index('guard !DockStartScreen.launchGate.busy(now: ProcessInfo.processInfo.systemUptime)') < entry.index('BCDLaunch.applyLibrary(entry, sessionLog: false)')
+        and entry.index('guard !DockStartScreen.launchGate.busy(now: ProcessInfo.processInfo.systemUptime)') < entry.index('startDock(game, compactPool:'),
+        "a second Play changes nothing: not even the launch options the first start's Play applied (the gate is asked before BCDLaunch.applyLibrary)")
+require('static var launchGate = DockLaunchGate()' in screen[screen.index('final class DockStartScreen'):]
+        and 'DockLaunchGate' not in (app / 'MadeiraDock.swift').read_text(encoding='utf-8'),
+        'DockStartScreen.launchGate holds the gate (not MadeiraDock.swift, which the host checks compile on its own)')
+
 # ------------------------------------------------------------------ 1. Swift
 checks = r'''
 import Foundation
@@ -226,6 +248,24 @@ func window(_ image: String, _ w: Int, _ h: Int, visible: Bool = true, drawn: Bo
         }
         require(reveals == SteamLaunchHold.maxAutoReveals && covers == SteamLaunchHold.maxAutoReveals - 1 && flapping.revealed,
                 "a flapping dialog stops toggling and stays shown (reveals=\(reveals) covers=\(covers))")
+
+        // --- A second Play while a start is on its way (a double tap).
+        var gate = DockLaunchGate()
+        require(!gate.busy(now: 100) && !gate.busy(now: 0), "no start on its way: Play goes ahead")
+        gate.begin(now: 100)
+        require(gate.busy(now: 100) && gate.busy(now: 101.4) && gate.busy(now: 159.9),
+                "a second Play 1.4 s later (the 9BAP3Q double tap), or any time while the start signs in, is ignored")
+        require(!gate.busy(now: 160) && !gate.busy(now: 1000), "a start that never ended stops blocking Play after 60 s")
+        gate.end()
+        require(!gate.busy(now: 100.5), "the session began or the start failed: the next Play goes ahead")
+        gate.begin(now: 200); gate.end(); gate.end()
+        require(!gate.busy(now: 200.1), "ending twice is harmless")
+        var sequence: [String] = []
+        var taps = DockLaunchGate()
+        for (t, label) in [(10.0, "tap1"), (11.4, "tap2")] {
+            if taps.busy(now: t) { sequence.append(label + ":ignored") } else { taps.begin(now: t); sequence.append(label + ":started") }
+        }
+        require(sequence == ["tap1:started", "tap2:ignored"], "two taps: one start, the second changes nothing (\(sequence))")
 
         // --- The status line: the furthest stage the host reported.
         typealias D = DockStartStatus

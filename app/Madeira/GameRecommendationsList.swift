@@ -432,10 +432,11 @@ struct RecommendationsPolicy {
         "MADEIRA_PIN_GRAPHICS_DLLS", "MADEIRA_POOL_HEAD_RESERVE_MB", "MADEIRA_POOL_LOW_IMAGES",
         "MADEIRA_POOL_RECYCLE_IMAGES", "MADEIRA_PRELOAD_DLLS", "MADEIRA_RDR2_VA_HOLD", "MADEIRA_SC_PA_POOLS",
         "MADEIRA_SMALL_STACK_EXES", "MADEIRA_SPAWN_BLOCK", "MADEIRA_SRV_FGETPATH", "MADEIRA_SWAP_MIN_KB",
-        "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TOUCH_MOUSE",
+        "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TINY_WINDOW_FIX", "MADEIRA_TOUCH_MOUSE",
         "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_VCRT_ARM64_KEY", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WOW_MIN_FREE_GB",
         "MADEIRA_WOW_RWX_PLAIN",
-        "MADEIRA_X64_GRAPHICS_ENTRY", "MADEIRA_X64_IMAGE_NOCOPY", "SteamDeck", "WINEDEBUG", "WINEDLLOVERRIDES",
+        "MADEIRA_X64_GRAPHICS_ENTRY", "MADEIRA_X64_IMAGE_NOCOPY", "MADEIRA_X64_MACHINE", "SteamDeck", "WINEDEBUG",
+        "WINEDLLOVERRIDES",
         "WINE_D3D_CONFIG",
     ]
 
@@ -459,14 +460,15 @@ struct RecommendationsPolicy {
             }
             switch name {
             case "MADEIRA_OPTIN_DLLS":
-                // Only DLLs BCD ships as <name>-optin.dll (tools/build-wine-extra-dlls.sh, OPTIN_WANT).
+                // Only DLLs BCD ships as <name>-optin.dll (tools/build-wine-extra-dlls.sh: OPTIN_WANT, and setupapi,
+                // the shipped setupapi.dll with a lock round its device node table).
                 let names = value.lowercased().split(whereSeparator: { ",; ".contains($0) })
-                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint"].contains($0) }) else {
-                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr or xpsprint")
+                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint", "setupapi"].contains($0) }) else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint or setupapi")
                 }
-            case "MADEIRA_WINTYPES":
+            case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX":
                 guard value == "0" || value == "1" else {
-                    throw RecommendationsError.policy("\(path): MADEIRA_WINTYPES is 0 or 1")
+                    throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
                 }
             case "DOTNET_EnableWriteXorExecute":
                 // The .NET runtime's own switch; only turning it off is ever listed.

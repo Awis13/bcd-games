@@ -450,6 +450,12 @@ BOOL winios_pCreateWindow(HWND hwnd) {
 static _Atomic(uintptr_t) g_swap_hwnds[WINIOS_SWAP_HWNDS];
 static _Atomic unsigned g_swap_said[WINIOS_SWAP_HWNDS][WINIOS_SWAP_KINDS];
 enum { WINIOS_SWAP_SHOW = 4, WINIOS_SWAP_LAYER = 5 };
+/* The swapchain's drawable size per slot, (width << 32) | height, 0 = none yet; written by
+ * MadeiraWindowMetalLayer (desktop mode) when DXMT sets it. driver_ios.c's [tiny-win] reads it. */
+static _Atomic(uint64_t) g_swap_drawable[WINIOS_SWAP_HWNDS];
+/* Counts how often a slot was taken: HWND values are reused (between sessions of one app run too), so driver_ios.c
+ * tells a new window in a slot from the old one by this, not by the HWND alone. */
+static _Atomic(unsigned) g_swap_gen[WINIOS_SWAP_HWNDS];
 
 /* The window's slot + 1, or 0 when no swapchain presents into it. */
 int winios_swapchain_hwnd(void *hwnd) {
@@ -458,6 +464,30 @@ int winios_swapchain_hwnd(void *hwnd) {
     for (int i = 0; i < WINIOS_SWAP_HWNDS; i++)
         if (atomic_load_explicit(&g_swap_hwnds[i], memory_order_relaxed) == h) return i + 1;
     return 0;
+}
+
+/* driver_ios.c ([tiny-win]): the HWND in table slot `index`, NULL when it is free. */
+void *winios_swapchain_hwnd_at(int index) {
+    if (index < 0 || index >= WINIOS_SWAP_HWNDS) return NULL;
+    return (void *)atomic_load_explicit(&g_swap_hwnds[index], memory_order_relaxed);
+}
+
+/* driver_ios.c ([tiny-win]): how many windows have taken table slot `index` so far. */
+unsigned winios_swapchain_slot_generation(int index) {
+    if (index < 0 || index >= WINIOS_SWAP_HWNDS) return 0;
+    return atomic_load_explicit(&g_swap_gen[index], memory_order_relaxed);
+}
+
+/* driver_ios.c ([tiny-win]): the drawable size the swapchain of `hwnd` gave its Metal layer, 1 when known. */
+int winios_swapchain_drawable(void *hwnd, int *w, int *h) {
+    int slot = winios_swapchain_hwnd(hwnd);
+    uint64_t v;
+    if (!slot || !w || !h) return 0;
+    v = atomic_load_explicit(&g_swap_drawable[slot - 1], memory_order_relaxed);
+    if (!v) return 0;
+    *w = (int)(v >> 32);
+    *h = (int)(v & 0xffffffffu);
+    return 1;
 }
 
 /* Whether to log this line of `kind` for the window in `slot1` (from
@@ -478,6 +508,8 @@ void winios_note_swapchain_hwnd(void *hwnd) {
         uintptr_t empty = 0;
         if (atomic_compare_exchange_strong(&g_swap_hwnds[i], &empty, h)) {
             for (int k = 0; k < WINIOS_SWAP_KINDS; k++) atomic_store(&g_swap_said[i][k], 0);
+            atomic_store(&g_swap_drawable[i], 0);
+            atomic_fetch_add_explicit(&g_swap_gen[i], 1, memory_order_relaxed);
             fprintf(stderr, "[swap-win] hwnd=%p presents through a swapchain: its style, position, show, activation "
                             "and destruction are logged as [swap-win] lines\n", hwnd);
             fflush(stderr);
@@ -501,6 +533,14 @@ static void winios_swapchain_hwnds_reset(void) {
 }
 
 static void winios_remove_layer(HWND hwnd);   /* compositor, below */
+
+/* MadeiraWindowMetalLayer (below): the size DXMT gave the swapchain's layer, for driver_ios.c's [tiny-win]. */
+static void winios_note_swap_drawable(uintptr_t hwnd, CGSize size) {
+    int slot = winios_swapchain_hwnd((void *)hwnd);
+    uint64_t w = size.width > 0 ? (uint64_t)size.width : 0, h = size.height > 0 ? (uint64_t)size.height : 0;
+    if (!slot) return;
+    atomic_store_explicit(&g_swap_drawable[slot - 1], (w && h) ? ((w << 32) | h) : 0, memory_order_relaxed);
+}
 
 /* ============================================================ *
  * Top-level window census (see Winios.h)
@@ -1508,6 +1548,10 @@ static unsigned long long winios_hidden_present_interval_ns(void) {
 }
 - (void)madeiraSetWindowHidden:(BOOL)hidden {
     __atomic_store_n(&_windowHidden, hidden ? 1 : 0, __ATOMIC_RELAXED);
+}
+- (void)setDrawableSize:(CGSize)drawableSize {
+    [super setDrawableSize:drawableSize];
+    winios_note_swap_drawable(self.madeiraHwnd, drawableSize);   /* [tiny-win], driver_ios.c */
 }
 - (nullable id<CAMetalDrawable>)nextDrawable {
     if (!__atomic_exchange_n(&_firstDrawableSaid, 1, __ATOMIC_RELAXED)) {

@@ -9,7 +9,8 @@ import UIKit
 // own layouts ("Custom Layout 1", "Custom Layout 2", ...) are kept app-wide in
 // Documents/bcd-control-presets.json, beside bcd-controls.json, so a
 // device backup carries them. Built-ins ship in code and can be loaded but
-// never changed: there is one, a full XInput layout named "Xbox controller".
+// never changed: a full XInput layout named "Xbox controller" (shown as "Full controller") and a
+// keyboard-and-mouse layout named "PC keyboard" (a WASD stick, mouse buttons and the usual keys).
 //
 // bcd-controls.json stays the working copy the overlay draws; it records
 // which layout it was loaded from (`TouchControlsModel.layoutID`) so edits made
@@ -24,6 +25,9 @@ import UIKit
 //   MADEIRA_CONTROLS_XBOX_DEFAULT=1  a user with no controls file gets the
 //                                    built-in once (default OFF: otherwise the
 //                                    built-in is only applied from the menu)
+//   MADEIRA_TOUCH_GAME_DEFAULT=0     a library game whose touch controls are on with nothing on
+//                                    screen is not given a built-in layout (default on; see
+//                                    ControlPresetsModel.applyGameDefault)
 // ============================================================================
 
 // MARK: - Pure preset state (also compiled by the host regression test)
@@ -60,6 +64,8 @@ struct ControlPresetScreen: Equatable {
 enum ControlPresetLayout {
     static let xboxID = "builtin.xbox"
     static let xboxName = "Xbox controller"
+    static let keyboardID = "builtin.keyboard"
+    static let keyboardName = "PC keyboard"
     /// Mirrors `TouchControlsModel.baseDiameter`.
     static let baseDiameter = 64.0
 
@@ -176,6 +182,117 @@ enum ControlPresetLayout {
         add("R3", clickScale, rStickX - stick / 2 - 20 * k - click / 2, clickY)
         return out
     }
+
+    /// The built-in keyboard-and-mouse layout, for games that read no controller:
+    ///
+    ///   Esc  Tab  (top left)                                    (top right)  keyboard  Enter
+    ///   WASD stick (bottom left)             Q  F  E / Ctrl  R  Shift / mouse R  mouse L  (bottom right)
+    ///
+    /// A key stick for W A S D, and a 3 x 3 block of round buttons in the bottom-right corner (the mouse
+    /// buttons and Space on the bottom row, then E, R and F, then Shift, Ctrl and Q), Esc and Tab in the
+    /// top-left corner, Enter and the iOS keyboard in the top-right one. Placed like the controller layout:
+    /// in points from the safe-area edges, then normalised, clear of the overlay's own top buttons.
+    static func keyboard(for screen: ControlPresetScreen) -> [TouchControl] {
+        let s = screen.landscape
+        let W = s.width, H = s.height
+        guard W > 0, H > 0 else { return [] }
+        let k = min(max(H / 400, 1.0), 1.3)
+        let (L, R, T, B) = margins(s)
+        var out: [TouchControl] = []
+        func add(_ action: ControlAction, _ scale: Double, _ x: Double, _ y: Double) {
+            var c = TouchControl()
+            c.action = action
+            c.scale = scale
+            c.nx = x / W
+            c.ny = y / H
+            out.append(c)
+        }
+        func d(_ scale: Double) -> Double { baseDiameter * scale }
+
+        // The WASD stick: bottom-left, where the controller layout's left stick is.
+        let stickScale = 1.45 * k
+        let stick = d(stickScale)
+        add(.joystickWASD, stickScale, L + 76 * k, H - B - 12 * k - stick / 2)
+
+        // The 3 x 3 block, from the bottom-right corner: column 0 is the rightmost, row 0 the bottom one.
+        let keyScale = 0.8 * k
+        let key = d(keyScale), pitch = key + 10 * k
+        func x(_ column: Int) -> Double { W - R - 6 * k - key / 2 - Double(column) * pitch }
+        func y(_ row: Int) -> Double { H - B - 12 * k - key / 2 - Double(row) * pitch }
+        add(.mouseLeft, keyScale, x(0), y(0))
+        add(.mouseRight, keyScale, x(1), y(0))
+        add(.key(0x20), keyScale, x(2), y(0))      // Space
+        add(.key(0x45), keyScale, x(0), y(1))      // E
+        add(.key(0x52), keyScale, x(1), y(1))      // R
+        add(.key(0x46), keyScale, x(2), y(1))      // F
+        add(.key(0x10), keyScale, x(0), y(2))      // Shift
+        add(.key(0x11), keyScale, x(1), y(2))      // Ctrl
+        add(.key(0x51), keyScale, x(2), y(2))      // Q
+
+        // The corners at the top, away from the overlay's own buttons in the middle.
+        let smallScale = 0.7 * k
+        let small = d(smallScale), step = small + 8 * k
+        let topY = T + 6 * k + small / 2
+        add(.key(0x1B), smallScale, L + 6 * k + small / 2, topY)                 // Esc
+        add(.key(0x09), smallScale, L + 6 * k + small / 2 + step, topY)          // Tab
+        add(.key(0x0D), smallScale, W - R - 6 * k - small / 2, topY)             // Enter
+        add(.keyboardToggle, smallScale, W - R - 6 * k - small / 2 - step, topY) // the iOS keyboard
+        return out
+    }
+}
+
+/// What a layout's controls do for the game (the log's `kind=`): `pad` presses the virtual XInput pad,
+/// `keys` posts keyboard keys and mouse buttons (winios_post_key / winios_pointer, nothing of the controller
+/// hub's "keys and mouse" mapping, which turns a physical pad into keys), `mixed` has both.
+enum TouchLayoutKind: String {
+    case none, pad, keys, mixed
+
+    static func of(_ controls: [TouchControl]) -> TouchLayoutKind {
+        var pad = false, keys = false
+        for c in controls {
+            switch c.action {
+            case .pad(let name): if TouchPadAction.supported(name) { pad = true }
+            case .key, .mouseLeft, .mouseRight, .joystickWASD, .joystickArrows, .keyboardToggle: keys = true
+            case .none: break
+            }
+        }
+        return pad && keys ? .mixed : pad ? .pad : keys ? .keys : .none
+    }
+}
+
+/// What the touch layer does with the layout on screen, as the log line `[touch] ...` says it.
+struct TouchLayoutPlan: Equatable {
+    var layout: String
+    var kind: TouchLayoutKind
+    /// Keyboard keys and mouse buttons reach the game: on while the controls are shown; off while hidden.
+    var keysPath: String
+    /// The virtual pad: connected (shown, touch XInput on, taking input), waiting (shown, but a menu, the
+    /// starting screen or the editor has it), off (shown, but touch XInput is off: the buttons are inert),
+    /// hidden (the controls are not shown).
+    var pad: String
+    var controls: Int
+
+    var line: String {
+        "[touch] layout=\"\(layout)\" kind=\(kind.rawValue) keys-path=\(keysPath) pad=\(pad) controls=\(controls)"
+    }
+
+    static func make(layout: String, controls: [TouchControl], shown: Bool, accepting: Bool, padAvailable: Bool) -> TouchLayoutPlan {
+        let kind = TouchLayoutKind.of(controls)
+        let hasKeys = kind == .keys || kind == .mixed, hasPad = kind == .pad || kind == .mixed
+        return TouchLayoutPlan(layout: layout, kind: kind,
+                               keysPath: hasKeys ? (shown ? "on" : "off") : "n/a",
+                               pad: hasPad ? (!shown ? "hidden" : !padAvailable ? "off" : accepting ? "connected" : "waiting") : "n/a",
+                               controls: controls.count)
+    }
+}
+
+extension ControlPresetLayout {
+    /// The built-in a game gets when its touch controls are on and nothing is on screen: the controller for a
+    /// Steam game (nearly all read XInput), the keyboard and mouse for any other (a program added by hand,
+    /// a GOG game) and for every game when touch XInput is off (a pad layout would be inert).
+    static func defaultID(steam: Bool, touchPad: Bool) -> String {
+        steam && touchPad ? xboxID : keyboardID
+    }
 }
 
 /// The layout list: built-ins (read-only, in code), then the user's own
@@ -184,6 +301,8 @@ struct ControlPresetStore: Equatable {
     static let builtIns: [ControlPreset] = [
         ControlPreset(id: ControlPresetLayout.xboxID, name: ControlPresetLayout.xboxName,
                       controls: ControlPresetLayout.xbox(for: .referencePhone)),
+        ControlPreset(id: ControlPresetLayout.keyboardID, name: ControlPresetLayout.keyboardName,
+                      controls: ControlPresetLayout.keyboard(for: .referencePhone)),
     ]
     static let maxNameLength = 40
 
@@ -281,8 +400,9 @@ struct ControlPresetStore: Equatable {
     /// loaded on.
     static func layout(of p: ControlPreset, screen: ControlPresetScreen?) -> [TouchControl] {
         var controls = p.controls
-        if p.id == ControlPresetLayout.xboxID, let screen {
-            let fitted = ControlPresetLayout.xbox(for: screen)
+        if let screen {
+            let fitted = p.id == ControlPresetLayout.xboxID ? ControlPresetLayout.xbox(for: screen)
+                : p.id == ControlPresetLayout.keyboardID ? ControlPresetLayout.keyboard(for: screen) : []
             if !fitted.isEmpty { controls = fitted }
         }
         return controls.map { c in
@@ -309,6 +429,9 @@ final class ControlPresetsModel: ObservableObject {
     /// 18-button overlay they did not ask for. Nothing on disk tells the two
     /// apart reliably, so the built-in is applied automatically only on request.
     static let xboxDefault = GamepadInput.optIn("MADEIRA_CONTROLS_XBOX_DEFAULT")
+    /// A library game whose touch controls are on with nothing on screen gets a built-in layout for its kind
+    /// (applyGameDefault). Only "0" turns it off.
+    static let gameDefault = GamepadInput.flag("MADEIRA_TOUCH_GAME_DEFAULT")
 
     @Published private(set) var store = ControlPresetStore()
     /// A file that exists and cannot be read is left untouched: saving is
@@ -334,9 +457,9 @@ final class ControlPresetsModel: ObservableObject {
     /// The controller built-in needs touch XInput; without it its buttons are inert.
     private static var touchPad: Bool { MainActor.assumeIsolated { GamepadInput.touchEnabled } }
 
-    /// What the layout menu lists.
+    /// What the layout menu lists. The controller built-in needs touch XInput; the keyboard one does not.
     var available: [ControlPreset] {
-        (Self.touchPad ? ControlPresetStore.builtIns : []) + store.user
+        ControlPresetStore.builtIns.filter { $0.id != ControlPresetLayout.xboxID || Self.touchPad } + store.user
     }
 
     var active: ControlPreset? { TouchControlsModel.shared.layoutID.flatMap { store.preset($0) } }
@@ -400,8 +523,50 @@ final class ControlPresetsModel: ObservableObject {
         m.selected = nil
         m.controls = controls
         m.layoutID = p.id
-        log("loaded layout=\(ControlPresetStore.isBuiltIn(p.id) ? "xbox" : "custom") controls=\(controls.count) reason=\(reason)")
+        let kind = p.id == ControlPresetLayout.xboxID ? "xbox" : p.id == ControlPresetLayout.keyboardID ? "keyboard" : "custom"
+        log("loaded layout=\(kind) controls=\(controls.count) reason=\(reason)")
     }
+
+    /// A library game's touch controls are on and nothing is on screen (no controls, no layout): put a built-in
+    /// layout on screen that suits the game, as if the player had picked it, so they do not have to build a
+    /// controller or PC keyboard layout by hand. `steam`: a Steam game (the controller layout), else the keyboard
+    /// one. Never over controls or a layout the player has (an empty custom layout is a layout), and nothing
+    /// while the editor is open. MADEIRA_TOUCH_GAME_DEFAULT=0 and MADEIRA_CONTROL_PRESETS=0 turn it off.
+    @discardableResult func applyGameDefault(steam: Bool, reason: String) -> Bool {
+        let m = TouchControlsModel.shared
+        guard Self.enabled, m.visible, !m.editing, m.controls.isEmpty, m.layoutID == nil else { return false }
+        guard Self.gameDefault else {
+            if !loggedGameDefaultOff {
+                loggedGameDefaultOff = true
+                LogStore.shared.log("[touch] default layout not applied: env.MADEIRA_TOUCH_GAME_DEFAULT=0 (reason=\(reason))")
+            }
+            return false
+        }
+        let id = ControlPresetLayout.defaultID(steam: steam, touchPad: Self.touchPad)
+        guard let preset = store.preset(id) else { return false }
+        load(id, screen: Self.currentScreen(), reason: "game-default-" + reason)
+        LogStore.shared.log("[touch] default layout=\"\(BCDTouchNames.layoutName(id: preset.id, stored: preset.name))\" for=\(steam ? "steam" : "local") reason=\(reason) controls=\(m.controls.count)")
+        return true
+    }
+    private var loggedGameDefaultOff = false
+
+    /// The one `[touch] layout="..." kind=... keys-path=... pad=... controls=...` line for what the touch layer does with
+    /// the layout on screen: logged when it changes (the overlay calls this on every change of controls, visibility,
+    /// editing or menus), at most 64 times.
+    func logPlan(shown: Bool, accepting: Bool) {
+        let m = TouchControlsModel.shared
+        let name = active.map { BCDTouchNames.layoutName(id: $0.id, stored: $0.name) } ?? (m.controls.isEmpty ? "none" : "unsaved")
+        let plan = TouchLayoutPlan.make(layout: name, controls: m.controls, shown: shown, accepting: accepting,
+                                        padAvailable: Self.touchPad)
+        guard plan != lastPlan, plannedLines < 64 else { return }
+        lastPlan = plan
+        plannedLines += 1
+        LogStore.shared.log(plan.line)
+    }
+    private var lastPlan: TouchLayoutPlan?
+    /// A game session begins: its first plan is logged even if it equals the last session's.
+    func sessionBegan() { lastPlan = nil }
+    private var plannedLines = 0
 
     /// Keep the unsaved on-screen controls as the next "Custom Layout N".
     @discardableResult func keepCurrent() -> Bool {

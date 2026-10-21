@@ -278,8 +278,17 @@ enum AutoTune {
                                            fingerprint: m.fingerprint, log: log.lastPathComponent)
         save(after, m.windowsPath)
         let next = after.candidate.map { $0.isEmpty ? "the same settings once more" : $0.joined(separator: "; ") } ?? "nothing"
+        // What became of the line this session tried, and which lines stay (text only): a kept line is never taken back
+        // by itself, and the logs of build 576 could not say why env.MADEIRA_FEX_AVX = 1 had been kept on a game
+        // whose every session after it ended earlier (Rockstar Launcher: GBY65K, Y5MEB6, A50T0Q).
+        var verdict = ""
+        if report.outcome != "inconclusive", let last = after.attempts.last, let rule = last.rule {
+            verdict = "; tried \(rule): " + (last.kept == true ? "kept" : "reverted")
+        }
+        let keptNow = after.kept.isEmpty ? "" : "; kept \(after.kept.joined(separator: ", "))"
         LogStore.shared.log("[autotune] \(m.title): \(report.outcome) at stage \(report.stage) after \(Int(report.seconds)) s; "
-                            + "matched \(report.matched.joined(separator: ",")); status \(after.status); next \(next)")
+                            + "matched \(report.matched.joined(separator: ",")); status \(after.status); next \(next)"
+                            + verdict + keptNow)
         let offer = AutoTuneOffer(title: m.title, windowsPath: m.windowsPath, report: report, state: after,
                                   reason: after.candidateRule.flatMap { id in rules.first { $0.id == id }?.reason })
         DispatchQueue.main.async { AutoTuneOffers.shared.offer = offer }

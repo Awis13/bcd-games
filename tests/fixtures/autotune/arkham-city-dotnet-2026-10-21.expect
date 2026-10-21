@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "seconds": 68,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "dotnet-setup-never-finishes"
+ ],
+ "next": [],
+ "note": "Batman: Arkham City GOTY (Steam 200260), build 576, iPad16,5 (Discord log-83643051, the installs-only session): the one-time install of the .NET Framework 3.5 setup (DotNetFx35.exe -> dotNetFx35setup.exe -> setup.exe /web /q) never ends; build 574 did the same (PTKASZ, dotnet=unfinished, auto-tune hung at stage 2). The user's 'froze' answer is assumed (the 576 session was ended by killing the app, which auto-tune read as inconclusive). Build 578 does not run .NET Framework setups (provided by Wine Mono)",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "known"
+}

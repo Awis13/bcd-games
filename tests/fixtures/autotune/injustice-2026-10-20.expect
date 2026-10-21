@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x87-int64-roundtrip"
+ ],
+ "next": [
+  "env.FEX_X87REDUCEDPRECISION = 0"
+ ],
+ "note": "Injustice: Gods Among Us Ultimate Edition (Steam 242700, 32-bit, UE3), build 574, iPhone18,2 (Send Log G5HGVV): first unhandled fault is the same ldapr read after the same FILD/FISTP qword list-head function (EIP 0xB52B3D) at 0x798cd60000 (a hole after a live view); the session had run 323 s. Attempt env.FEX_X87REDUCEDPRECISION = 0, not proven",
+ "outcome": "crashed",
+ "stage": 5,
+ "status": "trying"
+}

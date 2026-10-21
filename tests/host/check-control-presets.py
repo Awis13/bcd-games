@@ -8,7 +8,10 @@ controller layout on phone and tablet screens, built-ins read-only, "Custom
 Layout N" naming, encode/decode and what loading a layout puts on screen.
 
 The preset is checked as data: its name, id and its 18 bindings, each an XInput
-mapping that produces a non-neutral pad sample; and the key sticks' glyphs.
+mapping that produces a non-neutral pad sample; and the key sticks' glyphs. The
+built-in PC keyboard layout (a WASD stick, the mouse buttons and the usual keys)
+is checked the same way, and the kind/plan the log line `[touch] layout=...` states
+and the built-in a game gets when its touch controls are on with nothing on screen.
 
 Part B checks the UI wiring in the same files: kill switches, the write-back
 on the end of an edit, the default for new users only, and the session slot.
@@ -106,8 +109,9 @@ require(ids.count == expected.count, "built-in controls have distinct ids")
 
 // --- The Xbox controller preset as data: what a user is offered and what each button does.
 let builtIn = ControlPresetStore.builtIns
-require(builtIn.count == 1 && builtIn[0].id == ControlPresetLayout.xboxID && builtIn[0].name == "Xbox controller",
-        "one built-in, listed as \"Xbox controller\"")
+require(builtIn.count == 2 && builtIn[0].id == ControlPresetLayout.xboxID && builtIn[0].name == "Xbox controller"
+        && builtIn[1].id == ControlPresetLayout.keyboardID && builtIn[1].name == "PC keyboard",
+        "two built-ins: \"Xbox controller\" first, then \"PC keyboard\"")
 require(builtIn[0].controls.count == 18 && Set(builtIn[0].controls.compactMap { $0.action.padName }) == Set(expected),
         "the built-in binds the 18 controller inputs, none twice")
 require(builtIn[0].controls.allSatisfy { c in
@@ -121,6 +125,85 @@ let one = ControlPresetStore(user: [ControlPreset(id: "u", name: "Mine", control
 require(one.resolvedID(ControlPresetLayout.xboxID) == ControlPresetLayout.xboxID && one.resolvedID("u") == "u",
         "a game's remembered built-in or custom layout resolves")
 require(one.resolvedID("gone") == nil && one.resolvedID(nil) == nil, "a deleted or absent layout resolves to none")
+
+// --- The built-in PC keyboard layout: complete, on screen, non-overlapping, and nothing but keys and the mouse.
+let keyboardExpected: [ControlAction] = [.joystickWASD, .mouseLeft, .mouseRight, .key(0x20), .key(0x45), .key(0x52), .key(0x46),
+                                         .key(0x10), .key(0x11), .key(0x51), .key(0x1B), .key(0x09), .key(0x0D), .keyboardToggle]
+for (label, screen) in screens {
+    let s = screen.landscape
+    let cs = ControlPresetLayout.keyboard(for: screen)
+    require(cs.count == keyboardExpected.count && keyboardExpected.allSatisfy { a in cs.filter { $0.action == a }.count == 1 },
+            "\(label): PC keyboard: WASD, both mouse buttons, Space, E, R, F, Shift, Ctrl, Q, Esc, Tab, Enter and the keyboard once each")
+    require(cs.allSatisfy { !$0.action.isPad }, "\(label): PC keyboard: no controller input in it")
+    require(cs.allSatisfy { $0.scale >= 0.5 && $0.scale <= 3.0 }, "\(label): PC keyboard: scales inside the pinch clamp")
+    require(cs.allSatisfy { $0.nx >= 0.03 && $0.nx <= 0.97 && $0.ny >= 0.03 && $0.ny <= 0.97 },
+            "\(label): PC keyboard: positions inside the editor's drag clamp")
+    let m = ControlPresetLayout.margins(s)
+    let safe = CGRect(x: m.left, y: m.top, width: s.width - m.left - m.right, height: s.height - m.top - m.bottom)
+    let boxes = cs.map { ControlPresetLayout.box($0, screen: s) }
+    require(boxes.allSatisfy { safe.contains($0) }, "\(label): PC keyboard: every control inside the safe area")
+    var overlaps: [String] = []
+    for i in cs.indices { for j in cs.indices where j > i {
+        let dx = boxes[i].midX - boxes[j].midX, dy = boxes[i].midY - boxes[j].midY
+        if (dx * dx + dy * dy).squareRoot() < boxes[i].width / 2 + boxes[j].width / 2 + 2 {
+            overlaps.append("\(cs[i].action.label)/\(cs[j].action.label)")
+        }
+    } }
+    require(overlaps.isEmpty, "\(label): PC keyboard: no two controls overlap \(overlaps)")
+    let bar = ControlPresetLayout.topBarRect(s)
+    require(!boxes.contains { $0.intersects(bar) }, "\(label): PC keyboard: the overlay's top buttons stay free")
+    let wasd = cs.first { $0.action == .joystickWASD }!, mouseLeft = cs.first { $0.action == .mouseLeft }!
+    let esc = cs.first { $0.action == .key(0x1B) }!, enter = cs.first { $0.action == .key(0x0D) }!
+    require(wasd.nx < 0.3 && wasd.ny > 0.6 && mouseLeft.nx > 0.7 && mouseLeft.ny > 0.7 && esc.nx < 0.2 && esc.ny < 0.2
+            && enter.nx > 0.8 && enter.ny < 0.2, "\(label): PC keyboard: the stick bottom left, the mouse button bottom right, Esc and Enter in the top corners")
+}
+require(Set(ControlPresetLayout.keyboard(for: .referencePhone).map { $0.id }).count == keyboardExpected.count, "keyboard controls have distinct ids")
+require(builtIn[1].controls.count == 14 && TouchLayoutKind.of(builtIn[1].controls) == .keys,
+        "the built-in keyboard layout is stored for the reference phone, 14 controls, all keys and mouse")
+var readOnlyStore = ControlPresetStore()
+require(ControlPresetStore.isBuiltIn(ControlPresetLayout.keyboardID) && !readOnlyStore.delete(id: ControlPresetLayout.keyboardID)
+        && !readOnlyStore.overwrite(id: ControlPresetLayout.keyboardID, controls: []),
+        "the keyboard built-in is read-only too")
+require(readOnlyStore.save(name: "pc KEYBOARD ", controls: [], newID: { "x" }) == .refusedBuiltIn, "a built-in's name is refused: PC keyboard")
+let fitKeyboard = ControlPresetStore.layout(of: ControlPresetStore.builtIns[1], screen: ControlPresetScreen(width: 1194, height: 834, top: 24, bottom: 20))
+require(fitKeyboard.map { $0.action } == ControlPresetLayout.keyboard(for: ControlPresetScreen(width: 1194, height: 834, top: 24, bottom: 20)).map { $0.action }
+        && fitKeyboard.map { $0.scale } == ControlPresetLayout.keyboard(for: ControlPresetScreen(width: 1194, height: 834, top: 24, bottom: 20)).map { $0.scale },
+        "the keyboard built-in is laid out again for the screen it is loaded on")
+let keyboardJSON = String(decoding: try! JSONEncoder().encode(builtIn[1].controls), as: UTF8.self)
+require(keyboardJSON.contains("joystickWASD") && keyboardJSON.contains("mouseLeft") && !keyboardJSON.contains("\"pad\""),
+        "the keyboard built-in stores keys, never a controller input")
+
+// --- What the touch layer does with a layout (the log's kind=, keys-path=, pad=) and which built-in a game gets.
+let padLayout = ControlPresetLayout.xbox(for: .referencePhone), keyLayout = ControlPresetLayout.keyboard(for: .referencePhone)
+require(TouchLayoutKind.of(padLayout) == .pad && TouchLayoutKind.of(keyLayout) == .keys
+        && TouchLayoutKind.of(padLayout + keyLayout) == .mixed && TouchLayoutKind.of([]) == .none,
+        "kind: the controller layout is pad, the keyboard layout keys, both mixed, none none")
+var noAction = TouchControl(); noAction.action = .none
+var oddPad = TouchControl(); oddPad.action = .pad("Nope")
+require(TouchLayoutKind.of([noAction, oddPad]) == .none, "kind: a control that does nothing, or an unsupported controller input, counts for neither")
+var toggle = TouchControl(); toggle.action = .keyboardToggle
+require(TouchLayoutKind.of([toggle]) == .keys, "kind: the keyboard button is keys")
+let onKeys = TouchLayoutPlan.make(layout: "PC keyboard", controls: keyLayout, shown: true, accepting: true, padAvailable: true)
+require(onKeys.line == "[touch] layout=\"PC keyboard\" kind=keys keys-path=on pad=n/a controls=14",
+        "log line for a keyboard layout: keys path on, no pad: \(onKeys.line)")
+let onPad = TouchLayoutPlan.make(layout: "Xbox controller", controls: padLayout, shown: true, accepting: true, padAvailable: true)
+require(onPad.line == "[touch] layout=\"Xbox controller\" kind=pad keys-path=n/a pad=connected controls=18", "log line for the controller layout: pad connected: \(onPad.line)")
+require(TouchLayoutPlan.make(layout: "x", controls: padLayout, shown: true, accepting: false, padAvailable: true).pad == "waiting",
+        "a menu, the starting screen or the editor has the pad: waiting")
+require(TouchLayoutPlan.make(layout: "x", controls: padLayout, shown: true, accepting: true, padAvailable: false).pad == "off",
+        "touch XInput off: the controller buttons are inert, and the line says pad=off")
+require(TouchLayoutPlan.make(layout: "x", controls: padLayout, shown: false, accepting: true, padAvailable: true).pad == "hidden"
+        && TouchLayoutPlan.make(layout: "x", controls: keyLayout, shown: false, accepting: true, padAvailable: true).keysPath == "off",
+        "hidden controls: pad=hidden, keys-path=off")
+let mixedPlan = TouchLayoutPlan.make(layout: "unsaved", controls: padLayout + keyLayout, shown: true, accepting: true, padAvailable: true)
+require(mixedPlan.kind == .mixed && mixedPlan.keysPath == "on" && mixedPlan.pad == "connected", "a mixed layout: both paths on")
+require(TouchLayoutPlan.make(layout: "none", controls: [], shown: true, accepting: true, padAvailable: true).line
+        == "[touch] layout=\"none\" kind=none keys-path=n/a pad=n/a controls=0", "no controls: kind=none")
+require(ControlPresetLayout.defaultID(steam: true, touchPad: true) == ControlPresetLayout.xboxID
+        && ControlPresetLayout.defaultID(steam: false, touchPad: true) == ControlPresetLayout.keyboardID
+        && ControlPresetLayout.defaultID(steam: true, touchPad: false) == ControlPresetLayout.keyboardID
+        && ControlPresetLayout.defaultID(steam: false, touchPad: false) == ControlPresetLayout.keyboardID,
+        "default built-in: the controller for a Steam game, the keyboard for any other, and for every game without touch XInput")
 
 // --- The key sticks carry a glyph that tells them apart; nothing else does.
 require(ControlAction.joystickWASD.stickGlyph == "keyboard", "the WASD stick's glyph is the keyboard")
@@ -255,6 +338,33 @@ assert begin.index('if let profile = entry.controls') < begin.index('resolvedID'
 assert 'entry.controlLayout = controls.layoutID' in function(model_lib, 'func saveCurrentProfile()')
 fin = function(model_lib, 'private func finish()')
 assert fin.index('saveCurrentProfile()') < fin.index('controls.layoutID = savedLayout'), 'the session restores the shared layout after saving'
+
+# 578 (tester: "keyboard layout in custom games doesn't work ... need manually to add pc keyboard"): the built-in PC keyboard
+# layout is listed whether or not touch XInput is on, and a game whose touch controls are on with nothing on screen gets the
+# built-in that suits it. Only an empty overlay changes: controls or a layout the player has are never replaced.
+assert '.flag("MADEIRA_TOUCH_GAME_DEFAULT")' in presets and '.optIn("MADEIRA_TOUCH_GAME_DEFAULT")' not in presets, \
+    'the game default is on, with a kill switch at 0'
+available = function(presets, 'var available: [ControlPreset] {')
+assert '$0.id != ControlPresetLayout.xboxID || Self.touchPad' in available, 'only the controller built-in needs touch XInput'
+apply = function(presets, '@discardableResult func applyGameDefault(steam: Bool, reason: String) -> Bool {')
+for needle in ('Self.enabled', 'm.visible', '!m.editing', 'm.controls.isEmpty', 'm.layoutID == nil'):
+    assert needle in apply.split('guard Self.gameDefault')[0], 'the game default only fills an empty overlay: ' + needle
+assert apply.index('guard Self.gameDefault') < apply.index('load(id,'), 'the kill switch comes before the layout is put on screen'
+assert 'ControlPresetLayout.defaultID(steam: steam, touchPad: Self.touchPad)' in apply
+assert '[touch] default layout=' in apply and 'MADEIRA_TOUCH_GAME_DEFAULT=0' in apply, 'every decision is logged'
+# 578 (lead): no default at session start (an empty overlay with touch controls on may be the player's touch-as-mouse
+# setup); only turning touch controls on in the in-game menu fills an empty overlay.
+assert 'applyGameDefault(' not in begin and 'ControlPresetsModel.shared.sessionBegan()' in begin, \
+    'a session never puts a default layout on screen by itself'
+live = (app / 'BCDTouchLive.swift').read_text()
+set_visible = function(live, 'func setVisible(_ on: Bool) {')
+assert 'presets.applyGameDefault(' in set_visible and 'if on, let entry = library.activeEntry, inLibrarySession' in set_visible \
+    and set_visible.index('model.visible = on') < set_visible.index('applyGameDefault('), 'turning touch controls on in a library session fills an empty overlay'
+configure = function(overlay, 'private func configureGamepad(landscape: Bool) {')
+assert 'ControlPresetsModel.shared.logPlan(shown: landscape && m.visible, accepting: accepting)' in configure \
+    and configure.index('GamepadInput.shared.configureTouch(') < configure.index('logPlan('), 'the [touch] line follows what configureTouch was given'
+assert 'ControlPresetLayout.keyboardID' in function(presets, 'static func layout(of p: ControlPreset, screen: ControlPresetScreen?)'), \
+    'a keyboard built-in is laid out again for the screen it is loaded on'
 
 # The WASD stick's centre glyph: fed by the action (the classic stick face that drew it is deleted; BCD's controls draw their own).
 assert 'var stickGlyph: String?' in content, 'the action still names its stick glyph'

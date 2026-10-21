@@ -1268,6 +1268,12 @@ struct ContentView: View {
         // unless its Game details page chose "The game": then its own program starts below, like
         // any library game (SteamDirectStart).
         if let appID = entry.steamAppID, !entry.startsSteamGameDirectly {
+            // A second Play while this game's Dock start is on its way changes nothing: not the
+            // launch options applied below, and not the first start's sign-in (DockLaunchGate).
+            guard !DockStartScreen.launchGate.busy(now: ProcessInfo.processInfo.systemUptime) else {
+                LogStore.shared.log("[madeira-dock] a start is already on its way: this Play is ignored app=\(appID)")
+                return
+            }
             guard let game = MadeiraDock.games(drive: MadeiraDock.drive).first(where: { $0.id == appID }) else {
                 library.error = "Steam doesn't show this game as installed anymore. Refresh the library, then try again."; return
             }
@@ -2149,6 +2155,13 @@ struct ContentView: View {
     /// `profile` is a Steam game's library entry (its Game details page): the
     /// session then takes that entry's display, performance and on-screen settings.
     private func startDock(_ game: DockGame, compactPool: Bool, profile: LibraryEntry? = nil) {
+        // A second Play while a Dock start is on its way (a double tap) is ignored: its failure
+        // would clean up the first start's sign-in transfer and give the account back while the
+        // host signs in (Panzer Paladin 9BAP3Q: Dock code 30). DockLaunchGate.
+        guard !DockStartScreen.launchGate.busy(now: ProcessInfo.processInfo.systemUptime) else {
+            logStore.log("[madeira-dock] a start is already on its way: this Play is ignored app=\(game.id)")
+            return
+        }
         guard jitReadyForLaunch(entry: profile?.id,
                                 then: { startDock(game, compactPool: compactPool, profile: profile) }) else { return }
         guard cloudClear(game.id, name: game.name, retry: { startDock(game, compactPool: compactPool, profile: profile) }) else { return }
@@ -2162,7 +2175,10 @@ struct ContentView: View {
             library.restartNotice = LibraryModel.restartMessage
             return
         }
+        // This start is the one on its way until its session begins or it fails (below).
+        DockStartScreen.launchGate.begin(now: ProcessInfo.processInfo.systemUptime)
         func fail(_ error: Error) {
+            DockStartScreen.launchGate.end()
             MadeiraDock.cleanup()
             SteamOwnedLibrary.shared.dockEnded()
             MadeiraDockModel.shared.status = error.localizedDescription
@@ -2208,6 +2224,12 @@ struct ContentView: View {
             // a Reset takes out what they installed; the other games share those installs.
             DockInstallers.prepare(game, drive: MadeiraDock.drive, prefix: MadeiraDock.prefix,
                                    others: MadeiraDock.games(drive: MadeiraDock.drive))
+            // madeira-bcd (round 578): a start that has Valve's client prepare per-user executables (CEG)
+            // finds Valve's own client service installed, as on Windows; the Dock host's own installer
+            // step failed in 3 of 5 logged sessions (DockCEGService). No session runs yet.
+            if !DockInstallers.installsOnly {
+                DockCEGService.prepare(game, drive: MadeiraDock.drive, prefix: MadeiraDock.prefix)
+            }
             if DockInstallers.installsOnly {
                 // No host runs in this session: nothing will take the sign-in transfer.
                 MadeiraDock.cleanup()
@@ -2265,6 +2287,7 @@ struct ContentView: View {
             MadeiraDockModel.shared.watchReport()
             if let profile { library.begin(profile, dock: game) }
             else { library.begin(.dockSession(title: game.name, width: width, height: height), remember: false, dock: game) }
+            DockStartScreen.launchGate.end()   // the library session exists now: its own guards answer a later Play
             runWineFullSequence(profile: profile)
         }
     }
@@ -2694,6 +2717,11 @@ struct TouchControlsOverlay: View {
         let accepting = !m.editing && !library.blocksGameplayTouch
         GamepadInput.shared.configureTouch(controls: Set(ids), acceptingInput: accepting)
         TouchMouseGate.padOverlay = accepting && !ids.isEmpty
+        // The `[touch] layout=... kind=... keys-path=... pad=...` line: what the touch layer does with the layout
+        // on screen, while a game runs (a library session or a program Wine runs by itself).
+        if library.current != nil || wine_process_is_running() != 0 {
+            ControlPresetsModel.shared.logPlan(shown: landscape && m.visible, accepting: accepting)
+        }
     }
 
     /// ml1970: with MADEIRA_CONTROLS_XBOX_DEFAULT=1, a user with no controls file gets the built-in controller

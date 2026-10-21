@@ -184,6 +184,32 @@ struct SteamLaunchHold {
     }
 }
 
+/// Whether a Dock start is already on its way. A Dock start is a launch in progress from the Play
+/// tap until the library session begins or the start fails: between them it signs the account
+/// over (the app's own Steam connection closes, the one-use transfer is written) and the Wine
+/// session starts. A second Play tap in that time (a double tap, 1.4 s apart in a Panzer Paladin
+/// log) started a second launch whose failure then cleaned up the first one's transfer and gave
+/// the account back while the host was signing in (Dock code 30). A start asked for while another
+/// is on its way is ignored instead. `staleAfter`: a launch that never ended (a network wait that
+/// never returned) stops blocking Play after this many seconds, so Play cannot stay dead.
+/// Main thread only (ContentView.startDock).
+struct DockLaunchGate {
+    static let staleAfter = 60.0
+    private(set) var since: Double?
+
+    /// Another launch is on its way at `now`.
+    func busy(now: Double) -> Bool {
+        guard let since else { return false }
+        return now - since < Self.staleAfter
+    }
+
+    /// This launch is the one on its way from now.
+    mutating func begin(now: Double) { since = now }
+
+    /// The launch's session began, or its start failed.
+    mutating func end() { since = nil }
+}
+
 /// The starting screen's text for a Dock start, from the host's numeric report.
 /// The host writes its fields as it goes (madeira-dock src/main.c,
 /// session.c, launch.c), and the text follows the furthest stage reported: the
@@ -268,6 +294,9 @@ extension SteamLaunchScene.Places {
 /// thread only (the session timer and the views).
 final class DockStartScreen: ObservableObject {
     static let shared = DockStartScreen()
+    /// A Dock start is on its way (Play tapped, the library session not begun): a second Play is
+    /// ignored meanwhile (ContentView.startDock, DockLaunchGate). Main thread only.
+    static var launchGate = DockLaunchGate()
 
     /// A Dock start's session runs (the status line, a failure and its Close session).
     @Published private(set) var active = false

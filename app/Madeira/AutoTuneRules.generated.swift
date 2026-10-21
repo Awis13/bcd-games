@@ -105,6 +105,155 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[pool-poison] HANDED OUT NON-EXEC"
+    ]
+   },
+   {
+    "has": [
+     "[copy-verify]",
+     ".text pages BORN NON-EXEC"
+    ]
+   },
+   {
+    "has": [
+     "[exec-recover] pg=",
+     "mprotect_rx=-1",
+     "pool-rx"
+    ]
+   },
+   {
+    "has": [
+     "[redeliv] terminating process"
+    ]
+   }
+  ],
+  "evidence": [
+   "vice-city-2026-10-21 (AE6NQZ, build 576)",
+   "S0TH0N (build 574, same offsets)",
+   "tests/host/check-pool-dead-range.py (build 577)"
+  ],
+  "fixedIn": 577,
+  "id": "child-ntdll-copy-lost-exec",
+  "lines": [],
+  "priority": 1,
+  "reason": "The private copy of a system library that a helper process needs was placed on JIT-pool memory that had lost the right to run code; from this build on BCD takes the next range that can."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[wow-window] small address map"
+    ]
+   },
+   {
+    "has": [
+     "[laa] ml1070 SPILL"
+    ]
+   },
+   {
+    "has": [
+     "[map-sec] virtual_map_section",
+     "-> 0xc0000017"
+    ]
+   },
+   {
+    "has": [
+     "failed to initialize, aborting"
+    ]
+   }
+  ],
+  "evidence": [
+   "small-map-window-2026-10-21 (Shade 39Z345, C534F0, Z5F6MG, build 576)",
+   "tests/host/check-reserved-area-retry.py (build 577)"
+  ],
+  "fixedIn": 577,
+  "id": "small-map-window-no-place",
+  "lines": [],
+  "priority": 1,
+  "reason": "On this device's smaller address map a 32-bit program's memory request found no place in its 4 GB window although space was free; from this build on BCD tries the next free range when the system refuses one."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[dock-installers] start"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=DotNetFx"
+    ]
+   },
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=dotNetFx"
+    ]
+   },
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=dotnetfx"
+    ]
+   },
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=NDP"
+    ]
+   },
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=ndp"
+    ]
+   },
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=NetFx"
+    ]
+   },
+   {
+    "has": [
+     "[dock-installers] app=",
+     "status=pending",
+     "file=netfx"
+    ]
+   }
+  ],
+  "evidence": [
+   "arkham-city-dotnet-2026-10-21 (log-83643051, build 576)",
+   "PTKASZ (build 574, same game)",
+   "tests/host/check-dock-installers.py (build 578)"
+  ],
+  "fixedIn": 578,
+  "id": "dotnet-setup-never-finishes",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[dock-installers] end succeeded"
+    ]
+   }
+  ],
+  "priority": 1,
+  "reason": "The game's one-time install of Microsoft's .NET Framework never finished under Wine and kept the start from going on; from this build on BCD does not run it (Wine Mono provides .NET) and starts the game.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[x18-emul3] UNRECOGNIZED insn="
     ]
    }
@@ -141,6 +290,39 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[mach_exc] UNHANDLED"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[mach_exc] sym pc=",
+     "req_cancel_async"
+    ]
+   },
+   {
+    "has": [
+     "NATIVE-THREAD DECLINE",
+     "req_cancel_async"
+    ]
+   }
+  ],
+  "evidence": [
+   "beamng-drive-2026-10-21 (SYDJDY, build 576)",
+   "BeamNG VV1FQ4, SRWY27, DZ6BN4 (build 574)",
+   "tests/host/check-wineserver-async-cancel.py (build 577)"
+  ],
+  "fixedIn": 577,
+  "id": "wineserver-cancel-async-freed",
+  "lines": [],
+  "priority": 1,
+  "reason": "BCD's own Windows server released an I/O request while it was still cancelling it, and iOS closed the app; from this build on it keeps the request until it is done."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[mach_exc] pc PE: libwow64fex.dll+"
     ]
    },
@@ -168,6 +350,26 @@ enum AutoTuneBuiltInRules {
   "lines": [],
   "priority": 1,
   "reason": "BCD ran the 32-bit emulator's start-up code from a different copy of the module than the one it then used, so every 32-bit program stopped before its first instruction; from this build on both use the same copy."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[dock-report] ceg-result=-5"
+    ]
+   }
+  ],
+  "evidence": [
+   "ceg-service-not-installed-2026-10-21 (Call of Duty: Black Ops codbo-prev, build 576)",
+   "Just Cause 2 JYFG4D (build 574): same RPC 1726, exit 1",
+   "tests/host/check-dock-ceg-service.py (build 578)"
+  ],
+  "fixedIn": 578,
+  "id": "ceg-service-not-installed",
+  "lines": [],
+  "priority": 1,
+  "reason": "Valve's client service, which Steam needs to prepare this game's executable, was not installed in BCD's Windows setup, and Valve's installer for it failed inside the session; from this build on BCD installs it before the game starts.",
+  "session": "dock"
  },
  {
   "all": [
@@ -355,6 +557,63 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[guest-rip-sec]",
+     "'' rva",
+     "(RWX)"
+    ]
+   },
+   {
+    "has": [
+     "[guest-code] rev=ml333 pool_rip=",
+     "): "
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Unhandled exception"
+    ]
+   },
+   {
+    "has": [
+     "ACCEPTING terminal root frame"
+    ]
+   },
+   {
+    "has": [
+     "Runtime error!"
+    ]
+   }
+  ],
+  "evidence": [
+   "monster-hunter-stories-3-trial-2026-10-21 (owner, build 576)",
+   "MKPN2N (Monster Hunter Rise, build 574)",
+   "virtual_ios.c ios_x64_image_is_host_data; docs/madeira-bcd-421-sonrasi.md 7e"
+  ],
+  "id": "x64-image-rwx-protector-nocopy",
+  "lines": [
+   "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[x64-image]",
+     "mapped without a pool copy"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 14,
+  "reason": "The game's protector rewrites its own code at start and the emulator did not follow the rewrite; the line runs the program from its loaded image, where the emulator's trap for rewritten code works."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset)"
     ]
    },
@@ -426,6 +685,40 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 15,
   "reason": "The game swaps values in its own executable memory at unaligned addresses, which BCD's write emulation refuses, so one store faulted forever; the line makes the game's executable memory plain read/write, as on Windows."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[fault-host]",
+     "9e620282 6ee19842 4ee1b842"
+    ]
+   }
+  ],
+  "evidence": [
+   "arkham-city-skip (a tester's iPad16,5, build 576), PTKASZ (build 574)",
+   "G5HGVV, ND8YNB (Injustice, build 574)",
+   "FEX WOW64 Module.cpp ml950 (X87ReducedPrecision on for 32-bit guests)",
+   "tests/host/check-x87-int64-diag.py (build 578)"
+  ],
+  "id": "x87-int64-roundtrip",
+  "lines": [
+   "env.FEX_X87REDUCEDPRECISION = 0"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[x87-int64]",
+     "verdict: EXACT"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 16,
+  "reason": "The game reads an 8-byte list head through the old x87 unit and BCD's fast x87 mode rounds it to 53 bits, which can send the next load to memory that is not there; the line turns on exact x87 math for this game (slower)."
  },
  {
   "all": [
@@ -593,6 +886,41 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 12,
   "reason": "The game's engine insists that Direct3D 12 can make a pipeline library and stops when the call fails; the line makes BCD answer it with a library that keeps nothing."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[mip0]",
+     "GetDesc answers 0"
+    ]
+   },
+   {
+    "has": [
+     "_mtlValidateArgumentsForTextureViewOnDevice",
+     "failed assertion"
+    ]
+   },
+   {
+    "has": [
+     "newLevelRange.location",
+     "mipmapLevelCount"
+    ]
+   }
+  ],
+  "api": "d3d12",
+  "evidence": [
+   "miles-morales-2026-10-21 (iPad16,5, build 576)",
+   "PD7S1E (2026-10-19, iPad16,5, build 574): the same assertion",
+   "docs/arsiv/HFW-DURUM.md (mip0-full, build 533)"
+  ],
+  "id": "mip0-texture-view-beyond-levels",
+  "lines": [
+   "mip0-full = 1"
+  ],
+  "noRetry": true,
+  "priority": 12,
+  "reason": "The game made a texture with the full chain of mip levels and used a level this build did not make, and the graphics driver ended the game; the line gives such textures all their levels."
  },
  {
   "all": [
@@ -821,6 +1149,38 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[tiny-win]",
+     "would size it to the screen"
+    ]
+   }
+  ],
+  "evidence": [
+   "american-truck-simulator-2026-10-21 (iPad16,10, build 576; the [tiny-win] line is 578's)",
+   "tests/host/check-tiny-window.py (build 578)"
+  ],
+  "id": "tiny-swapchain-window",
+  "lines": [
+   "env.MADEIRA_TINY_WINDOW_FIX = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "[tiny-win]",
+     "sized to the virtual screen"
+    ]
+   }
+  ],
+  "outcomes": [
+   "hung",
+   "exited-early"
+  ],
+  "priority": 13,
+  "reason": "The game drew into a window far smaller than its picture and never sized it; the line sizes such a window to the screen after three seconds."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[jit-pool] EXHAUSTED (image"
     ]
    }
@@ -992,6 +1352,35 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "loader_init Importing dlls for",
+     ".arm64.exe",
+     "failed, status c0000135"
+    ]
+   }
+  ],
+  "evidence": [
+   "beamng-arm64-launcher-2026-10-21 (SYDJDY); BeamNG VV1FQ4, DZ6BN4, PEVMEQ (build 574)",
+   "tests/host/check-x64-machine.py (build 577)"
+  ],
+  "id": "x64-machine-arm64-launcher",
+  "lines": [
+   "env.MADEIRA_X64_MACHINE = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[x64-machine] IsWow64Process2"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game's launcher took BCD for an ARM machine and started its ARM64 program, which BCD cannot load yet; the line tells it the machine is x64, so it starts the x64 program."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "err:module:import_dll Library XPSPRINT.DLL",
      "not found"
     ]
@@ -1019,6 +1408,48 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[mach_exc] pc PE: setupapi.dll+"
+    ]
+   },
+   {
+    "has": [
+     "[av-args]",
+     "NULL-class fault"
+    ]
+   },
+   {
+    "has": [
+     "[av-args]",
+     "\"HID\\"
+    ]
+   }
+  ],
+  "evidence": [
+   "dying-light-2026-10-21 (log 1c807435, build 576)",
+   "tests/host/check-setupapi-devinst-lock.py (build 577)"
+  ],
+  "id": "setupapi-devinst-race",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = setupapi"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: setupapi.dll -> setupapi-optin.dll"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 10,
+  "reason": "The game's controller library and its main thread listed devices at the same moment, and Wine's device list code read a table that was not made yet; the line gives this game a copy of that library with a lock round the table."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "failed to create main module",
      "c0000018"
     ]
@@ -1033,6 +1464,14 @@ enum AutoTuneBuiltInRules {
    "exe-window-mb = 512"
   ],
   "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[exe-window]",
+     "gets the window"
+    ]
+   }
+  ],
   "priority": 6,
   "reason": "The game's program must load at a fixed address that BCD's JIT pool partly held; the line keeps 512 MB there for it (the pool may be smaller)."
  },
@@ -1105,7 +1544,8 @@ enum AutoTuneBuiltInRules {
   ],
   "evidence": [
    "HANDOFF: Crysis 2 Remastered 540 (c000001d, DISABLEAVX expected), HFW, GoT, Rift Apart 531",
-   "not for an invalid opcode: Age of Empires IV 7DXVSK/34WSPP died the same with AVX on"
+   "not for an invalid opcode: Age of Empires IV 7DXVSK/34WSPP died the same with AVX on",
+   "not for the Rockstar Games Launcher's games: GBY65K, Y5MEB6, A50T0Q (AVX on: service connection fails) against 8JXT6Q, DGNRT5 (AVX off: connects, GTA5.exe plays); gta-v-legacy-2026-10-20 (DR83Z9)"
   ],
   "id": "fex-avx-on",
   "lines": [
@@ -1121,6 +1561,34 @@ enum AutoTuneBuiltInRules {
     "has": [
      "[guest-code] rev=ml333",
      "): d5 "
+    ]
+   },
+   {
+    "has": [
+     "[bcd] library launch Grand Theft Auto V"
+    ]
+   },
+   {
+    "has": [
+     "[bcd] library launch Red Dead Redemption 2"
+    ]
+   },
+   {
+    "has": [
+     "[phase] spawn:",
+     "RockstarService.exe"
+    ]
+   },
+   {
+    "has": [
+     "[phase] spawn:",
+     "Rockstar-Games-Launcher.exe"
+    ]
+   },
+   {
+    "has": [
+     "[phase] spawn:",
+     "Rockstar Games\\\\Launcher\\\\Launcher.exe"
     ]
    }
   ],
@@ -1317,6 +1785,38 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 45,
   "reason": "iOS refused GPU work the game submitted while BCD was in the background, which can leave textures black or the device lost; the line holds the game's GPU work while BCD is not active."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[Wine ntdll/server] process_exit_wrapper("
+    ]
+   },
+   {
+    "has": [
+     "[srv-kill] kill_process pid=0020 violent=0"
+    ]
+   }
+  ],
+  "evidence": [
+   "gta-iv-2026-10-21 (gta4-freeze, build 576)",
+   "Stranglehold RVBE4K (build 569)",
+   "tests/host/check-session-end.py (build 578)"
+  ],
+  "fixedIn": 578,
+  "id": "program-exit-off-boot-thread",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[WineProc] stopping wineserver"
+    ]
+   }
+  ],
+  "priority": 1,
+  "reason": "The game ended on a thread BCD was not watching, so BCD stayed on its last frame; from this build on BCD notices, says that the game closed and returns to the library.",
+  "session": "library"
  },
  {
   "all": [

@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "thread-stack-spill"
+ ],
+ "next": [
+  "env.MADEIRA_THREAD_STACK_SPILL = 1"
+ ],
+ "note": "GTA V Legacy through the Dock, the first start of the Rockstar installers (Social-Club-Setup.exe, Rockstar-Games-Launcher.exe): an unhandled c000001d in the installer matched fex-avx-on; the line turns AVX on in the Launcher process only and every Rockstar session that had it failed at the Launcher's service connection (GBY65K, Y5MEB6, A50T0Q), so the rule has a none signal for the Rockstar Games Launcher's games (ajan5/rockstar, 2026-10-21)",
+ "outcome": "crashed",
+ "stage": 5,
+ "status": "trying"
+}

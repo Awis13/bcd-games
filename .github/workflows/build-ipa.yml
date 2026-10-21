@@ -141,6 +141,12 @@ jobs:
       - name: Check the Dock's one-time install reset
         run: python3 tests/host/check-dock-reset.py --require-swift
 
+      # madeira-bcd (round 578): Valve's client service (Steam Client Service) is installed before a
+      # custom-executable (CEG) Dock start, with Valve's own SteamService.exe, because the host's
+      # in-session installer failed over RPC 1726 in 3 of 5 logged sessions (DockCEGService).
+      - name: Check Valve's client service for a CEG Dock start
+        run: python3 tests/host/check-dock-ceg-service.py --require-swift
+
       # Every Play and download of BCD's interface goes the classic library's way (the same
       # launch function and checks for Steam via BCD Dock or directly, programs from Files and the
       # desktop; downloads that keep running in the background on iOS 26; nothing for Epic or GOG).
@@ -504,6 +510,14 @@ jobs:
           python3 tests/host/check-guest-log-tag.py
           python3 tools/patch-wine-guest-log-tag.py wine/dlls/ntdll/unix/file.c
 
+      # madeira-bcd: RockstarService.exe's own text writes (any file name, every line, 60 lines of their own) in the
+      # session log as [guest-log] svc: in the failing Rockstar Launcher runs of builds 574/576 ("Failed to connect to the
+      # Rockstar Games Library Service") nothing the service itself wrote reached the log. Logging only.
+      - name: Patch wine text-log mirror to mirror the Rockstar service's own files
+        run: |
+          python3 tests/host/check-guest-log-service.py
+          python3 tools/patch-wine-guest-log-service.py wine/dlls/ntdll/unix/file.c
+
       # [file-trace]: every guest open / attribute query with its status when
       # MADEIRA_FILE_TRACE=1 (GTA V Enhanced's "incomplete installation"
       # screen names no file; [file-fail] stops after 64 DLL-search misses).
@@ -601,6 +615,14 @@ jobs:
       # compiles the production header and runs it on constructed memory (macOS).
       - name: Check the [av-args] diagnostic
         run: python3 tests/host/check-av-args-diag.py
+
+      # madeira-bcd ajan5-mhs3: [rwx-fault] (build/ntdll-unix/ios_rwx_fault_diag.h), a guest fault in a page the
+      # emulator translated from and that may have been rewritten under it: the host page's real protection, Wine's
+      # byte for each 4 KB page of it, and the loaded image's bytes next to the pool copy's (Monster Hunter Stories 3
+      # Trial, Monster Hunter Rise). Log only; the test compiles the production header and runs it on constructed
+      # memory (macOS).
+      - name: Check the [rwx-fault] diagnostic
+        run: python3 tests/host/check-rwx-fault-diag.py
 
       # madeira-bcd ios18-jit: JIT readiness on P_TRACED, the SIGTRAP fallback when BCD starts
       # debugged, no exit after a failed pool request, and the debugger-less JIT pool where TXM
@@ -735,6 +757,16 @@ jobs:
       - name: Patch wineserver thread priorities (keep pthread QoS)
         run: python3 tools/patch-wine-thread-qos.py
 
+      # madeira-bcd: the cancel_async request (CancelIo, NtCancelIoFile[Ex]) keeps each async alive while it
+      # cancels it. On iOS the APC for a busy thread cannot be queued, the async completes (and is freed) inside
+      # cancel_async, and cancel_process_async then wrote into it: the whole app died in req_cancel_async
+      # (BeamNG.drive, builds 574 and 576). Where cancel already worked nothing changes
+      # (tests/host/check-wineserver-async-cancel.py runs the real async.c on the host).
+      - name: Patch the wineserver's cancel_process_async (keep the async alive while it is cancelled)
+        run: |
+          python3 tests/host/check-wineserver-async-cancel.py
+          python3 tools/patch-wineserver-async-cancel.py wine
+
       # madeira-bcd: a WM_PAINT that never ends no longer starves WM_TIMER
       # (build/wineserver/queue_ios.c; the Rockstar Games Launcher installer
       # stayed at "Preparing to Install..."; 2026-10-12).
@@ -771,6 +803,11 @@ jobs:
       # no pipeline instead of failing (Returnal ends in a fatal error without it, build 574).
       - name: Check the opt-in D3D12 pipeline library
         run: python3 tests/host/check-d3d12-pipeline-library.py
+
+      # madeira-bcd (round 578): the runtime names a texture view Metal would refuse ([mip0-view]; Miles Morales'
+      # level-1 UAV on a MipLevels 0 texture, builds 574/576); the fix itself is mip0-full = 1.
+      - name: Check the mip0-view diagnostic
+        run: python3 tests/host/check-mip0-view-diag.py
 
       - name: Build base libwineserver.a from wine/server sources
         shell: bash
@@ -1310,6 +1347,16 @@ jobs:
       - name: Patch DXMT layer format
         run: python3 tools/patch-dxmt-layer-format.py
 
+      # A swapchain that goes fullscreen (Windowed = FALSE, SetFullscreenState(TRUE)) makes Windows' DXGI cover the
+      # output with its window; DXMT's headless WSI only said "true". A fullscreen swapchain's window whose client
+      # area is under 160x120 (American Truck Simulator: 132x38 around a 1024x768 picture) now gets the monitor's
+      # size; every larger window is left as it was. Before the DXMT builds.
+      - name: Check DXMT tiny fullscreen window
+        run: python3 tests/host/check-dxmt-wsi-tiny-fullscreen.py
+
+      - name: Patch DXMT tiny fullscreen window
+        run: python3 tools/patch-dxmt-wsi-tiny-fullscreen.py
+
       # env.MADEIRA_DXMT_FAULT_INFO = 1 (off by default): command buffers with
       # encoder execution status, labelled encoders and a [fault-enc] line after
       # "Device error", so a GPU hang names its encoder (GTA V Legacy hung the GPU
@@ -1512,6 +1559,17 @@ jobs:
       - name: Patch winemetal pause while inactive
         run: python3 tools/patch-winemetal-pause-inactive.py
 
+      # madeira-bcd: env.MADEIRA_X64_MACHINE = 1 (off by default): a 32-bit program that asks which machine is native
+      # (IsWow64Process2, PROCESSOR_ARCHITEW6432) hears AMD64 instead of ARM64 (BeamNG.drive's launcher starts its
+      # native ARM64 build, which cannot load, otherwise). Applied to kernelbase/process.c and ntdll/env.c ONLY for
+      # the i386 farm below and put back right after it: the arm64ec builds of extra DLLs (tools/build-wine-extra-
+      # dlls.sh) compare an unpatched ntdll/kernelbase byte for byte with the shipped ones. This script is named
+      # patch-wine-*, so the farm's cache key (which hashes it) rebuilds the farm once.
+      - name: Patch wine for the opt-in x64 machine answer (i386 farm only)
+        run: |
+          python3 tests/host/check-x64-machine.py
+          python3 tools/patch-wine-x64-machine.py wine
+
       # WoW64's 32-bit Windows farm (app/Madeira/i386-windows), which upstream
       # builds from the pinned wine and DXMT (build/wine-i386) and does not
       # commit. Cached per wine/DXMT revision and per the tools/patch-wine-*.py
@@ -1548,6 +1606,10 @@ jobs:
         with:
           path: app/Madeira/i386-windows
           key: ${{ steps.i386rev.outputs.key }}
+
+      - name: Put back the files patched for the i386 farm only (x64 machine answer)
+        if: always()
+        run: git -C wine checkout -- dlls/ntdll/env.c dlls/kernelbase/process.c
 
       # madeira-bcd FORK-ONLY (owner's decision, 2026-10-11): never part of a pull request to
       # upstream. The D3D9 (i386, into the farm above, after its cache is saved) and D3D11
@@ -1706,6 +1768,44 @@ jobs:
       - name: Check .NET write-xor-execute off
         run: python3 tests/host/check-dotnet-wx.py
 
+      # madeira-bcd: [nt-fail] (every failed NtAllocateVirtualMemory[Ex] / NtMapViewOfSection[Ex] with the process, size,
+      # flags and extended parameters, once per kind) and [map-name] (every named section a process creates or opens, with the
+      # status): the Rockstar service never reached its 2 MB shared-memory allocation in builds 574/576. Logging only.
+      - name: Check [nt-fail] and [map-name]
+        run: |
+          python3 tests/host/check-nt-fail-log.py
+          python3 tests/host/check-map-name-log.py
+
+      # madeira-bcd (round 577): a child's ntdll copy skips a pool range that lost EXEC (Vice City AE6NQZ/S0TH0N), a small
+      # address map retries the next free range after a refused MAP_FIXED (iPhone13,4 / iOS 18), and every spawn line
+      # names the child's current directory (Terraria's "Asset could not be found").
+      - name: Check pool dead-range skip, small-map retry, spawn cwd
+        run: |
+          python3 tests/host/check-pool-dead-range.py
+          python3 tests/host/check-reserved-area-retry.py
+          python3 tests/host/check-spawn-cwd-log.py
+          python3 tests/host/check-tail-carve-exec.py
+
+      # madeira-bcd (round 578): a program that ends on a thread other than the engine's boot thread (GTA IV, Stranglehold)
+      # never made __wine_main return, so BCD kept the last frame for good: the library now ends such a session when none of
+      # the program's own processes is left, says "The game closed (exit code N)", and returns; the app's own program name is
+      # given back as the program ends (the dangling getprogname() that crashed iOS afterwards); a child that ended off its
+      # boot thread no longer keeps a launcher's session alive (Hello Neighbor).
+      - name: Check session end off the boot thread
+        run: python3 tests/host/check-session-end.py
+
+      # madeira-bcd (round 578, ajan6-arkham): Batman: Arkham City GOTY (builds 574/576) and Injustice (574) die in the same UE3 lock-free
+      # list pop right after a 64-bit FILD/FISTP that the emulator's 64-bit x87 (X87ReducedPrecision, on for 32-bit guests) rounds to 53
+      # bits. [x87-int64] (build/ntdll-unix/ios_x87_int64_diag.h) compares the list head's memory with the value the guest got and says
+      # LOST or EXACT; [fault-rgn] names the views below and above the fault and the views under 1 MB around it, and the provenance
+      # line says when its view is gone (virtual_ios.c). Log only; the first test compiles the production header and runs it on
+      # constructed memory (macOS), the second the ring and provenance functions against fakes. Rule x87-int64-roundtrip (auto-tune)
+      # is checked with the other rules.
+      - name: Check [x87-int64] and the fault neighbour lines
+        run: |
+          python3 tests/host/check-x87-int64-diag.py
+          python3 tests/host/check-fault-neighbour-diag.py
+
       # madeira-bcd: kernelbase-fibertrace.dll (env.MADEIRA_FIBER_TRACE): the fiber calls logged.
       - name: Check kernelbase fiber trace
         run: python3 tests/host/check-kernelbase-fibertrace.py
@@ -1726,9 +1826,20 @@ jobs:
       - name: Check opt-in DLLs
         run: python3 tests/host/check-optin-dlls.py
 
+      # madeira-bcd: setupapi-optin.dll (env.MADEIRA_OPTIN_DLLS = setupapi): a lock round Wine's device node
+      # table, for Dying Light's controller library racing the main thread (build 576).
+      - name: Check setupapi device node lock
+        run: python3 tests/host/check-setupapi-devinst-lock.py
+
       # madeira-bcd: a game's own switches end with its session.
       - name: Check session switches
         run: python3 tests/host/check-session-switches.py
+
+      # madeira-bcd: [win-create] / [tiny-win] and env.MADEIRA_TINY_WINDOW_FIX = 1 (off by default): a swapchain's window
+      # that stays under 160x120 while a 320x200 or larger picture is drawn into it is sized to the virtual screen
+      # (American Truck Simulator, 132x38). build/win32u-unix/driver_ios.c, app/Madeira/Winios/Winios.m.
+      - name: Check tiny swapchain window
+        run: python3 tests/host/check-tiny-window.py
 
       # madeira-bcd: a paused first-time Steam install survives closing BCD.
       - name: Check Steam paused download restore
@@ -2061,6 +2172,14 @@ jobs:
               app/Madeira/arm64ec-windows/kernelbase.dll
           else
             echo "::warning::kernelbase-fibertrace.dll missing: env.MADEIRA_FIBER_TRACE = 1 does nothing in this IPA"
+          fi
+          # And its setupapi-optin.dll (env.MADEIRA_OPTIN_DLLS = setupapi): never ship one without the
+          # device node lock or with other exports than the shipped setupapi.dll.
+          if [ -f app/Madeira/arm64ec-windows/setupapi-optin.dll ]; then
+            python3 tools/patch-wine-setupapi-devinst-lock.py --verify app/Madeira/arm64ec-windows/setupapi-optin.dll \
+              app/Madeira/arm64ec-windows/setupapi.dll
+          else
+            echo "::warning::setupapi-optin.dll missing: env.MADEIRA_OPTIN_DLLS = setupapi does nothing in this IPA"
           fi
           # And its ntdll-sync.dll, which the unix loader maps by default: never
           # ship one whose SRW and critical-section exports are not the x64 bodies

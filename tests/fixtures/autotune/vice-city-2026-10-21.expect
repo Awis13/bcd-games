@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "child-ntdll-copy-lost-exec"
+ ],
+ "next": [],
+ "note": "GTA Vice City (Steam 12110) build 576, iPhone16,2: the second process's ntdll copy was placed on JIT-pool pages that lost EXEC (a section of an unnamed 32-bit image claims 256 MB); fixed in code in 577, no line",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

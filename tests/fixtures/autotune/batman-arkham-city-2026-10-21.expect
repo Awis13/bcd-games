@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x87-int64-roundtrip"
+ ],
+ "next": [
+  "env.FEX_X87REDUCEDPRECISION = 0"
+ ],
+ "note": "Batman: Arkham City GOTY (Steam 200260, 32-bit, UE3), build 576, a tester's iPad16,5 (Discord, run that skipped the one-time installs): first unhandled fault is an ldapr w4,[x24] read at 0x790f080000, the first byte of a hole after a live 64 KB block, in the function that reads an 8-byte list head with FILD/FISTP qword; its host code (the scvtf/frinti/fcvtzs row in [fault-host]) is the emulator's 64-bit x87, which rounds the integer to 53 bits (x13 = 0xf07ff00 is the tie that rounds to the fault address). Same code in PTKASZ (build 574) and in Injustice G5HGVV/ND8YNB. env.FEX_X87REDUCEDPRECISION = 0 is an attempt, not proven",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

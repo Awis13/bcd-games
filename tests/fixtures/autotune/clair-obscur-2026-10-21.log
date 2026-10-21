@@ -1,0 +1,187 @@
+[20:39:44.654] [INFO] Checking entitlements...
+[20:39:44.654] [INFO] [build] v0.1.574 (574)
+[20:39:44.655] [INFO] [device] model=iPhone18,3 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=7672MB available=6125MB cores=6
+[20:39:44.655] [INFO] [device] address-map=[0x102578000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[20:39:44.679] [INFO] [device] gpu="Apple A19 GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[20:39:48.264] [INFO] [bcd] library launch Expedition 33: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[20:39:48.265] [INFO] Requesting JIT with Built-in StikJIT...
+[20:39:51.761] [INFO] [dock-launch] image-retire=1
+[20:39:51.761] [INFO] [dock-launch] image-map-guard=1
+[20:39:51.775] [INFO] Running full Wine sequence...
+[20:39:51.775] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102578000,0x8000000000) 512GB available=6110MB low-power=0 thermal=nominal
+[20:39:51.778] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[20:39:51.778] [INFO] Allocating 896MB JIT pool via debugger...
+[20:39:51.778] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[20:39:51.779] [INFO] [jit-debugger] attached=1 at the pool request
+[20:39:51.780] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[20:39:52.501] [INFO] RX pool at 0x148000000
+[20:39:52.528] [INFO] Detaching debugger...
+[phase] wine-start             t+  1.743s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[swap] ml1077 backed 0x71ffe00000+0x200000 (whole reservation, ml1257) (file off 0 MB): 2 MB in 1 extents, peak 2 MB, 0 refused
+ml992: os_proc_available_memory=5500 MB + phys_footprint=643 MB = 6144 MB (hw.memsize says 7672 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=651 MB (peak 651) internal=650 MB compressed=0 MB external=68 MB reusable=8 MB (cycle=1)
+[swap] ml1077 backed 0x7025970000+0x100000 (whole reservation, ml1257) (file off 2 MB): 3 MB in 2 extents, peak 3 MB, 0 refused
+[swap] ml1077 backed 0x70260d0000+0x100000 (whole reservation, ml1257) (file off 3 MB): 4 MB in 3 extents, peak 4 MB, 0 refused
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[swap] ml1077 backed 0x7026220000+0x420000 (whole reservation, ml1257) (file off 4 MB): 8 MB in 4 extents, peak 8 MB, 0 refused
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #5 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[x64-image] L"\\??\\C:\\windows\\system32\\dockhost.exe" 0x119140000+0x99000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #1 0x119140000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x119140000+0x8000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x119148000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x119148000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x11914c000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[copy-verify] oleaut32.dll: OK, 21 .text pages executable (copy @0x149e1c000)
+[swap] ml1077 backed 0x7028fe0000+0x100000 (whole reservation, ml1257) (file off 8 MB): 9 MB in 5 extents, peak 9 MB, 0 refused
+[swap] ml1077 backed 0x7029c80000+0x24c000 (whole reservation, ml1257) (file off 9 MB): 11 MB in 6 extents, peak 11 MB, 0 refused
+[copy-verify] imm32.dll: OK, 4 .text pages executable (copy @0x14ae64000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 119140000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[copy-verify] dbghelp.dll: OK, 22 .text pages executable (copy @0x14d6e4000)
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=929 MB (peak 929) internal=928 MB compressed=0 MB external=153 MB reusable=8 MB (cycle=2)
+[swap] ml1077 stats: 78 MB file-backed now (peak 109), 16 extents, file used 78 of 131072 MB, backs 18 releases 2 unbacks 0 refused 0 | coverage broad: disk 0 MB of 6144 cap, reservations 18, holes 13, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[footprint] rev=ml358 phys=1029 MB (peak 1029) internal=1028 MB compressed=0 MB external=159 MB reusable=8 MB (cycle=3)
+[footprint] rev=ml358 phys=1035 MB (peak 1035) internal=1033 MB compressed=0 MB external=159 MB reusable=8 MB (cycle=4)
+[footprint] rev=ml358 phys=1024 MB (peak 1035) internal=1023 MB compressed=0 MB external=159 MB reusable=8 MB (cycle=5)
+[alloc-fail] ml814 #2 status=c0000018 hint=0x180000000 size=0x39000 type=0x2000 protect=0x4 tid=00a4 | STAGE=fixed-map err=3 at 0x180000000+0x3c000
+[copy-verify] crypt32.dll: OK, 24 .text pages executable (copy @0x150618000)
+[alloc-fail] ml814 #3 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00a4 | STAGE=none err=3 at 0x73fff60000+0x90000
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] shell32.dll: OK, 34 .text pages executable (copy @0x152ad0000)
+[footprint] rev=ml358 phys=1371 MB (peak 1371) internal=1369 MB compressed=0 MB external=228 MB reusable=8 MB (cycle=6)
+[alloc-fail] ml814 #4 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00ac | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[alloc-fail] ml814 #5 status=c0000018 hint=0x71f10b2000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #6 status=c0000018 hint=0x71f10b3000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #7 status=c0000018 hint=0x71f10b4000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #8 status=c0000018 hint=0x71f10b5000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x71f10b6000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #10 status=c0000018 hint=0x71f10b7000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #11 status=c0000018 hint=0x71f10b8000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #12 status=c0000018 hint=0x71f10b9000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #13 status=c0000018 hint=0x71f10ba000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #14 status=c0000018 hint=0x71f10bb000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #15 status=c0000018 hint=0x71f10bc000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #16 status=c0000018 hint=0x71f10bd000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #17 status=c0000018 hint=0x71f10be000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #18 status=c0000018 hint=0x71f10bf000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #19 status=c0000018 hint=0x71f13d1000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #20 status=c0000018 hint=0x71f13d2000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #21 status=c0000018 hint=0x71f13d3000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #22 status=c0000018 hint=0x71f13d4000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #23 status=c0000018 hint=0x71f13d5000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #24 status=c0000018 hint=0x71f13d6000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #25 status=c0000018 hint=0x71f13d7000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #26 status=c0000018 hint=0x71f13d8000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #27 status=c0000018 hint=0x71f13d9000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #28 status=c0000018 hint=0x71f13da000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #29 status=c0000018 hint=0x71f13db000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #30 status=c0000018 hint=0x71f13dc000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #31 status=c0000018 hint=0x71f13dd000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #32 status=c0000018 hint=0x71f13de000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #33 status=c0000018 hint=0x71f13df000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #34 status=c0000018 hint=0x71f157c000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #35 status=c0000018 hint=0x71f157d000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #36 status=c0000018 hint=0x71f157e000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #37 status=c0000018 hint=0x71f157f000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #38 status=c0000018 hint=0x71f3aeb000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #39 status=c0000018 hint=0x71f3aec000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #40 status=c0000018 hint=0x71f3aed000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #41 status=c0000018 hint=0x71f3aee000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #42 status=c0000018 hint=0x71f3aef000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #43 status=c0000018 hint=0x71f5672000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #44 status=c0000018 hint=0x71f5673000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #45 status=c0000018 hint=0x71f5674000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #46 status=c0000018 hint=0x71f5675000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #47 status=c0000018 hint=0x71f5676000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #48 status=c0000018 hint=0x71f5677000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #49 status=c0000018 hint=0x71f5678000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #50 status=c0000018 hint=0x71f5679000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #51 status=c0000018 hint=0x71f567a000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #52 status=c0000018 hint=0x71f567b000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #53 status=c0000018 hint=0x71f567c000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #54 status=c0000018 hint=0x71f567d000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #55 status=c0000018 hint=0x71f567e000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #56 status=c0000018 hint=0x71f567f000 size=0x1000 type=0x3000 protect=0x40 tid=00ac | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+00ac:err:module:load_dll [dll-missing] rev=ml336 #4 L"C:\\windows\\system32\\gameux.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #5 L"C:\\windows\\system32\\explorerframe.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] command queue: type 3
+[madeira-d3d12] command queue: type 2
+[madeira-d3d12] command queue: type 0
+[copy-verify] wininet.dll: OK, 15 .text pages executable (copy @0x1554fc000)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Sandfall\\Plugins\\NVIDIA\\StreamlineCore\\Binaries\\ThirdParty\\Win64\\sl.interposer.dll" 0x71e42e0000+0x87000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+00ac:err:module:load_dll [dll-missing] rev=ml336 #6 L"dbgcore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #37 hwnd=0x10080 class='' text="Default IME" rev=ml853
+[win-name] #38 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+[win-name] #39 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+[win-name] #40 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+[win-name] #44 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+[win-name] #45 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+[swap-diag] #1 layer 0x1265c1ce0: drawable 0x0 format 80 -> 1408x648 format 90, set on the iOS main thread (dispatch_sync) ...
+[swap-diag] #1 layer 0x1265c1ce0: drawable 1408x648 format 90 -> 1408x648 format 90, set on the iOS main thread (dispatch_sync) ...
+[launch-view] dismissed reason=game-window logs=0
+[footprint] rev=ml358 phys=2586 MB (peak 2586) internal=2347 MB compressed=0 MB external=443 MB reusable=8 MB (cycle=9)
+00ac:err:module:load_dll [dll-missing] rev=ml336 #7 L"mfplay.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[swap] ml1077 backed 0x7091e40000+0x2b8000 (whole reservation, ml1257) (file off 525 MB): 523 MB in 104 extents, peak 523 MB, 0 refused
+[swap] ml1077 backed 0x709f730000+0x34c000 (whole reservation, ml1257) (file off 655 MB): 654 MB in 168 extents, peak 654 MB, 0 refused
+[swap] ml1077 backed 0x70b1810000+0x1a4000 (whole reservation, ml1257) (file off 800 MB): 796 MB in 230 extents, peak 796 MB, 0 refused
+[footprint] rev=ml358 phys=2793 MB (peak 2793) internal=2048 MB compressed=525 MB external=905 MB reusable=0 MB (cycle=10)
+[swap] ml1077 backed 0x70c00c0000+0x400000 (whole reservation, ml1257) (file off 773 MB): 889 MB in 263 extents, peak 889 MB, 0 refused
+[footprint] rev=ml358 phys=2823 MB (peak 2823) internal=1653 MB compressed=951 MB external=840 MB reusable=0 MB (cycle=11)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Engine\\Binaries\\ThirdParty\\Ogg\\Win64\\VS2015\\libogg_64.dll" 0x71e5a70000+0x12000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Engine\\Binaries\\ThirdParty\\Vorbis\\Win64\\VS2015\\libvorbis_64.dll" 0x71e58c0000+0x1a7000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Engine\\Binaries\\ThirdParty\\Vorbis\\Win64\\VS2015\\libvorbisfile_64.dll" 0x71e58b0000+0xe000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Engine\\Binaries\\ThirdParty\\Windows\\XAudio2_9\\x64\\xaudio2_9redist.dll" 0x71e56f0000+0xd3000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[footprint] rev=ml358 phys=2872 MB (peak 2872) internal=1736 MB compressed=917 MB external=799 MB reusable=0 MB (cycle=12)
+[swap] ml1077 backed 0x7074550000+0x1a8000 (whole reservation, ml1257) (file off 537 MB): 1188 MB in 228 extents, peak 1188 MB, 0 refused
+[madeira-d3d12] ml1057 live GPU backing (estimated) total=1730MB: tex-RT=21MB/18 (peak 21) tex-DS=0MB/0 (peak 0) tex-UAV=0MB/2 (peak 0) tex-sampled=5MB/440 (peak 5) tex-MSAA=0MB/0 (peak 0) buf-private=32MB/2 (peak 32) buf-shared=1672MB/228 (peak 1672)
+00ac:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Sandfall\\Plugins\\Sentry\\Binaries\\Win64\\crashpad_handler.exe" cmdline=L"\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Sandfall\\Plugins\\Sentry\\Binaries\\Win64\\crashpad_handler.exe\" --no-rate-limit --database=C:\\usr\\<user>\\AppData\\Local\\Sandfall\\.sentry-native --metrics-dir=C:\\usr\\<user>\\AppData\\Local\\Sandfall\\.sentry-"...
+00ac:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Sandfall\\Plugins\\Sentry\\Binaries\\Win64\\crashpad_handler.exe\" --no-rate-limit --database=C:\\usr\\<user>\\AppData\\Local\\Sandfall\\.sentry-native --metrics-dir=C:\\usr\\<user>\\AppData\\Local\\Sandfall\\.sentry-"... (fd=874, unixdir=875, dup_unixdir=879)
+[Wine child thread] calling wine_ios_child_main...
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Expedition 33\\Sandfall\\Plugins\\Sentry\\Binaries\\Win64\\crashpad_handler.exe" 0x70ac2c0000+0xfa000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 1B4 Load module VCRUNTIME140_1.dll (vcruntime140_1.dll-5a9099dd3d46b520): 71E2260000
+D 1B4 Load module imm32.dll (imm32.dll-d32ec4d784d2a68d): 71E21C0000
+D 1B4 Load module concrt140.dll (concrt140.dll-7f7bd0536697a14b): 71E2130000
+[footprint] rev=ml358 phys=4310 MB (peak 4310) internal=1693 MB compressed=1285 MB external=843 MB reusable=0 MB (cycle=13)
+D 1B8 Load module UxTheme.dll (uxtheme.dll-4e1d696344b97035): 71E2040000
+[win-name] #48 hwnd=0x1008e class='' text="Default IME" rev=ml853
+[win-name] #50 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+D 1AC Load module schannel.dll (schannel.dll-b6824dedbc2abf6e): 71E1E70000
+[swap] ml1077 backed 0x709b920000+0x2ac000 (whole reservation, ml1257) (file off 124 MB): 1503 MB in 164 extents, peak 1606 MB, 0 refused
+[win-name] #51 hwnd=0x20078 class='' text="Clair Obscur: Expedition 33  " rev=ml853
+D AC Load module XINPUT1_4.dll (xinput1_4.dll-a6149d3778eaf389): 71E1C60000
+[footprint] rev=ml358 phys=6105 MB (peak 6105) internal=377 MB compressed=2688 MB external=385 MB reusable=0 MB (cycle=14)

@@ -62,14 +62,14 @@ assert section.index('if (!(size = ROUND_SIZE( 0, size, page_mask ))) return STA
     < section.index(call) < section.index('server_enter_uninterrupted_section( &virtual_mutex, &sigset );') \
     < section.index('res = map_view( &view, base, size, alloc_type, vprot, limit_low, limit_high, 0 );'), \
     'the view\'s final range, before map_view and outside virtual_mutex'
-nt = native[native.index('NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process'):]
-nt = nt[:nt.index('NTSTATUS WINAPI NtAllocateVirtualMemoryEx(')]
+nt = native[native.index('static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemory( HANDLE process'):]
+nt = nt[:nt.index('static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemoryEx(')]
 assert nt.count('ios_fd_reuse(') == 1
 assert 'if (!ios_steered && *ret) ios_fd_reuse( *ret, *size_ptr, type );\n' \
        '            if (!ios_steered)\n' \
        '                st = allocate_virtual_memory( ret, size_ptr, type, protect, 0, limit, 0, 0 );' in nt, \
     'only with an address, right before the generic allocation'
-ex = body('NTSTATUS WINAPI NtAllocateVirtualMemoryEx(')
+ex = body('static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemoryEx(')
 assert ex.count('ios_fd_reuse(') == 1
 assert 'if (!caged && *ret) ios_fd_reuse( *ret, *size_ptr, type );\n' \
        '            if (!caged)\n' \

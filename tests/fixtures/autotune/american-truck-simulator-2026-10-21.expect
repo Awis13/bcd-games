@@ -1,0 +1,18 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "tiny-swapchain-window",
+  "gpu-work-refused-in-background"
+ ],
+ "next": [
+  "env.MADEIRA_TINY_WINDOW_FIX = 1"
+ ],
+ "note": "American Truck Simulator (Steam 270880, iPad16,10, build 576, a tester): the window is created 132x38 and stays that size while the swapchain draws 1024x768. The [tiny-win] line is build 578's (synthetic: inserted at the first presented frame); the user ended the session as frozen.",
+ "outcome": "hung",
+ "stage": 5,
+ "status": "trying"
+}

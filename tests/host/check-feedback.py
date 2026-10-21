@@ -452,7 +452,37 @@ with tempfile.TemporaryDirectory(prefix="bcd-feedback-pull-") as tmp:
     check("pull-logs --feedback: never prints the key", KEY not in text and "Bearer" not in text, text)
     status2, text2 = run_pull("--feedback", out=out)
     check("pull-logs --feedback: only what is new is listed the second time", status2 == 0 and text2.startswith("2 feedback in the bucket, 0 new in ")
-          and len(text2.splitlines()) == 1, text2)
+          and text2.splitlines()[1:] == ["2 removed from the bucket (each is on the Mac)"], text2)
+    # Owner, 2026-10-21: what is on the Mac leaves the bucket by default; --keep leaves it; nothing local is deleted.
+    Handler.deleted.clear()
+    run_pull("--feedback", "--keep", out=out)
+    check("pull-logs --feedback --keep: removes nothing from the bucket", Handler.deleted == [], str(Handler.deleted))
+    check("pull-logs: the feedback on the Mac is still there after the bucket is emptied",
+          (out / "feedback/2026-10-19/AAAAAA.json").exists() and (out / "feedback/2026-10-19/BBBBBB.json").exists())
+    with tempfile.TemporaryDirectory(prefix="bcd-pull-safe-") as t:
+        t = Path(t)
+        o = {"key": "logs/2026-10-21/ABCDEF.gz", "size": 1234, "meta": {}}
+        d = pl.log_dest(o, t)
+        ok_missing = not pl.log_on_mac(o, d)
+        d.parent.mkdir(parents=True)
+        d.write_text("log\n")
+        ok_no_record = not pl.log_on_mac(o, d)
+        d.with_suffix(".json").write_text(json.dumps({"key": o["key"], "size": 999}))
+        ok_size = not pl.log_on_mac(o, d)
+        d.with_suffix(".json").write_text(json.dumps({"key": o["key"], "size": 1234}))
+        ok_same = pl.log_on_mac(o, d) and pl.log_dest(o, t) == d
+        d.write_text("")
+        ok_empty = not pl.log_on_mac(o, d)
+        d.write_text("log\n")
+        d.with_suffix(".json").write_text(json.dumps({"key": "logs/2026-10-21/OTHER.gz", "size": 1234}))
+        d3 = pl.log_dest(o, t)
+        ok_collide = d3 != d and d3.parent == d.parent and d3.name.startswith("ABCDEF-") and not pl.log_on_mac(o, d3)
+    check("pull-logs: a bucket log is removed only when its Mac copy is whole and its record names the same key and size",
+          ok_missing and ok_no_record and ok_size and ok_same and ok_empty)
+    check("pull-logs: a second object with the same code on the same day gets its own file, never taken for the first", ok_collide)
+    check("pull-logs: a download is written to a .part file and renamed; nothing on the Mac is deleted",
+          "part.replace(dest)" in pull and pull.count(".unlink(") == 1 and "part.unlink(missing_ok=True)" in pull
+          and "rmtree" not in pull and "os.remove" not in pull)
     check("pull-logs --feedback: no file holds the key", not any(KEY in p.read_text() for p in out.rglob("*") if p.is_file()))
     Handler.deleted.clear()
     run_pull("--feedback", "--delete", out=out)

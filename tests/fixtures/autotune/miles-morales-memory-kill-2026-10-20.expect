@@ -1,0 +1,18 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "swap-12gb-memory-kill"
+ ],
+ "next": [
+  "swap-mb = 6144",
+  "swap-mode = 2",
+  "swap-min-mb = 1"
+ ],
+ "note": "Miles Morales on a 12 GB iPhone, killed at 8154 of 8192 MB (fast footprint line); crs-video.exe's c0000135 must not hide the kill (578)",
+ "outcome": "killed",
+ "stage": 4,
+ "status": "trying"
+}

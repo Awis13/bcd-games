@@ -103,6 +103,10 @@ struct AutoTuneLogFacts: Codable, Equatable {
     var aliveSeconds = 0
     var lastFootprintMB: Int?
     var peakFootprintMB: Int?
+    /// The memory limit the log itself names: "ml992: os_proc_available_memory=A MB + phys_footprint=B MB = L MB".
+    /// A kill is told from the footprint's last line against it when the app's own marker had none (Clair Obscur
+    /// A5HRFG died at 6105 of 6144 MB and was not seen as killed: the fallback below guessed 6366).
+    var limitMB: Int?
     var quitRequested = false
     var returnedToLibrary = false
     var exitStatus: UInt32?
@@ -113,6 +117,9 @@ struct AutoTuneLogFacts: Codable, Equatable {
     /// The highest "detach-wait: presents=N" (every 30 s while the app waits on the game;
     /// in a Madeira Dock session the only frame count the log has).
     var presentsLogged = 0
+    /// Whether any "detach-wait: presents=N" line was seen at all. Only Dock sessions print it, so a
+    /// zero count means "no frame" only when the counter was there.
+    var presentsCounted: Bool? = nil
     /// Metal command buffers that failed ("Device error at frame"): a GPU hang or fault.
     var gpuErrors = 0
     /// What the game's own error boxes said ([win-name] texts that read like an error),
@@ -263,7 +270,14 @@ final class AutoTuneLogScanner {
     private static let mPresenting = Array("Game is presenting (#1".utf8)
     private static let mSettled = Array("Early detach: game presenting and settled".utf8)
     private static let mAlive = Array("[freeze] alive t+".utf8)
+    private static let mLimitLine = Array("ml992: os_proc_available_memory=".utf8)
+    /// " MB = " as bytes, not as an Array("...".utf8) literal: tools/autotune-fixture.py keeps every line a literal of that
+    /// shape matches, and this one would match far more than the ml992 line.
+    private static let mLimitEq: [UInt8] = [0x20, 0x4D, 0x42, 0x20, 0x3D, 0x20]
     private static let mFootprint = Array("[footprint] rev=ml358 phys=".utf8)
+    /// The fast sampler's line ("[footprint] rev=ml1060 fast phys=N MB"): near the limit it is written more often than the
+    /// ml358 census, so a kill's last reading is often only there (Miles Morales V4JGSJ: 8154 MB fast vs 7975 MB census).
+    private static let mFootprintFast = Array("[footprint] rev=ml1060 fast phys=".utf8)
     private static let mPeak = Array("(peak ".utf8)
     private static let mQuit = Array("[frontend] graceful close requested".utf8)
     private static let mReturned = Array("[frontend] returned to library".utf8)
@@ -308,9 +322,16 @@ final class AutoTuneLogScanner {
         if facts.stage < 3, S.find(l, S.mPresenting) != nil { facts.stage = 3 }
         if facts.stage < 4, S.find(l, S.mSettled) != nil { facts.stage = 4 }
         if let v = S.number(l, after: S.mAlive) { facts.aliveSeconds = max(facts.aliveSeconds, Int(v)) }
+        if facts.limitMB == nil, let at = S.find(l, S.mLimitLine),
+           let v = S.number(UnsafeRawBufferPointer(rebasing: l[at...]), after: S.mLimitEq), v >= 1024, v <= 65536 {
+            facts.limitMB = Int(v)
+        }
         if let v = S.number(l, after: S.mFootprint) {
             facts.lastFootprintMB = Int(v)
             if let p = S.number(l, after: S.mPeak) { facts.peakFootprintMB = max(facts.peakFootprintMB ?? 0, Int(p)) }
+        } else if let v = S.number(l, after: S.mFootprintFast) {
+            facts.lastFootprintMB = Int(v)
+            facts.peakFootprintMB = max(facts.peakFootprintMB ?? 0, Int(v))
         }
         if S.find(l, S.mQuit) != nil {
             if !facts.quitRequested { facts.crashEvidenceAtQuit = facts.crashEvidence }
@@ -323,6 +344,7 @@ final class AutoTuneLogScanner {
         if S.find(l, S.mFreeze) != nil { facts.freezeGaps += 1 }
         if S.find(l, S.mMainStall) != nil { facts.mainStalls += 1 }
         if let v = S.number(l, after: S.mDetachWait) {
+            facts.presentsCounted = true
             facts.presentsLogged = max(facts.presentsLogged, Int(v))
             if v >= 1 { facts.stage = max(facts.stage, 3) }
             if v >= 600 { facts.stage = max(facts.stage, 4) }   // about 20 s of frames
@@ -399,6 +421,13 @@ enum AutoTuneEngine {
             if end.userSaid == "i-closed" { return "inconclusive" }
             if end.userSaid == "froze" || f.freezeGaps > 0 || f.gpuErrors > 0
                 || (f.quitRequested && !f.returnedToLibrary) { return "hung" }
+            // madeira-bcd 578 (lead, from ajan6-mm): a session killed at the memory limit whose only crash evidence is
+            // a helper program's error exit (Miles Morales' crs-video.exe, c0000135) is a memory kill, not a crash:
+            // otherwise the swap rules can never fire for such a game (V4JGSJ, VWKPTS ended at 8154 of 8192 MB).
+            let onlyHelperExits = f.errorExits > 0 && f.unhandled == 0 && !f.runtimeErrorDialog && f.exitStatus == nil
+                && (f.dialogs.isEmpty || f.stage >= 4)
+            if onlyHelperExits, let last = f.lastFootprintMB, let limit = end.limitMB ?? f.limitMB,
+               last >= limit - max(150, limit / 50) { return "killed" }
             if crashedInLog { return "crashed" }
             // The limit the marker measured, else the memory left at launch plus the app's own
             // share then; the last footprint line can be 2 s behind the kill, hence a margin.
@@ -406,8 +435,10 @@ enum AutoTuneEngine {
             // called a memory kill would steer the search (HFW 2026-10-13 17:10 ended at
             // 7932 MB of about 8317 and had played).
             if let last = f.lastFootprintMB {
-                if let limit = end.limitMB, last >= limit - max(150, limit / 50) { return "killed" }
-                if end.limitMB == nil, let avail = f.availableMB {
+                // The app's marker first, else the limit the log names (ml992), else the guess below.
+                let known = end.limitMB ?? f.limitMB
+                if let limit = known, last >= limit - max(150, limit / 50) { return "killed" }
+                if known == nil, let avail = f.availableMB {
                     let limit = avail + 256
                     if last >= limit - max(200, limit * 3 / 100) { return "killed" }
                 }
@@ -421,7 +452,13 @@ enum AutoTuneEngine {
         if end.quitRequested && f.stage >= 3 && (f.crashEvidenceAtQuit ?? 0) == 0 { return "quit" }
         if end.crashStatus != nil || crashedInLog { return "crashed" }
         if end.quitRequested { return "exited-early" }
-        return f.stage >= 4 || f.aliveSeconds >= 120 ? "ran" : "exited-early"
+        // Alive for two minutes is not playing when no frame was ever presented (No Man's Sky 4KAT5E sat 151 s at
+        // stage 2 with presents=0): only a session that presented counts as having run.
+        // madeira-bcd (round 577, lead): narrowed. Only the Dock's "detach-wait: presents=N" counts frames, so a session
+        // without that counter (a local program, GOG) keeps the old rule; a session is "not run" only when the counter
+        // was there, stayed at 0 and the game never reached the presenting stage (stage 3).
+        let noFrameProof = (f.presentsCounted ?? false) && f.presentsLogged == 0 && f.stage < 3
+        return f.stage >= 4 || (f.aliveSeconds >= 120 && !noFrameProof) ? "ran" : "exited-early"
     }
 
     static func report(_ end: AutoTuneSessionEnd, _ scanner: AutoTuneLogScanner,

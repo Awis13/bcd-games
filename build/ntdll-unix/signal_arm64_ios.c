@@ -1618,6 +1618,15 @@ done:
  * ios_pe_module_name (declared at the top) and ios_jit_low_contains (declared above). */
 #include "ios_av_args_diag.h"
 
+/* ajan5-mhs3: [rwx-fault], failure path only, capped (see ios_rwx_fault_diag.h). It uses the helpers of
+ * ios_av_args_diag.h above (ios_av_args_pc_is_jit, ios_av_args_read). */
+#include "ios_rwx_fault_diag.h"
+
+/* ajan6-arkham: [x87-int64], failure path only, capped (see ios_x87_int64_diag.h): a 32-bit guest's 64-bit integer read
+ * through FILD/FISTP that the emulator's 64-bit x87 rounds (Batman: Arkham City GOTY, Injustice). It uses the helpers
+ * of ios_av_args_diag.h above (ios_av_args_pc_is_jit, ios_av_args_read). */
+#include "ios_x87_int64_diag.h"
+
 /* ajan2-tani (2026-10-21): FAILURE-PATH DIAGNOSTICS for guest control flow that dies in the JIT.
  *
  * Log only: every read goes through mach_vm_read_overwrite, nothing is written, and each
@@ -5806,6 +5815,12 @@ skip_reclaim_band: ;
                     ios_ajan2_fault_diag( &state, thread_teb, req->exception, fault_addr );
                     /* ajan3-dyinglight: [av-args], NULL-class faults only (see ios_av_args_diag.h). */
                     ios_av_args_diag( &state, req->exception, fault_addr );
+                    /* ajan5-mhs3: [rwx-fault], a fault in code translated from a page that may have been rewritten
+                     * under the emulator (Monster Hunter Stories 3 Trial, Monster Hunter Rise); see ios_rwx_fault_diag.h. */
+                    ios_rwx_fault_diag( &state, req->exception );
+                    /* ajan6-arkham: [x87-int64], a load in code that follows a 64-bit FILD/FISTP (the emulator's 64-bit
+                     * x87 rounds the integer to a double); see ios_x87_int64_diag.h. */
+                    ios_x87_int64_diag( &state, req->exception, fault_addr );
                     /* madeira-bcd [fault-full]: every register, and the host code
                      * that led up to the faulting instruction (JIT blocks compute
                      * the address a few instructions earlier), for the first two
@@ -8192,6 +8207,22 @@ static int ios_mach_deliver_guest_exception_inner( thread_t thread, arm_thread_s
                                         else dprintf( 2, "[native-bt] ml1155 x%d=%llx is not among the last 16384 objects our NSObject_release freed\n",
                                                       r ? 8 : 0, (unsigned long long)v );
                                     }
+                            }
+                            {   /* madeira-bcd (round 577, GTA IV freeze): is the string this thread reads the program name?
+                                 * setprogname() keeps the pointer it is given; Wine's set_process_name gave it a file name
+                                 * inside a local of the boot thread's start function, and that thread's stack is unmapped
+                                 * when it ends (GTA IV 0x16d621a87, Dead Space DVXWGA, Tomb Raider TXPQM1, PES 2013 B39EXN).
+                                 * Build 578 gives the app's own name back when the program ends
+                                 * (WineProcessBridge.m "Session end"); a line saying "== x0" in a later log means this
+                                 * is not fixed for that path. */
+                                uint64_t name = (uint64_t)(uintptr_t)getprogname();
+                                int r, hit = -1;
+                                for (r = 0; r < 8; r++) if (state->__x[r] == name && name) { hit = r; break; }
+                                if (hit >= 0)
+                                    dprintf( 2, "[native-bt] progname ptr=0x%llx == x%d: the faulting string is the program name, "
+                                                "a pointer setprogname() kept into a stack that is gone\n", (unsigned long long)name, hit );
+                                else
+                                    dprintf( 2, "[native-bt] progname ptr=0x%llx is not in x0..x7\n", (unsigned long long)name );
                             }
                         }
                     }

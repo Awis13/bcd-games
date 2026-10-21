@@ -1,0 +1,246 @@
+[21:51:53.947] [INFO] Checking entitlements...
+[21:51:53.947] [INFO] [build] v0.1.574 (574)
+[21:51:53.948] [INFO] [device] model=iPhone19,2 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=11543MB available=6126MB cores=6
+[21:51:53.948] [INFO] [device] address-map=[0x104a90000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[21:51:53.959] [INFO] [device] gpu="Apple A20 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[21:53:26.126] [INFO] [bcd] library launch Marvel's Spider-Man Miles Morales: avx=0 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[21:53:26.126] [INFO] Requesting JIT with Built-in StikJIT...
+[21:53:27.632] [INFO] [dock-launch] image-retire=1
+[21:53:27.632] [INFO] [dock-launch] image-map-guard=1
+[21:53:27.636] [INFO] [dock-installers] app=1817190 scripts=0 programs=0
+[21:53:27.641] [INFO] Running full Wine sequence...
+[21:53:27.641] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104a90000,0x8000000000) 512GB available=8151MB low-power=0 thermal=nominal
+[21:53:27.644] [INFO] Allocating 1024MB JIT pool (BRK will suspend process)...
+[21:53:27.644] [INFO] Allocating 1024MB JIT pool via debugger...
+[21:53:27.644] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[21:53:27.644] [INFO] [jit-debugger] attached=1 at the pool request
+[21:53:27.645] [ERR] ml1036: no hole fits a 1024MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[21:53:28.200] [INFO] RX pool at 0x148000000
+[21:53:28.215] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.615s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7580 MB + phys_footprint=611 MB = 8192 MB (hw.memsize says 11543 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=618 MB (peak 618) internal=616 MB compressed=0 MB external=90 MB reusable=32 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  1.018s rev=ml526
+[x64-image] L"\\??\\C:\\windows\\system32\\dockhost.exe" 0x11df50000+0x99000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #1 0x11df50000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x11df50000+0x8000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x11df58000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x11df58000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x11df5c000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.084s rev=ml526
+[copy-verify] imm32.dll: OK, 4 .text pages executable (copy @0x14ae64000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11DF50000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[steer] #1 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c05400000
+[copy-verify] dbghelp.dll: OK, 22 .text pages executable (copy @0x14d6e4000)
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=987 MB (peak 987) internal=985 MB compressed=0 MB external=170 MB reusable=32 MB (cycle=2)
+[footprint] rev=ml358 phys=1021 MB (peak 1021) internal=1020 MB compressed=0 MB external=170 MB reusable=32 MB (cycle=3)
+[footprint] rev=ml358 phys=1025 MB (peak 1025) internal=1024 MB compressed=0 MB external=170 MB reusable=32 MB (cycle=4)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\MilesMorales.exe" t+  8.703s rev=ml526
+[copy-verify] cfgmgr32.dll: OK, 4 .text pages executable (copy @0x150698000)
+[footprint] rev=ml358 phys=1220 MB (peak 1220) internal=1219 MB compressed=0 MB external=201 MB reusable=32 MB (cycle=5)
+[alloc-fail] ml814 #2 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00a8 | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+[steer] #2 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c46400000
+[alloc-fail] ml814 #3 status=c0000018 hint=0x71f5632000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #4 status=c0000018 hint=0x71f5633000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #5 status=c0000018 hint=0x71f5634000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #6 status=c0000018 hint=0x71f5635000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #7 status=c0000018 hint=0x71f5636000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #8 status=c0000018 hint=0x71f5637000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x71f5638000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #10 status=c0000018 hint=0x71f5639000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #11 status=c0000018 hint=0x71f563a000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #12 status=c0000018 hint=0x71f563b000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #13 status=c0000018 hint=0x71f563c000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #14 status=c0000018 hint=0x71f563d000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #15 status=c0000018 hint=0x71f563e000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #16 status=c0000018 hint=0x71f563f000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #17 status=c0000018 hint=0x71f597e000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #18 status=c0000018 hint=0x71f597f000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #19 status=c0000018 hint=0x71f5984000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #20 status=c0000018 hint=0x71f5985000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #21 status=c0000018 hint=0x71f5986000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #22 status=c0000018 hint=0x71f5987000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #23 status=c0000018 hint=0x71f5988000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #24 status=c0000018 hint=0x71f5989000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #25 status=c0000018 hint=0x71f598a000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #26 status=c0000018 hint=0x71f598b000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #27 status=c0000018 hint=0x71f598c000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #28 status=c0000018 hint=0x71f598d000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #29 status=c0000018 hint=0x71f598e000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #30 status=c0000018 hint=0x71f598f000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #31 status=c0000018 hint=0x71f6497000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #32 status=c0000018 hint=0x71f6498000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #33 status=c0000018 hint=0x71f6499000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #34 status=c0000018 hint=0x71f649a000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #35 status=c0000018 hint=0x71f649b000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #36 status=c0000018 hint=0x71f649c000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #37 status=c0000018 hint=0x71f649d000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #38 status=c0000018 hint=0x71f649e000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #39 status=c0000018 hint=0x71f649f000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #40 status=c0000018 hint=0x71f6b37000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #41 status=c0000018 hint=0x71f6b38000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #42 status=c0000018 hint=0x71f6b39000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #43 status=c0000018 hint=0x71f6b3a000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #44 status=c0000018 hint=0x71f6b3b000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #45 status=c0000018 hint=0x71f6b3c000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #46 status=c0000018 hint=0x71f6b3d000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #47 status=c0000018 hint=0x71f6b3e000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #48 status=c0000018 hint=0x71f6b3f000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #49 status=c0000018 hint=0x71f71d7000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #50 status=c0000018 hint=0x71f71d8000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #51 status=c0000018 hint=0x71f71d9000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #52 status=c0000018 hint=0x71f71da000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #53 status=c0000018 hint=0x71f71db000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #54 status=c0000018 hint=0x71f71dc000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #55 status=c0000018 hint=0x71f71dd000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #56 status=c0000018 hint=0x71f71de000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #57 status=c0000018 hint=0x71f71df000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #58 status=c0000018 hint=0x71f7907000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #59 status=c0000018 hint=0x71f7908000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #60 status=c0000018 hint=0x71f7909000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #61 status=c0000018 hint=0x71f790a000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #62 status=c0000018 hint=0x71f790b000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #63 status=c0000018 hint=0x71f790c000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #64 status=c0000018 hint=0x71f790d000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[steer] #3 size=0x14666000 reserved_total=326MB armed=va-pressure -> above ceiling 0x7c48400000
+[steer] #4 size=0x399d000 reserved_total=326MB armed=va-pressure -> above ceiling 0x7c5ca70000
+[steer] #5 size=0x3e66000 reserved_total=326MB armed=va-pressure -> above ceiling 0x7c60410000
+[steer] #6 size=0x2198000 reserved_total=326MB armed=va-pressure -> above ceiling 0x7c64280000
+[steer] #7 size=0x3e400000 reserved_total=1322MB armed=va-pressure -> above ceiling 0x7c66420000
+[steer] #8 size=0x2a800000 reserved_total=2002MB armed=va-pressure -> above ceiling 0x7ca5c10000
+[steer] #9 size=0x2010000 reserved_total=2002MB armed=va-pressure -> above ceiling 0x7cd0410000
+[steer] #10 size=0x2010000 reserved_total=2002MB armed=va-pressure -> above ceiling 0x7cd3000000
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\crs-handler.exe" t+ 10.413s rev=ml526
+[copy-verify] jsproxy.dll: OK, 1 .text pages executable (copy @0x1529a0000)
+[win-name] #31 hwnd=0x10060 class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\crs-video.exe" t+ 10.803s rev=ml526
+[copy-verify] win32u.dll: OK, 8 .text pages executable (copy @0x15612c000)
+[footprint] rev=ml358 phys=1833 MB (peak 1833) internal=1831 MB compressed=0 MB external=304 MB reusable=32 MB (cycle=6)
+00f8:err:module:import_dll Library EVR.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\crs-video.exe") not found
+00f8:err:module:loader_init Importing dlls for L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\crs-video.exe" failed, status c0000135
+00f8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000135) syscalls=0 unix_calls=12688
+[Wine ntdll/server] process_exit_wrapper(-1073741515): closing child fd_socket=669
+[Wine ntdll/server] process_exit_wrapper(-1073741515)
+[Wine child thread] child exited with code -1073741515
+00a8:err:module:load_dll [dll-missing] rev=ml336 #4 L"devobj.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00e8:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".................................................................................."
+00e8:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: "[220:232:20261020,045338.921:ERROR sie_analytics.cc:381] Failed to post telemetry event: status(0) WinHttpSendRequest: error 0x13d while retrieving error 0x2f7d..."
+00a8:err:module:load_dll [dll-missing] rev=ml336 #5 L"drvstore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #6 L"devobj.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\sl.reflex.dll" 0x71e8a40000+0x2b000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[guest-log] #12 tid=00a8 04:53:39:197 (00000168) > [Render] Loading NVAPI...
+00a8:err:module:load_dll [dll-missing] rev=ml336 #7 L"drvstore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #8 L"devobj.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\D3DCompiler_47.dll" 0x71e8010000+0x404000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[madeira-d3d12] command queue: type 0
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\amd_fidelityfx_dx12.dll" 0x71e7970000+0x660000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\libxess.dll" 0x71e3910000+0x46b6000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] command queue: type 0
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\amd_fidelityfx_dx12.dll" 0x71e3220000+0x660000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[guest-log] #25 tid=00a8 04:53:39:436 (00000168) > [NxApp] Querying GPU Driver Info...
+[win-name] #35 hwnd=0x1006e class='' text="Default IME" rev=ml853
+[win-name] #36 hwnd=0x10066 class='' text="Marvel's Spider-Man: Miles Morales" rev=ml853
+[launch-view] dismissed reason=game-window logs=0
+[footprint] rev=ml1060 fast phys=2135 MB compressed=1 MB
+[footprint] rev=ml1060 fast phys=2152 MB compressed=1 MB
+[21:53:58.323] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=75 resident=2499MB dbg=DEBUGGED rev=ml525
+[guest-log] #32 tid=00a8 04:54:17:248 (00000168) > [NxApp] Querying GPU Driver Info...
+[win-name] #861 hwnd=0x20082 class='' text="Default IME" rev=ml853
+[win-name] #862 hwnd=0x20068 class='' text="Marvel's Spider-Man: Miles Morales v4.630.0.0" rev=ml853
+[win-name] #863 hwnd=0x20068 class='' text="Marvel's Spider-Man: Miles Morales v4.630.0.0" rev=ml853
+[win-name] #864 hwnd=0x20068 class='' text="Marvel's Spider-Man: Miles Morales v4.630.0.0" rev=ml853
+[win-name] #868 hwnd=0x20068 class='' text="Marvel's Spider-Man: Miles Morales v4.630.0.0" rev=ml853
+[win-name] #869 hwnd=0x20068 class='' text="Marvel's Spider-Man: Miles Morales v4.630.0.0" rev=ml853
+[madeira-d3d12] command queue: type 0
+[swap-diag] #1 layer 0x125578060: drawable 0x0 format 80 -> 1408x648 format 70, set on the iOS main thread (dispatch_sync) ...
+[madeira-d3d12] command queue: type 2
+[footprint] rev=ml1060 fast phys=2289 MB compressed=1 MB
+[madeira-d3d12] command queue: type 3
+[steer] #11 size=0x6c00000 reserved_total=2802MB armed=va-pressure -> above ceiling 0x7d2d000000
+[steer] #12 size=0x5000000 reserved_total=2802MB armed=va-pressure -> above ceiling 0x7d33c00000
+[footprint] rev=ml1060 fast phys=2452 MB compressed=75 MB
+[footprint] rev=ml1060 fast phys=2738 MB compressed=296 MB
+[footprint] rev=ml1060 fast phys=2802 MB compressed=316 MB
+[steer] #13 size=0xfeb8000 reserved_total=2802MB armed=va-pressure -> above ceiling 0x7d3c000000
+00a8:err:module:load_dll [dll-missing] rev=ml336 #9 L"hkCompatFormats.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[steer] #14 size=0x10800000 reserved_total=3066MB armed=va-pressure -> above ceiling 0x7d66410000
+[steer] #15 size=0x3a00000 reserved_total=3066MB armed=va-pressure -> above ceiling 0x7d76c10000
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Marvel's Spider-Man Miles Morales\\bink2w64.dll" 0x71e2270000+0x7b000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[copy-verify] xaudio2_7.dll: OK, 9 .text pages executable (copy @0x1548b4000)
+D A8 Load module XAudio2_7.DLL (xaudio2_7.dll-02fa8eaf137b3314): 71E2110000
+D 224 Load module wbemprox.dll (wbemprox.dll-32727b2744fb579d): 71E1FD0000
+D 224 Load module winspool.drv (winspool.drv-1d86ae048b0921a6): 71E1EA0000
+D 224 Load module compstui.dll (compstui.dll-6caceb67ab4f8333): 71E1E00000
+D A8 Load module xaudio2_8.dll (xaudio2_8.dll-6d69cf073a3abd5f): 71E1D10000
+D 260 Load module schannel.dll (schannel.dll-b6824dedbc2abf6e): 71E1900000
+[mip0] r#3811 704x324x1 dx34 flags 0x4: MipLevels 0 (D3D12: the full chain, 10 levels) -> 1 level(s); GetDesc answers 0 (bcd.cfg mip0-full = 1 resolves it)
+[mip0] r#3863 704x324x1 dx10 flags 0x4: MipLevels 0 (D3D12: the full chain, 10 levels) -> 1 level(s); GetDesc answers 0 (bcd.cfg mip0-full = 1 resolves it)
+[madeira-d3d12] helper kernels: ready (library 1, indirect tessellation kernel 1, probe kernel 1, ring 1, CPU-visible)
+[21:54:28.552] [INFO] detach-wait: presents=392 running=1 elapsed=60s
+[ios_audio] ml1230 pacing stream=0x12766cd00 lead 60 ms: client wrote 9.96 s of audio in 10.01 s (99.5%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x12766d300 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=146 resident=2821MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x11cd0c600 lead 60 ms: client wrote 8.96 s of audio in 10.00 s (89.6%) over 248 wakes; device short 1109.3 ms in 52 of 469 passes (largest pass 1024 frames); ring 0..4096 frames; worst late wake 0.0 ms; clamped 0 samples
+[cage] holdback handed to the allocator [0x7200004000,0x73ffff0000): the band is exhausted (request 0xfe0000) and no V8 cage was asked for; its first page stays a guard
+[rb-tex] madeira-bcd new readback #1: fmt 55 352x164 level 0 (texture 352x164, 1 mips)
+[ios_audio] ml1230 pacing stream=0x12766cd00 lead 60 ms: client wrote 10.02 s of audio in 10.00 s (100.2%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x12766d300 lead 60 ms: client wrote 9.98 s of audio in 10.00 s (99.8%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x11cd0c600 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.0%) over 148 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2048..4096 frames; worst late wake 0.0 ms; clamped 0 samples
+[footprint] rev=ml358 phys=7908 MB (peak 7912) internal=1841 MB compressed=3296 MB external=31 MB reusable=0 MB (cycle=40)
+[ios_audio] ml1230 pacing stream=0x12766cd00 lead 60 ms: client wrote 9.99 s of audio in 10.00 s (99.9%) over 234 wakes; device short 0.0 ms in 0 of 468 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x12766d300 lead 60 ms: client wrote 9.99 s of audio in 10.00 s (99.9%) over 234 wakes; device short 0.0 ms in 0 of 468 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[footprint] rev=ml358 phys=7903 MB (peak 7912) internal=1845 MB compressed=3287 MB external=26 MB reusable=0 MB (cycle=41)
+[ios_audio] ml1230 pacing stream=0x11cd0c600 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.0%) over 140 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2048..4096 frames; worst late wake 0.0 ms; clamped 0 samples
+[footprint] rev=ml358 phys=7903 MB (peak 7912) internal=1859 MB compressed=3273 MB external=26 MB reusable=0 MB (cycle=42)
+[madeira-d3d12] ml1057 live GPU backing (estimated) total=1780MB: tex-RT=85MB/23 (peak 85) tex-DS=0MB/0 (peak 0) tex-UAV=45MB/53 (peak 45) tex-sampled=336MB/4739 (peak 339) tex-MSAA=0MB/0 (peak 0) buf-private=0MB/15 (peak 0) buf-shared=1312MB/30 (peak 1440)
+[footprint] rev=ml358 phys=7908 MB (peak 7912) internal=1842 MB compressed=3281 MB external=26 MB reusable=0 MB (cycle=43)
+[footprint] rev=ml358 phys=7931 MB (peak 7931) internal=1995 MB compressed=3148 MB external=28 MB reusable=0 MB (cycle=44)
+[footprint] rev=ml1060 fast phys=7958 MB compressed=3164 MB
+[rb-tex] madeira-bcd new readback #613: fmt 20 256x256 level 0 (texture 256x256, 1 mips)
+[footprint] rev=ml358 phys=7975 MB (peak 7975) internal=2134 MB compressed=3050 MB external=27 MB reusable=0 MB (cycle=45)
+[21:54:58.597] [INFO] detach-wait: presents=1884 running=1 elapsed=90s
+[madeira-d3d12] ml1057 live GPU backing (estimated) total=1780MB: tex-RT=85MB/23 (peak 85) tex-DS=0MB/0 (peak 0) tex-UAV=45MB/53 (peak 45) tex-sampled=336MB/4753 (peak 339) tex-MSAA=0MB/0 (peak 0) buf-private=0MB/15 (peak 0) buf-shared=1312MB/30 (peak 1440)
+[freeze] alive t+91s beats=3 gaps=0 iter=354 gen=1 threads=137 resident=2212MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x12766cd00 lead 60 ms: client wrote 10.03 s of audio in 10.00 s (100.3%) over 235 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x12766d300 lead 60 ms: client wrote 10.03 s of audio in 10.00 s (100.3%) over 235 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.0 ms; clamped 0 samples
+[footprint] rev=ml1060 fast phys=7999 MB compressed=3018 MB
+[footprint] rev=ml1060 fast phys=8079 MB compressed=3168 MB
+[footprint] rev=ml1060 fast phys=8102 MB compressed=3220 MB
+[footprint] rev=ml1060 fast phys=8125 MB compressed=3205 MB
+[footprint] rev=ml1060 fast phys=8154 MB compressed=3241 MB

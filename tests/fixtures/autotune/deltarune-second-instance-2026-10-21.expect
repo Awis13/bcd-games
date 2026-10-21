@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "DELTARUNE relaunches its stripped exe while the first process holds the window; exe-window-fixed-base must not fire (round 577)",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "stuck"
+}

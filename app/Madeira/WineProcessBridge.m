@@ -15,6 +15,7 @@
 #import <UIKit/UIKit.h>
 #include <stdatomic.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <fcntl.h>
@@ -314,11 +315,16 @@ volatile int g_madeira_srv_log_all = 0;      /* env.MADEIRA_SRV_LOG_ALL = 1 */
  * calls wine_launched_process_did_exit() for that process only, on whichever
  * thread ends it. Only the status is kept: no names, no allocation, no
  * logging. g_launch_exit holds (1 << 32) | status when the program ended with
- * an NTSTATUS error (0xC...), else 0. */
+ * an NTSTATUS error (0xC...), else 0.
+ * madeira-bcd (round 577, GTA IV freeze): the hook also hands the end to
+ * wine_session_note_launch_exit() ("Session end" below): which thread it ran on,
+ * and the app's own program name back. */
+void wine_session_note_launch_exit(int status);
 static uint64_t g_launch_exit = 0;
 void wine_launched_process_did_exit(int status) {
     if ((uint32_t)status >= 0xC0000000u)
         __atomic_store_n(&g_launch_exit, (UINT64_C(1) << 32) | (uint32_t)status, __ATOMIC_RELEASE);
+    wine_session_note_launch_exit(status);
 }
 void wine_exit_status_reset(void) {
     __atomic_store_n(&g_launch_exit, 0, __ATOMIC_RELEASE);
@@ -330,6 +336,83 @@ int wine_crash_exit_status(uint32_t *status) {
     return 1;
 }
 static char *g_prefix_path = NULL;
+
+/* ---- Session end (madeira-bcd, round 577: GTA IV "the game freezes") ----------------------------------
+ *
+ * What ends a session: wine_process_thread (below) runs __wine_main on its own thread, the boot thread, and
+ * clears g_wine_running and stops the wineserver when __wine_main comes back. It comes back when the program's
+ * exit reaches the shim in shims/wine_ios_exit.h on THAT thread: exit() long-jumps to the setjmp above it. When
+ * the program ends on any other thread (GTA IV 2026-10-21 10:18:42: the game thread 00b8 died of an uncaught C++
+ * exception and called ExitProcess, the boot thread was 0024; Stranglehold RVBE4K: abort_process on 0070) the
+ * shim can only pthread_exit that thread, the server kills the boot thread with the rest of the process,
+ * __wine_main never returns, g_wine_running stays 1 and the library keeps the last frame for good. Of the logs
+ * that show the server's line for the initial process's death ("[srv-kill] kill_process pid=0020", builds
+ * 574-576), the two whose program ended off the boot thread (GTA IV 00b8, Stranglehold 0070) never printed
+ * "[WineProc] stopping wineserver"; those that ended on 0024 did (or went on to a launcher's child wait).
+ *
+ * wine_session_note_launch_exit() (the hook above) notes that the initial process ended: with what code, when,
+ * and whether on the boot thread (then the normal path follows). LibraryModel.poll asks
+ * wine_launched_exit_stuck(): "ended off the boot thread, __wine_main has not returned". When the library
+ * decides to leave (SessionEndRules in Library.swift: none of the program's own processes is left, a few
+ * seconds passed) it calls wine_session_abandon(), which does what the boot thread would have done. That work,
+ * wine_session_end(), is shared with the boot thread's own tail and runs once per session.
+ *
+ * Program name: setprogname() keeps the POINTER it is given (Darwin's libc does not copy). Wine's
+ * set_process_name (build/ntdll-unix/env_ios.c) hands it the program's file name, which lies inside exe_path[],
+ * a local of wine_process_thread: on the boot thread's stack. When that thread is gone its stack is unmapped
+ * and the next getprogname() in the app (ICU's date formatting on BCD's game page, XPC's name for the network
+ * state in AssistantServices, ...) faults on a native thread: [mach-deliver] NATIVE-THREAD DECLINE in
+ * _platform_strlen / strcmp / strncasecmp_l, at an address 0x1270-0x1670 below the boot thread's TSD base (GTA IV
+ * 0x16d621a87 = exe_path + 23, where the file name starts in the program's full path; Dead Space DVXWGA, Tomb Raider
+ * TXPQM1, PES 2013 B39EXN, NFS Most Wanted XM2BC1 the same shape, Dead Space after a session that ended cleanly).
+ * The hook gives the app's own name back as soon as the initial process ends, and wine_session_end() again. */
+static volatile int g_wine_main_returned = 0;   /* __wine_main came back (or long-jumped back) on the boot thread */
+static int g_launch_exit_claim = 0;             /* the first end of the initial process is taken */
+static volatile int g_launch_exit_seen = 0;     /* ... and its code and time are stored */
+static volatile int g_launch_exit_boot = 0;     /* an end of it ran on the boot thread: the normal path follows */
+static volatile int g_launch_exit_code = 0;
+static volatile uint64_t g_launch_exit_ns = 0;
+static int g_session_end_claim = 0;             /* wine_session_end() has run for this session */
+static char *g_app_progname = NULL;             /* the app's own getprogname(), taken before the first session */
+
+static uint64_t wine_session_now_ns(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+}
+
+static void wine_progname_restore(void) {
+    const char *name = __atomic_load_n(&g_app_progname, __ATOMIC_ACQUIRE);
+    if (name) setprogname(name);
+}
+
+void wine_session_note_launch_exit(int status) {
+    int boot = g_wine_thread && pthread_equal(pthread_self(), g_wine_thread);
+    int expected = 0;
+    if (boot) __atomic_store_n(&g_launch_exit_boot, 1, __ATOMIC_RELEASE);
+    if (__atomic_compare_exchange_n(&g_launch_exit_claim, &expected, 1, 0, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+        g_launch_exit_code = status;
+        g_launch_exit_ns = wine_session_now_ns();
+        __atomic_store_n(&g_launch_exit_seen, 1, __ATOMIC_RELEASE);
+    }
+    wine_progname_restore();
+}
+
+/* 1: the program ended off the boot thread and __wine_main has not come back (and the session's end work has
+ * not run). *code: its exit status; *seconds: how long ago. */
+int wine_launched_exit_stuck(int32_t *code, double *seconds) {
+    if (!__atomic_load_n(&g_launch_exit_seen, __ATOMIC_ACQUIRE)) return 0;
+    if (__atomic_load_n(&g_launch_exit_boot, __ATOMIC_ACQUIRE) || __atomic_load_n(&g_wine_main_returned, __ATOMIC_ACQUIRE)) return 0;
+    if (!g_wine_running || __atomic_load_n(&g_session_end_claim, __ATOMIC_ACQUIRE)) return 0;
+    if (code) *code = (int32_t)g_launch_exit_code;
+    if (seconds) {
+        uint64_t now = wine_session_now_ns(), then = g_launch_exit_ns;
+        *seconds = now > then ? (double)(now - then) / 1e9 : 0.0;
+    }
+    return 1;
+}
+
+static void wine_session_end(void);   /* defined after wine_process_thread: the boot thread's tail and wine_session_abandon call it */
 
 /* Export MADEIRA_DOCS_DIR before main(), while HOME is still the app container.
  * The in-app wineserver thread sets HOME to the Wine prefix before it creates its
@@ -1917,7 +2000,14 @@ static void *wine_process_thread(void *arg) {
              * as <name>.dll, as MADEIRA_WER and MADEIRA_WINTYPES above. Fort Solis and DRAGON BALL
              * Sparking! ZERO import dxva2.dll and ended at once with c0000135 (testers' logs, build
              * 574). Every other shipped *-optin.dll that is not listed has a link of ours removed, so
-             * only the game that lists one has it. wer and wintypes keep their own switches. */
+             * only the game that lists one has it. wer and wintypes keep their own switches.
+             * setupapi is the one name that IS shipped (setupapi.dll, linked into both farms above):
+             * setupapi-optin.dll is the same DLL with a lock round its device node table
+             * (tools/patch-wine-setupapi-devinst-lock.py; Dying Light's controller library and main
+             * thread raced in it, build 576). The loop below links it over the farm's link for a game
+             * that lists setupapi; the farms are relinked from the bundle at the start of every session,
+             * so the next session without the line has the shipped file again, and the removal below
+             * only ever removes a link to the -optin file, never the shipped setupapi.dll. */
             {
                 const char *optList = getenv("MADEIRA_OPTIN_DLLS");
                 NSMutableSet<NSString *> *wanted = [NSMutableSet set];
@@ -2325,6 +2415,7 @@ static void *wine_process_thread(void *arg) {
         } else {
             dprintf(STDERR_FILENO, "[WineProc] Wine exited with code %d (caught by longjmp)\n", wine_ios_exit_code);
         }
+        __atomic_store_n(&g_wine_main_returned, 1, __ATOMIC_RELEASE);   /* madeira-bcd (round 577): the normal path; wine_launched_exit_stuck() stays 0 */
 
         /* A launcher stub that starts the game and exits at once (GTA V
          * Enhanced: PlayGTAV.exe -> GTA5_Enhanced.exe) must not end the
@@ -2355,37 +2446,10 @@ static void *wine_process_thread(void *arg) {
             }
         }
 
-        g_wine_running = 0;
-        /* ml1184: these belong to the launch that just ended; a later session in this app
-         * run gets its own from its game, or bcd.cfg's. */
-        unsetenv("MADEIRA_FASTSYNC"); unsetenv("MADEIRA_FASTSYNC_SEM");
-        unsetenv("MADEIRA_CPU_COUNT"); unsetenv("DXMT_D9_ANISO_LIMIT");
-        unsetenv("FEX_X87REDUCEDPRECISION");   /* ml1184 */
-        unsetenv("MADEIRA_DINPUT_PAD");        /* ml1240 */
-        unsetenv("MADEIRA_FEX_AVX"); unsetenv("MADEIRA_FRAMEGEN");   /* ml1184 */
-        unsetenv("DXMT_ENABLE_NVEXT"); unsetenv("DXMT_WSI_MONITOR_IDENTITY"); unsetenv("DXMT_WSI_MODE_TABLE");
-        /* madeira-bcd: Horizon Zero Dawn's per-game switches must not reach a later game
-         * of this app run (GTA V Enhanced runs without them). */
-        unsetenv("MADEIRA_UCRT_X64_MATH"); unsetenv("MADEIRA_SRV_FGETPATH");
-        unsetenv("MADEIRA_NTDLL_SYNC");   /* madeira-bcd: a game's switch is its own */
-        unsetenv("MADEIRA_FIBER_TRACE");  /* madeira-bcd: likewise */
-        unsetenv("MADEIRA_WER");          /* madeira-bcd: likewise */
-        unsetenv("MADEIRA_WINTYPES");     /* madeira-bcd: likewise */
-        unsetenv("MADEIRA_OPTIN_DLLS");   /* madeira-bcd: likewise */
-        unsetenv("MADEIRA_VCRT_ARM64_KEY"); /* madeira-bcd: likewise (the Runtimes\\arm64 marker is per game) */
-        unsetenv("MADEIRA_TAIL_CARVE_EXEC_CHECK"); /* madeira-bcd: likewise */
-        unsetenv("MADEIRA_LUM_PROBE");      /* madeira-bcd: likewise */
-        unsetenv("MADEIRA_FEX_BAND_KEEP_MB"); /* madeira-bcd: likewise */
-        g_madeira_srv_fgetpath = 0;
-        /* madeira-bcd: the server's per-launch switches end with the session as well */
-        unsetenv("MADEIRA_SRV_ECO_FOLLOW"); unsetenv("MADEIRA_SRV_DIRECT");
-        unsetenv("MADEIRA_SRV_IDLE_US"); unsetenv("MADEIRA_SRV_LOG_ALL");
-        g_madeira_srv_eco_follow = 0; g_madeira_srv_direct = 0;
-        g_madeira_srv_idle_us = 0; g_madeira_srv_log_all = 0;
-
-        // Stop wineserver to prevent CPU spin (iOS kills for excessive CPU)
-        dprintf(STDERR_FILENO, "[WineProc] stopping wineserver...\n");
-        wineserver_stop();
+        /* madeira-bcd (round 577): the session's end work, shared with wine_session_abandon
+         * (the "Session end" section above): g_wine_running = 0, the per-launch switches
+         * unset, the wineserver stopped. Once per session. */
+        wine_session_end();
 
         dprintf(STDERR_FILENO, "[WineProc] Wine process thread finished cleanly\n");
 
@@ -2405,6 +2469,60 @@ static void *wine_process_thread(void *arg) {
     return NULL;
 }
 
+/* What the boot thread does after __wine_main: the session is over, stop the wineserver. Once per session,
+ * whoever gets here first (the boot thread, or wine_session_abandon). */
+static void wine_session_end(void)
+{
+    if (__atomic_exchange_n(&g_session_end_claim, 1, __ATOMIC_ACQ_REL)) return;
+    g_wine_running = 0;
+    wine_progname_restore();
+    /* ml1184: these belong to the launch that just ended; a later session in this app
+     * run gets its own from its game, or bcd.cfg's. */
+    unsetenv("MADEIRA_FASTSYNC"); unsetenv("MADEIRA_FASTSYNC_SEM");
+    unsetenv("MADEIRA_CPU_COUNT"); unsetenv("DXMT_D9_ANISO_LIMIT");
+    unsetenv("FEX_X87REDUCEDPRECISION");   /* ml1184 */
+    unsetenv("MADEIRA_DINPUT_PAD");        /* ml1240 */
+    unsetenv("MADEIRA_FEX_AVX"); unsetenv("MADEIRA_FRAMEGEN");   /* ml1184 */
+    unsetenv("DXMT_ENABLE_NVEXT"); unsetenv("DXMT_WSI_MONITOR_IDENTITY"); unsetenv("DXMT_WSI_MODE_TABLE");
+    /* madeira-bcd: Horizon Zero Dawn's per-game switches must not reach a later game
+     * of this app run (GTA V Enhanced runs without them). */
+    unsetenv("MADEIRA_UCRT_X64_MATH"); unsetenv("MADEIRA_SRV_FGETPATH");
+    unsetenv("MADEIRA_NTDLL_SYNC");   /* madeira-bcd: a game's switch is its own */
+    unsetenv("MADEIRA_FIBER_TRACE");  /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_WER");          /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_WINTYPES");     /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_X64_MACHINE");  /* madeira-bcd: likewise (BeamNG.drive's launcher) */
+    unsetenv("MADEIRA_TINY_WINDOW_FIX"); /* madeira-bcd: likewise (American Truck Simulator's tiny window) */
+    unsetenv("MADEIRA_OPTIN_DLLS");   /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_VCRT_ARM64_KEY"); /* madeira-bcd: likewise (the Runtimes\\arm64 marker is per game) */
+    unsetenv("MADEIRA_TAIL_CARVE_EXEC_CHECK"); /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_POOL_CLAMP_SECTIONS"); /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_LUM_PROBE");      /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_FEX_BAND_KEEP_MB"); /* madeira-bcd: likewise */
+    g_madeira_srv_fgetpath = 0;
+    /* madeira-bcd: the server's per-launch switches end with the session as well */
+    unsetenv("MADEIRA_SRV_ECO_FOLLOW"); unsetenv("MADEIRA_SRV_DIRECT");
+    unsetenv("MADEIRA_SRV_IDLE_US"); unsetenv("MADEIRA_SRV_LOG_ALL");
+    g_madeira_srv_eco_follow = 0; g_madeira_srv_direct = 0;
+    g_madeira_srv_idle_us = 0; g_madeira_srv_log_all = 0;
+
+    // Stop wineserver to prevent CPU spin (iOS kills for excessive CPU)
+    dprintf(STDERR_FILENO, "[WineProc] stopping wineserver...\n");
+    wineserver_stop();
+}
+
+/* The library's call (a background queue) once SessionEndRules says the session is over although __wine_main
+ * never came back. The thread that ran it is gone with the program. */
+void wine_session_abandon(void)
+{
+    int32_t code = 0;
+    double seconds = 0;
+    if (!wine_launched_exit_stuck(&code, &seconds)) return;
+    dprintf(STDERR_FILENO, "[WineProc] madeira-bcd: the program exited (status %d) on a thread other than the boot thread "
+            "%.1f s ago and __wine_main never returned; ending the session here\n", (int)code, seconds);
+    wine_session_end();
+}
+
 int wine_process_start(const char *prefix_path) {
     if (g_wine_running) {
         LOG("Wine process already running");
@@ -2415,6 +2533,15 @@ int wine_process_start(const char *prefix_path) {
     g_prefix_path = strdup(prefix_path);
 
     LOG("Starting Wine process with prefix: %{public}s", prefix_path);
+
+    /* madeira-bcd (round 577, "Session end" above): this session's own bookkeeping, and the app's own program
+     * name, taken once before any session has handed setprogname() a pointer of its own. */
+    if (!g_app_progname) {
+        const char *own = getprogname();
+        if (own && *own) __atomic_store_n(&g_app_progname, strdup(own), __ATOMIC_RELEASE);
+    }
+    g_wine_main_returned = 0; g_launch_exit_claim = 0; g_launch_exit_seen = 0; g_launch_exit_boot = 0;
+    g_launch_exit_code = 0; g_launch_exit_ns = 0; g_session_end_claim = 0;
 
     g_wine_running = 1;
 

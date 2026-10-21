@@ -1,0 +1,117 @@
+[10:40:53.771] [INFO] Checking entitlements...
+[10:40:53.771] [INFO] [build] v0.1.576 (576)
+[10:40:53.772] [INFO] [device] model=iPad16,5 idiom=pad os=iPadOS Version 27.2 (Build 24B5089g) ram=15416MB available=16366MB cores=10
+[10:40:53.772] [INFO] [device] address-map=[0x100ba8000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:40:53.791] [INFO] [device] gpu="Apple M4 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[10:42:02.452] [INFO] [dock-installers] app=200260 choice=run
+[10:42:05.293] [INFO] [dock-installers] app=200260 request=reset-signout; applied at the next Dock start
+[10:42:09.319] [INFO] [bcd] library launch Batman Arkham City GOTY: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[10:42:09.320] [INFO] Requesting JIT with Built-in StikJIT...
+[10:42:10.854] [INFO] [dock-launch] image-retire=1
+[10:42:10.854] [INFO] [dock-launch] image-map-guard=1
+[10:42:11.427] [INFO] [dock-installers] app=200260 choice=run pending=4; the next start skips them
+[10:42:11.458] [INFO] [dock-installers] app=200260 program=vcredist file=VCRedist_x86.exe status=pending key=HKLM\Software\Valve\Steam\Apps\200260 recorded=- minimum=1
+[10:42:11.488] [INFO] [dock-installers] app=200260 program=dotnet file=DotNetFx35.exe status=pending key=HKLM\Software\Valve\Steam\Apps\200260 recorded=- minimum=1
+[10:42:11.518] [INFO] [dock-installers] app=200260 program=directx file=DXSetup.exe status=pending key=HKLM\Software\Valve\Steam\Apps\200260 recorded=- minimum=1
+[10:42:11.548] [INFO] [dock-installers] app=200260 program=amd file=AMD_DCOptSetup.exe status=pending key=HKLM\Software\Valve\Steam\Apps\200260 recorded=- minimum=1
+[10:42:11.548] [INFO] [dock-installers] app=200260 dotnet-fusion=present
+[10:42:11.548] [INFO] [dock-installers] app=200260 scripts=1 programs=4 pending=4 done=0 missing=0 unsupported=0 default-key=1 services-step=start session-madsync-off=1 installs-only=1
+[10:42:11.548] [INFO] [dock-installers] app=200260 this session runs only the one-time installs; the game starts after BCD is restarted (MADEIRA_DOCK_INSTALL_SEPARATE=0: in the same session)
+[10:42:11.555] [INFO] Running full Wine sequence...
+[10:42:11.555] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100ba8000,0x8000000000) 512GB available=16321MB low-power=0 thermal=nominal
+[10:42:11.557] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[10:42:11.558] [INFO] Allocating 896MB JIT pool via debugger...
+[10:42:11.558] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[10:42:11.558] [INFO] [jit-debugger] attached=1 at the pool request
+[10:42:11.559] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 624MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[10:42:12.274] [INFO] RX pool at 0x148000000
+[10:42:12.290] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.778s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=15684 MB + phys_footprint=699 MB = 16384 MB (hw.memsize says 15416 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=712 MB (peak 712) internal=711 MB compressed=0 MB external=94 MB reusable=14 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #8 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\cmd.exe" t+  1.145s rev=ml526
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x1498d8000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x1499f0000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x149a84000)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.190s rev=ml526
+[copy-verify] imm32.dll: OK, 4 .text pages executable (copy @0x14afac000)
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  1.233s rev=ml526
+D 4C Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11A0A0000
+D 4C Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FC900000
+D 4C Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FAEF0000
+D 4C Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FAE70000
+D 4C Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FAD60000
+D 50 Load module rpcrt4.dll (rpcrt4.dll-5ef8bc180117faf4): 71FAC30000
+[phase] spawn:L"C:\\windows\\system32\\services.exe" t+  1.353s rev=ml526
+[phase] spawn:L"C:\\windows\\system32\\rpcss.exe" t+  1.419s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14d5d8000)
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=992
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=1006
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Batman Arkham City GOTY\\Setup\\VCRedist_x86.exe" t+  1.645s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[10:42:13.288] [INFO] [dock-installers] start 1/4 program=vcredist
+[win-name] #21 hwnd=0x1005a class='' text="Default IME" rev=ml853
+[win-name] #22 hwnd=0x10052 class='' text="Extracting Files" rev=ml853
+[win-name] #24 hwnd=0x1005c class='' text="Verifying File:" rev=ml853
+[phase] spawn:L"c:\\67a3cc23f25b53ca2a0a368491e7a348\\install.exe" t+  1.936s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+00ac:err:module:load_dll [dll-missing] rev=ml336 #59 L"C:\\windows\\Microsoft.NET\\Framework\\v1.1.4322\\fusion.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #60 L"C:\\windows\\Microsoft.NET\\Framework\\v4.0.30319\\fusion.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=1932
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Batman Arkham City GOTY\\Setup\\DotNetFx35.exe" t+  2.822s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[footprint] rev=ml358 phys=982 MB (peak 982) internal=981 MB compressed=0 MB external=169 MB reusable=18 MB (cycle=2)
+[10:42:15.289] [INFO] [dock-installers] start 2/4 program=dotnet
+[footprint] rev=ml358 phys=976 MB (peak 982) internal=975 MB compressed=0 MB external=168 MB reusable=21 MB (cycle=3)
+00b4:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=963 MB (peak 982) internal=961 MB compressed=0 MB external=171 MB reusable=21 MB (cycle=4)
+[phase] spawn:L"c:\\c4a124f0d31762ae90bec348ee\\wcu\\dotNetFramework\\dotNetFx35setup.exe" t+  8.299s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x14de78000)
+00c0:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #183 hwnd=0x20070 class='' text="Extracting Files" rev=ml853
+[win-name] #187 hwnd=0x20070 class='' text="Extracting Files" rev=ml853
+[win-name] #192 hwnd=0x20070 class='' text="Extracting Files" rev=ml853
+[win-name] #193 hwnd=0x20070 class='' text="Extracting Files" rev=ml853
+[win-name] #199 hwnd=0x20070 class='' text="Extracting Files" rev=ml853
+[footprint] rev=ml358 phys=998 MB (peak 998) internal=997 MB compressed=0 MB external=176 MB reusable=21 MB (cycle=5)
+[win-name] #200 hwnd=0x20070 class='' text="Extracting Files" rev=ml853
+[phase] spawn:L"c:\\d160e9bbb32e654504d5\\setup.exe" t+  9.699s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+00cc:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D CC Load module vs70uimgr.dll (vs70uimgr.dll-63cc4c5dc95137f1): 797A020000
+D CC Load module COMDLG32.dll (comdlg32.dll-bb2c831250d17c10): 7979F20000
+00cc:err:module:load_dll [dll-missing] rev=ml336 #1 L"c:\\d160e9bbb32e654504d5\\suiteinfo.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D CC Load module gencomp.dll (gencomp.dll-62782f276a7f6ae2): 7979E00000
+D CC Load module vs_setup.dll (vs_setup.dll-a00343770a208ea1): 7979CE0000
+D CC Load module PSAPI.DLL (psapi.dll-d7ed89fa3afdc220): 7979CC0000
+D CC Load module msimsg.dll (msimsg.dll-e39a9c3eee113ade): 7910000000
+[footprint] rev=ml358 phys=1074 MB (peak 1074) internal=1072 MB compressed=0 MB external=181 MB reusable=21 MB (cycle=6)
+[10:42:42.467] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=45 resident=1281MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1077 MB (peak 1078) internal=1075 MB compressed=0 MB external=183 MB reusable=21 MB (cycle=30)
+[10:43:12.631] [INFO] detach-wait: presents=0 running=1 elapsed=60s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=44 resident=1281MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1077 MB (peak 1078) internal=1075 MB compressed=0 MB external=183 MB reusable=21 MB (cycle=31)
+[footprint] rev=ml358 phys=1077 MB (peak 1078) internal=1075 MB compressed=0 MB external=183 MB reusable=21 MB (cycle=32)
+[footprint] rev=ml358 phys=1077 MB (peak 1078) internal=1075 MB compressed=0 MB external=183 MB reusable=21 MB (cycle=33)
+[footprint] rev=ml358 phys=1077 MB (peak 1078) internal=1075 MB compressed=0 MB external=183 MB reusable=21 MB (cycle=34)
+[footprint] rev=ml358 phys=1077 MB (peak 1078) internal=1075 MB compressed=0 MB external=183 MB reusable=21 MB (cycle=35)

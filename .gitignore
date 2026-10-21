@@ -172,6 +172,9 @@ app/Madeira/arm64ec-windows/vulkan-1.dll
 app/Madeira/arm64ec-windows/xtajit64-avx.dll
 # tools/build-wine-extra-dlls.sh output (opt-in diagnostic kernelbase, env.MADEIRA_FIBER_TRACE), built in CI
 app/Madeira/arm64ec-windows/kernelbase-fibertrace.dll
+# tools/build-wine-extra-dlls.sh output (the shipped setupapi.dll with a lock round its device node table,
+# env.MADEIRA_OPTIN_DLLS = setupapi), built in CI
+app/Madeira/arm64ec-windows/setupapi-optin.dll
 # tools/build-dxmt-nvapi.sh output, built in CI
 build/dxmt-nvapi/
 app/Madeira/arm64ec-windows/nvapi64.dll
@@ -196,3 +199,5 @@ app/Madeira/arm64ec-windows/dock-notices.txt
 # madeira-bcd fork-only smoke tests (bcd-smoke/build.sh output; built in CI, never committed)
 bcd-smoke/out/
 app/Madeira/arm64ec-windows/bcd-smoke-*.exe
+# tools/update-altsource.py output (the AltStore/SideStore source, built by .github/workflows/altsource.yml on GitHub)
+build-out/altsource/

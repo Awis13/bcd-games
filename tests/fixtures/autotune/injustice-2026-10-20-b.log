@@ -1,0 +1,151 @@
+[12:21:10.168] [INFO] Checking entitlements...
+[12:21:10.168] [INFO] [build] v0.1.574 (574)
+[12:21:10.171] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.2 (Build 24B115) ram=11695MB available=8152MB cores=6
+[12:21:10.171] [INFO] [device] address-map=[0x104b18000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[12:21:10.197] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[12:21:31.890] [INFO] [bcd] library launch InjusticeGodsAmongUs_UltimateEdition: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[12:21:31.891] [INFO] Requesting JIT with Built-in StikJIT...
+[12:21:39.041] [INFO] [dock-launch] image-retire=1
+[12:21:39.042] [INFO] [dock-launch] image-map-guard=1
+[12:21:39.061] [INFO] Running full Wine sequence...
+[12:21:39.062] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104b18000,0x8000000000) 512GB available=8150MB low-power=0 thermal=serious
+[12:21:39.064] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[12:21:39.064] [INFO] Allocating 896MB JIT pool via debugger...
+[12:21:39.065] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[12:21:39.065] [INFO] [jit-debugger] attached=1 at the pool request
+[12:21:39.066] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[12:21:39.764] [INFO] RX pool at 0x148000000
+[12:21:39.783] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.765s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[12:21:40.058] [Wine init_process] reply_pipe=41, sending init_first_thread...
+ml992: os_proc_available_memory=7585 MB + phys_footprint=606 MB = 8192 MB (hw.memsize says 11695 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+0024:err:seh:init_syscall_frame page0: trying debugger (BRK #0xf00d, x16=3)...
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=618 MB (peak 618) internal=617 MB compressed=0 MB external=91 MB reusable=105 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #8 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  1.176s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] ?: OK, 2 .text pages executable (copy @0x149837000)
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1498d4000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x149a0c000)
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x149aa2000)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.234s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x14ae70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11D520000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[steer] #1 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c05400000
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14ee8d000)
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1023 MB (peak 1023) internal=1022 MB compressed=0 MB external=163 MB reusable=105 MB (cycle=2)
+[footprint] rev=ml358 phys=1077 MB (peak 1077) internal=1076 MB compressed=0 MB external=165 MB reusable=105 MB (cycle=3)
+[footprint] rev=ml358 phys=1092 MB (peak 1092) internal=1091 MB compressed=0 MB external=165 MB reusable=105 MB (cycle=4)
+[footprint] rev=ml358 phys=1082 MB (peak 1092) internal=1081 MB compressed=0 MB external=165 MB reusable=105 MB (cycle=5)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\InjusticeGodsAmongUs_UltimateEdition\\DiscContentPCG\\Injustice.exe" t+  9.483s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+00a8:err:module:load_dll [dll-missing] rev=ml336 #11 L"CSERHelper.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #33 hwnd=0x1006a class='' text="Default IME" rev=ml853
+[win-name] #34 hwnd=0x10066 class='' text="SplashScreen" rev=ml853
+[win-name] #35 hwnd=0x10066 class='' text="SplashScreen" rev=ml853
+[footprint] rev=ml358 phys=1510 MB (peak 1510) internal=1508 MB compressed=0 MB external=187 MB reusable=105 MB (cycle=6)
+[launch-view] dismissed reason=game-window logs=0
+00a8:err:module:load_dll [dll-missing] rev=ml336 #12 L"nvapi.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #45 hwnd=0x10074 class='' text="INJUSTICE: GODS AMONG US" rev=ml853
+[win-name] #49 hwnd=0x10074 class='' text="INJUSTICE: GODS AMONG US" rev=ml853
+[win-name] #50 hwnd=0x10074 class='' text="INJUSTICE: GODS AMONG US" rev=ml853
+[win-name] #51 hwnd=0x10074 class='' text="INJUSTICE: GODS AMONG US" rev=ml853
+[win-name] #52 hwnd=0x10074 class='' text="INJUSTICE: GODS AMONG US" rev=ml853
+D A8 Load module rsaenh.dll (rsaenh.dll-6cdd9371ffbfb056): 7977E30000
+D A8 Load module rsaenh.dll (rsaenh.dll-6cdd9371ffbfb056): 7977E30000
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=84 resident=2166MB dbg=DEBUGGED rev=ml525
+[12:22:09.978] [INFO] detach-wait: presents=718 running=1 elapsed=30s
+D A8 Load module rsaenh.dll (rsaenh.dll-6cdd9371ffbfb056): 7977E30000
+D A8 Load module rsaenh.dll (rsaenh.dll-6cdd9371ffbfb056): 7977E30000
+D A8 Load module rsaenh.dll (rsaenh.dll-6cdd9371ffbfb056): 7977E30000
+D A8 Load module rsaenh.dll (rsaenh.dll-6cdd9371ffbfb056): 7977E30000
+[footprint] rev=ml358 phys=3477 MB (peak 3525) internal=1931 MB compressed=0 MB external=190 MB reusable=105 MB (cycle=20)
+[footprint] rev=ml358 phys=3477 MB (peak 3525) internal=1931 MB compressed=0 MB external=190 MB reusable=105 MB (cycle=21)
+[footprint] rev=ml358 phys=3527 MB (peak 3527) internal=1984 MB compressed=0 MB external=191 MB reusable=105 MB (cycle=22)
+[store-noalias] #1 rev=ml348 addr=0x7928100000 insn=0xb8bfc304 pc=0x1612a9ed0 NO pool/anon alias | region 0x7928100000+0x10000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x7928100000 hostpc=0x1612a9ed0 hinsn=0xb8bfc304 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x160ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x0 pc=0x1612a9ed0 addr=0x7928100000 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7928100000+0x10000 rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x1612a9ed0 addr=0x7928100000 x18=0x0 type=1 lr=0x1612a93cc sp=0x12f42f350 x16=0x7c4190cb40 x17=0x661aeb
+[guest-code] rev=ml333 pool_rip=0xfff8d67c (PE 0xfff8d67c) -- NO pool copy for this address (identity translate)
+[fault-host] 1612a9dd0: d503201f 8b274278 f8bfc314 d503201f 9e620282 6ee19842 4ee1b842 d1006138
+[fault-host] 1612a9df0: fc384a62 51006134 8b344278 b8bfc304 d503201f 51005134 8b344278 b8bfc305
+[fault-host] 1612a9e10: d503201f 39506f94 3952cb95 52800036 11001e94 12000a94 1ad422d4 0a3402b4
+[fault-host] 1612a9e30: 3912cb94 14000016 529cc0a4 72a94fe4 52985305 72a367a5 aa0703ea 51001108
+[fault-host] 1612a9e50: b8284a66 aa0403e6 aa0503e7 8b2a4278 aa0403f4 aa0503f5 0874ff06 d53b4200
+[fault-host] 1612a9e70: 6b04029f 7a4502a0 ba0e040b 9a841284 9a8512a5 b8684a66 11001108 aa0403eb
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-noalias] #2 rev=ml348 addr=0x7928100000 insn=0xb8bfc304 pc=0x1612a9ed0 NO pool/anon alias | region 0x7928100000+0x10000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=READ p1=0x7928100000 hostpc=0x1612a9ed0 hinsn=0xb8bfc304 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x160ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x0 pc=0x1612a9ed0 addr=0x7928100000 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7928100000+0x10000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x1612a9ed0 addr=0x7928100000 x18=0x0 type=1 lr=0x1612a93cc sp=0x12f42f350 x16=0x7c4190cb40 x17=0x661aeb
+[guest-code] rev=ml333 pool_rip=0xfff8d67c (PE 0xfff8d67c) -- NO pool copy for this address (identity translate)
+[fault-host] 1612a9e30: 3912cb94 14000016 529cc0a4 72a94fe4 52985305 72a367a5 aa0703ea 51001108
+[fault-host] 1612a9e50: b8284a66 aa0403e6 aa0503e7 8b2a4278 aa0403f4 aa0503f5 0874ff06 d53b4200
+[fault-host] 1612a9e70: 6b04029f 7a4502a0 ba0e040b 9a841284 9a8512a5 b8684a66 11001108 aa0403eb
+[fault-host] 1612a9e90: 51004134 8b344278 d503201f 889fff0b 51003134 8b344278 d503201f 889fff05
+[fault-host] 1612a9eb0: aa0503e7 51002134 8b344278 d503201f 889fff04 7100009f 540007e0 8b244278
+[fault-host] 1612a9ed0: b8bfc304 d503201f 5280000a aa0a03e5 00000000 00000000 00000000 00000000
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+00a8:err:seh:bus_handler BUS->AV: unreadable target addr=0x7928100000 pc=0x1612a9ed0 rw=1 rev=ml420
+[footprint] rev=ml358 phys=3585 MB (peak 3585) internal=2045 MB compressed=0 MB external=203 MB reusable=105 MB (cycle=23)
+[win-name] #53 hwnd=0x10074 class='' text="INJUSTICE: GODS AMONG US" rev=ml853
+[store-noalias] #3 rev=ml348 addr=0x790000006b insn=0x38bfc314 pc=0x1617b8d78 NO pool/anon alias | region 0x7900000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #3 p0=READ p1=0x790000006b hostpc=0x1617b8d78 hinsn=0x38bfc314 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x160ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=3 rip=0x0 pc=0x1617b8d78 addr=0x790000006b kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7900000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #3 pc=0x1617b8d78 addr=0x790000006b x18=0x7900300000 type=1 lr=0x161646718 sp=0x12f42f350 x16=0x151a59e94 x17=0x12f42f2b0
+[guest-code] rev=ml333 pool_rip=0x16f7d10 (PE 0x16f7d10) -- NO pool copy for this address (identity translate)
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-noalias] #4 rev=ml348 addr=0x790000006b insn=0x38bfc314 pc=0x1617b8d78 NO pool/anon alias | region 0x7900000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #4 p0=READ p1=0x790000006b hostpc=0x1617b8d78 hinsn=0x38bfc314 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x160ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=4 rip=0x0 pc=0x1617b8d78 addr=0x790000006b kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7900000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #4 pc=0x1617b8d78 addr=0x790000006b x18=0x7900300000 type=1 lr=0x161646718 sp=0x12f42f350 x16=0x151a59e94 x17=0x12f42f2b0
+[guest-code] rev=ml333 pool_rip=0x16f7d10 (PE 0x16f7d10) -- NO pool copy for this address (identity translate)
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+00a8:err:seh:bus_handler BUS->AV: unreadable target addr=0x790000006b pc=0x1617b8d78 rw=1 rev=ml420
+00a8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=12387
+[Wine child thread] child exited with code -1073741819
+[footprint] rev=ml358 phys=3431 MB (peak 3585) internal=1920 MB compressed=0 MB external=203 MB reusable=105 MB (cycle=24)
+0050:err:module:load_dll [dll-missing] rev=ml336 #47 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #48 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=3412 MB (peak 3585) internal=1920 MB compressed=0 MB external=203 MB reusable=105 MB (cycle=25)

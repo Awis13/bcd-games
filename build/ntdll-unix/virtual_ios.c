@@ -2750,6 +2750,111 @@ static int ios_pool_range_first_nonexec( size_t off, size_t size, size_t limit,
     return 0;
 }
 
+/* ajan5-motor (2026-10-21): a writable PE section must not reach past its own copy.
+ *
+ * GTA Vice City (Steam 12110; AE6NQZ build 576, S0TH0N build 574, same device, same pool offsets) died
+ * 100% of the time at its second process: the child's private ntdll copy was handed pool pages
+ * that had lost EXEC for good ("[pool-poison] HANDED OUT NON-EXEC ... 70 poisoned pages",
+ * "[copy-verify] ntdll.dll: 29 of 29 .text pages BORN NON-EXEC", then "[exec-recover] ... mprotect_rx=-1
+ * errno=13" until the redelivery guard ended the process). Build 576's section-overrun log line
+ * named the cause: the game's unnamed 32-bit image (SizeOfImage 0x56000, ImageBase 0x10000000) has a
+ * section table whose VirtualSize is rva + 0x10000000 in every section, and the writable one
+ * (".data rva=0x43000 vsize=0x10043000 chars=0xc0000040") made mprotect_exec's
+ * mprotect(RW) cover 256 MB of pool starting inside the copy. On blessed pool memory a
+ * mprotect(RW) lowers max_prot for good, so every page after the copy was dead from then on
+ * (pool-poison starts at 0x12b380000 = the first page after the copy's allocation, in both logs at the
+ * same pool offset 0xa46c000). The tail-carve check of build 576 only covers FEX's code buffers;
+ * this hit a head image copy.
+ *
+ * ios_pool_section_clamp keeps the range inside `limit` (the copy's own end rounded up to the page: the
+ * highest end any section of a well-formed image can have, so it changes nothing for those).
+ * It is only applied behind env.MADEIRA_POOL_CLAMP_SECTIONS = 1 (default off): the two
+ * a game that carries the same kind of image (LEGO Batman 2, BXW23W: 391 s and 17,792 presents) runs today with the
+ * dead run in place, and nothing proves it does not rely on it (Burnout Paradise's AQY7NM log has the same run and
+ * stops at the game's own "CPU Error" box, for another reason). */
+static size_t ios_pool_section_clamp( uintptr_t target, size_t want, uintptr_t limit )
+{
+    if (target >= limit) return 0;
+    return want > limit - target ? (size_t)(limit - target) : want;
+}
+
+static int ios_pool_clamp_sections_on( void )
+{
+    static int on = -1;
+
+    if (on < 0)
+    {
+        const char *e = getenv( "MADEIRA_POOL_CLAMP_SECTIONS" );
+        on = (e && e[0] == '1');
+    }
+    return on;
+}
+
+/* The last writable section whose mprotect reached past its copy (only ever set by one that did;
+ * a log line names it again if a later copy comes up dead). */
+static struct
+{
+    uintptr_t copy, reach_end;      /* the copy's start; where the mprotect ended */
+    char name[16];
+    unsigned long past;             /* bytes beyond the copy's page-rounded end */
+} ios_pool_last_overrun;
+
+static void ios_pool_note_overrun( const char *module, const char *section, uintptr_t copy, uintptr_t reach_end,
+                                   uintptr_t limit, int clamped )
+{
+    static int note_n;
+
+    snprintf( ios_pool_last_overrun.name, sizeof(ios_pool_last_overrun.name), "%s", module ? module : "?" );
+    ios_pool_last_overrun.copy = copy;
+    ios_pool_last_overrun.reach_end = reach_end;
+    ios_pool_last_overrun.past = (unsigned long)(reach_end - limit);
+    if (note_n++ < 8)
+        dprintf( 2, "[pool-section-reach] %s %.8s: the RW mprotect of this section reaches 0x%lx bytes past its copy "
+                    "(copy %p, ends %p) -- %s rev=ajan5-motor\n",
+                 module ? module : "?", section, ios_pool_last_overrun.past, (void *)copy, (void *)limit,
+                 clamped ? "clamped to the copy (env.MADEIRA_POOL_CLAMP_SECTIONS=1)"
+                         : "NOT clamped: those pool pages lose EXEC for good (set env.MADEIRA_POOL_CLAMP_SECTIONS=1)" );
+}
+
+/* ajan5-motor (2026-10-21): hand out a range that can execute, or say none could be found.
+ *
+ * `off` is a range just handed out for CODE (a child process's private ntdll copy); `dead` says whether it
+ * has a page whose max_prot lost EXEC. A copy born that way can never run (mprotect(RX) fails with EACCES
+ * on max=3 memory; the child's first instruction faults and the redelivery guard ends the process), so
+ * the range is given up -- nothing else can use it, the pages are dead -- and the next one is taken,
+ * until one can execute. The dead ranges stay on the head's ledger (reclaimed when the child exits,
+ * where the freelist's own check drops their dead pages). At most `max_tries` further ranges; when the
+ * pool runs out first the last range in hand is returned, dead, exactly as before this existed. */
+typedef size_t (*ios_pool_take_fn)( size_t size, size_t limit );
+typedef int (*ios_pool_dead_fn)( size_t off, size_t size, size_t *bad_at, unsigned int *cur, unsigned int *max );
+
+static size_t ios_pool_skip_dead_ranges( size_t off, size_t size, size_t limit, unsigned int max_tries,
+                                         ios_pool_take_fn take, ios_pool_dead_fn dead, unsigned int *skipped,
+                                         int *still_dead, size_t *first_bad, unsigned int *bad_cur,
+                                         unsigned int *bad_max )
+{
+    unsigned int n = 0;
+    size_t bad = 0;
+    unsigned int cur = 0, max = 0;
+    int first = 1, is_dead = 0;
+
+    while (off != (size_t)-1 && (is_dead = dead( off, size, &bad, &cur, &max )) != 0)
+    {
+        size_t next;
+
+        if (first) { if (first_bad) *first_bad = bad; if (bad_cur) *bad_cur = cur; if (bad_max) *bad_max = max; first = 0; }
+        if (n >= max_tries) break;
+        next = take( size, limit );
+        if (next == (size_t)-1) break;       /* pool exhausted: keep the one in hand, as before */
+        off = next;
+        n++;
+        is_dead = 0;                         /* the new range is looked at by the next test */
+    }
+    if (skipped) *skipped = n;
+    if (still_dead) *still_dead = is_dead;
+    return off;
+}
+
 /* madeira-bcd: the parts of a POISONED freed range that are still executable.
  *
  * Every range the dead SocialClubHelper.exe processes freed was dropped as
@@ -13612,6 +13717,48 @@ static void *find_reserved_free_area( void *base, void *end, size_t size, int to
 }
 
 
+/* ajan5-motor (2026-10-21): what Wine's own free-range table says about a window a request just failed in.
+ * Read-only, only called on the [va-scan] FAILED path for a request that cannot relax (a guest-window
+ * request), capped. Settles the question map_reserved_area leaves open (see ios_reserved_retry): "fit" 0 =
+ * the search had no range to find; "fit" > 0 = a range was there and the MAP_FIXED over it was refused. */
+static void ios_log_window_room( void *start, void *end, size_t size, size_t align_mask )
+{
+    static int room_n;
+    struct range_entry *range;
+    struct reserved_area *area, *cover = NULL;
+    unsigned int fit = 0, seen = 0;
+    size_t largest = 0;
+    void *first_fit = NULL;
+
+    if (room_n++ >= 8 || (char *)start >= (char *)end) return;
+    LIST_FOR_EACH_ENTRY( area, &reserved_areas, struct reserved_area, entry )
+        if ((char *)area->base <= (char *)start && (char *)start < (char *)area->base + area->size)
+        { cover = area; break; }
+
+    for (range = free_ranges_lower_bound( start );
+         range < free_ranges_end && (char *)range->base < (char *)end && seen < 100000; range++, seen++)
+    {
+        char *lo = (char *)range->base > (char *)start ? (char *)range->base : (char *)start;
+        char *hi = (char *)range->end < (char *)end ? (char *)range->end : (char *)end;
+        char *al = ROUND_ADDR( lo + align_mask, align_mask );
+
+        if (hi <= lo) continue;
+        if ((size_t)(hi - lo) > largest) largest = hi - lo;
+        if (al < hi && (size_t)(hi - al) >= size)
+        {
+            if (!fit) first_fit = al;
+            fit++;
+        }
+    }
+    dprintf( 2, "[va-scan] window room %p..%p for 0x%lx (align 0x%lx): the free-range table holds %u range(s) that fit "
+                "(first %p), largest free 0x%lx over %u range(s); reserved area at the start: %s [%p+0x%lx fex_only=%u] "
+                "-- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor\n",
+             start, end, (unsigned long)size, (unsigned long)(align_mask + 1), fit, first_fit, (unsigned long)largest, seen,
+             cover ? "yes" : "NO", cover ? cover->base : NULL, cover ? (unsigned long)cover->size : 0UL,
+             cover ? cover->fex_only : 0 );
+}
+
+
 /***********************************************************************
  *           remove_reserved_area
  *
@@ -14035,9 +14182,54 @@ static void ios_vh_capture_free_site( const struct file_view *view, void *native
     }
     site->valid = 1;
 }
+/* ajan6-arkham (2026-10-21): VIEW HISTORY FOR SMALL VIEWS. The ring above keeps only views of 1 MB or more, so for a
+ * fault next to a small view the report said "no view of 1 MB+ covered this address" and nothing else (Batman: Arkham City
+ * GOTY, build 576, 0x790f080000: the 0x11000 section view before it was mapped and unmapped 67 times, and what
+ * stands there at the fault could not be told). Every guest-band view under 1 MB is recorded the same way (kind, base,
+ * size, protect, thread, time), in a ring of its own so the 1 MB records are not pushed out, and
+ * ios_dump_fault_region prints the last ones that touch the fault's neighbourhood. Passive: it only stores a few words
+ * when a view is created or deleted and prints on a fault Wine cannot serve. */
+struct ios_vhs_rec
+{
+    char *base;
+    size_t size;
+    unsigned int protect, tid, ms;
+    char kind;
+};
+#define IOS_VHS_N 2048
+static struct ios_vhs_rec ios_vhs_ring[IOS_VHS_N];
+static unsigned long ios_vhs_pos;
+static void ios_vhs_note( char kind, const struct file_view *view )
+{
+    struct ios_vhs_rec *r = &ios_vhs_ring[__atomic_fetch_add( &ios_vhs_pos, 1, __ATOMIC_RELAXED ) % IOS_VHS_N];
+    r->base = view->base; r->size = view->size; r->protect = view->protect; r->kind = kind;
+    r->tid = NtCurrentTeb() ? (unsigned int)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread : 0;
+    r->ms = ios_vh_ms();
+}
+/* The last `max` small views that touch [addr - span, addr + span), newest first. Returns how many were printed. */
+static unsigned ios_vhs_dump( const void *addr, size_t span, unsigned max )
+{
+    unsigned long end = __atomic_load_n( &ios_vhs_pos, __ATOMIC_RELAXED ), i;
+    unsigned int now = ios_vh_ms(), n = 0;
+    const char *lo = (const char *)addr - span, *hi = (const char *)addr + span;
+    for (i = end; i-- > 0 && end - i <= IOS_VHS_N && n < max; )
+    {
+        const struct ios_vhs_rec *r = &ios_vhs_ring[i % IOS_VHS_N];
+        if (!r->base || r->base + r->size <= lo || r->base >= hi) continue;
+        dprintf( 2, "[fault-rgn]   small-view history: view %p+0x%lx (ends %p) protect=0x%x %s by tid %04x %u ms ago\n",
+                 r->base, (unsigned long)r->size, r->base + r->size, r->protect,
+                 r->kind == 'c' ? "CREATED" : "DELETED", r->tid, now - r->ms );
+        n++;
+    }
+    if (!n) dprintf( 2, "[fault-rgn]   small-view history: no view under 1 MB within 0x%lx of this address in the last %u records\n",
+                     (unsigned long)span, IOS_VHS_N );
+    return n;
+}
 static void ios_vh_note( char kind, const struct file_view *view )
 {
     struct ios_vh_rec *r;
+    if ((uintptr_t)view->base >= 0x7000000000ULL && (uintptr_t)view->base < 0x7c00000000ULL && view->size < (1u << 20))
+        ios_vhs_note( kind, view );   /* ajan6-arkham: the small views, in a ring of their own */
     if (view->size < (1u << 20) || (uintptr_t)view->base < 0x7000000000ULL || (uintptr_t)view->base >= 0x7c00000000ULL) return;
     r = &ios_vh_ring[__atomic_fetch_add( &ios_vh_pos, 1, __ATOMIC_RELAXED ) % IOS_VH_N];
     r->base = view->base; r->size = view->size; r->protect = view->protect; r->kind = kind;
@@ -14170,9 +14362,11 @@ static void ios_alias_release_view( const void *base, size_t size )
  *
  * Deletes a view. virtual_mutex must be held by caller.
  */
+static void ios_map_note_unmapped( const void *base, size_t size );   /* ajan6-arkham: ml561's ring, defined with it below */
 static void delete_view( struct file_view *view ) /* [in] View */
 {
     ios_vh_note( 'd', view );   /* madeira-bcd: view history */
+    if (!is_view_valloc( view )) ios_map_note_unmapped( view->base, view->size );   /* ajan6-arkham: a file view that is gone is no provenance */
     /* ml989: entered BEFORE any field of `view` is read, so "call never
      * entered" is distinguishable from "died reading the view". */
     if (ios_retire_trace_armed) ios_retire_mark( "D0>\n" );
@@ -18642,8 +18836,30 @@ static inline int mprotect_exec( void *base, size_t size, int unix_prot )
                         void *target = (void *)(sec_abs & ~(uintptr_t)(page_size - 1));
                         size_t sec_page_size = sec_abs_end - (uintptr_t)target;
 
+                        /* ajan5-motor: a section that ends past its own copy lowers max_prot of the pool
+                         * pages after it (see ios_pool_section_clamp). The limit is the highest end a
+                         * section of a well-formed image can reach, so a normal image never enters here.
+                         * Off by default: the range is only cut when env.MADEIRA_POOL_CLAMP_SECTIONS = 1. */
+                        {
+                            uintptr_t sec_limit = ((uintptr_t)((char *)jit_rx_base + offset + image_size)
+                                                   + page_size - 1) & ~(uintptr_t)(page_size - 1);
+                            if ((uintptr_t)target + sec_page_size > sec_limit)
+                            {
+                                int clamp = ios_pool_clamp_sections_on();
+                                ios_pool_note_overrun( ios_pe_module_name( image_base, image_size ), section_hdr,
+                                                       (uintptr_t)((char *)jit_rx_base + offset),
+                                                       (uintptr_t)target + sec_page_size, sec_limit, clamp );
+                                if (clamp)
+                                    sec_page_size = ios_pool_section_clamp( (uintptr_t)target, sec_page_size, sec_limit );
+                            }
+                        }
+
                         /* Try mprotect to make data section writable (drops execute) */
-                        if (mprotect(target, sec_page_size, PROT_READ | PROT_WRITE) == 0)
+                        if (!sec_page_size)
+                        {
+                            ERR("iOS JIT:     → mprotect RW skipped: the section lies past its copy\n");
+                        }
+                        else if (mprotect(target, sec_page_size, PROT_READ | PROT_WRITE) == 0)
                         {
                             ERR("iOS JIT:     → mprotect RW at %p (0x%lx bytes) OK\n",
                                 target, (unsigned long)sec_page_size);
@@ -19010,6 +19226,21 @@ static void ios_jit_mark_ec_ranges_for_copy(char *rw_image, char *jit_base, size
     }
 }
 
+/* ajan5-motor: the real range source and the dead-range test ios_pool_skip_dead_ranges() is given. At most
+ * 512 further ranges (the ntdll copy is ~1.1 MB: ~560 MB, more than any pool here); the Vice City run needs
+ * about 230. */
+#define IOS_POOL_DEAD_SKIP_MAX 512
+
+static size_t ios_pool_take_head_range( size_t size, size_t limit )
+{
+    return ios_pool_alloc_range( size, limit );
+}
+
+static int ios_pool_range_dead( size_t off, size_t size, size_t *bad_at, unsigned int *cur, unsigned int *max )
+{
+    return ios_pool_range_first_nonexec( off, size, size, bad_at, cur, max );
+}
+
 /* Copy the module containing `module_addr` into a fresh pool slot owned by
  * `child_peb`. Returns 0 on success. Idempotent per (module, child). */
 int ios_jit_copy_module_for_child(void *module_addr, void *child_peb)
@@ -19066,8 +19297,34 @@ int ios_jit_copy_module_for_child(void *module_addr, void *child_peb)
     alloc_size += child_tramp_prealloc;
     {
         size_t data_delta = ios_jit_data_align_delta(m->pe_base, m->size);
+        size_t head_limit = ios_jit_pool_size_global - ios_jit_tail_reserved;
         if (data_delta) alloc_size += pg;
-        offset = ios_pool_alloc_range(alloc_size, ios_jit_pool_size_global - ios_jit_tail_reserved);
+        offset = ios_pool_alloc_range(alloc_size, head_limit);
+        /* ajan5-motor (2026-10-21): a copy of ntdll born on pool pages that lost EXEC can never run (GTA Vice
+         * City AE6NQZ/S0TH0N: 29 of 29 .text pages BORN NON-EXEC, the child's first instruction faults, 2000
+         * redeliveries, process ended). Only a range that is ALREADY dead is given up and the next range that
+         * can execute is taken; a live range is used exactly as before, and when none is found the dead one is
+         * used as before. */
+        if (offset != (size_t)-1)
+        {
+            unsigned int skipped = 0, bad_cur = 0, bad_max = 0;
+            size_t first_off = offset, bad_at = 0;
+            int still_dead = 0;
+
+            offset = ios_pool_skip_dead_ranges( offset, alloc_size, head_limit, IOS_POOL_DEAD_SKIP_MAX,
+                                                ios_pool_take_head_range, ios_pool_range_dead, &skipped,
+                                                &still_dead, &bad_at, &bad_cur, &bad_max );
+            if (skipped || still_dead)
+                dprintf(2, "[child-ntdll] the pool range for this ntdll copy had lost EXEC (pool+0x%lx, first dead page +0x%lx, "
+                           "cur=0x%x max=0x%x): %s; gave up %u range(s) of 0x%lx bytes, copy at pool+0x%lx "
+                           "[last writable section past its copy: %s copy %p +0x%lx] rev=ajan5-motor\n",
+                        (unsigned long)first_off, (unsigned long)bad_at, bad_cur, bad_max,
+                        still_dead ? "NO range that can execute was found, the dead one is used as before"
+                                   : "took one that can execute",
+                        skipped, (unsigned long)alloc_size, (unsigned long)offset,
+                        ios_pool_last_overrun.copy ? ios_pool_last_overrun.name : "none",
+                        (void *)ios_pool_last_overrun.copy, ios_pool_last_overrun.past);
+        }
         if (offset != (size_t)-1 && data_delta) offset += data_delta;
     }
     if (offset == (size_t)-1)
@@ -19113,7 +19370,21 @@ int ios_jit_copy_module_for_child(void *module_addr, void *child_peb)
             {
                 size_t p_off = rva & ~(pg - 1);
                 size_t p_sz = ((rva + vsz + pg - 1) & ~(pg - 1)) - p_off;
-                if (mprotect(rx_dest + p_off, p_sz, PROT_READ | PROT_WRITE) != 0)
+                /* ajan5-motor: the same bound as the parent path's section loop (ios_pool_section_clamp):
+                 * a well-formed image never reaches it, and the cut is only made with
+                 * env.MADEIRA_POOL_CLAMP_SECTIONS = 1. */
+                {
+                    uintptr_t c_lim = ((uintptr_t)rx_dest + m->size + pg - 1) & ~(uintptr_t)(pg - 1);
+                    uintptr_t c_beg = (uintptr_t)rx_dest + p_off;
+                    if (c_beg + p_sz > c_lim)
+                    {
+                        int clamp = ios_pool_clamp_sections_on();
+                        ios_pool_note_overrun( ios_pe_module_name( m->pe_base, m->size ), sec, (uintptr_t)rx_dest,
+                                               c_beg + p_sz, c_lim, clamp );
+                        if (clamp) p_sz = ios_pool_section_clamp( c_beg, p_sz, c_lim );
+                    }
+                }
+                if (p_sz && mprotect(rx_dest + p_off, p_sz, PROT_READ | PROT_WRITE) != 0)
                     dprintf(2, "[child-ntdll] mprotect RW failed for section RVA 0x%x (errno=%d)\n",
                             rva, errno);
             }
@@ -19714,9 +19985,94 @@ static void *map_reserved_area( void *limit_low, void *limit_high, size_t size, 
     return r;
 }
 
+/* ajan5-motor (2026-10-21): a request that lies in one of our own guest windows and gets NO place.
+ *
+ * Shade: Wrath of Angels (39Z345, C534F0, Z5F6MG; build 576, iPhone13,4, iOS 18.6.2, address map 63 GB,
+ * extended-va=0, 32-bit program): in the 4 GB window [0x400000000,0x500000000) a section map of 0x11000 bytes
+ * failed with STATUS_NO_MEMORY ("[laa] ml1070 SPILL ... no room below guest 2 GB", then "[va-scan] FAILED
+ * window=0x400110000..0x500000000 ... views=32 maxgap=0x7ff40000 ... firstfail=0x401310000
+ * errno=17(File exists)") although a 2 GB gap lay free, and ucrtbase's init failed (c0000142). The
+ * errno=17 is map_free_area's no-clobber probe finding our own PROT_NONE window, which is expected there: a
+ * window is a Wine reserved area, and it is map_reserved_area that places views in it, with MAP_FIXED over
+ * the reservation. That function returned NULL in silence, for one of two reasons the log cannot tell
+ * apart: no free range was found, or the MAP_FIXED over the free range failed. The same logs show the window
+ * refusing something else too: the program's own image, asked at its preferred base 0x410000000 inside it, was
+ * refused with c0000017, and the relocated map at 0x401310000 was accepted. c0000017 there can come from that
+ * MAP_FIXED (ENOMEM) or from create_view (the page-protection table or the view record); the log does not say
+ * which, so this is a recovery for the first reading, not a proof of it.
+ *
+ * So, on a small address map only (ios_wow_small_va_slots != 0, which is 0 on a 512 GB map) and only after the
+ * MAP_FIXED itself failed with ENOMEM, the next free range of the same area is tried, at most
+ * IOS_RESERVED_RETRY_MAX times, each one strictly above (below, top-down) the one the kernel refused.
+ * A request that already got its place, or whose find found no range, is untouched. The refusal is logged
+ * ([reserved-area]), with what Mach says occupies the address, so the next log settles whether this was it. */
+#define IOS_RESERVED_RETRY_MAX 32
+
+typedef void *(*ios_reserved_once_fn)( void *low, void *high, void *ctx, void **refused, int *err );
+
+static void *ios_reserved_retry( void *low, void *high, size_t size, int top_down, size_t align_mask,
+                                 unsigned int max_tries, ios_reserved_once_fn once, void *ctx,
+                                 unsigned int *refused_n, void **first_refused, int *first_err )
+{
+    void *refused = NULL, *ptr;
+    int err = 0;
+    unsigned int n = 0;
+
+    *refused_n = 0; *first_refused = NULL; *first_err = 0;
+    ptr = once( low, high, ctx, &refused, &err );
+    if (refused) { *refused_n = 1; *first_refused = refused; *first_err = err; }
+    while (!ptr && refused && err == ENOMEM && n < max_tries)
+    {
+        if (top_down) high = (char *)refused + size - 1;           /* the next candidate lies below it */
+        else low = (char *)refused + align_mask + 1;                /* ... above it */
+        if ((char *)low >= (char *)high) break;
+        n++;
+        refused = NULL;
+        ptr = once( low, high, ctx, &refused, &err );
+        if (refused) ++*refused_n;
+    }
+    return ptr;
+}
+
+struct ios_reserved_ctx { size_t size; int top_down; int unix_prot; size_t align_mask; };
+
+static void *map_reserved_area_once( void *limit_low, void *limit_high, void *ctx_, void **refused, int *err );
+
 static void *map_reserved_area_inner( void *limit_low, void *limit_high, size_t size, int top_down,
                                       int unix_prot, size_t align_mask )
 {
+    struct ios_reserved_ctx ctx = { size, top_down, unix_prot, align_mask };
+    unsigned int refused_n;
+    void *first_refused, *ptr;
+    int first_err;
+
+    ptr = ios_reserved_retry( limit_low, limit_high, size, top_down, align_mask,
+                              ios_wow_small_va_slots ? IOS_RESERVED_RETRY_MAX : 0,
+                              map_reserved_area_once, &ctx, &refused_n, &first_refused, &first_err );
+    if (first_refused)
+    {
+        static unsigned long ra_n;
+        char what[160];
+
+        if (++ra_n <= 8 || !(ra_n % 256))
+        {
+            what[0] = 0;
+            ios_va_describe( first_refused, what, sizeof(what) );
+            dprintf( 2, "[reserved-area] #%lu MAP_FIXED over our own reservation refused: %p+0x%lx errno=%d (%s) | %s | "
+                        "%s (%u refused in all; small address map retry %s) rev=ajan5-motor\n",
+                     ra_n, first_refused, (unsigned long)size, first_err, strerror( first_err ), what,
+                     ptr ? "the retry placed it" : "NOT placed", refused_n,
+                     ios_wow_small_va_slots ? "on" : "off" );
+        }
+    }
+    return ptr;
+}
+
+static void *map_reserved_area_once( void *limit_low, void *limit_high, void *ctx_, void **refused, int *err )
+{
+    const struct ios_reserved_ctx *ctx = ctx_;
+    size_t size = ctx->size, align_mask = ctx->align_mask;
+    int top_down = ctx->top_down, unix_prot = ctx->unix_prot;
     void *ptr = NULL;
     struct reserved_area *area;
     /* iOS-Madeira ml520: time the aligned VA reservation.
@@ -19770,7 +20126,12 @@ static void *map_reserved_area_inner( void *limit_low, void *limit_high, size_t 
             if (ptr) break;
         }
     }
-    if (ptr && anon_mmap_fixed( ptr, size, unix_prot, 0 ) != ptr) ptr = NULL;
+    if (ptr && anon_mmap_fixed( ptr, size, unix_prot, 0 ) != ptr)
+    {
+        *refused = ptr;          /* ajan5-motor: the MAP_FIXED failed, not the search (see ios_reserved_retry) */
+        *err = errno;
+        ptr = NULL;
+    }
     return ptr;
 }
 
@@ -19814,6 +20175,10 @@ static NTSTATUS map_fixed_area( void *base, size_t size, int unix_prot )
     return STATUS_SUCCESS;
 
 failed:
+    /* ajan5-motor: a MAP_FIXED that failed here left no attribution (STAGE=none); name it (first failure wins, so
+     * anon_mmap_tryfixed's own record, with its Mach result, stays). Lets a c0000017 for a fixed base be told from
+     * create_view's (vprot-table / view-struct). */
+    ios_af_set( 6, errno, base, size );
     if (errno == ENOMEM)
     {
         ERR( "out of memory for %p-%p\n", base, (char *)base + size );
@@ -20169,6 +20534,7 @@ static NTSTATUS map_view( struct file_view **view_ret, void *base, size_t size,
                          ptr ? "" : (ceiling_relaxable ? "  --> relaxing ceiling, retrying unclamped"
                                                        : "  <-- STATUS_NO_MEMORY (callers see a NULL alloc)") );
                 }
+                if (!ptr && !ceiling_relaxable) ios_log_window_room( start, end, host_size, align_mask );   /* ajan5-motor */
             }
 #ifdef WINE_IOS
             if (!ptr) ios_fex_arena_census( start, end, size, align_mask );
@@ -20340,6 +20706,7 @@ static struct {
     long long offset, file_size;
     unsigned long long dev, ino;
     int shared, for_image, valid;
+    int unmapped;   /* ajan6-arkham: the view this record made has since been deleted (delete_view) */
 } ios_map_ring[IOS_MAP_RING];
 static volatile unsigned ios_map_ring_n;
 
@@ -20350,6 +20717,7 @@ static void ios_map_record( const void *view_base, size_t view_size, size_t star
     unsigned slot = __sync_fetch_and_add( &ios_map_ring_n, 1 ) % IOS_MAP_RING;
     struct stat st;
     ios_map_ring[slot].valid = 0;
+    ios_map_ring[slot].unmapped = 0;
     ios_map_ring[slot].base = (const char *)view_base;
     ios_map_ring[slot].view_size = view_size;
     ios_map_ring[slot].start = start;
@@ -20368,6 +20736,20 @@ static void ios_map_record( const void *view_base, size_t view_size, size_t star
     else ios_map_ring[slot].file_size = -1;
     __sync_synchronize();
     ios_map_ring[slot].valid = 1;
+}
+
+/* ajan6-arkham (2026-10-21): delete_view calls this for every file view it deletes. The ring above remembers the LAST
+ * mapping made over an address, whether or not it is still there, so a fault on a page whose view had been unmapped
+ * (and whose host pages are PROT_NONE again) was described by the dead view's file: Batman: Arkham City GOTY, build 576,
+ * "PROVENANCE view=0x790f070000+0x11000 ... file_size=0x11000 <== backing covers the mapping; EOF is NOT the explanation"
+ * for 0x790f080000, a page that no Wine view holds. The record is kept, but described as unmapped. Entries are marked
+ * by exact base and size; no lock (virtual_mutex is held by the caller, and the readers are lock-free on purpose). */
+static void ios_map_note_unmapped( const void *base, size_t size )
+{
+    unsigned i;
+    for (i = 0; i < IOS_MAP_RING; i++)
+        if (ios_map_ring[i].valid && ios_map_ring[i].base == (const char *)base && ios_map_ring[i].view_size == size)
+            ios_map_ring[i].unmapped = 1;
 }
 
 /* Signal-handler-safe: describe the mapping containing `addr`, or say plainly
@@ -20407,7 +20789,9 @@ void ios_map_describe( const void *addr, char *out, size_t outlen )
                   ios_map_ring[best].for_image ? "image" : "section",
                   ios_map_ring[best].file_size, ios_map_ring[best].dev, ios_map_ring[best].ino,
                   end_needed,
-                  ios_map_ring[best].file_size >= 0 && end_needed > ios_map_ring[best].file_size
+                  ios_map_ring[best].unmapped
+                    ? "<== THAT VIEW IS GONE (unmapped since): the file is not what the page belongs to now, the EOF story does not apply"
+                  : ios_map_ring[best].file_size >= 0 && end_needed > ios_map_ring[best].file_size
                     ? "<== MAPPING EXTENDS PAST END OF FILE — unbacked tail, this is the bug"
                     : "<== backing covers the mapping; EOF is NOT the explanation" );
     }
@@ -23951,12 +24335,14 @@ static NTSTATUS map_image_view( struct file_view **view_ret, struct pe_image_inf
              * the small ones. */
             if (size >= 64u * 1024u * 1024u || failn++ < 12)
                 dprintf( 2, "ml985: preferred base %p+%#lx REFUSED status=%#x "
-                         "image_flags=%#x charact=%#x map_addr=%#llx info_base=%#llx\n",
+                         "image_flags=%#x charact=%#x map_addr=%#llx info_base=%#llx "
+                         "| STAGE=%s err=%d at 0x%llx+0x%llx rev=ajan5-motor\n",
                          base, (unsigned long)size, (unsigned int)status,
                          (unsigned int)image_info->image_flags,
                          (unsigned int)image_info->image_charact,
                          (unsigned long long)image_info->map_addr,
-                         (unsigned long long)image_info->base );
+                         (unsigned long long)image_info->base,
+                         ios_af.stage <= 6 ? ios_af_stage_name[ios_af.stage] : "?", ios_af.err, ios_af.addr, ios_af.size );
         }
     }
 
@@ -24307,8 +24693,11 @@ static unsigned int virtual_map_section( HANDLE handle, PVOID *addr_ptr, ULONG_P
 done:
     server_leave_uninterrupted_section( &virtual_mutex, &sigset );
     if (needs_close) close( unix_handle );
-    if (res) dprintf(2, "[map-sec] virtual_map_section handle=%p prot=0x%x size=%p -> 0x%x\n",
-                     handle, (unsigned)protect, (void *)size, res);
+    if (res) dprintf(2, "[map-sec] virtual_map_section handle=%p prot=0x%x size=%p -> 0x%x | STAGE=%s err=%d at 0x%llx+0x%llx "
+                        "(map_view's own record: placement-scan = no place found; vprot-table/view-struct = create_view; "
+                        "fixed-map = MAP_FIXED) rev=ajan5-motor\n",
+                     handle, (unsigned)protect, (void *)size, res,
+                     ios_af.stage <= 6 ? ios_af_stage_name[ios_af.stage] : "?", ios_af.err, ios_af.addr, ios_af.size);
     return res;
 }
 
@@ -26468,6 +26857,16 @@ void ios_page_vprot_explain( const void *addr, const char *why )
     server_leave_uninterrupted_section( &virtual_mutex, &sigset );
 }
 
+/* ajan6-arkham: what a view is, for the [fault-rgn] neighbour lines. */
+static const char *ios_fault_view_kind( const struct file_view *view )
+{
+    if (view->protect & SEC_IMAGE) return "image";
+    if (view->protect & SEC_FILE) return "file section";
+    if (view->protect & SEC_COMMIT) return "section, SEC_COMMIT";
+    if (view->protect & SEC_RESERVE) return "section, SEC_RESERVE";
+    return "VirtualAlloc";
+}
+
 /* Steam S3 (task #29): when virtual_handle_fault can't service a fault,
  * dump the target's memory picture — is it in a Wine file_view (Wine should
  * manage it → our commit/vprot has a gap), or is it a FEX/foreign mapping
@@ -26508,8 +26907,30 @@ void ios_dump_fault_region( void *addr )
                  (char *)view->base + view->size );
     else
     {
+        struct file_view *below, *above;
         dprintf( 2, "[fault-rgn]   NO wine view — Wine doesn't own this addr (FEX/foreign mmap)\n" );
+        /* ajan6-arkham: name the views on both sides. Batman: Arkham City GOTY (build 576) and Injustice (574) read
+         * the first byte of a hole whose neighbour below is a live committed view (vprot prev = 23): whose end is
+         * it, and what lies above? A fault exactly at a view's end is a read past the allocation; a fault further
+         * out is a pointer into memory the game (or we) already gave back. */
+        below = find_view( (char *)addr - 1, 1 );
+        above = find_view_range( addr, 0x100000 );
+        if (below)
+            dprintf( 2, "[fault-rgn]   VIEW BELOW: base=%p size=0x%lx end=%p protect=0x%x (%s)%s\n", below->base,
+                     (unsigned long)below->size, (char *)below->base + below->size, below->protect,
+                     ios_fault_view_kind( below ),
+                     (char *)below->base + below->size == (char *)addr ? " -- the fault is exactly one past its end"
+                                                                       : " -- the fault is past its end" );
+        else
+            dprintf( 2, "[fault-rgn]   VIEW BELOW: none holds the byte before the fault\n" );
+        if (above)
+            dprintf( 2, "[fault-rgn]   VIEW ABOVE: base=%p size=0x%lx protect=0x%x (%s), 0x%lx above the fault\n",
+                     above->base, (unsigned long)above->size, above->protect, ios_fault_view_kind( above ),
+                     (unsigned long)((char *)above->base - (char *)addr) );
+        else
+            dprintf( 2, "[fault-rgn]   VIEW ABOVE: no view in the next 1 MB\n" );
         ios_vh_dump( addr );   /* madeira-bcd */
+        ios_vhs_dump( addr, 0x40000, 10 );   /* ajan6-arkham: the same for the views under 1 MB */
     }
     mutex_unlock( &virtual_mutex );
 }
@@ -28460,7 +28881,202 @@ static NTSTATUS ios_sc_glued_pools( void **pick, SIZE_T *sz, ULONG type, ULONG p
     return STATUS_SUCCESS;
 }
 
-NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR zero_bits,
+/***********************************************************************
+ *           [nt-fail]   (ajan5/rockstar, 2026-10-21; logging only)
+ *
+ * The Rockstar Launcher's service (RockstarService.exe) never reached its 2 MB shared-memory
+ * allocation in the failing runs of builds 574/576, and the log could not say whether a call
+ * of that process failed: [alloc-fail] ml814 prints the first 64 failures of the whole session
+ * and then every 64th, and the Launcher's own probe loop (0x1000 bytes at one hint after the
+ * other, c0000018) spends that budget before the service starts; it covers neither the Ex
+ * variants' address requirements nor a failed NtMapViewOfSection[Ex]; and it never says
+ * which process asked.
+ *
+ * Every FAILED NtAllocateVirtualMemory, NtAllocateVirtualMemoryEx, NtMapViewOfSection and
+ * NtMapViewOfSectionEx (the wrappers below; the bodies are the old functions, forced inline and
+ * unchanged) prints
+ *   [nt-fail] #N <api> status=... proc=<image> [(remote target)] tid=... size=... type=... prot=...
+ *             hint=... zb=... [h=<section handle> off=...] [ext={addr[low high align] attrs machine}] hits=K
+ * once per KIND of failure: the kind is api + status + size + type + protection + process image
+ * + whether a hint, zero bits or extended parameters were given -- never the address, so a probe
+ * loop over a thousand hints is one kind. A kind prints its first three failures and then its
+ * 4th, 8th, 16th...; 240 lines in all; 160 kinds. Only failures; the status handed back is the
+ * one the old function returned, and nothing is read that the old function did not read.
+ * NtCreateSection / NtOpenSection (Wine's sync.c) fail in the server: see [map-name] in
+ * build/wineserver/mapping_ios.c. */
+/* ntfail-test:begin (tests/host/check-nt-fail-log.py compiles this region) */
+#define IOS_NTFAIL_KEYS   160
+#define IOS_NTFAIL_LINES  240
+
+static struct { unsigned long long key; unsigned int hits; } ios_ntfail_tab[IOS_NTFAIL_KEYS];
+static unsigned int ios_ntfail_other, ios_ntfail_lines;
+
+static unsigned long long ios_ntfail_mix( unsigned long long h, unsigned long long v )
+{
+    return (h ^ v) * 1099511628211ULL;
+}
+
+static unsigned long long ios_ntfail_hash_str( const char *s )
+{
+    unsigned long long h = 14695981039346656037ULL;
+    for (; *s; s++) h = ios_ntfail_mix( h, (unsigned char)*s );
+    return h;
+}
+
+/* The last component of an image path (UTF-16, either slash), lower case ASCII, '?' for the rest. */
+static void ios_ntfail_basename( const unsigned short *w, size_t len, char *out, size_t cap )
+{
+    size_t base = 0, k, n = 0;
+
+    if (!cap) return;
+    for (k = 0; k < len; k++) if (w[k] == '\\' || w[k] == '/') base = k + 1;
+    for (k = base; k < len && n + 1 < cap; k++)
+    {
+        unsigned short c = w[k];
+        out[n++] = c >= 'A' && c <= 'Z' ? (char)(c + 32) : (c >= 0x20 && c < 0x7f) ? (char)c : '?';
+    }
+    out[n] = 0;
+}
+
+/* 1 when this failure is to be printed; then *line is its number and *hits how many of its kind
+ * there have been. */
+static int ios_ntfail_take( unsigned long long key, unsigned int *hits, unsigned int *line )
+{
+    unsigned int i, start, n, l;
+
+    key |= 1;
+    start = (unsigned int)(key % IOS_NTFAIL_KEYS);
+    for (i = 0; i < IOS_NTFAIL_KEYS; i++)
+    {
+        unsigned int s = (start + i) % IOS_NTFAIL_KEYS;
+        unsigned long long cur = __atomic_load_n( &ios_ntfail_tab[s].key, __ATOMIC_RELAXED );
+
+        if (!cur && __atomic_compare_exchange_n( &ios_ntfail_tab[s].key, &cur, key, 0, __ATOMIC_RELAXED,
+                                                 __ATOMIC_RELAXED )) cur = key;
+        if (cur != key) continue;
+        n = __atomic_add_fetch( &ios_ntfail_tab[s].hits, 1, __ATOMIC_RELAXED );
+        *hits = n;
+        if (!(n <= 3 || (n & (n - 1)) == 0)) return 0;
+        l = __atomic_fetch_add( &ios_ntfail_lines, 1, __ATOMIC_RELAXED );
+        *line = l + 1;
+        return l < IOS_NTFAIL_LINES;
+    }
+    /* every slot is another kind's: the rest count together */
+    n = __atomic_add_fetch( &ios_ntfail_other, 1, __ATOMIC_RELAXED );
+    *hits = n;
+    if ((n & (n - 1)) != 0) return 0;
+    l = __atomic_fetch_add( &ios_ntfail_lines, 1, __ATOMIC_RELAXED );
+    *line = l + 1;
+    return l < IOS_NTFAIL_LINES;
+}
+
+/* `api`: "NtAllocateVirtualMemory" ...; `image`: the process that asked (lower case, "" when unknown);
+ * `remote`: it acted on another process; `handle`/`offset`: a map's section and file offset (0 for an
+ * allocation); `ext`: the extended parameters as text, or "". */
+static void ios_ntfail_note( const char *api, unsigned int status, const char *image, int remote, unsigned int tid,
+                             unsigned long long size, unsigned int type, unsigned int protect,
+                             unsigned long long hint, unsigned long long zero_bits,
+                             unsigned long long handle, unsigned long long offset, const char *ext )
+{
+    unsigned long long key = ios_ntfail_hash_str( api );
+    unsigned int hits = 0, line = 0;
+    char tail[320];
+    size_t n = 0;
+
+    key = ios_ntfail_mix( key, status );
+    key = ios_ntfail_mix( key, size );
+    key = ios_ntfail_mix( key, type );
+    key = ios_ntfail_mix( key, protect );
+    key = ios_ntfail_mix( key, ios_ntfail_hash_str( image ) );
+    key = ios_ntfail_mix( key, (remote ? 1 : 0) | (hint ? 2 : 0) | (zero_bits ? 4 : 0) | (ext && ext[0] ? 8 : 0) );
+    if (!ios_ntfail_take( key, &hits, &line )) return;
+    tail[0] = 0;
+    if (handle || offset) n += snprintf( tail + n, sizeof(tail) - n, " h=0x%llx off=0x%llx", handle, offset );
+    if (ext && ext[0] && n < sizeof(tail)) snprintf( tail + n, sizeof(tail) - n, " ext={%s}", ext );
+    dprintf( 2, "[nt-fail] #%u %s status=%08x proc=%s%s tid=%04x size=0x%llx type=0x%x prot=0x%x hint=0x%llx "
+                "zb=0x%llx%s hits=%u rev=ajan5-rockstar\n",
+             line, api, status, image && image[0] ? image : "?", remote ? " (remote target)" : "", tid, size,
+             type, protect, hint, zero_bits, tail, hits );
+}
+/* ntfail-test:end */
+
+/* The current pseudo-process's image, as ios_ntfail_note wants it. */
+static void ios_ntfail_image( char *out, size_t cap )
+{
+    PEB *peb = ios_jit_current_peb();
+    RTL_USER_PROCESS_PARAMETERS *pp = peb ? peb->ProcessParameters : NULL;
+
+    out[0] = 0;
+    if (pp && pp->ImagePathName.Buffer)
+        ios_ntfail_basename( (const unsigned short *)pp->ImagePathName.Buffer,
+                             pp->ImagePathName.Length / sizeof(WCHAR), out, cap );
+}
+
+/* Extended parameters as text: the address requirements, the attribute flags, the image machine; another
+ * type by its number. At most four. */
+static void ios_ntfail_ext_text( const MEM_EXTENDED_PARAMETER *p, ULONG count, char *out, size_t cap )
+{
+    size_t n = 0;
+    ULONG i;
+
+    out[0] = 0;
+    if (!p || !count) return;
+    for (i = 0; i < count && i < 4 && n + 96 < cap; i++)
+    {
+        switch (p[i].Type)
+        {
+        case MemExtendedParameterAddressRequirements:
+        {
+            const MEM_ADDRESS_REQUIREMENTS *r = p[i].Pointer;
+
+            if (r) n += snprintf( out + n, cap - n, "%saddr[low=%p high=%p align=0x%llx]", n ? " " : "",
+                                  r->LowestStartingAddress, r->HighestEndingAddress,
+                                  (unsigned long long)r->Alignment );
+            else n += snprintf( out + n, cap - n, "%saddr[NULL]", n ? " " : "" );
+            break;
+        }
+        case MemExtendedParameterAttributeFlags:
+            n += snprintf( out + n, cap - n, "%sattrs=0x%llx", n ? " " : "", (unsigned long long)p[i].ULong64 );
+            break;
+        case MemExtendedParameterImageMachine:
+            n += snprintf( out + n, cap - n, "%smachine=0x%x", n ? " " : "", (unsigned int)p[i].ULong );
+            break;
+        default:
+            n += snprintf( out + n, cap - n, "%stype%u", n ? " " : "", (unsigned int)p[i].Type );
+            break;
+        }
+    }
+}
+
+static void ios_ntfail_alloc( const char *api, NTSTATUS status, HANDLE process, const void *hint, ULONGLONG size,
+                              ULONG type, ULONG protect, ULONG_PTR zero_bits, const MEM_EXTENDED_PARAMETER *params,
+                              ULONG count )
+{
+    char image[64], ext[200];
+
+    ios_ntfail_image( image, sizeof(image) );
+    ios_ntfail_ext_text( params, count, ext, sizeof(ext) );
+    ios_ntfail_note( api, (unsigned int)status, image, process != NtCurrentProcess(),
+                     NtCurrentTeb() ? (unsigned int)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread : 0,
+                     size, type, protect, (unsigned long long)(ULONG_PTR)hint, (unsigned long long)zero_bits,
+                     0, 0, ext );
+}
+
+static void ios_ntfail_map( const char *api, NTSTATUS status, HANDLE handle, HANDLE process, const void *hint,
+                            ULONGLONG size, ULONG alloc_type, ULONG protect, ULONG_PTR zero_bits,
+                            const LARGE_INTEGER *offset, const MEM_EXTENDED_PARAMETER *params, ULONG count )
+{
+    char image[64], ext[200];
+
+    ios_ntfail_image( image, sizeof(image) );
+    ios_ntfail_ext_text( params, count, ext, sizeof(ext) );
+    ios_ntfail_note( api, (unsigned int)status, image, process != NtCurrentProcess(),
+                     NtCurrentTeb() ? (unsigned int)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread : 0,
+                     size, alloc_type, protect, (unsigned long long)(ULONG_PTR)hint, (unsigned long long)zero_bits,
+                     (unsigned long long)(ULONG_PTR)handle, offset ? (unsigned long long)offset->QuadPart : 0, ext );
+}
+
+static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR zero_bits,
                                          SIZE_T *size_ptr, ULONG type, ULONG protect )
 {
 #ifdef WINE_IOS
@@ -29567,6 +30183,18 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
 #endif
 }
 
+NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR zero_bits,
+                                         SIZE_T *size_ptr, ULONG type, ULONG protect )
+{
+    const void *hint = ret ? *ret : NULL;
+    const ULONGLONG want = size_ptr ? *size_ptr : 0;
+    NTSTATUS status = ios_nt_impl_NtAllocateVirtualMemory( process, ret, zero_bits, size_ptr, type, protect );
+
+    if (NT_ERROR( status ))
+        ios_ntfail_alloc( "NtAllocateVirtualMemory", status, process, hint, want, type, protect, zero_bits, NULL, 0 );
+    return status;
+}
+
 
 static NTSTATUS get_extended_params( const MEM_EXTENDED_PARAMETER *parameters, ULONG count,
                                      ULONG_PTR *limit_low, ULONG_PTR *limit_high, ULONG_PTR *align,
@@ -30069,7 +30697,7 @@ void ios_reserve_fex_arena(void)
              (unsigned)ARRAY_SIZE(plan) );
 }
 
-NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *size_ptr, ULONG type,
+static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *size_ptr, ULONG type,
                                            ULONG protect, MEM_EXTENDED_PARAMETER *parameters,
                                            ULONG count )
 {
@@ -30971,6 +31599,19 @@ retry_code_carve_reuse:
     return allocate_virtual_memory( ret, size_ptr, type, protect,
                                     limit_low, limit_high, align, attributes );
 #endif
+}
+
+NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *size_ptr, ULONG type,
+                                           ULONG protect, MEM_EXTENDED_PARAMETER *parameters,
+                                           ULONG count )
+{
+    const void *hint = ret ? *ret : NULL;
+    const ULONGLONG want = size_ptr ? *size_ptr : 0;
+    NTSTATUS status = ios_nt_impl_NtAllocateVirtualMemoryEx( process, ret, size_ptr, type, protect, parameters, count );
+
+    if (NT_ERROR( status ))
+        ios_ntfail_alloc( "NtAllocateVirtualMemoryEx", status, process, hint, want, type, protect, 0, parameters, count );
+    return status;
 }
 
 
@@ -33201,7 +33842,7 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
  *             NtMapViewOfSection   (NTDLL.@)
  *             ZwMapViewOfSection   (NTDLL.@)
  */
-NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_ptr, ULONG_PTR zero_bits,
+static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_ptr, ULONG_PTR zero_bits,
                                     SIZE_T commit_size, const LARGE_INTEGER *offset_ptr, SIZE_T *size_ptr,
                                     SECTION_INHERIT inherit, ULONG alloc_type, ULONG protect )
 {
@@ -33274,11 +33915,26 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
                                 offset_ptr, size_ptr, alloc_type, protect, 0 );
 }
 
+NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_ptr, ULONG_PTR zero_bits,
+                                    SIZE_T commit_size, const LARGE_INTEGER *offset_ptr, SIZE_T *size_ptr,
+                                    SECTION_INHERIT inherit, ULONG alloc_type, ULONG protect )
+{
+    const void *hint = addr_ptr ? *addr_ptr : NULL;
+    const ULONGLONG want = size_ptr ? *size_ptr : 0;
+    NTSTATUS status = ios_nt_impl_NtMapViewOfSection( handle, process, addr_ptr, zero_bits, commit_size, offset_ptr,
+                                                      size_ptr, inherit, alloc_type, protect );
+
+    if (NT_ERROR( status ))
+        ios_ntfail_map( "NtMapViewOfSection", status, handle, process, hint, want, alloc_type, protect, zero_bits,
+                        offset_ptr, NULL, 0 );
+    return status;
+}
+
 /***********************************************************************
  *             NtMapViewOfSectionEx   (NTDLL.@)
  *             ZwMapViewOfSectionEx   (NTDLL.@)
  */
-NTSTATUS WINAPI NtMapViewOfSectionEx( HANDLE handle, HANDLE process, PVOID *addr_ptr,
+static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtMapViewOfSectionEx( HANDLE handle, HANDLE process, PVOID *addr_ptr,
                                       const LARGE_INTEGER *offset_ptr, SIZE_T *size_ptr,
                                       ULONG alloc_type, ULONG protect,
                                       MEM_EXTENDED_PARAMETER *parameters, ULONG count )
@@ -33348,6 +34004,22 @@ NTSTATUS WINAPI NtMapViewOfSectionEx( HANDLE handle, HANDLE process, PVOID *addr
 
     return virtual_map_section( handle, addr_ptr, limit_low, limit_high, 0,
                                 offset_ptr, size_ptr, alloc_type, protect, machine );
+}
+
+NTSTATUS WINAPI NtMapViewOfSectionEx( HANDLE handle, HANDLE process, PVOID *addr_ptr,
+                                      const LARGE_INTEGER *offset_ptr, SIZE_T *size_ptr,
+                                      ULONG alloc_type, ULONG protect,
+                                      MEM_EXTENDED_PARAMETER *parameters, ULONG count )
+{
+    const void *hint = addr_ptr ? *addr_ptr : NULL;
+    const ULONGLONG want = size_ptr ? *size_ptr : 0;
+    NTSTATUS status = ios_nt_impl_NtMapViewOfSectionEx( handle, process, addr_ptr, offset_ptr, size_ptr, alloc_type,
+                                                        protect, parameters, count );
+
+    if (NT_ERROR( status ))
+        ios_ntfail_map( "NtMapViewOfSectionEx", status, handle, process, hint, want, alloc_type, protect, 0,
+                        offset_ptr, parameters, count );
+    return status;
 }
 
 

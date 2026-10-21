@@ -106,6 +106,9 @@ final class MadeiraDockModel: ObservableObject {
                     if let failure = report.failure {
                         status = failure
                         LogStore.shared.log("[madeira-dock] " + failure, level: .error)
+                        // madeira-bcd (round 578): a failed CEG start (host result 49) leaves Valve's own account in the
+                        // client's log files; the lines about the job, the service and DRM go to the log.
+                        if report.result == 49, report.fields["ceg-result"] != nil { DockCEGService.logSteamLogs(drive: MadeiraDock.drive) }
                     } else {
                         status = "BCD Dock ended without errors."
                         LogStore.shared.log("[madeira-dock] host finished (result 0)")
