@@ -214,6 +214,30 @@ RULES = [
                      "tests/host/check-reserved-area-retry.py (build 577)"],
     },
     {
+        "id": "small-map-window-refusals",
+        "lines": [],
+        "fixedIn": 579,
+        "priority": 1,
+        # Shade: Wrath of Angels on build 578 (6NE7KH, iPhone13,4, iOS 18.6.2, 63 GB address map, 32-bit program): the 576 failure above
+        # is fixed (the retry placed the loader-time requests), but every MAP_FIXED over the 4 GB window's lowest free ranges is still
+        # refused with ENOMEM (9 consecutive refusals at 0x401310000, the kernel's region there reading "prot=0/0"), and the game's
+        # 8 MB Direct3D 9 buffer (0x810000 at 0x40f8c0000) found all 32 retries, 64 KB apart, refused: [alloc-fail] ... STAGE=fixed-map, the
+        # same address 13 times, "MTLDevice_newBuffer ... refusing", "[thr-create] FAILED at WoW64 32-bit stack", exit 3. thread-stack-spill
+        # was proposed for it and was the wrong line (the stack is refused by the same MAP_FIXED, inside the window). build/ntdll-unix/
+        # virtual_ios.c (build 579): a placement refused on every candidate, on a small address map only, is tried once more by unmapping
+        # the first refused range (Wine's tables call it free) and mapping it without overwriting (env.MADEIRA_RESERVED_REMAP = 0 turns it
+        # off), and [reserved-area] names every refused candidate, the kernel's regions across the refused range and what the last candidate
+        # held before it was mapped (tests/host/check-reserved-area-retry.py). NOT PROVEN that the remap places it: if a 579 log still shows
+        # this, the new [reserved-area] "detail" and "last resort" lines say why. "none": the free-range table had no range that fits (a
+        # different failure). 576 logs have no [reserved-area] line and keep small-map-window-no-place.
+        "all": [s("[wow-window] small address map"), s("[reserved-area] #", "small address map retry on"),
+                s("[alloc-fail]", "STAGE=fixed-map"), s("[va-scan] window room", "range(s) that fit")],
+        "none": [s("[va-scan] window room", "holds 0 range(s) that fit")],
+        "reason": "On this device's smaller address map the system kept refusing BCD's memory placements inside a 32-bit program's "
+                  "window and a larger request found none; from this build on BCD makes one more attempt when every candidate was refused.",
+        "evidence": ["shade-2026-10-21 (6NE7KH, build 578)", "tests/host/check-reserved-area-retry.py (build 579)"],
+    },
+    {
         "id": "dotnet-setup-never-finishes",
         "lines": [],
         "fixedIn": 578,
@@ -548,6 +572,56 @@ RULES = [
                      "tests/host/check-x87-int64-diag.py (build 578)"],
     },
     {
+        "id": "vdcfg-virtual-path",
+        "lines": ["env.MADEIRA_VDCFG_PATH = 1"],
+        "priority": 20,
+        "noRetry": True,
+        "outcomes": ["crashed"],
+        "session": "dock",
+        # Trails in the Sky 1st Chapter (Steam 3375780; 24VADD build 578, X56ZXZ and YTMNEK build 573, one iPhone18,1): about 2 s after
+        # the game's process starts, a NULL read at sora_1st.exe+0x5215E0 (`mov rdx,[rdx+0x10]`, RDX = 0: a swapchain / render-target
+        # wrapper that was never made), registers in sora_deploy_steam.exe. Right before it, GetDisplayConfigBufferSizes says "1 paths
+        # 2 modes" for BCD's virtual monitor and QueryDisplayConfig answers "success, 0 paths 0 modes" (the virtual monitor has no
+        # source, sysparams_ios.c skipped it: two answers of one driver that disagree), twice; then the game's SetWindowPos is
+        # {32767,32767}-{32768,32768}: one pixel at the clamp, which is what a bounding box seeded with INT_MAX / INT_MIN gives when
+        # no path was seen (INT_MIN - INT_MAX wraps to 1). Before the two calls the same window was a sane 1928x1114, and
+        # GetMonitorInfo (1408x648) works. NOT PROVEN that the game reads those paths: an attempt. The line lists the virtual
+        # monitor's path (one source mode and one target mode of the current desktop size) and names its source and target
+        # (tests/host/check-vdcfg-path.py); kept only if the game then does better. Off (default) nothing changes for any game.
+        "all": [s("[vdcfg] QueryDisplayConfig", "-> 0, 0 paths 0 modes"), s("[av-args]", "NULL-class fault addr=0x10"),
+                s("[av-args]", "sora_deploy_steam.exe+")],
+        "none": [s("[vdcfg] QueryDisplayConfig", "-> 0, 1 paths 2 modes")],
+        "reason": "The game builds its fullscreen window from the display paths and BCD answered with none, so it made a one-pixel "
+                  "window and then used a screen it never created; the line lists the virtual monitor's path as Windows does.",
+        "evidence": ["trails-in-the-sky-1st-chapter-2026-10-21 (24VADD, build 578)", "X56ZXZ, YTMNEK (build 573)",
+                     "tests/host/check-vdcfg-path.py (build 579)"],
+    },
+    {
+        "id": "mono-child-tls-null",
+        "lines": ["env.MADEIRA_TLS_CLEAR_OWN_PROCESS = 1"],
+        "priority": 17,
+        "noRetry": True,
+        "outcomes": ["crashed"],
+        # Batman: Arkham City GOTY (Steam 200260: C7DGSN, build 578, a tester's iPad16,5, auto-tune's FEX_X87REDUCEDPRECISION = 0
+        # trial on): BatmanAC.exe gets as far as starting BmLauncher.exe, a .NET Framework program run by Wine Mono, and the
+        # launcher's main thread dies in libmono-2.0-x86.dll (guest EIP 0x778635C9, +0x2135C9) on `mov dword [ebx+0x10c], 1` with
+        # EBX = 0, right after corlib loaded: Mono's inlined TlsGetValue (TEB32->TlsSlots[key]) returned NULL for its SGen thread
+        # info, which the same thread had set a moment before. Meanwhile the parent was shutting down (eight worker threads exiting).
+        # virtual_clear_tls_index, the unix side of TlsFree, clears the freed cell in EVERY thread of EVERY pseudo-process (teb_list
+        # holds them all); on Windows another process is never touched. NOT PROVEN: no TlsFree is logged in C7DGSN. Build 579's
+        # [tls-cross-clear] line (a live cell cleared in another process, with the index) and [wow-null32] (the thread's TLS cells,
+        # the stack and the return address) are the proof or the refutation. An attempt: only the calling program's threads are
+        # cleared, kept only if the game then does better. The three signals are the 32-bit Wine Mono, a second 32-bit window
+        # (a program a program started) and a NULL-page fault (8 hex digits = a 32-bit guest address below 64 KB).
+        "all": [s("[mono-cfg]", "libmono-2.0-x86.dll", "HOOKS ARMED"), s("[wow-window] reserved B=", "(slot 1)"),
+                s("wine: Unhandled page fault on", "access to 0000")],
+        "reason": "A program the game started (a .NET launcher) died on an empty thread slot while the game was shutting down; "
+                  "the line stops one program's thread-slot cleanup from reaching into other programs' threads, the suspected cause.",
+        "evidence": ["C7DGSN (Batman: Arkham City GOTY, build 578, a tester's iPad16,5)",
+                     "build/ntdll-unix/virtual_ios.c virtual_clear_tls_index (teb_list is every pseudo-process's threads)",
+                     "tests/host/check-tls-clear-process.py, tests/host/check-wow-null-diag.py (build 579)"],
+    },
+    {
         "id": "cage-release-band-exhausted",
         "lines": ["env.MADEIRA_CAGE_RELEASE = 1"],
         "priority": 10,
@@ -608,6 +682,32 @@ RULES = [
         "reason": "The game's .NET runtime keeps its code in two views of one memory section, and BCD cannot "
                   "keep the two views the same; the line makes the runtime use plain executable memory.",
         "evidence": ["quaver-2026-10-20 (DKEQ3C, build 574)"],
+    },
+    {
+        "id": "dotnet-gc-region-range",
+        "lines": ["env.DOTNET_GCRegionRange = 400000000"],
+        "priority": 10,
+        "noRetry": True,
+        # Unrailed! 2: Back on Track (Steam 2211170, CR8H6H, build 576, iPhone18,2; a Godot game with a .NET 7+ bootstrap,
+        # Bootstrap.exe): "GC heap initialization failed with error 0x8007000E" (E_OUTOFMEMORY), "Failed to create CoreCLR".
+        # .NET 7+ reserves, at start, a range of virtual memory for its regions-based heap: 256 GB by default (twice the
+        # physical memory if more), capped at half the process's virtual memory limit. The log's request is 0x3fd2d28000
+        # (261421 MB), and BCD's map has no such gap: "[mmap-place] ml1027 NO GAP FITS size=0x3fd2d38000 ... largest gap
+        # 32768 MB", "[jumbo] kernel-pick reserve failed (0xc0000017)". Microsoft documents the knob for exactly this
+        # (learn.microsoft.com, .NET runtime configuration for the GC, "Region range"): DOTNET_GCRegionRange, a hexadecimal
+        # size in bytes; "if you do get E_OUTOFMEMORY during the runtime initialization ... due to reserving this range" it
+        # recommends two to five times the committed heap, or twice the physical memory available to the process when that
+        # is unknown. BCD reports at most 8 GB ("ml992: clamping reported physical memory 11722 MB -> 8192 MB"), so 16 GB =
+        # 0x400000000, which fits the 32 GB gap. A range is reserved, never committed: no memory is used by the number
+        # itself. DOTNET_GCHeapHardLimit would also size the range, but it changes the GC's behaviour (a commit limit). The
+        # next stop of such a game may be the CLR's write-barrier assert (rule dotnet-wx-off). "none": the session already
+        # ran with the line ([madeira-env] game ... is auto-tune's own line for a kept or tried key) and failed again.
+        "all": [s("GC heap initialization failed with error 0x8007000E", "ReportEventW")],
+        "none": [s("[madeira-env] game DOTNET_GCRegionRange=")],
+        "reason": "The game's .NET runtime tried to reserve 256 GB of address space for its heap and BCD's address map has "
+                  "no such gap; the line gives the runtime a 16 GB range.",
+        "evidence": ["unrailed-2-2026-10-21 (CR8H6H, build 576)",
+                     "learn.microsoft.com/dotnet/core/runtime-config/garbage-collector (Region range)"],
     },
     {
         "id": "d3d12-pipeline-library-fatal",
@@ -753,11 +853,43 @@ RULES = [
         # (the pool takes two runs, about 880 MB). Also Albion Online's launcher and Spelunky 2
         # (2026-10-20 logs BYBFCH, PGKTDD, J2YJF8). Only a game that already failed this way gets it.
         # After x64-image-nocopy (priority 10), which fixed Spider-Man: Miles Morales: that path stays as it was.
+        # imageMaxMB (build 579): not for an image of more than 300 MiB. A copy must fit one region of the pool, the
+        # earlier copies (Wine's own DLLs: 107-187 MiB in the logs below) sit at the start of the first region, and a
+        # split pool's regions are 249-520 MB (14 pairs in the logs, the second never above 328 MB) and never larger than
+        # the single pool the same start-up would have built. Stellar Blade Demo's 314 MiB exe (YBX2WT, AVFMGC: regions
+        # of 432 and 256 MB; the pool then still had 245 and 256 MB free) and FINAL FANTASY RESONANCE DEMO's 474 MiB exe
+        # (EJDV7Z: 288 and 272 MB) got pool-split = 1 and ended with the same "[jit-pool] EXHAUSTED (image" line; the
+        # attempt only cost a start. Without the line the engine says "stuck" once x64-image-nocopy is tried or set.
+        # Spelunky 2's 558 MiB exe (J2YJF8) is over the bar as well; BeamNG.drive's 265 MiB DLL (PEVMEQ) and every
+        # smaller image keep this rule.
+        "imageMaxMB": 300,
         "all": [s("[jit-pool] EXHAUSTED")],
         "reason": "The JIT pool was smaller than usual and filled up while the game loaded; a split "
                   "pool is about 880 MB.",
         "evidence": ["counter-strike-2-owner-2026-10-20 (pool-split by hand started it)",
-                     "albion-launcher BYBFCH/PGKTDD, spelunky-2 J2YJF8 (2026-10-20)"],
+                     "albion-launcher BYBFCH/PGKTDD, spelunky-2 J2YJF8 (2026-10-20)",
+                     "stellar-blade-demo-2026-10-21 (YBX2WT), ffrs-demo-2026-10-21 (EJDV7Z): the guard"],
+    },
+    {
+        "id": "dock-game-scm",
+        "lines": ["env.MADEIRA_DOCK_GAME_SCM = 1"],
+        "priority": 12,
+        "noRetry": True,
+        "session": "dock",
+        # A Steam game whose launcher is Rockstar's (GTA San Andreas - The Definitive Edition MM0DAY, iPhone18,1 build 576;
+        # Grand Theft Auto IV: The Complete Edition 4GAWSA, iPad13,6 build 576): PlayGTA*.exe starts Launcher.exe, which starts
+        # RockstarService.exe four times (each exits 1) and logs "[svc] Unable to open SC manager! (1722)" (RPC: no service
+        # manager). A Dock game session runs Wine's services.exe only for the install batch and for CEG; no services.exe is
+        # spawned and the report has no game-scm line. env.MADEIRA_DOCK_GAME_SCM = 1 starts it before Steam's LaunchApp
+        # (tools/patch-dock-game-scm.py): GTA V's sessions that carry it spawn services.exe, report game-scm=2 and have no 1722
+        # (FMWZC5, YFYGD4, BT9TE3, 0DHNMC against MM0DAY and 4GAWSA). "none": the report says the manager already ran
+        # (game-scm=2 started, 1 already there), so the line is not what is missing. Not proven to get the game itself running.
+        "all": [s("[svc] Unable to open SC manager! (1722)")],
+        "none": [s("[dock-report] game-scm=2"), s("[dock-report] game-scm=1")],
+        "reason": "The game's launcher (Rockstar's) could not reach a Windows service manager, because a Steam game's "
+                  "session starts none; the line starts Wine's before the game.",
+        "evidence": ["gta-san-andreas-de-2026-10-21 (MM0DAY)", "gta-iv-launcher-2026-10-21 (4GAWSA)",
+                     "FMWZC5 (GTA V Legacy, game-scm=2: no 1722, the Launcher's window stayed 6.9 min)"],
     },
     {
         "id": "tiny-swapchain-window",
@@ -850,6 +982,86 @@ RULES = [
         "evidence": ["fort-solis-2026-10-20 (94MSWJ), DRAGON BALL Sparking! ZERO H6XVPV (c0000135 at once)"],
     },
     {
+        "id": "sfc-tbs-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = sfc,sfc_os,tbs"],
+        "priority": 10,
+        "noRetry": True,
+        # Diablo II: Resurrected (bcd-games issue #3, build 573, iPhone 16 Pro): D2R_loader.dll imports sfc.dll and
+        # tbs.dll, BCD's 64-bit set ships neither, and D2R.exe ended with c0000135. Build 579 ships Wine's sfc, sfc_os
+        # (sfc.dll forwards to it) and tbs as -optin DLLs (tools/build-wine-extra-dlls.sh, OPTIN_WANT).
+        "all": [s("loader_init Importing dlls for", "failed, status c0000135")],
+        "any": [s("err:module:import_dll Library sfc.dll", "not found"),
+                s("err:module:import_dll Library tbs.dll", "not found")],
+        "none": [s("MADEIRA_OPTIN_DLLS: sfc.dll -> sfc-optin.dll"), s("MADEIRA_OPTIN_DLLS: tbs.dll -> tbs-optin.dll")],
+        "reason": "The game imports sfc.dll or tbs.dll, which BCD does not ship for every game; the line gives this "
+                  "game Wine's sfc, sfc_os and tbs.",
+        "evidence": ["d2r-2026-10-20 (synthetic: the import lines quoted in bcd-games issue #3, in the Fort Solis "
+                     "build 574 session frame; no Send Log of the game yet)"],
+    },
+    {
+        "id": "cmd-exe-arm64ec-core",
+        "lines": [],
+        "fixedIn": 579,
+        "priority": 1,
+        "session": "library",
+        # A library entry that is a .bat/.cmd (Library.swift launchCommand: "C:\windows\system32\cmd.exe /c <file>"):
+        # VSWVB0 "Play NeoEE.bat" (build 576, iPad17,3) and the same lines in JFFRDP, H579EM (Watch Dogs) and ZSRKW7
+        # (Miles Morales) on build 574. WineProcessBridge.m picked the arm64ec-windows core for the backslash path, but
+        # cmd.exe is shipped only as a native aarch64 program (aarch64-windows, i386-windows; arm64ec-windows has none),
+        # a native ARM64 process cannot load the ARM64EC kernel32, and Wine stopped after 0.5 s with "could not load
+        # kernel32.dll, status c000007b" before the batch file was read. Build 579 (madeira_target_is_cmd,
+        # tests/host/check-cmd-bundle.py) runs cmd.exe in the aarch64-windows core, the one the Wine desktop uses. No
+        # config line changes it. Both signals are the engine's own lines, printed whatever the diagnostic switches; a
+        # 579 session says "(bundle=aarch64-windows)" and no longer matches.
+        "all": [s("[WineProc] Target exe: C:\\windows\\system32\\cmd.exe (bundle=arm64ec-windows)"),
+                s("wine: could not load kernel32.dll, status c000007b")],
+        "reason": "The batch file's command interpreter (cmd.exe) was started in the wrong set of Windows files, "
+                  "so it stopped before it read your file; from this build on BCD starts it in the right one.",
+        "evidence": ["bat-cmd-arm64ec-core-2026-10-21 (VSWVB0, build 576)", "JFFRDP, H579EM, ZSRKW7 (build 574)",
+                     "tests/host/check-cmd-bundle.py (build 579)"],
+    },
+    {
+        "id": "ilonly-native-no-mscoree",
+        "lines": [],
+        "fixedIn": 579,
+        "priority": 1,
+        # The Dishwasher: Vampire Smile (SSXDRW, build 576, iPhone13,1, a Steam game through Madeira Dock): VampireSmile.exe is an
+        # AnyCPU IL-only .NET Framework program (PE32, no 32BITREQUIRED). Wine's server marks such an image ComPlusNativeReady and runs
+        # it as a process of the NATIVE machine; here that is ARM64, whose set (aarch64-windows) has no mscoree.dll (Wine Mono has no
+        # ARM64 build), so the loader stopped with "mscoree.dll not found, IL-only binary ... cannot be loaded", c000007b, 6 s after
+        # the start ([Wine child] 64-bit image machine=0xaa64 for a PE32 whose header says 0x14c; virtual_map_module 0x4000000e).
+        # Build 579 (build/wineserver/mapping_ios.c ios_native_has_mscoree, tests/host/check-ilonly-machine.py) withholds the flag
+        # while the native set has no mscoree.dll: the program runs as i386 under WoW64 with the i386 mscoree.dll and Wine Mono, like
+        # the 32BITREQUIRED .NET programs. Wine Mono must be installed (Settings > .NET Framework). No config line changes it.
+        # The signal is Wine's own loader error, printed whatever the diagnostic switches. "none": the engine's "[ilonly-machine]"
+        # line, which a 579 session prints when it withheld the flag -- a later mscoree failure is then another cause.
+        "all": [s("err:module:fixup_imports_ilonly mscoree.dll not found, IL-only binary")],
+        "none": [s("[ilonly-machine]")],
+        "reason": "The game is a .NET program that Wine started in a mode BCD has no .NET runtime for, so it stopped at "
+                  "once; from this build on BCD starts it the way its 32-bit .NET programs run (Wine Mono, from "
+                  "Settings, is needed).",
+        "evidence": ["dishwasher-ilonly-2026-10-21 (SSXDRW, build 576)", "tests/host/check-ilonly-machine.py (build 579)"],
+    },
+    {
+        "id": "twinapi-appcore-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = twinapi.appcore"],
+        "priority": 10,
+        "noRetry": True,
+        # Senua's Saga: Hellblade II (XJ7Z6Y, build 576, iPad16,5): the GDK libraries XCurl.dll and
+        # Microsoft.Xbox.Services.GDK.C.Thunks.dll import api-ms-win-core-psm-appnotify-l1-1-0.dll; Wine's apiset
+        # (apisetschema.spec) maps it to twinapi.appcore.dll ("[dll-missing] #1 twinapi.appcore.dll c0000135"), which BCD's
+        # 64-bit set does not ship, so the exe's import chain failed (c0000135, 2 s into the session). Build 579 ships
+        # Wine's twinapi.appcore as twinapi.appcore-optin.dll (tools/build-wine-extra-dlls.sh, OPTIN_WANT). Wine's
+        # RegisterAppStateChangeNotification and its three neighbours return ERROR_CALL_NOT_IMPLEMENTED (stubs): the
+        # import resolves, what the GDK libraries do with that answer is not known. Any program that imports that
+        # API set gets the line, not only this one.
+        "all": [s("err:module:import_dll Library api-ms-win-core-psm-appnotify", "not found")],
+        "none": [s("MADEIRA_OPTIN_DLLS: twinapi.appcore.dll -> twinapi.appcore-optin.dll")],
+        "reason": "The game imports an API set that Wine serves from twinapi.appcore.dll, which BCD does not ship for "
+                  "every game; the line gives this game Wine's twinapi.appcore.dll.",
+        "evidence": ["hellblade-2-2026-10-21 (XJ7Z6Y, build 576)"],
+    },
+    {
         "id": "x64-machine-arm64-launcher",
         "lines": ["env.MADEIRA_X64_MACHINE = 1"],
         "priority": 10,
@@ -919,10 +1131,18 @@ RULES = [
         "all": [s("failed to create main module", "c0000018")],
         # Not when the first process already got the window for its small stripped program (DELTARUNE 035KD6,
         # Skyrim SE VMY6C5, round 577): there a SECOND instance of the same program fails, which no window size fixes.
-        "none": [s("[exe-window]", "gets the window")],
+        "none": [s("[exe-window]", "gets the window"),
+                 # Not when the program that failed is a one-time installer's helper, not the game: Saints Row: The
+                 # Third's DirectX setup extracts infinst.exe into %TEMP% and its main module failed the same way
+                 # (T3P8HK, build 576, line 6990: ...\\AppData\\Local\\Temp\\DXa9e1.tmp\\infinst.exe, c0000018), and the
+                 # rule proposed a window for the GAME. The path in Wine's own line is the signal (backslashes
+                 # doubled, as debugstr_w writes them); a game's program is never run from %TEMP%.
+                 s("failed to create main module", "\\\\Temp\\\\"),
+                 s("failed to create main module", "infinst.exe")],
         "reason": "The game's program must load at a fixed address that BCD's JIT pool partly held; the "
                   "line keeps 512 MB there for it (the pool may be smaller).",
-        "evidence": ["hogwarts-legacy-2026-10-20 (D67PYY)", "3HWREK, XDCPK7, 6E40B4, WNDRGF"],
+        "evidence": ["hogwarts-legacy-2026-10-20 (D67PYY)", "3HWREK, XDCPK7, 6E40B4, WNDRGF",
+                     "saints-row-the-third-directx-helper-2026-10-21 (T3P8HK: the DirectX installer's helper is not the game; no match)"],
     },
     {
         "id": "vcrt-arm64-marker",
@@ -996,9 +1216,16 @@ RULES = [
         "lines": ["env.MADEIRA_THREAD_STACK_SPILL = 1"],
         "priority": 20,
         "all": [s("[thr-create] FAILED at")],
+        # Not for a 32-bit program's own stack: it is bounded by the guest window's ceiling (limit_high), and the line
+        # only relaxes requests bounded by a 4 GB floor with no ceiling (virtual_ios.c map_view: `!limit_high`; the
+        # kernel, emulator and WoW64 64-bit stacks). Shade on build 578 (6NE7KH, lines 2951-3088): its 32-bit stack
+        # and the 8 MB d3d9 buffer were refused by a MAP_FIXED over the window's own free ranges ("fit > 0" in the
+        # [va-scan] window room line), the line was tried and reverted: it could not have helped.
+        "none": [s("[thr-create] FAILED at WoW64 32-bit stack")],
         "reason": "A thread could not get its stack in the game's address range; the line lets "
                   "stacks take the kernel's placement.",
-        "evidence": ["HANDOFF: Ghost of Tsushima 515, RDR2 460"],
+        "evidence": ["HANDOFF: Ghost of Tsushima 515, RDR2 460",
+                     "shade-wow64-stack-2026-10-21 (6NE7KH: a WoW64 32-bit stack refused inside the window; no match)"],
     },
     {
         "id": "lock-orphan-stamped",
@@ -1033,12 +1260,17 @@ RULES = [
         "id": "free-delay-off",
         "lines": ["env.MADEIRA_FREE_DELAY_MS = 0"],
         "priority": 40,
-        "all": [s("[alloc-fail]", "status=c0000018", count=200)],
+        # The rule's own evidence is a held release: the hold prints "[free-delay] #N release of ... held for 2000 ms"
+        # for its first eight holds, and the trap (HFW: the program allocates, releases, then reserves inside the
+        # released block) cannot happen without one. Minecraft Dungeons (CYDN1E, build 578) refused 458,752 RWX probes
+        # of its own protection sweep, with no [free-delay] line anywhere in the log: not this failure.
+        "all": [s("[alloc-fail]", "status=c0000018", count=200), s("[free-delay] #")],
         "none": [s("[win-name] #", "not supported")],
         "maxStage": 2,
         "reason": "Address requests kept colliding with ranges held back after a free; the line "
                   "frees them at once.",
-        "evidence": ["HANDOFF: Horizon Forbidden West 517"],
+        "evidence": ["HANDOFF: Horizon Forbidden West 517",
+                     "minecraft-dungeons-2026-10-21 (CYDN1E: 200+ refused probes and no [free-delay] line; no match)"],
     },
     {
         "id": "audio-resume-after-interruption",
@@ -1100,6 +1332,52 @@ RULES = [
                   "from this build on BCD notices, says that the game closed and returns to the library.",
         "evidence": ["gta-iv-2026-10-21 (gta4-freeze, build 576)", "Stranglehold RVBE4K (build 569)",
                      "tests/host/check-session-end.py (build 578)"],
+    },
+    {
+        "id": "dock-game-died-session-open",
+        "lines": [],
+        "fixedIn": 579,
+        # After the LOCALE experiment (priority 12): that line is the thing to try for Dying Light, and this rule must
+        # not hide it. A BCD Dock session's own program is Wine's desktop, which never closes by itself on iOS, so a game
+        # that died (Dying Light 32FEAT, build 578, c0000005 at 16:00:05; The Binding of Isaac VV5NHZ, build 576, c0000005)
+        # left the session open on its dead desktop: the host reported "launch-game-ended=1" and finished, then
+        # "detach-wait: presents=0 running=1" for as long as the user waited, and the session never reached auto-tune.
+        # From build 579 the library ends such a session when the game's last process ended with an error status,
+        # nothing of the game runs, 10 s passed and the host finished (DockGameEnd.swift, WineProcessBridge.m
+        # wine_session_dock_game_ended, tests/host/check-dock-game-end.py), prints "[dock-game-end]" and says "The game
+        # quit with Windows error ...". The signals are the engine's own and the host's report lines, printed whatever
+        # the diagnostic switches: a process that ended with an NTSTATUS error (-10737... in decimal: 0xC00000xx-0xC00004xx)
+        # and the host's own "game ended". "none": the new path ran (or the session ended some other way).
+        "session": "dock",
+        "priority": 13,
+        "all": [s("[dock-report] launch-game-ended=1"), s("[Wine ntdll/server] process_exit_wrapper(-10737", "closing child")],
+        "none": [s("[dock-game-end]"), s("[frontend] returned to library")],
+        "reason": "The game's process crashed and Valve's client and the Dock host finished, but BCD kept the session "
+                  "open on its dead desktop; from this build on BCD ends the session, says which Windows error the "
+                  "game closed with, and auto-tune goes on from there.",
+        "evidence": ["dying-light-dock-game-end-2026-10-21 (32FEAT, build 578)", "Isaac VV5NHZ (build 576)",
+                     "tests/host/check-dock-game-end.py (build 579)"],
+    },
+    {
+        "id": "wow-window-main-image-hang",
+        "lines": [],
+        "fixedIn": 579,
+        "priority": 14,
+        "session": "library",
+        # Tomb Raider: Underworld ZWAA2K (build 576, iPhone 11, started from the library): the 32-bit main program could
+        # not get its 4 GB window ("[wow-window] main-process reserve FAILED 0xc0000017", 6319 MB free of the 4096 MB plus
+        # MADEIRA_WOW_MIN_FREE_GB left over). fatal_error() ended the boot thread with pthread_exit in the middle of
+        # __wine_main, so the end work never ran and the app showed "running" for three minutes (detach-wait ... running=1).
+        # From build 579 the same failure leaves __wine_main by the normal exit (loader_ios.c start_main_thread), the
+        # session ends at once and says "The game quit with Windows error 0xC0000017 (not enough memory)". The cause
+        # (the address space this install has) is not changed by it. "none": the new exit's own line.
+        "all": [s("[wow-window] main-process reserve FAILED")],
+        "none": [s("[WineProc] Wine exited with code"), s("[frontend] returned to library")],
+        "reason": "A 32-bit game could not get the address space it needs on this install, and BCD stayed on 'running' "
+                  "for minutes; from this build on the session ends at once and says so (the lack of address space is "
+                  "the cause, and it is the install's).",
+        "evidence": ["tomb-raider-underworld-main-window-2026-10-21 (ZWAA2K, build 576)",
+                     "tests/host/check-dock-game-end.py (build 579)"],
     },
 ] + SWAP_RULES
 

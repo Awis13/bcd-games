@@ -332,6 +332,8 @@ struct BCDGameDetails: Equatable {
     var shortcut = false
     var saves = false
     var report = false
+    /// Said before a log is sent: on an install without the increased memory limit, what fixes it (MemoryRights.swift).
+    var sendLogAdvice: String? = nil
     var removal: BCDGameRemoval = .none
     /// A download runs for a game that is installed: an update, which Stop only stops.
     var updating = false
@@ -509,7 +511,8 @@ extension BCDGameAction {
                                    confirm: "Restore", destructive: true)
         case .sendLog(let log):
             return BCDGameQuestion(title: "Send the log of \(game.title)?",
-                                   message: "\(log.name), \(BCDFormat.ago(log.date)), \(BCDFormat.bytes(Int64(log.bytes))). Folder paths, names and addresses are removed on this device before it goes. You get a code to quote when you describe the problem.",
+                                   message: "\(log.name), \(BCDFormat.ago(log.date)), \(BCDFormat.bytes(Int64(log.bytes))). Folder paths, names and addresses are removed on this device before it goes. You get a code to quote when you describe the problem."
+                                    + (details.sendLogAdvice.map { "\n\n" + $0 } ?? ""),   // the setup first (MemoryRights.swift, set by the live page)
                                    confirm: "Send", destructive: false)
         case .set(let id, let value):
             guard let found = details.setting(id)?.setting else { return nil }

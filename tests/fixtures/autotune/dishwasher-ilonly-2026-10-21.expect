@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "ilonly-native-no-mscoree"
+ ],
+ "next": [],
+ "note": "The Dishwasher: Vampire Smile (Steam 268990 through Madeira Dock, build 576, iPhone13,1): an AnyCPU IL-only PE32 program is started as a native ARM64 process, whose set has no mscoree.dll: mscoree.dll not found, IL-only binary, c000007b; fixed in 579 (ios_native_has_mscoree).",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

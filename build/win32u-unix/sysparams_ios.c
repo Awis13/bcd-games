@@ -3690,6 +3690,80 @@ RECT get_primary_monitor_rect( UINT dpi )
     return rect;
 }
 
+#ifdef WINE_IOS
+/* madeira-bcd (round 579, Trails in the Sky 1st Chapter 24VADD / X56ZXZ / YTMNEK): env.MADEIRA_VDCFG_PATH = 1.
+ *
+ * GetDisplayConfigBufferSizes counts every ACTIVE monitor, and the virtual monitor (this port's only one; it has no
+ * source) is active, so it answers "1 path, 2 modes". QueryDisplayConfig skips a monitor without a source and answers
+ * "success, 0 paths, 0 modes": two answers of one driver that disagree. Most programs ask once and go on, but Trails'
+ * engine builds the window it makes fullscreen from the source modes QueryDisplayConfig returns: right after the two
+ * calls its SetWindowPos is {32767,32767}-{32768,32768}, one pixel at the clamp, which is what a bounding box seeded
+ * with INT_MAX / INT_MIN gives when no path was seen (width INT_MIN - INT_MAX wraps to 1), and the swapchain it clears
+ * next is NULL (sora_1st.exe+0x5215E0, three logs). On: QueryDisplayConfig lists the virtual monitor's path as the sizes
+ * call says it has, and DisplayConfigGetDeviceInfo names its source, target and adapter. Off (default): both answers as before.
+ * Nothing but this key changes any answer. */
+/* vdcfg-test:begin (tests/host/check-vdcfg-path.py compiles this region) */
+static int ios_vdcfg_path_enabled(void)
+{
+    static int on = -1;
+    if (on < 0)
+    {
+        const char *e = getenv( "MADEIRA_VDCFG_PATH" );
+        on = e && (!strcmp( e, "1" ) || !strcasecmp( e, "on" ) || !strcasecmp( e, "true" ) || !strcasecmp( e, "yes" ));
+        if (on)
+            dprintf( 2, "[vdcfg] MADEIRA_VDCFG_PATH=1: QueryDisplayConfig lists the virtual monitor's path (the count "
+                     "GetDisplayConfigBufferSizes gives)\n" );
+    }
+    return on;
+}
+
+/* Whether QueryDisplayConfig lists this monitor although it has no source: only the virtual monitor, only on. */
+static int ios_vdcfg_lists_sourceless( int key_on, int sourceless, int is_virtual_monitor )
+{
+    return key_on && sourceless && is_virtual_monitor;
+}
+
+/* GetDisplayConfigBufferSizes' last answer, for the mismatch line below. */
+static UINT32 ios_vdcfg_sizes_paths, ios_vdcfg_sizes_modes;
+/* vdcfg-test:end */
+
+/* The virtual monitor's adapter identity. display_lock must be held. One stable LUID for the process, chosen as
+ * d3dkmt_open_adapter_from_gdi_display_name always did (the DXGI / D3D12 adapter's under MADEIRA_KMT_ADAPTER, else a
+ * registered GPU's, else one allocated here); that function now takes it from here. */
+static LUID ios_virtual_adapter_luid;
+static BOOL ios_virtual_adapter_luid_ready;
+
+static void ios_virtual_luid_locked( LUID *out )
+{
+    if (!ios_virtual_adapter_luid_ready)
+    {
+        struct gpu *first = LIST_ENTRY( list_head( &gpus ), struct gpu, entry );
+        if (madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &ios_virtual_adapter_luid ))
+            dprintf( 2, "[vmode] ml1006 virtual adapter uses the MADEIRA_KMT_ADAPTER luid %08x%08x "
+                     "(the DXGI / D3D12 adapter)\n", (unsigned)ios_virtual_adapter_luid.HighPart,
+                     (unsigned)ios_virtual_adapter_luid.LowPart );
+        else if (!list_empty( &gpus ) && first)
+        {
+            ios_virtual_adapter_luid = first->luid;
+            dprintf( 2, "[vmode] ml1006 virtual adapter adopts the registered GPU luid "
+                     "%08x%08x\n", (unsigned)ios_virtual_adapter_luid.HighPart,
+                     (unsigned)ios_virtual_adapter_luid.LowPart );
+        }
+        else
+        {
+            NtAllocateLocallyUniqueId( &ios_virtual_adapter_luid );
+            dprintf( 2, "[vmode] ml1006 no GPU registered; allocated a SOFTWARE virtual "
+                     "adapter luid %08x%08x (not a hardware identity)\n",
+                     (unsigned)ios_virtual_adapter_luid.HighPart, (unsigned)ios_virtual_adapter_luid.LowPart );
+        }
+        ios_virtual_adapter_luid_ready = TRUE;
+    }
+    *out = ios_virtual_adapter_luid;
+}
+
+static BOOL ios_virtual_enum_display_settings( DWORD index, DEVMODEW *devmode, DWORD flags );   /* below */
+#endif
+
 /**********************************************************************
  *           NtUserGetDisplayConfigBufferSizes    (win32u.@)
  */
@@ -3742,6 +3816,8 @@ LONG WINAPI NtUserGetDisplayConfigBufferSizes( UINT32 flags, UINT32 *num_path_in
         *num_mode_info += count;
     TRACE( "returning %u paths %u modes\n", *num_path_info, *num_mode_info );
 #ifdef WINE_IOS
+    ios_vdcfg_sizes_paths = *num_path_info;   /* madeira-bcd (round 579): QueryDisplayConfig's mismatch line */
+    ios_vdcfg_sizes_modes = *num_mode_info;
     {
         static int logged;   /* madeira-bcd: docs/got-gpu-check.md */
         if (logged++ < 4)
@@ -3917,6 +3993,10 @@ LONG WINAPI NtUserQueryDisplayConfig( UINT32 flags, UINT32 *paths_count, DISPLAY
     DEVMODEW devmode;
     struct monitor *monitor;
     DWORD retrieve_flags = flags & qdc_retrieve_flags_mask;
+#ifdef WINE_IOS
+    LUID virtual_luid;                              /* madeira-bcd (round 579): MADEIRA_VDCFG_PATH */
+    UINT32 offered_paths = 0, offered_modes = 0, skipped = 0;
+#endif
 
     TRACE( "flags %#x, paths_count %p, paths %p, modes_count %p, modes %p, topology_id %p.\n",
            flags, paths_count, paths, modes_count, modes, topology_id );
@@ -3926,6 +4006,10 @@ LONG WINAPI NtUserQueryDisplayConfig( UINT32 flags, UINT32 *paths_count, DISPLAY
 
     if (!*paths_count || !*modes_count)
         return ERROR_INVALID_PARAMETER;
+#ifdef WINE_IOS
+    offered_paths = *paths_count;
+    offered_modes = *modes_count;
+#endif
 
     if (retrieve_flags != QDC_ALL_PATHS &&
         retrieve_flags != QDC_ONLY_ACTIVE_PATHS &&
@@ -3958,18 +4042,50 @@ LONG WINAPI NtUserQueryDisplayConfig( UINT32 flags, UINT32 *paths_count, DISPLAY
 
     LIST_FOR_EACH_ENTRY( monitor, &monitors, struct monitor, entry )
     {
+#ifdef WINE_IOS
+        BOOL virtual_path = FALSE;
+#endif
         if (!is_monitor_active( monitor )) continue;
-        if (!monitor->source) continue;
-
-        source_index = monitor->source->id;
-        gpu_luid = &monitor->source->gpu->luid;
-        output_id = monitor->output_id;
-
-        memset( &devmode, 0, sizeof(devmode) );
-        devmode.dmSize = sizeof(devmode);
-        if (!source_get_current_settings( monitor->source, &devmode ))
+#ifdef WINE_IOS
+        if (!monitor->source)
         {
-            goto done;
+            /* madeira-bcd (round 579): env.MADEIRA_VDCFG_PATH = 1 lists the virtual monitor, the one monitor without
+             * a source, as GetDisplayConfigBufferSizes counts it; off (default) it is skipped as before. */
+            if (!ios_vdcfg_lists_sourceless( ios_vdcfg_path_enabled(), 1, monitor == &virtual_monitor ))
+            {
+                skipped++;
+                continue;
+            }
+            virtual_path = TRUE;
+        }
+#else
+        if (!monitor->source) continue;
+#endif
+
+#ifdef WINE_IOS
+        if (virtual_path)
+        {
+            source_index = 0;                       /* the virtual monitor's one source: \\.\DISPLAY1 */
+            output_id = monitor->output_id;
+            ios_virtual_luid_locked( &virtual_luid );
+            gpu_luid = &virtual_luid;
+            memset( &devmode, 0, sizeof(devmode) );
+            devmode.dmSize = sizeof(devmode);
+            ios_virtual_enum_display_settings( ENUM_CURRENT_SETTINGS, &devmode, 0 );
+        }
+        else
+#endif
+        {
+            source_index = monitor->source->id;
+            gpu_luid = &monitor->source->gpu->luid;
+            output_id = monitor->output_id;
+
+            memset( &devmode, 0, sizeof(devmode) );
+            devmode.dmSize = sizeof(devmode);
+            if (!source_get_current_settings( monitor->source, &devmode ))
+            {
+                goto done;
+            }
         }
 
         if (path_index == *paths_count || mode_index == *modes_count)
@@ -4025,6 +4141,19 @@ done:
         if (logged++ < 4)
             dprintf( 2, "[vdcfg] QueryDisplayConfig flags=%#x -> %ld, %u paths %u modes\n",
                      (unsigned)flags, (long)ret, (unsigned)path_index, (unsigned)mode_index );
+    }
+    /* madeira-bcd (round 579): only when the two answers disagree (success, no path, after a sizes answer with paths);
+     * twice per process. Trails in the Sky 1st Chapter then builds a one-pixel window at the 32767 clamp. */
+    if (ret == ERROR_SUCCESS && !path_index && ios_vdcfg_sizes_paths)
+    {
+        static int mismatch;
+        if (mismatch++ < 2)
+            dprintf( 2, "[vdcfg-mismatch] QueryDisplayConfig flags=%#x answered success with 0 paths 0 modes (room for %u paths "
+                     "%u modes offered; %u monitor(s) without a source skipped) after GetDisplayConfigBufferSizes said %u paths "
+                     "%u modes: a program that trusts the sizes call and reads the result finds no monitor; "
+                     "env.MADEIRA_VDCFG_PATH = 1 lists the virtual monitor's path\n",
+                     (unsigned)flags, (unsigned)offered_paths, (unsigned)offered_modes, (unsigned)skipped,
+                     (unsigned)ios_vdcfg_sizes_paths, (unsigned)ios_vdcfg_sizes_modes );
     }
 #endif
     return ret;
@@ -4502,8 +4631,6 @@ static NTSTATUS d3dkmt_open_adapter_from_gdi_display_name( D3DKMT_OPENADAPTERFRO
     if (ios_virtual_monitor_active())
     {
         static const WCHAR kmt_display1W[] = {'\\','\\','.','\\','D','I','S','P','L','A','Y','1',0};
-        static LUID virtual_luid;
-        static BOOL virtual_luid_ready;
 
         if (name.Length != (sizeof(kmt_display1W) - sizeof(WCHAR)) ||
             wcsnicmp( name.Buffer, kmt_display1W, ARRAY_SIZE(kmt_display1W) - 1 ))
@@ -4516,30 +4643,7 @@ static NTSTATUS d3dkmt_open_adapter_from_gdi_display_name( D3DKMT_OPENADAPTERFRO
         }
 
         pthread_mutex_lock( &display_lock );
-        if (!virtual_luid_ready)
-        {
-            struct gpu *first = LIST_ENTRY( list_head( &gpus ), struct gpu, entry );
-            if (madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &virtual_luid ))
-                dprintf( 2, "[vmode] ml1006 virtual adapter uses the MADEIRA_KMT_ADAPTER luid %08x%08x "
-                         "(the DXGI / D3D12 adapter)\n", (unsigned)virtual_luid.HighPart,
-                         (unsigned)virtual_luid.LowPart );
-            else if (!list_empty( &gpus ) && first)
-            {
-                virtual_luid = first->luid;
-                dprintf( 2, "[vmode] ml1006 virtual adapter adopts the registered GPU luid "
-                         "%08x%08x\n", (unsigned)virtual_luid.HighPart,
-                         (unsigned)virtual_luid.LowPart );
-            }
-            else
-            {
-                NtAllocateLocallyUniqueId( &virtual_luid );
-                dprintf( 2, "[vmode] ml1006 no GPU registered; allocated a SOFTWARE virtual "
-                         "adapter luid %08x%08x (not a hardware identity)\n",
-                         (unsigned)virtual_luid.HighPart, (unsigned)virtual_luid.LowPart );
-            }
-            virtual_luid_ready = TRUE;
-        }
-        luid_desc.AdapterLuid = virtual_luid;
+        ios_virtual_luid_locked( &luid_desc.AdapterLuid );   /* the same choice as before, now shared with QueryDisplayConfig */
         pthread_mutex_unlock( &display_lock );
 
         if ((status = NtGdiDdDDIOpenAdapterFromLuid( &luid_desc )))
@@ -8662,6 +8766,21 @@ NTSTATUS WINAPI NtUserDisplayConfigGetDeviceInfo( DISPLAYCONFIG_DEVICE_INFO_HEAD
             ret = STATUS_SUCCESS;
             break;
         }
+#ifdef WINE_IOS
+        /* madeira-bcd (round 579): MADEIRA_VDCFG_PATH = 1 lists the virtual monitor's path (QueryDisplayConfig); this
+         * names its source. Off (default), or any other id or adapter: the answer above, as before. */
+        if (ret != STATUS_SUCCESS && ios_vdcfg_path_enabled() && !source_name->header.id)
+        {
+            LUID virtual_luid;
+
+            ios_virtual_luid_locked( &virtual_luid );
+            if (!memcmp( &source_name->header.adapterId, &virtual_luid, sizeof(virtual_luid) ))
+            {
+                asciiz_to_unicode( source_name->viewGdiDeviceName, "\\\\.\\DISPLAY1" );
+                ret = STATUS_SUCCESS;
+            }
+        }
+#endif
 
         unlock_display_devices();
         return ret;
@@ -8684,6 +8803,25 @@ NTSTATUS WINAPI NtUserDisplayConfigGetDeviceInfo( DISPLAYCONFIG_DEVICE_INFO_HEAD
         LIST_FOR_EACH_ENTRY(monitor, &monitors, struct monitor, entry)
         {
             if (target_name->header.id != monitor->output_id) continue;
+#ifdef WINE_IOS
+            /* madeira-bcd (round 579): MADEIRA_VDCFG_PATH = 1 lists the virtual monitor's path (QueryDisplayConfig); this
+             * names its target. Off (default): skipped as before. */
+            if (!monitor->source && ios_vdcfg_lists_sourceless( ios_vdcfg_path_enabled(), 1, monitor == &virtual_monitor ))
+            {
+                LUID virtual_luid;
+                char path[128];
+
+                ios_virtual_luid_locked( &virtual_luid );
+                if (memcmp( &target_name->header.adapterId, &virtual_luid, sizeof(virtual_luid) )) continue;
+                target_name->outputTechnology = DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL;
+                snprintf( buffer, ARRAY_SIZE(buffer), "Display%u", monitor->output_id + 1 );
+                asciiz_to_unicode( target_name->monitorFriendlyDeviceName, buffer );
+                ios_vmon_device_id( EDD_GET_DEVICE_INTERFACE_NAME, path, sizeof(path) );
+                asciiz_to_unicode( target_name->monitorDevicePath, path );
+                ret = STATUS_SUCCESS;
+                break;
+            }
+#endif
             /* madeira-bcd: the virtual monitor (the only one on iOS since the WoW64
              * series) has no source; QueryDisplayConfig reports no path for it either. */
             if (!monitor->source) continue;
@@ -8823,6 +8961,29 @@ NTSTATUS WINAPI NtUserDisplayConfigGetDeviceInfo( DISPLAYCONFIG_DEVICE_INFO_HEAD
             ret = STATUS_SUCCESS;
             break;
         }
+#ifdef WINE_IOS
+        /* madeira-bcd (round 579): MADEIRA_VDCFG_PATH = 1 lists the virtual monitor's path (QueryDisplayConfig), whose adapter is
+         * the virtual one: it gets the registry GPU's interface name. Off (default), or another adapter: the answer above. */
+        if (ret != STATUS_SUCCESS && ios_vdcfg_path_enabled())
+        {
+            LUID virtual_luid;
+
+            ios_virtual_luid_locked( &virtual_luid );
+            if (!memcmp( &adapter_name->header.adapterId, &virtual_luid, sizeof(virtual_luid) ))
+            {
+                struct madeira_kmt_identity kmt_id;
+
+                madeira_kmt_identity( &kmt_id );
+                snprintf( buffer, ARRAY_SIZE(buffer), "\\\\?\\%s\\%s", kmt_id.path, guid_devinterface_display_adapterA );
+                for (i = 4; buffer[i]; ++i)
+                {
+                    if (buffer[i] == '\\') buffer[i] = '#';
+                }
+                asciiz_to_unicode( adapter_name->adapterDevicePath, buffer );
+                ret = STATUS_SUCCESS;
+            }
+        }
+#endif
 
         unlock_display_devices();
         return ret;

@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "Minecraft Dungeons (a folder in the app's container, library entry, no Dock), build 578, iPad17,1 (CYDN1E): the program sweeps RWX probes of 4 KB at sliding hints, 458,752 of them refused with c0000018 (7231 [alloc-fail] lines, STAGE=fixed-map), ends itself with 0xdeadc0de at stage 2 after 27 s. There is no [free-delay] line anywhere in the log (no release was held), yet free-delay-off matched on the [alloc-fail] count alone and proposed env.MADEIRA_FREE_DELAY_MS = 0, which cannot change a sweep. The rule now needs a [free-delay] line of its own (round 579); nothing matches here",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "stuck"
+}

@@ -28,6 +28,8 @@ struct BCDLiveFrontEnd: View {
     @ObservedObject private var steam = SteamOwnedLibrary.shared
     @ObservedObject private var onboarding = OnboardingModel.shared
     @ObservedObject private var jit = JITCoordinator.shared
+    @ObservedObject private var update = BCDUpdateNotice.shared
+    @ObservedObject private var memory = MemoryRightsNotice.shared
     @StateObject private var focus = BCDFocus(watchControllers: false)
     @Environment(\.scenePhase) private var scenePhase
     /// What a game's page opens on: Cloud saves for Choose saves, Library for a game just added.
@@ -61,6 +63,10 @@ struct BCDLiveFrontEnd: View {
                 EndedSessionSurface.hide(reason: "library-appeared")
                 onboarding.presentIfNeeded()
                 live.libraryAppeared()
+                // A newer BCD, at most once a day (BCDUpdateCheck.swift); never blocks anything.
+                update.start()
+                // An install without the increased memory limit, once per build (MemoryRights.swift).
+                memory.start()
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
@@ -96,6 +102,22 @@ struct BCDLiveFrontEnd: View {
             .alert("Steam", isPresented: Binding(get: { steam.error != nil }, set: { if !$0 { steam.error = nil } })) {
                 Button("OK", role: .cancel) { steam.error = nil }
             } message: { Text(steam.error ?? "") }
+            // An install without the increased memory limit (MemoryRights.swift): told, never blocked;
+            // only over the library, OK is the only button.
+            .alert("Memory limit", isPresented: Binding(
+                get: { memory.message != nil && library.current == nil && !onboarding.presented
+                    && library.error == nil && steam.error == nil },
+                set: { if !$0 { memory.message = nil } })) {
+                Button("OK", role: .cancel) { memory.message = nil }
+            } message: { Text(memory.message ?? "") }
+            // A newer BCD (BCDUpdateCheck.swift): only over the library, never during a game, first-run
+            // setup or another alert; OK is the only button.
+            .alert("Update available", isPresented: Binding(
+                get: { update.message != nil && library.current == nil && !onboarding.presented
+                    && library.error == nil && steam.error == nil && memory.message == nil },
+                set: { if !$0 { update.message = nil } })) {
+                Button("OK", role: .cancel) { update.message = nil }
+            } message: { Text(update.message ?? "") }
             // First-run setup (Onboarding.swift).
             .fullScreenCover(isPresented: $onboarding.presented) { OnboardingView() }
             .sheet(item: sheetShown) { sheet in screen(sheet) }

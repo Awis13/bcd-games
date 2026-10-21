@@ -1,0 +1,122 @@
+[06:21:03.637] [INFO] Checking entitlements...
+[06:21:03.638] [INFO] [build] v0.1.576 (576)
+[06:21:03.638] [INFO] [device] model=iPhone18,1 idiom=phone os=iOS Version 27.2 (Build 24B5089g) ram=11722MB available=6122MB cores=6
+[06:21:03.639] [INFO] [device] address-map=[0x100904000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[06:21:03.661] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[06:21:11.952] [INFO] [bcd] library launch StellarBladeDemo: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[06:21:11.962] [INFO] [dock-launch] image-retire=1
+[06:21:11.962] [INFO] [dock-launch] image-map-guard=1
+[06:21:11.968] [INFO] [dock-installers] app=3564860 scripts=0 programs=0
+[06:21:11.977] [INFO] Running full Wine sequence...
+[06:21:11.977] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100904000,0x8000000000) 512GB available=8149MB low-power=0 thermal=fair
+[06:21:11.982] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[06:21:11.983] [INFO] Allocating 896MB JIT pool via debugger...
+[06:21:11.983] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[06:21:11.984] [INFO] [jit-debugger] attached=1 at the pool request
+[06:21:11.986] [OK] [exe-window] executable window widened to [0x140000000,+320MB) for this game (exe-window-mb)
+[06:21:14.236] [INFO] RX pool at 0x154000000
+[06:21:14.279] [INFO] Detaching debugger...
+[06:21:14.284] [INFO] Starting wineserver...
+[phase] wine-start             t+  2.340s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7447 MB + phys_footprint=744 MB = 8192 MB (hw.memsize says 11722 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x154004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x154078000)
+0024:err:seh:init_syscall_frame page0: trying debugger (BRK #0xf00d, x16=3)...
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x154190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x154238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1543b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x15448c000)
+[footprint] rev=ml358 phys=756 MB (peak 756) internal=754 MB compressed=0 MB external=114 MB reusable=10 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #6 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  2.921s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1558d4000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x155a0c000)
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x155aa2000)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  3.012s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x156e70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11A720000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x702bd30000+0xc000
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x15ae8d000)
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:load_dll [dll-missing] rev=ml336 #41 L"libswscale-9.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:load_dll [dll-missing] rev=ml336 #42 L"video64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1107 MB (peak 1107) internal=1105 MB compressed=0 MB external=185 MB reusable=10 MB (cycle=2)
+[footprint] rev=ml358 phys=1211 MB (peak 1211) internal=1210 MB compressed=0 MB external=188 MB reusable=10 MB (cycle=3)
+[footprint] rev=ml358 phys=1215 MB (peak 1215) internal=1214 MB compressed=0 MB external=188 MB reusable=10 MB (cycle=4)
+[footprint] rev=ml358 phys=1205 MB (peak 1215) internal=1204 MB compressed=0 MB external=187 MB reusable=10 MB (cycle=5)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\StellarBladeDemo\\SB.exe" t+ 11.752s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] msvcp140_2.dll: OK, 1 .text pages executable (copy @0x15f69c000)
+D A4 Load module cfgmgr32.dll (cfgmgr32.dll-9e975325c50ed383): 71F37F0000
+D A4 Load module rpcrt4.dll (rpcrt4.dll-5ef8bc180117faf4): 71F3700000
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\StellarBladeDemo\\SB\\Binaries\\Win64\\SB-Win64-Shipping.exe" t+ 12.010s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[jit-pool] EXHAUSTED (image 0x140000000+0x13a43000): want=0x13a48000 bump=0xbb44000/0x2bd30000 tail_resv=0x2008000 freelist=0 — FAILING the load (was: silent BUS loop)
+[jit-pool] EXHAUSTED (image 0x140000000+0x13a43000): want=0x13a48000 bump=0xbb44000/0x2bd30000 tail_resv=0x2008000 freelist=0 — FAILING the load (was: silent BUS loop)
+00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000017) syscalls=0 unix_calls=8210
+[Wine ntdll/server] process_exit_wrapper(-1073741801): closing child fd_socket=455
+[Wine ntdll/server] process_exit_wrapper(-1073741801)
+[Wine child thread] child exited with code -1073741801
+D A4 Load module uxtheme.dll (uxtheme.dll-4e1d696344b97035): 71F3650000
+[win-name] #31 hwnd=0x10060 class='' text="Default IME" rev=ml853
+[win-name] #38 hwnd=0x10064 class='' text="&Yes" rev=ml853
+[win-name] #39 hwnd=0x10064 class='' text="&Yes" rev=ml853
+[win-name] #81 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #82 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #83 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #84 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #85 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #86 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #87 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #88 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #89 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #90 hwnd=0x10058 class='' text="Error" rev=ml853
+D A4 Load module ole32.dll (ole32.dll-424c26e02d7b7d0d): 71F35E0000
+D A4 Load module combase.dll (combase.dll-87add9b7d0a5b955): 71F3530000
+D A4 Load module coml2.dll (coml2.dll-735614df14a136bf): 71F34A0000
+[win-name] #98 hwnd=0x1006c class='' text="OK" rev=ml853
+[win-name] #99 hwnd=0x10058 class='' text="Error" rev=ml853
+[launch-view] dismissed reason=game-window logs=0
+[footprint] rev=ml358 phys=1278 MB (peak 1278) internal=1276 MB compressed=0 MB external=216 MB reusable=10 MB (cycle=6)
+0050:err:module:load_dll [dll-missing] rev=ml336 #43 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #44 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1285 MB (peak 1285) internal=1283 MB compressed=0 MB external=216 MB reusable=11 MB (cycle=7)
+[win-name] #100 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #101 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #102 hwnd=0x10058 class='' text="Error" rev=ml853
+[win-name] #103 hwnd=0x10058 class='' text="Error" rev=ml853
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x232d) syscalls=0 unix_calls=8510
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x232d) syscalls=0 unix_calls=8525
+[Wine ntdll/server] process_exit_wrapper(9005): closing child fd_socket=428
+[Wine ntdll/server] process_exit_wrapper(9005)

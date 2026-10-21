@@ -649,6 +649,8 @@ struct BCDLiveSwitch {
 }
 
 @MainActor final class BCDLogsLive: BCDLogsBackend {
+    /// An install without the increased memory limit: what fixes it, said before a log goes (MemoryRights.swift).
+    var sendLogAdvice: String? { MemoryRights.lacking ? MemoryRights.sendLogAdvice : nil }
     private let input = InputSettings.shared
     private let tune = BCDLiveSwitch(read: { AutoTune.preferred }, write: { AutoTune.preferred = $0 }, running: AutoTune.enabled)   // madeira-bcd: auto-tune's switch in BCD's Settings, on by default
     private var bag = Set<AnyCancellable>()

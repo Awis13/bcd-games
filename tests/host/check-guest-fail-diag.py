@@ -24,6 +24,12 @@ instructions before it, x0-x3/x16/x17 and the producing load with its effective 
 MISALIGNED, aligned words shown); a canonical RIP, any other instruction, a pc outside the pool and an
 unreadable frame print nothing; the cap and the repeat rule hold. The A64 load decoder is checked against
 the assembler's own encodings when clang can target arm64.
+
+Round 579 (Vampire Survivors RJHZRT, build 576; the same registers as MSQJWT, build 573): the [badrip] report is widened on its own
+failure path (ios_ajan2_badrip_wide, called at the end of the same report, so the same signature and the same cap of 2): 64 host
+instructions before LR and every load among them that wrote a register equal to the RIP (immediate and register-offset forms), the
+x86 RAX / RCX / RSP, the return address on the x86 stack with its module and the call bytes before it, the object at RCX (0x100
+bytes), RAX's table, and where the RIP's 8 bytes sit in them (an unaligned read through an odd RAX). The older lines are untouched.
 """
 from pathlib import Path
 import os
@@ -89,6 +95,19 @@ check('entry-fail: capped at 2 reports, a repeated RIP is not a report',
 check('badrip: capped at 2 reports, at most 2 candidate loads',
       'if (reports >= 2 ||' in badrip and '(n = __sync_add_and_fetch( &reports, 1 )) > 2) return;' in badrip
       and 'found < 2' in badrip)
+
+
+wide = function(block, 'static void ios_ajan2_badrip_wide(')
+check('badrip wide: called only from ios_ajan2_badrip (two paths: LR unreadable, and the end of the report), after its own lines',
+      block.count('ios_ajan2_badrip_wide(') == 3 and badrip.count('ios_ajan2_badrip_wide( st, rip, lr );') == 2
+      and badrip.index('candidate producer at LR-') < badrip.rindex('ios_ajan2_badrip_wide( st, rip, lr );'))
+check('badrip wide: reads only through ios_ajan2_read / the hexdump helper, writes nothing, allocates nothing',
+      'mach_vm_read_overwrite(' not in wide and not re.search(r'memset|memcpy|malloc|free\(|mmap|thread_set_state|thread_suspend|thread_terminate|vm_write', wide)
+      and wide.count('ios_ajan2_read(') >= 5 and 'ios_ajan2_hexdump(' in wide)
+check('badrip wide: at most 25 lines on any path (8 per scenario below)', len(re.findall(r'\\n"', wide)) <= 26, str(len(re.findall(r'\\n"', wide))))
+check('badrip wide: the 64-instruction window, at most 4 producers, the 0x100-byte object window and the 0x400-byte scans',
+      'ios_ajan2_read( lr - 256, w, sizeof(w) )' in wide and 'shown < 4' in wide and 'rcx - 0x40 + i * 32' in wide
+      and 'unsigned char tbl[0x400];' in wide)
 
 
 def lines_on_longest_path(src):
@@ -298,6 +317,30 @@ int main(int argc, char **argv)
         ios_ajan2_fault_diag(&w.st, 0, EXC_BAD_ACCESS, 0x17071fd61e3d0ULL);
         ios_ajan2_fault_diag(&w.st, 0, EXC_BAD_ACCESS, 0x17071fd61e3d0ULL);              /* the second fault is the next report */
         fprintf(stdout, "vt=%llx\n", (unsigned long long)vt);
+    } else if (!strcmp(s, "badrip-wide")) {
+        uint64_t rip = 0xb800000071eafb37ULL;
+        struct world w = make(rip, 0, 0x15c, 0x138);
+        uint64_t vt = alloc(0x1000), obj = alloc(0x1000), table = alloc(0x2000), tbl2 = alloc(0x1000), rsp = w.stack + 0x100;
+        uint64_t ret = w.mod + 0x2c3c;
+        static const unsigned char call_bytes[] = { 0x48, 0x8b, 0x01, 0xff, 0x50, 0x38 };            /* mov rax,[rcx]; call [rax+0x38] */
+        uint32_t words[8] = { 0xf8686aa6 /* ldr x6,[x21,x8] */, 0xd503201f, 0xd503201f, 0xd503201f, 0xf9401d06 /* ldr x6,[x8,#0x38] */,
+                              0xaa0603ec, 0xf9000f86, 0xd63f0160 };
+        (void)table; (void)tbl2;
+        w64(vt + 0x38, ((rip & 0x00ffffffffffffffULL) << 8) | 0xaa);
+        w64(vt + 0x40, 0x00000071eafb38b8ULL);
+        for (int i = 0; i < 8; i++) w32(w.pool + 0x138 - 32 + 4 * i, words[i]);
+        /* an older load (register offset, uxtw #3) of the RIP, far before the window of 8 */
+        w32(w.pool + 0x138 - 200, 0xf8685aa6u);               /* ldr x6,[x21,w8,uxtw #3] */
+        for (int i = 0; i < 4; i++) w64(obj + 0x40 + i * 8, 0x1111000000000000ULL + i);
+        w64(obj + 0x40, vt + 1);                              /* the odd klass word */
+        w64(obj + 0x50, 0x00000072490a4c90ULL);
+        memcpy((void *)(w.mod + 0x2c3c - sizeof(call_bytes)), call_bytes, sizeof(call_bytes));
+        w64(rsp, ret);
+        w.st.__x[0] = obj + 0x40; w.st.__x[8] = vt + 1; w.st.__x[23] = rsp; w.st.__x[21] = 0;
+        w.st.__x[6] = rip; w.st.__x[12] = rip;
+        ios_ajan2_fault_diag(&w.st, 0, EXC_BAD_ACCESS, 0x17071fd61e3d0ULL);
+        fprintf(stdout, "vt=%llx obj=%llx mod=%llx ret=%llx\n", (unsigned long long)vt, (unsigned long long)(obj + 0x40),
+                (unsigned long long)w.mod, (unsigned long long)ret);
     } else if (!strcmp(s, "decode")) {
         uint32_t insn; unsigned rt, rt2, rn; int64_t imm;
         while (scanf("%x", &insn) == 1) {
@@ -389,8 +432,8 @@ with tempfile.TemporaryDirectory(prefix='guest-fail-diag-') as directory:
     r = run(exe, 'badrip')
     info = kv(r.stdout)
     err = r.stderr.splitlines()
-    check('badrip: 2 reports (the second fault), at most 5 lines each', r.stderr.count('[badrip] rev=ajan2-tani #') == 2
-          and len(err) <= 10, r.stderr)
+    check('badrip: 2 reports (the second fault); each report is the 4 older lines, then the wider look (round 579, at most 30 lines)',
+          r.stderr.count('[badrip] rev=ajan2-tani #') == 2 and len(err) <= 60, r.stderr)
     check('badrip: header names the non-canonical RIP, x0-x3, x16, x17',
           'guest RIP=0xb800000071eafb37 is not a canonical user address' in err[0]
           and 'x0=0x1111 x1=0x2222 x2=0x3333 x3=0x4444 x16=0x16dff8108 x17=0x724db40000' in err[1], '\n'.join(err[:2]))
@@ -410,6 +453,32 @@ with tempfile.TemporaryDirectory(prefix='guest-fail-diag-') as directory:
           'no load among those 8 insns wrote a register that equals the RIP' in r.stderr, r.stderr)
     r = run(exe, 'badrip-lr')
     check('badrip: an unreadable LR is reported, not dereferenced', 'LR 0x30 not readable' in r.stderr, r.stderr)
+
+    r = run(exe, 'badrip-wide')
+    info = kv(r.stdout)
+    err = r.stderr.splitlines()
+    vt, obj, mod, ret = (int(info.get(k, '0'), 16) for k in ('vt', 'obj', 'mod', 'ret'))
+    text = r.stderr
+    check('badrip wide: the older lines come first and unchanged (header, x0-x3, 8 insns, the candidate producer)',
+          err[2].startswith('[badrip]   host insns LR-32..LR-4: ') and err[3].startswith('[badrip]   candidate producer at LR-16: f9401d06 = ldr x6,[x8,#56]'), '\n'.join(err[:5]))
+    check('badrip wide: 64 host instructions in four rows, LR-256 to LR-4',
+          text.count('[badrip]   host insns LR-') == 5 and '[badrip]   host insns LR-256..LR-196: ' in text and '[badrip]   host insns LR-64..LR-4: ' in text, text[:1200])
+    check('badrip wide: the register-offset load far before the window is a producer too, newest first',
+          'producer at LR-16: f9401d06 = ldr x6,[x8,#0x' in text.replace('#56', '#0x') or 'producer at LR-16: f9401d06 = ldr x6,[x8,#56]' in text, text)
+    check('badrip wide: ... and so is the uxtw #3 register-offset form (LR-200)',
+          'producer at LR-200: f8685aa6 = ldr x6,[x21,x8,uxtw #3]' in text, text)
+    check('badrip wide: the x86 registers, and which host registers hold the RIP',
+          f'x86 RAX=0x{vt + 1:x} RCX=0x{obj:x} RSP=0x' in text and 'host x6=yes x12=yes x7=no' in text, text)
+    check('badrip wide: the return address on the x86 stack with module + RVA, and the call bytes before it',
+          f'x86 return address [RSP]=0x{ret:x} Fake.exe+0x2c3c (base 0x{mod:x})' in text
+          and '48 8b 01 ff 50 38 ' in text and 'ret-32..ret+7' in text, text)
+    check('badrip wide: the object at RCX (0x100 bytes from RCX-0x40, 8 rows) with the odd klass word',
+          text.count('[badrip]   RCX') == 8 and f'[badrip]   RCX+0: {vt + 1:016x} ' in text, text)
+    check('badrip wide: RAX\'s table from RAX&~7 - 0x10 (3 rows)', text.count('[badrip]   RAX&~7 ') == 3, text)
+    check('badrip wide: the RIP\'s 8 bytes are found at RAX+0x38 (misaligned): the vtable slot of the call',
+          'the RIP\'s 8 bytes sit at RAX+0x38 (misaligned): a call through [RAX+0x38] reads it' in text, text)
+    check('badrip wide: about 25 lines per report, 2 reports', 20 <= len([l for l in err if l.startswith('[badrip]')]) <= 60,
+          str(len(err)))
 
     # --- the A64 load decoder against the assembler's encodings
     asm = d / 'loads.s'

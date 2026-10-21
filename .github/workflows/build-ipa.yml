@@ -107,6 +107,17 @@ jobs:
       - name: Check Settings › Feedback
         run: python3 tests/host/check-feedback.py --require-swift
 
+      # A newer BCD, said at most once a day (BCDUpdateCheck.swift, BCDUpdateNotice.swift): the source's shape
+      # as tools/update-altsource.py writes it, the build compare, the day key, one host with a size cap, the
+      # alert only over the library with OK alone, env.MADEIRA_UPDATE_CHECK = 0.
+      - name: Check the update notice
+        run: python3 tests/host/check-update-check.py --require-swift
+
+      # An install without the increased memory limit is told once per build and where a log is sent, never blocked
+      # (MemoryRights.swift; the box over the library, Settings › Logs and a game's page).
+      - name: Check the memory limit notice
+        run: python3 tests/host/check-memory-rights-notice.py
+
       # BCD's in-game layer (BCDSession.swift and its views, BCDSessionLive.swift): the starting
       # screen, menu button, overlay, in-game menu and key bar in BCD's look, the classic engine
       # calls behind every function, nothing alive while closed, the preview build.
@@ -588,6 +599,14 @@ jobs:
         run: |
           python3 tests/host/check-wow-guard.py
           python3 tests/host/check-lazy-windows.py
+
+      # round 579: a .bat/.cmd library entry starts C:\windows\system32\cmd.exe, which only aarch64-windows ships; the
+      # name heuristic's arm64ec-windows core ended every such start in c000007b ("could not load kernel32.dll", 0.5 s).
+      # cmd.exe, and nothing else, takes the aarch64-windows core (WineProcessBridge.m madeira_target_is_cmd).
+      - name: Check the session core choice (cmd.exe in aarch64-windows)
+        run: |
+          python3 tests/host/check-launch-routing.py
+          python3 tests/host/check-cmd-bundle.py
 
       - name: Check JIT pool image placement contracts
         run: |
@@ -1367,6 +1386,13 @@ jobs:
       - name: Patch DXMT fault info
         run: python3 tools/patch-dxmt-d3d11-fault-info.py
 
+      # GTA IV (log JA13M8): a D3D9 dynamic buffer refresh with no room for a new generation (a full 32-bit
+      # address space) drew stale data. It now waits for the GPU and reuses a generation instead; only on that
+      # failure, DXMT_D9_RENAME_WAIT=0 keeps the old behaviour. In the dxmt submodule itself (the i386 farm key
+      # hashes its commit). Source invariants only.
+      - name: Check the D3D9 dynamic buffer rename wait
+        run: python3 tests/host/check-d9-rename-wait.py
+
       # God of War died on a loading screen at 7.5 GB: 2.4 GB of native malloc in
       # two seconds while it created its shaders. DXMT keeps every shader with
       # airconv's parsed program; the parse is now dropped after creation and
@@ -1768,6 +1794,11 @@ jobs:
       - name: Check .NET write-xor-execute off
         run: python3 tests/host/check-dotnet-wx.py
 
+      # madeira-bcd: env.DOTNET_GCRegionRange = 400000000 (16 GB) for a .NET 7+ game whose garbage collector cannot reserve its
+      # 256 GB range (Unrailed! 2, build 576: "GC heap initialization failed with error 0x8007000E"); wired to auto-tune and the list.
+      - name: Check .NET GC region range
+        run: python3 tests/host/check-dotnet-gc-region.py
+
       # madeira-bcd: [nt-fail] (every failed NtAllocateVirtualMemory[Ex] / NtMapViewOfSection[Ex] with the process, size,
       # flags and extended parameters, once per kind) and [map-name] (every named section a process creates or opens, with the
       # status): the Rockstar service never reached its 2 MB shared-memory allocation in builds 574/576. Logging only.
@@ -1775,6 +1806,13 @@ jobs:
         run: |
           python3 tests/host/check-nt-fail-log.py
           python3 tests/host/check-map-name-log.py
+
+      # round 579: an AnyCPU IL-only .NET program (PE32, no 32BITREQUIRED) was run as a native ARM64 process, whose set has no
+      # mscoree.dll: "mscoree.dll not found, IL-only binary ... cannot be loaded", c000007b (The Dishwasher: Vampire Smile,
+      # SSXDRW). The server's copy (build/wineserver/mapping_ios.c) withholds ComPlusNativeReady while aarch64-windows has no
+      # mscoree.dll, so the program runs as i386 under WoW64 with Wine Mono, as 32BITREQUIRED .NET programs do.
+      - name: Check the AnyCPU .NET machine (no native ARM64 without an mscoree.dll)
+        run: python3 tests/host/check-ilonly-machine.py
 
       # madeira-bcd (round 577): a child's ntdll copy skips a pool range that lost EXEC (Vice City AE6NQZ/S0TH0N), a small
       # address map retries the next free range after a refused MAP_FIXED (iPhone13,4 / iOS 18), and every spawn line
@@ -1794,6 +1832,36 @@ jobs:
       - name: Check session end off the boot thread
         run: python3 tests/host/check-session-end.py
 
+      # madeira-bcd (round 579, Trails in the Sky 1st Chapter 24VADD/X56ZXZ/YTMNEK): GetDisplayConfigBufferSizes says "1 path, 2 modes" for
+      # the virtual monitor and QueryDisplayConfig answers "success, 0 paths": a game that builds its fullscreen window from the paths
+      # makes a one-pixel window at 32767 and then clears a NULL swapchain. The default answers are unchanged (the test runs the
+      # production function against build 578's, byte for byte, on the host); a [vdcfg-mismatch] line names both answers once, and
+      # env.MADEIRA_VDCFG_PATH = 1 (auto-tune rule vdcfg-virtual-path, only after that crash) lists the virtual monitor's path.
+      - name: Check QueryDisplayConfig and the virtual monitor's path
+        run: python3 tests/host/check-vdcfg-path.py
+
+      # madeira-bcd (round 579, Stardew Valley BD8079/S4QB4S/XK1A2J): the .NET runtime's threads call GetLastError / SetLastError 12-19
+      # million times a second before any window exists. [spin] ml1140 (build/ntdll-unix/server_ios.c) keys on the xprobe's own x64->EC
+      # numbers (same target, 4 reports) and logs the busy threads' registers, the x86 code at the guest RIP and the x86 return
+      # addresses once per streak; nothing runs in the game's threads; MADEIRA_LEAN_DIAG touches no thread.
+      - name: Check the [spin] call-rate look
+        run: python3 tests/host/check-spin-diag.py
+
+      # madeira-bcd (round 579): a BCD Dock session whose game died with an error (Dying Light 32FEAT, The Binding of Isaac VV5NHZ:
+      # c0000005) stayed open on its dead desktop: the session's own program is Wine's desktop, which never closes by itself on iOS.
+      # The library now ends it when the game's last process ended with an error status, nothing of the game runs, the host
+      # finished and 10 s passed (DockGameEnd.swift, process_ios.c's ring of ended processes, wine_session_dock_game_ended), and says
+      # which Windows error the game closed with; auto-tune gets the status.
+      # env.MADEIRA_DOCK_GAME_END = 0 turns it off, env.MADEIRA_DOCK_GAME_END_GRACE sets the seconds.
+      - name: Check Dock game end
+        run: ASAN_OPTIONS=symbolize=0 python3 tests/host/check-dock-game-end.py
+
+      # madeira-bcd (round 579, Tomb Raider: Underworld ZWAA2K): a 32-bit main program that cannot get its 4 GB window ended the boot
+      # thread with pthread_exit (fatal_error), so the session never ended and the app showed "running" for three minutes. The failure
+      # now reports its status and leaves by exit(): the shim long-jumps back to wine_process_thread on the boot thread.
+      - name: Check a 32-bit main program that cannot get its window
+        run: python3 tests/host/check-main-window-exit.py
+
       # madeira-bcd (round 578, ajan6-arkham): Batman: Arkham City GOTY (builds 574/576) and Injustice (574) die in the same UE3 lock-free
       # list pop right after a 64-bit FILD/FISTP that the emulator's 64-bit x87 (X87ReducedPrecision, on for 32-bit guests) rounds to 53
       # bits. [x87-int64] (build/ntdll-unix/ios_x87_int64_diag.h) compares the list head's memory with the value the guest got and says
@@ -1805,6 +1873,13 @@ jobs:
         run: |
           python3 tests/host/check-x87-int64-diag.py
           python3 tests/host/check-fault-neighbour-diag.py
+
+      # ajan7-arkham: [wow-null32] (a 32-bit guest's use of the NULL page: registers, stack and TLS cells) and the [tls-cross-clear] line
+      # plus MADEIRA_TLS_CLEAR_OWN_PROCESS (TlsFree reaches into other pseudo-processes' threads); compiled runs against fakes (macOS).
+      - name: Check [wow-null32] and the TlsFree cross-process line
+        run: |
+          python3 tests/host/check-wow-null-diag.py
+          python3 tests/host/check-tls-clear-process.py
 
       # madeira-bcd: kernelbase-fibertrace.dll (env.MADEIRA_FIBER_TRACE): the fiber calls logged.
       - name: Check kernelbase fiber trace

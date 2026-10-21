@@ -145,6 +145,7 @@ import UniformTypeIdentifiers
         d.shortcut = !desktop
         d.saves = !desktop
         d.report = true
+        d.sendLogAdvice = MemoryRights.lacking ? MemoryRights.sendLogAdvice : nil
         return d
     }
 

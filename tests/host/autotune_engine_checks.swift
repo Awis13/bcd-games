@@ -331,6 +331,170 @@ struct AutoTuneEngineChecks {
         expect(loaded?.kept == ["x = 1"] && loaded?.monoMissing == nil && loaded?.best?.monoMissing == nil,
                "a state saved before the flag existed still loads, with its kept lines")
 
+        // 18. Round 579, the false positives the logs of 2026-10-21 showed. Each guard only narrows when a rule fires or how
+        // a session that is no game's is scored; the first half of every pair is the case it must still catch.
+        do {
+            let allSignals = AutoTuneEngine.signals(rules)
+            func scan(_ text: String) -> AutoTuneLogScanner {
+                let sc = AutoTuneLogScanner(signals: allSignals)
+                sc.feed(Data(text.utf8)); sc.finish()
+                return sc
+            }
+            func session(_ text: String, end: AutoTuneSessionEnd = AutoTuneSessionEnd(sawProcess: true, seconds: 30)) -> AutoTuneReport {
+                AutoTuneEngine.report(end, scan(text), rules: rules, signals: allSignals)
+            }
+            let head = "[build] v0.1.578 (578)\n[phase] wine-start             t+  0.639s rev=ml526\n"
+                + "D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000\n"
+            func exitLine(_ code: String) -> String {
+                "0024:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=\(code)) syscalls=0 unix_calls=4158\n"
+            }
+
+            // free-delay-off needs a held release of its own (Minecraft Dungeons CYDN1E: 458,752 refused probes, no hold at all).
+            let refused = (1...210).map {
+                "[alloc-fail] ml814 #\($0) status=c0000018 hint=0x71f5632000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=fixed-map err=3 at 0x73ffe40000+0x1ac000\n"
+            }.joined()
+            let held = "[free-delay] #1 release of 0x7300000000+0x200000 held for 2000 ms (1 in flight)\n"
+            expect(session(head + refused + exitLine("0xc0000005")).matched.contains("free-delay-off") == false,
+                   "200+ refused c0000018 requests without a [free-delay] line: not the free-delay trap")
+            expect(session(head + held + refused + exitLine("0xc0000005")).matched.contains("free-delay-off"),
+                   "the same with a held release in the log: it is")
+            expect(session(head + "[free-delay] #3 reservation at 0x7300000000+0x200000: 1 held release(s) from 0x7300000000 (0x3ff000 bytes) freed at once\n"
+                           + refused + exitLine("0xc0000005")).matched.contains("free-delay-off"),
+                   "and a reservation line of the hold's reuse path counts as well")
+
+            // exe-window-fixed-base: a one-time installer's helper in %TEMP% is not the game's program.
+            let gameMain = "wine: failed to create main module for L\"C:\\\\Program Files (x86)\\\\Steam\\\\steamapps\\\\common\\\\Game\\\\Game.exe\", status c0000018\n"
+            let helperMain = "wine: failed to create main module for L\"C:\\\\users\\\\<user>\\\\AppData\\\\Local\\\\Temp\\\\DXa9e1.tmp\\\\infinst.exe\", status c0000018\n"
+            expect(session(head + gameMain + exitLine("0xc0000018")).matched.contains("exe-window-fixed-base"),
+                   "the game's own main module refused (c0000018): the window rule still fires")
+            expect(!session(head + helperMain + exitLine("0xc0000018")).matched.contains("exe-window-fixed-base"),
+                   "the DirectX setup's infinst.exe in %TEMP% failing the same way: it does not")
+            expect(!session(head + helperMain.replacingOccurrences(of: "Temp\\\\DXa9e1.tmp\\\\", with: "") + exitLine("0xc0000018")).matched.contains("exe-window-fixed-base"),
+                   "the helper's file name alone is enough")
+
+            // thread-stack-spill: not for a 32-bit program's stack, which the line cannot move (Shade 6NE7KH).
+            let kernelStack = "[thr-create] FAILED at kernel stack: status=0xc0000017 pthread=0(-) reserve=0x0 commit=0x8000 creator pid=0020 tid=0024 peb=0x71ffff0000; task threads 101\n"
+            let wowStack = "[thr-create] FAILED at WoW64 32-bit stack: status=0xc0000017 pthread=0(-) reserve=0x100000 commit=0x0 creator pid=0020 tid=0028 peb=0x47ffd0000; task threads 28\n"
+            expect(session(head + kernelStack + exitLine("0xc0000005")).matched.contains("thread-stack-spill"),
+                   "a thread's kernel stack refused: the spill rule still fires")
+            expect(!session(head + wowStack + exitLine("0x3")).matched.contains("thread-stack-spill"),
+                   "a WoW64 32-bit stack refused inside its window: it does not")
+            expect(!session(head + kernelStack + wowStack + exitLine("0x3")).matched.contains("thread-stack-spill"),
+                   "nor when that is one of the session's refusals")
+
+            // A session that only ran the one-time installs, and whose batch ended, is no session of the game.
+            let installsOnly = "[madeira-dock] app 271590: this session runs only the one-time installs; the host starts after a restart\n"
+            let installsEnd = "[dock-installers] end succeeded=2 failed=0 of=2; the session ends, the game starts after a restart\n"
+            let byItself = AutoTuneSessionEnd(sawProcess: true, seconds: 60, killed: true, userSaid: "closed-by-itself")
+            let footprint = "[footprint] rev=ml358 phys=2116 MB (peak 2272) internal=1572 MB compressed=541 MB external=316 MB reusable=31 MB (cycle=21)\n"
+            let dock = "[dock-launch] app 271590\n"
+            expect(session(head + dock + footprint + installsOnly, end: byItself).outcome == "killed",
+                   "an installs-only session whose batch never ended and whose user said it closed by itself: scored as before")
+            expect(scan(head + dock + installsOnly).facts.installsOnly && !scan(head + dock + installsOnly).facts.installsOver,
+                   "the scanner sees the installs-only line, and the batch is not over without its end line")
+            for chunk in [1, 5, 64] {
+                let sc = AutoTuneLogScanner(signals: allSignals)
+                let bytes = Data((head + installsOnly + installsEnd).utf8)
+                var i = 0
+                while i < bytes.count { sc.feed(bytes.subdata(in: i..<min(i + chunk, bytes.count))); i += chunk }
+                sc.finish()
+                expect(sc.facts.installsOver, "installs-only and its end line make the session over (\(chunk)-byte chunks)")
+            }
+            expect(session(head + dock + footprint + installsOnly + installsEnd, end: byItself).outcome == "inconclusive",
+                   "the install batch ended and BCD closed itself for a restart: inconclusive, not a memory kill (NM88NQ)")
+            let overReport = session(head + dock + footprint + installsOnly + installsEnd + helperMain + exitLine("0xc0000018"))
+            expect(overReport.outcome == "inconclusive" && overReport.matched.isEmpty,
+                   "an installer's helper failing in such a session: inconclusive, no rule (T3P8HK)")
+            let overState = AutoTuneEngine.advance(AutoTuneState(), report: overReport, rules: rules, userKeys: [], fingerprint: "i", log: nil)
+            expect(overState.candidate == nil && overState.kept.isEmpty && overState.best == nil && overState.status == "baseline",
+                   "and the search has nothing to start from")
+            expect(session(head + dock + footprint + installsEnd + exitLine("0xc0000005")).outcome == "crashed",
+                   "the end line without the installs-only line (the host follows the installs in the same session): scored normally")
+            expect(session(head + dock + footprint + installsOnly, end: AutoTuneSessionEnd(sawProcess: true, seconds: 68, killed: true, userSaid: "froze")).outcome == "hung",
+                   "an installer that never ends and a user who says it froze: still a hang (Arkham City's .NET setup)")
+
+            // A window title that only reads like an error box is not one (Hotline Miami's GameMaker form).
+            expect(scan(head + "[win-name] #56 hwnd=0x100ae class='' text=\"Error Messages\" rev=ml853\n").facts.dialogs.isEmpty,
+                   "GameMaker's hidden \"Error Messages\" form is no error box")
+            expect(scan(head + "[win-name] #56 hwnd=0x100ae class='' text=\"Error Messages\" rev=ml853\n"
+                        + "[win-name] #57 hwnd=0x100b0 class='' text=\"Critical error\" rev=ml853\n").facts.dialogs == ["Critical error"],
+                   "a real caption beside it still is")
+            let exitsAlone = session(head + "[launch-view] dismissed reason=present logs=0\n"
+                                     + "[win-name] #56 hwnd=0x100ae class='' text=\"Error Messages\" rev=ml853\n" + exitLine("0x0"))
+            expect(exitsAlone.outcome == "exited-early" && exitsAlone.dialogs.isEmpty,
+                   "a game that ends itself with exit 0 and shows nothing but that form: exited early, not crashed (\(exitsAlone.outcome))")
+        }
+        // 19. One huge image that got no JIT-pool copy (Stellar Blade Demo's 314 MiB exe, YBX2WT, and FINAL FANTASY RESONANCE
+        // DEMO's 474 MiB exe, EJDV7Z, build 576): no region of a split pool takes it, so pool-split-exhausted (imageMaxMB 300)
+        // does not match; x64-image-nocopy does. A small image keeps both rules, as does an anonymous allocation that failed.
+        expect(rules.first { $0.id == split }?.imageMaxMB == 300 && rules.first { $0.id == nocopy }?.imageMaxMB == nil,
+               "only the split pool's rule carries the image size bar")
+        let allSignals = AutoTuneEngine.signals(rules)
+        func poolFail(_ line: String) -> AutoTuneReport {
+            let sc = AutoTuneLogScanner(signals: allSignals)
+            sc.feed(Data(("[phase] wine-start t+ 0.7s\n" + line + "\n"
+                          + "00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000017) syscalls=0 unix_calls=8210\n").utf8))
+            sc.finish()
+            return AutoTuneEngine.report(AutoTuneSessionEnd(sawProcess: true, seconds: 5), sc, rules: rules, signals: allSignals)
+        }
+        let tail = " want=0x13a48000 bump=0xbb44000/0x2bd30000 tail_resv=0x2008000 freelist=0 \u{2014} FAILING the load (was: silent BUS loop)"
+        let huge = poolFail("[jit-pool] EXHAUSTED (image 0x140000000+0x13a43000):" + tail)
+        expect(huge.jitImageFailMB == 314 && huge.matched.contains(nocopy) && !huge.matched.contains(split),
+               "a 314 MiB image: x64-image-nocopy only (\(huge.matched), \(huge.jitImageFailMB ?? -1) MiB)")
+        let small = poolFail("[jit-pool] EXHAUSTED (image 0x71e5950000+0x4a36000):" + tail)
+        expect(small.jitImageFailMB == 74 && small.matched.contains(nocopy) && small.matched.contains(split),
+               "a 74 MiB DLL keeps both rules (\(small.matched))")
+        let edge = poolFail("[jit-pool] EXHAUSTED (image 0x71e5950000+0x12c00000):" + tail)
+        let edgePlus = poolFail("[jit-pool] EXHAUSTED (image 0x71e5950000+0x12d00000):" + tail)
+        expect(edge.matched.contains(split) && !edgePlus.matched.contains(split),
+               "300 MiB passes the bar, 301 MiB does not (\(edge.jitImageFailMB ?? -1), \(edgePlus.jitImageFailMB ?? -1))")
+        let anon = poolFail("[jit-pool] EXHAUSTED (anon RWX): want=0x40000000 bump=0x10000000/0x25000000 tail_resv=0x0 freelist=0 \u{2014} FAILING allocation")
+        expect(anon.jitImageFailMB == nil && anon.matched.contains(split) && !anon.matched.contains(nocopy),
+               "an anonymous allocation that failed has no image size: pool-split still matches (\(anon.matched))")
+        let both = poolFail("[jit-pool] EXHAUSTED (image 0x71e5950000+0x4a36000):" + tail + "\n[jit-pool] EXHAUSTED (image 0x140000000+0x1da1b000):" + tail)
+        expect(both.jitImageFailMB == 474 && !both.matched.contains(split),
+               "the largest image counts, whatever order the lines come in (\(both.jitImageFailMB ?? -1) MiB)")
+        for chunk in [1, 7, 4096] {
+            expect(scanned("[jit-pool] EXHAUSTED (image 0x140000000+0x13a43000):" + tail + "\n", chunk: chunk).facts.jitImageFailMB == 314,
+                   "the scanner reads the image size across \(chunk)-byte chunks")
+        }
+        var hugeState = AutoTuneEngine.advance(AutoTuneState(), report: huge, rules: rules, userKeys: [], fingerprint: "huge", log: nil)
+        expect(!hugeState.retried && hugeState.candidateRule == nocopy, "a huge image gets x64-image-nocopy at once (\(hugeState.candidateRule ?? "-"))")
+        hugeState = AutoTuneEngine.advance(hugeState, report: huge, rules: rules, userKeys: [], fingerprint: "huge", log: nil)
+        expect(hugeState.status == "stuck" && hugeState.candidate == nil,
+               "and when that did not help there is no futile pool-split attempt after it (\(hugeState.status))")
+        let listed = AutoTuneEngine.advance(AutoTuneState(), report: huge, rules: rules,
+                                            userKeys: ["env.MADEIRA_X64_IMAGE_NOCOPY"], fingerprint: "huge2", log: nil)
+        expect(listed.status == "stuck" && listed.candidate == nil,
+               "with the line already in the game's list, a huge image has no attempt left (\(listed.status))")
+        if let d = try? JSONEncoder().encode(huge), let back = try? JSONDecoder().decode(AutoTuneReport.self, from: d) {
+            expect(back == huge && back.jitImageFailMB == 314, "the image size round-trips through JSON")
+        } else { expect(false, "the report encodes") }
+
+        // 20. A .NET 7+ game whose garbage collector cannot reserve its 256 GB range (Unrailed! 2: Back on Track, CR8H6H, build 576):
+        // DOTNET_GCRegionRange = 400000000 (16 GB); not again when the session already ran with it.
+        let gcRule = "dotnet-gc-region-range"
+        func crashed(_ lines: String) -> AutoTuneReport {
+            let sc = AutoTuneLogScanner(signals: allSignals)
+            sc.feed(Data(("[phase] wine-start t+ 0.7s\n" + lines
+                          + "00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xe0434352) syscalls=0 unix_calls=8210\n").utf8))
+            sc.finish()
+            return AutoTuneEngine.report(AutoTuneSessionEnd(sawProcess: true, seconds: 5), sc, rules: rules, signals: allSignals)
+        }
+        let gcFail = "00ac:err:eventlog:ReportEventW L\"Message: GC heap initialization failed with error 0x8007000E\\n\"\n"
+        let gcOne = crashed(gcFail)
+        expect(gcOne.matched == [gcRule] && rules.first { $0.id == gcRule }?.lines == ["env.DOTNET_GCRegionRange = 400000000"],
+               "the GC's out-of-memory at initialisation gets the 16 GB range (\(gcOne.matched))")
+        var gcState = AutoTuneEngine.advance(AutoTuneState(), report: gcOne, rules: rules, userKeys: [], fingerprint: "gc", log: nil)
+        expect(!gcState.retried && gcState.candidateRule == gcRule, "at once, no unchanged retry (\(gcState.candidateRule ?? "-"))")
+        expect(crashed("[madeira-env] game DOTNET_GCRegionRange=400000000\n" + gcFail).matched.isEmpty,
+               "a session that already ran with the line does not match again")
+        expect(crashed("00ac:err:eventlog:ReportEventW L\"Message: GC heap initialization failed with error 0x80070057\\n\"\n").matched.isEmpty
+               && crashed("00ac:err:eventlog:ReportEventW L\"Message: something else\\n\"\n").matched.isEmpty,
+               "another GC initialisation error, or another event, is not it")
+        gcState = AutoTuneEngine.advance(gcState, report: gcOne, rules: rules, userKeys: [], fingerprint: "gc", log: nil)
+        expect(gcState.status == "stuck", "and when the line did not help, nothing else is tried for it (\(gcState.status))")
+
         // 15. State survives JSON (the app saves it between sessions).
         if let d = try? JSONEncoder().encode(s), let back = try? JSONDecoder().decode(AutoTuneState.self, from: d) {
             expect(back == s, "the state round-trips through JSON")

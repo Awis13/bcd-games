@@ -466,6 +466,13 @@ check(kind(addLine("breakneck", #"env.MADEIRA_PRELOAD_DLLS = C:\x\evil.dll"#)) =
 check(kind(addLine("breakneck", "dxmt = d3d11.mipClampBC=1")) == .ok && kind(addLine("breakneck", "swap-min-kb = 64")) == .ok,
       "the two app-level keys that are game settings")
 check(kind(addLine("breakneck", "env.MADEIRA_FEX_AVX = 1")) == .ok, "auto-tune's known fix")
+check(kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 400000000")) == .ok && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 0x400000000")) == .ok
+      && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 40000000")) == .ok && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 1000000000")) == .ok,
+      "the .NET GC's address range, 1 GB to 64 GB in hexadecimal (with or without 0x)")
+check(kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 20000000")) == .policy && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 2000000000")) == .policy
+      && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 16GB")) == .policy && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = -400000000")) == .policy
+      && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 0x")) == .policy && kind(addLine("breakneck", "env.DOTNET_GCRegionRange = 4000000000000000000")) == .policy,
+      "...and nothing else: not under 1 GB, not over 64 GB, not text")
 let later = addLine("breakneck", ["line": "a-key-of-build-700 = 1", "minBuild": 700])
 check(kind(later, build: 600) == .ok && kind(later, build: 700) == .policy && kind(later, build: 600, everyLine: true) == .policy
       && kind(later, build: nil) == .ok,

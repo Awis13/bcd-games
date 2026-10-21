@@ -10,7 +10,7 @@
  "next": [
   "env.MADEIRA_FREE_DELAY_MS = 0"
  ],
- "note": "synthetic: built from [alloc-fail]'s format; HFW 517 (presents=0, a c0000018 storm)",
+ "note": "synthetic: built from [alloc-fail]'s format; HFW 517 (presents=0, a c0000018 storm); round 579: plus the [free-delay] #N release line (virtual_ios.c ios_fd_take) that the rule now requires as its own evidence",
  "outcome": "hung",
  "stage": 2,
  "status": "trying"

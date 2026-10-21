@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "mono-child-tls-null"
+ ],
+ "next": [
+  "env.MADEIRA_TLS_CLEAR_OWN_PROCESS = 1"
+ ],
+ "note": "Batman: Arkham City GOTY (Steam 200260, 32-bit, UE3), build 578, a tester's iPad16,5 (Send Log C7DGSN; auto-tune's FEX_X87REDUCEDPRECISION = 0 trial was on and the game got as far as starting its launcher for the first time): BatmanAC.exe starts BmLauncher.exe, a .NET Framework program run by Wine Mono (32-bit libmono at guest 0x77650000, second 32-bit window, slot 1), and the launcher's main thread dies on a write at guest 0x10c (wine: Unhandled page fault on write access to 0000010C at address 778635C9; EIP libmono+0x2135C9, mov dword [ebx+0x10c],1 with EBX = 0 = Mono's inlined TlsGetValue returned NULL for its SGen thread info), exit 0xc0000005; BatmanAC.exe then exits 0 and the screen stays blank. Not proven: the attempt is the keyed MADEIRA_TLS_CLEAR_OWN_PROCESS = 1 (TlsFree's cross-process clear); the next log's [tls-cross-clear] and [wow-null32] lines decide.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

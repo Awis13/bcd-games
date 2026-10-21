@@ -1,0 +1,16 @@
+{
+ "dialogs": [
+  "Error"
+ ],
+ "end": {},
+ "matched": [
+  "x64-image-nocopy"
+ ],
+ "next": [
+  "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+ ],
+ "note": "Stellar Blade Demo (library launch StellarBladeDemo), build 578, iPhone18,1 (Send Log AVFMGC, a fresh install of the same tester): the same 314 MiB exe, a single 480 MB pool (no pool-split line), [jit-pool] EXHAUSTED (image 0x140000000+0x13a43000), c0000017. Build 578 changes nothing here; next is x64-image-nocopy and, with the image bar, no pool-split behind it. Not tried on a device.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

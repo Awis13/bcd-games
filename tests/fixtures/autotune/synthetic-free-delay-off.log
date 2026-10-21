@@ -7,6 +7,7 @@
 [cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
 D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000
 [footprint] rev=ml358 phys=601 MB (peak 601) internal=523 MB compressed=0 MB external=72 MB reusable=12 MB (cycle=1)
+[free-delay] #1 release of 0x7300000000+0x200000 held for 2000 ms (1 in flight)
 [alloc-fail] ml814 #1 status=c0000018 hint=0x71f5632000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
 [alloc-fail] ml814 #2 status=c0000018 hint=0x71f5632000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
 [alloc-fail] ml814 #3 status=c0000018 hint=0x71f5632000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x73ffe40000+0x1ac000

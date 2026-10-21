@@ -176,6 +176,50 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[wow-window] small address map"
+    ]
+   },
+   {
+    "has": [
+     "[reserved-area] #",
+     "small address map retry on"
+    ]
+   },
+   {
+    "has": [
+     "[alloc-fail]",
+     "STAGE=fixed-map"
+    ]
+   },
+   {
+    "has": [
+     "[va-scan] window room",
+     "range(s) that fit"
+    ]
+   }
+  ],
+  "evidence": [
+   "shade-2026-10-21 (6NE7KH, build 578)",
+   "tests/host/check-reserved-area-retry.py (build 579)"
+  ],
+  "fixedIn": 579,
+  "id": "small-map-window-refusals",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[va-scan] window room",
+     "holds 0 range(s) that fit"
+    ]
+   }
+  ],
+  "priority": 1,
+  "reason": "On this device's smaller address map the system kept refusing BCD's memory placements inside a 32-bit program's window and a larger request found none; from this build on BCD makes one more attempt when every candidate was refused."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[dock-installers] start"
     ]
    }
@@ -724,6 +768,90 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[vdcfg] QueryDisplayConfig",
+     "-> 0, 0 paths 0 modes"
+    ]
+   },
+   {
+    "has": [
+     "[av-args]",
+     "NULL-class fault addr=0x10"
+    ]
+   },
+   {
+    "has": [
+     "[av-args]",
+     "sora_deploy_steam.exe+"
+    ]
+   }
+  ],
+  "evidence": [
+   "trails-in-the-sky-1st-chapter-2026-10-21 (24VADD, build 578)",
+   "X56ZXZ, YTMNEK (build 573)",
+   "tests/host/check-vdcfg-path.py (build 579)"
+  ],
+  "id": "vdcfg-virtual-path",
+  "lines": [
+   "env.MADEIRA_VDCFG_PATH = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[vdcfg] QueryDisplayConfig",
+     "-> 0, 1 paths 2 modes"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 20,
+  "reason": "The game builds its fullscreen window from the display paths and BCD answered with none, so it made a one-pixel window and then used a screen it never created; the line lists the virtual monitor's path as Windows does.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[mono-cfg]",
+     "libmono-2.0-x86.dll",
+     "HOOKS ARMED"
+    ]
+   },
+   {
+    "has": [
+     "[wow-window] reserved B=",
+     "(slot 1)"
+    ]
+   },
+   {
+    "has": [
+     "wine: Unhandled page fault on",
+     "access to 0000"
+    ]
+   }
+  ],
+  "evidence": [
+   "C7DGSN (Batman: Arkham City GOTY, build 578, a tester's iPad16,5)",
+   "build/ntdll-unix/virtual_ios.c virtual_clear_tls_index (teb_list is every pseudo-process's threads)",
+   "tests/host/check-tls-clear-process.py, tests/host/check-wow-null-diag.py (build 579)"
+  ],
+  "id": "mono-child-tls-null",
+  "lines": [
+   "env.MADEIRA_TLS_CLEAR_OWN_PROCESS = 1"
+  ],
+  "noRetry": true,
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 17,
+  "reason": "A program the game started (a .NET launcher) died on an empty thread slot while the game was shutting down; the line stops one program's thread-slot cleanup from reaching into other programs' threads, the suspected cause."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[va-scan] FAILED",
      "gaps-exhausted"
     ]
@@ -854,6 +982,34 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 10,
   "reason": "The game's .NET runtime keeps its code in two views of one memory section, and BCD cannot keep the two views the same; the line makes the runtime use plain executable memory."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "GC heap initialization failed with error 0x8007000E",
+     "ReportEventW"
+    ]
+   }
+  ],
+  "evidence": [
+   "unrailed-2-2026-10-21 (CR8H6H, build 576)",
+   "learn.microsoft.com/dotnet/core/runtime-config/garbage-collector (Region range)"
+  ],
+  "id": "dotnet-gc-region-range",
+  "lines": [
+   "env.DOTNET_GCRegionRange = 400000000"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game DOTNET_GCRegionRange="
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game's .NET runtime tried to reserve 256 GB of address space for its heap and BCD's address map has no such gap; the line gives the runtime a 16 GB range."
  },
  {
   "all": [
@@ -1135,15 +1291,51 @@ enum AutoTuneBuiltInRules {
   ],
   "evidence": [
    "counter-strike-2-owner-2026-10-20 (pool-split by hand started it)",
-   "albion-launcher BYBFCH/PGKTDD, spelunky-2 J2YJF8 (2026-10-20)"
+   "albion-launcher BYBFCH/PGKTDD, spelunky-2 J2YJF8 (2026-10-20)",
+   "stellar-blade-demo-2026-10-21 (YBX2WT), ffrs-demo-2026-10-21 (EJDV7Z): the guard"
   ],
   "id": "pool-split-exhausted",
+  "imageMaxMB": 300,
   "lines": [
    "pool-split = 1"
   ],
   "noRetry": true,
   "priority": 11,
   "reason": "The JIT pool was smaller than usual and filled up while the game loaded; a split pool is about 880 MB."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[svc] Unable to open SC manager! (1722)"
+    ]
+   }
+  ],
+  "evidence": [
+   "gta-san-andreas-de-2026-10-21 (MM0DAY)",
+   "gta-iv-launcher-2026-10-21 (4GAWSA)",
+   "FMWZC5 (GTA V Legacy, game-scm=2: no 1722, the Launcher's window stayed 6.9 min)"
+  ],
+  "id": "dock-game-scm",
+  "lines": [
+   "env.MADEIRA_DOCK_GAME_SCM = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[dock-report] game-scm=2"
+    ]
+   },
+   {
+    "has": [
+     "[dock-report] game-scm=1"
+    ]
+   }
+  ],
+  "priority": 12,
+  "reason": "The game's launcher (Rockstar's) could not reach a Windows service manager, because a Steam game's session starts none; the line starts Wine's before the game.",
+  "session": "dock"
  },
  {
   "all": [
@@ -1353,6 +1545,129 @@ enum AutoTuneBuiltInRules {
    {
     "has": [
      "loader_init Importing dlls for",
+     "failed, status c0000135"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "err:module:import_dll Library sfc.dll",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library tbs.dll",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "d2r-2026-10-20 (synthetic: the import lines quoted in bcd-games issue #3, in the Fort Solis build 574 session frame; no Send Log of the game yet)"
+  ],
+  "id": "sfc-tbs-dll-optin",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = sfc,sfc_os,tbs"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: sfc.dll -> sfc-optin.dll"
+    ]
+   },
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: tbs.dll -> tbs-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game imports sfc.dll or tbs.dll, which BCD does not ship for every game; the line gives this game Wine's sfc, sfc_os and tbs."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[WineProc] Target exe: C:\\windows\\system32\\cmd.exe (bundle=arm64ec-windows)"
+    ]
+   },
+   {
+    "has": [
+     "wine: could not load kernel32.dll, status c000007b"
+    ]
+   }
+  ],
+  "evidence": [
+   "bat-cmd-arm64ec-core-2026-10-21 (VSWVB0, build 576)",
+   "JFFRDP, H579EM, ZSRKW7 (build 574)",
+   "tests/host/check-cmd-bundle.py (build 579)"
+  ],
+  "fixedIn": 579,
+  "id": "cmd-exe-arm64ec-core",
+  "lines": [],
+  "priority": 1,
+  "reason": "The batch file's command interpreter (cmd.exe) was started in the wrong set of Windows files, so it stopped before it read your file; from this build on BCD starts it in the right one.",
+  "session": "library"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "err:module:fixup_imports_ilonly mscoree.dll not found, IL-only binary"
+    ]
+   }
+  ],
+  "evidence": [
+   "dishwasher-ilonly-2026-10-21 (SSXDRW, build 576)",
+   "tests/host/check-ilonly-machine.py (build 579)"
+  ],
+  "fixedIn": 579,
+  "id": "ilonly-native-no-mscoree",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[ilonly-machine]"
+    ]
+   }
+  ],
+  "priority": 1,
+  "reason": "The game is a .NET program that Wine started in a mode BCD has no .NET runtime for, so it stopped at once; from this build on BCD starts it the way its 32-bit .NET programs run (Wine Mono, from Settings, is needed)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "err:module:import_dll Library api-ms-win-core-psm-appnotify",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "hellblade-2-2026-10-21 (XJ7Z6Y, build 576)"
+  ],
+  "id": "twinapi-appcore-dll-optin",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = twinapi.appcore"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: twinapi.appcore.dll -> twinapi.appcore-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game imports an API set that Wine serves from twinapi.appcore.dll, which BCD does not ship for every game; the line gives this game Wine's twinapi.appcore.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "loader_init Importing dlls for",
      ".arm64.exe",
      "failed, status c0000135"
     ]
@@ -1457,7 +1772,8 @@ enum AutoTuneBuiltInRules {
   ],
   "evidence": [
    "hogwarts-legacy-2026-10-20 (D67PYY)",
-   "3HWREK, XDCPK7, 6E40B4, WNDRGF"
+   "3HWREK, XDCPK7, 6E40B4, WNDRGF",
+   "saints-row-the-third-directx-helper-2026-10-21 (T3P8HK: the DirectX installer's helper is not the game; no match)"
   ],
   "id": "exe-window-fixed-base",
   "lines": [
@@ -1469,6 +1785,18 @@ enum AutoTuneBuiltInRules {
     "has": [
      "[exe-window]",
      "gets the window"
+    ]
+   },
+   {
+    "has": [
+     "failed to create main module",
+     "\\\\Temp\\\\"
+    ]
+   },
+   {
+    "has": [
+     "failed to create main module",
+     "infinst.exe"
     ]
    }
   ],
@@ -1604,11 +1932,19 @@ enum AutoTuneBuiltInRules {
    }
   ],
   "evidence": [
-   "HANDOFF: Ghost of Tsushima 515, RDR2 460"
+   "HANDOFF: Ghost of Tsushima 515, RDR2 460",
+   "shade-wow64-stack-2026-10-21 (6NE7KH: a WoW64 32-bit stack refused inside the window; no match)"
   ],
   "id": "thread-stack-spill",
   "lines": [
    "env.MADEIRA_THREAD_STACK_SPILL = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "[thr-create] FAILED at WoW64 32-bit stack"
+    ]
+   }
   ],
   "priority": 20,
   "reason": "A thread could not get its stack in the game's address range; the line lets stacks take the kernel's placement."
@@ -1710,10 +2046,16 @@ enum AutoTuneBuiltInRules {
      "[alloc-fail]",
      "status=c0000018"
     ]
+   },
+   {
+    "has": [
+     "[free-delay] #"
+    ]
    }
   ],
   "evidence": [
-   "HANDOFF: Horizon Forbidden West 517"
+   "HANDOFF: Horizon Forbidden West 517",
+   "minecraft-dungeons-2026-10-21 (CYDN1E: 200+ refused probes and no [free-delay] line; no match)"
   ],
   "id": "free-delay-off",
   "lines": [
@@ -1816,6 +2158,75 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 1,
   "reason": "The game ended on a thread BCD was not watching, so BCD stayed on its last frame; from this build on BCD notices, says that the game closed and returns to the library.",
+  "session": "library"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[dock-report] launch-game-ended=1"
+    ]
+   },
+   {
+    "has": [
+     "[Wine ntdll/server] process_exit_wrapper(-10737",
+     "closing child"
+    ]
+   }
+  ],
+  "evidence": [
+   "dying-light-dock-game-end-2026-10-21 (32FEAT, build 578)",
+   "Isaac VV5NHZ (build 576)",
+   "tests/host/check-dock-game-end.py (build 579)"
+  ],
+  "fixedIn": 579,
+  "id": "dock-game-died-session-open",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[dock-game-end]"
+    ]
+   },
+   {
+    "has": [
+     "[frontend] returned to library"
+    ]
+   }
+  ],
+  "priority": 13,
+  "reason": "The game's process crashed and Valve's client and the Dock host finished, but BCD kept the session open on its dead desktop; from this build on BCD ends the session, says which Windows error the game closed with, and auto-tune goes on from there.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[wow-window] main-process reserve FAILED"
+    ]
+   }
+  ],
+  "evidence": [
+   "tomb-raider-underworld-main-window-2026-10-21 (ZWAA2K, build 576)",
+   "tests/host/check-dock-game-end.py (build 579)"
+  ],
+  "fixedIn": 579,
+  "id": "wow-window-main-image-hang",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[WineProc] Wine exited with code"
+    ]
+   },
+   {
+    "has": [
+     "[frontend] returned to library"
+    ]
+   }
+  ],
+  "priority": 14,
+  "reason": "A 32-bit game could not get the address space it needs on this install, and BCD stayed on 'running' for minutes; from this build on the session ends at once and says so (the lack of address space is the cause, and it is the install's).",
   "session": "library"
  },
  {

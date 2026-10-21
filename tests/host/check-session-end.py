@@ -91,6 +91,48 @@ func require(_ condition: @autoclosure () -> Bool, _ label: String) {
         require(R.message(exitCode: 70000)?.contains("0x11170") == true, "a large code reads in hex")
         require(R.message(exitCode: -2)?.contains("0xFFFFFFFE") == true, "a negative code reads as the 32-bit value")
         require(!(R.message(exitCode: 3) ?? "").contains("GTA"), "no game names")
+
+        // Round 579: a Steam game started without Dock that found no Steam (SteamStartHint), text only.
+        typealias H = SteamStartHint
+        require(H.applies(directSteamStart: true, quitRequested: false, seconds: 2), "direct start, ended by itself in 2 s: the log is read")
+        require(!H.applies(directSteamStart: false, quitRequested: false, seconds: 2), "a BCD Dock session or a game added by hand: never")
+        require(!H.applies(directSteamStart: true, quitRequested: true, seconds: 2), "the player quit: never")
+        require(!H.applies(directSteamStart: true, quitRequested: false, seconds: H.maxSeconds + 1), "a long session: never (the game ran)")
+        require(H.applies(directSteamStart: true, quitRequested: false, seconds: H.maxSeconds), "exactly the limit still reads the log")
+        require(!H.applies(directSteamStart: true, quitRequested: false, seconds: -1), "a negative time (clock change): never")
+        func said(_ lines: [String], chunk: Int = 1 << 20) -> Bool {
+            var scan = H.LogScan()
+            let bytes = Array((lines.joined(separator: "\n") + "\n").utf8)
+            var at = 0
+            while at < bytes.count { let to = min(bytes.count, at + chunk); scan.feed(Array(bytes[at..<to])); at = to }
+            scan.finish()
+            return scan.said
+        }
+        let start = "[05:47:24.100] [INFO] [steam-start] app=3375780 direct source=steam args=0 folder=program"
+        require(said([start, "PackFile Mount failed(a)", "SteamAPI_Init() failed.", "0024:err:process:NtTerminateProcess"]),
+                "the game's own SteamAPI_Init() failed line after a direct start is found")
+        require(said([start, "Steam must be running to play this game"]), "a game's own 'Steam must be running' line is found")
+        require(said([start, "0024:err:seh:ios_steam_api_diag [steam-api] steam_api found no running Steam; process 0020 sees:"]),
+                "BCD's own steam_api diagnostic line is found")
+        require(said([start, "[S_API] SteamAPI_Init(): SteamAPI_IsSteamRunning() did not locate a running instance of Steam.."]),
+                "Valve's steam_api text is found")
+        require(!said(["SteamAPI_Init() failed.", "x"]), "a failure line with no direct start before it (a Dock session's child) is not")
+        require(!said([start, "wine: all is well", "[xp] 1 2 3"]), "a direct start whose log says nothing about Steam: no")
+        require(!said(["SteamAPI_Init() failed.", start, "ready"]), "an earlier session's failure line does not count after a later direct start")
+        require(said([start, "SteamAPI_Init() failed.", start, "x"]) == false, "the LAST direct start resets the answer")
+        require(said(["[steam-start] app=1 mode=game", "SteamAPI_Init() failed."]) == false, "choosing the mode on the page is not a start")
+        require(said([start, "SteamAPI_Init() failed."], chunk: 7), "lines cut across chunks of 7 bytes are put back together")
+        require(said([start, "SteamAPI_Init() failed."], chunk: 1), "byte by byte")
+        require(said([start, "SteamAPI_Init() failed."]) == said([start, "SteamAPI_Init() failed."], chunk: 13), "the chunk size changes nothing")
+        var noEnd = H.LogScan()
+        noEnd.feed(Array((start + "\nSteamAPI_Init() failed.").utf8)); noEnd.finish()
+        require(noEnd.said, "a last line without a newline is read at the end")
+        var longLine = H.LogScan()
+        longLine.feed(Array((start + "\n" + String(repeating: "x", count: 100_000) + "\nSteamAPI_Init() failed.\n").utf8)); longLine.finish()
+        require(longLine.said, "a line far longer than the carry limit does not hide the next one")
+        require(H.text.contains("BCD Dock") && H.text.contains("Start with") && H.text.contains("needs Steam"),
+                "the words name the Start with choice and Dock")
+        require(!H.text.contains("Katana") && !H.text.contains("Trails") && !H.text.contains("crack"), "no game names")
         exit(failures == 0 ? 0 : 1)
     }
 }
@@ -264,6 +306,7 @@ static pthread_t g_wine_thread;
 static volatile int g_wine_running = 0;
 volatile int g_madeira_srv_fgetpath = 0, g_madeira_srv_eco_follow = 0, g_madeira_srv_direct = 0, g_madeira_srv_idle_us = 0, g_madeira_srv_log_all = 0;
 static int g_stops;
+static uint64_t g_launch_exit = 0;   /* the status word defined above the section (wine_session_dock_game_ended, round 579, records into it) */
 void wineserver_stop(void) { g_stops++; }
 void wine_session_note_launch_exit(int status);
 int wine_launched_exit_stuck(int32_t *code, double *seconds);
@@ -413,6 +456,15 @@ report = block(library, 'private func exitReport() -> String?')
 require('guard !quitRequested, MadeiraConfig.flag("MADEIRA_EXIT_REPORT") else { return nil }' in report and 'SessionEndRules.message(exitCode: code)' in report
         and report.index('wine_crash_exit_status(&status)') < report.index('SessionEndRules.message'),
         'the exit report: a Windows error keeps its own words; a plain code gets the new ones; Quit and MADEIRA_EXIT_REPORT=0 stay silent')
+fin = block(library, 'private func finish()')
+say = block(library, 'private func sayNoSteam(replacing report: String?)')
+require('SteamStartHint.applies(directSteamStart: activeEntry?.startsSteamGameDirectly == true' in fin and 'sawProcess,' in fin
+        and fin.index('SteamStartHint.applies') < fin.index('current = nil; activeEntry = nil'),
+        'finish(): the hint is asked only after a session that ran, for a direct Steam start, before the entry is cleared')
+require('DispatchQueue.global(qos: .utility).async' in say and 'guard let self, self.error == report else { return }' in say
+        and 'SteamStartHint.logSaysNoSteam(log)' in say and say.index('logSaysNoSteam') < say.index('DispatchQueue.main.async'),
+        'the log is read off the main queue; the alert changes only if nothing else took it meanwhile')
+require('SteamStartHint' not in watch and 'SteamStartHint' not in report, 'the watch and the exit report are as they were')
 require('endedByWatch = nil' in block(library, 'func begin(_ entry: LibraryEntry, remember: Bool = true, dock: DockGame? = nil)'),
         'a new session forgets the last one\'s watch state')
 # the process tree: bound at registration, marked at the exit chokepoint, never at the normal child exit

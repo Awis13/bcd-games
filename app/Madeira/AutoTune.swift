@@ -255,6 +255,14 @@ enum AutoTune {
         let tried = (before.candidate ?? []).map { AutoTuneSignal(has: [echo($0)]) }
         let ruleSignals = AutoTuneEngine.signals(rules)
         guard let scanner = AutoTuneLogScanner.scan(log, signals: ruleSignals + tried) else { return }
+        // madeira-bcd (round 579): a Dock session that ran only the one-time installs, and whose batch ended, is no session of the
+        // game (BCD quits itself for a restart, which a recovered marker reads as a kill and the next start asks about, and an
+        // installer's helper may fail): it is not scored, not asked about and changes nothing, so the game's search goes on from
+        // where it was. A batch that never ended (an installer that hangs) is scored as before.
+        if scanner.facts.installsOver {
+            LogStore.shared.log("[autotune] \(m.title): this session ran only the one-time installs; it is not a session of the game and is not scored")
+            return
+        }
         var report = AutoTuneEngine.report(end, scanner, rules: rules, signals: ruleSignals + tried)
         let missing = zip(before.candidate ?? [], scanner.counts.suffix(tried.count)).filter { $0.1 == 0 }.map(\.0)
         if !missing.isEmpty && report.outcome != "inconclusive" {

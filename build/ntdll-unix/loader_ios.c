@@ -3126,8 +3126,20 @@ static void start_main_thread(void)
                      "[wow-window] main-process reserve FAILED 0x%x — a 32-bit main image "
                      "cannot run without a guest window; terminating this process\n",
                      (unsigned)wst );
-            fatal_error( "no WoW64 guest window for the 32-bit main image (status %x)\n",
-                         (unsigned)wst );
+            /* madeira-bcd (round 579, Tomb Raider: Underworld ZWAA2K, a 32-bit game started from the library on a
+             * device whose address space left no 4 GB window): this is the SESSION'S OWN program, not a child. The
+             * pthread_exit() inside fatal_error() ended the boot thread (wine_process_thread) in the middle of
+             * __wine_main, so the end work after __wine_main never ran: g_wine_running stayed 1 and the app showed
+             * "running" for three minutes until the user closed it. exit() is the shim's wine_ios_exit
+             * (shims/wine_ios_exit.h): on the boot thread it long-jumps back to wine_process_thread, which ends the
+             * session as it does for any program; on any other thread it leaves by pthread_exit, as before. The status
+             * goes to the exit hook first, so the library's exit report carries it. */
+            os_log_error( OS_LOG_DEFAULT, "[Wine ntdll] FATAL: no WoW64 guest window for the 32-bit main image (status %x)", (unsigned)wst );
+            {
+                extern void wine_launched_process_did_exit( int status ) __attribute__((weak));
+                if (wine_launched_process_did_exit) wine_launched_process_did_exit( (int)wst );
+            }
+            exit( 1 );
         }
         else
             dprintf( STDERR_FILENO, "[wow-window] main-process window reserved (i386 main image)\n" );

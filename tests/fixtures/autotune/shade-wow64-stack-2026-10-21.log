@@ -1,0 +1,136 @@
+[16:51:35.775] [INFO] Checking entitlements...
+[16:51:35.776] [INFO] [build] v0.1.578 (578)
+[16:51:35.777] [INFO] [device] model=iPhone13,4 idiom=phone os=iOS Version 18.6.2 (Build 22G100) ram=5693MB available=4080MB cores=6
+[16:51:35.777] [INFO] [device] address-map=[0x102404000,0xfc0000000) 63GB increased-memory=1 extended-va=0
+[16:51:35.778] [INFO] [jit-nodebug] debugger-less JIT pool: allowed (iOS 18: TXM restricts JIT memory only from iOS 26); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[16:51:35.795] [INFO] [device] gpu="Apple A14 GPU" family=apple7 argument-buffers=tier2 mesh=1 bc=0 atomics64=0 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[16:51:39.295] [INFO] [bcd] library launch Shade.EXE: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[16:51:39.317] [INFO] Running full Wine sequence...
+[16:51:39.318] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102404000,0xfc0000000) 63GB available=4071MB low-power=0 thermal=nominal
+[16:51:39.322] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[16:51:39.323] [INFO] Allocating 896MB JIT pool via debugger...
+[16:51:39.323] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[16:51:39.323] [INFO] [jit-debugger] attached=1 at the pool request
+[16:51:41.191] [INFO] RX pool at 0x300000000
+[16:51:41.283] [INFO] Detaching debugger...
+[16:51:41.321] [INFO] Starting wineserver...
+[phase] wine-start             t+  2.052s rev=ml526
+[wow-window] small address map: it ends at 0xfc0000000, below the normal guest-window band -- candidates come from [0x400000000,0xb00000000), at most 2 window(s) at once
+ml992: os_proc_available_memory=3135 MB + phys_footprint=960 MB = 4096 MB (hw.memsize says 5693 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x300008000)
+[copy-verify] wow64.dll: OK, 5 .text pages executable (copy @0x300128000)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[copy-verify] libwow64fex.dll: OK, 119 .text pages executable (copy @0x30019d000)
+[copy-verify] ucrtbase.dll: OK, 39 .text pages executable (copy @0x300560000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x300684000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x30072c000)
+[copy-verify] wow64win.dll: OK, 8 .text pages executable (copy @0x3008ac000)
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x300930000)
+[footprint] rev=ml358 phys=975 MB (peak 975) internal=974 MB compressed=0 MB external=65 MB reusable=5 MB (cycle=1)
+D 24 Load module Shade.EXE (shade.exe-50a38cba78e7a406): 400400000
+D 24 Load module ntdll.dll (ntdll.dll-3903196a83f2d450): 4FFF40000
+D 24 Load module kernel32.dll (kernel32.dll-3a7c334be1ef20d0): 47BED0000
+D 24 Load module kernelbase.dll (kernelbase.dll-1bada4728a973278): 47BC40000
+D 24 Load module advapi32.dll (advapi32.dll-e40424e11a21123a): 47BBF0000
+D 24 Load module sechost.dll (sechost.dll-b367444c07982b5b): 47BBC0000
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"engine_d.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #5 hwnd=0x10036 class='' text="Default IME" rev=ml853
+[win-name] #6 hwnd=0x2002e class='' text="Shade - Wrath of angels" rev=ml853
+[win-name] #7 hwnd=0x2002e class='' text="Shade - Wrath of angels" rev=ml853
+D 24 Load module MiscMath.dll (miscmath.dll-77a1f65f73b55644): 402D60000
+[footprint] rev=ml358 phys=1043 MB (peak 1043) internal=1042 MB compressed=0 MB external=67 MB reusable=5 MB (cycle=2)
+[win-name] #11 hwnd=0x2002e class='' text="Shade - Wrath of angels" rev=ml853
+[win-name] #12 hwnd=0x2002e class='' text="Shade - Wrath of angels" rev=ml853
+D 24 Load module dsound.dll (dsound.dll-541344d6eb35e6bd): 47A1F0000
+D 24 Load module mmdevapi.dll (mmdevapi.dll-57d37935cbc65a7b): 47A1B0000
+D 24 Load module oleaut32.dll (oleaut32.dll-ed26e11610f7a720): 47A0F0000
+D 24 Load module version.dll (version.dll-f3fe55759b09d519): 47A0D0000
+[16:51:44.149] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[launch-view] dismissed reason=present logs=0
+[footprint] rev=ml358 phys=1152 MB (peak 1152) internal=1130 MB compressed=0 MB external=70 MB reusable=5 MB (cycle=3)
+0024:err:file:ios_video_track_open [video-io] ml733 OPEN slot=0 handle=0x118 ...\??\C:\Games\swoa\sound\fs\wood1.ogg
+0024:err:file:ios_video_track_open [video-io] ml733 OPEN slot=1 handle=0x118 ...\??\C:\Games\swoa\sound\fs\wood2.ogg
+0024:err:file:ios_video_track_open [video-io] ml733 OPEN slot=2 handle=0x118 ...\??\C:\Games\swoa\sound\fs\wood3.ogg
+0024:err:file:ios_video_track_open [video-io] ml733 OPEN slot=3 handle=0x118 ...\??\C:\Games\swoa\sound\fs\wood4.ogg
+[footprint] rev=ml358 phys=1170 MB (peak 1170) internal=1148 MB compressed=0 MB external=69 MB reusable=5 MB (cycle=4)
+[win-name] #14 hwnd=0x10040 class='' text="DIEmWin" rev=ml853
+D 24 Load module iccvid.dll (iccvid.dll-18c680a1e4a557c2): 47A0B0000
+[laa] ml1070 SPILL #1: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #1 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[rb-tex] madeira-bcd new readback #1: fmt 80 480x360 level 0 (texture 480x360, 1 mips)
+[laa] ml1070 SPILL #2: no room below guest 2 GB for 0x800000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x800000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[thr-create] FAILED at WoW64 32-bit stack: status=0xc0000017 pthread=0(-) reserve=0x100000 commit=0x0 creator pid=0020 tid=0028 peb=0x47ffd0000; task threads 28
+[laa] ml1070 SPILL #3: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #2 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[laa] ml1070 SPILL #4: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #3 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[laa] ml1070 SPILL #5: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #4 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[laa] ml1070 SPILL #6: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #5 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[laa] ml1070 SPILL #7: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[alloc-fail] ml814 #6 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[laa] ml1070 SPILL #8: no room below guest 2 GB for 0x810000 bytes (bottom-up, start=guest 0x110000) — falling back to the whole window
+[alloc-fail] ml814 #7 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #8 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+libc++abi: terminating due to uncaught exception of type dxmt::MTLD3DEr[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #9 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #10 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+0028:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x3) syscalls=0 unix_calls=1006
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #11 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #12 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+[va-scan] FAILED window=0x400110000..0x500000000 size=0x810000 align=0x10000 bottom-up tries=204 skips=34 | seen=0x400112000..0x500000000 views=128 maxgap=0x7ff40000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x40f8c0000 errno=17(File exists)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[alloc-fail] ml814 #13 status=c0000017 hint=0x0 size=0x810000 type=0x2000 protect=0x4 tid=0024 | STAGE=fixed-map err=3 at 0x40f8c0000+0x810000
+0028:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x3) syscalls=0 unix_calls=1008
+[Wine ntdll/server] process_exit_wrapper(3)
+[srv-kill] kill_process pid=0020 violent=0 threads: 0028 rev=ml586
+[store-noalias] #1 rev=ml348 addr=0x400004000 insn=0xacc10440 pc=0x337512b3c NO pool/anon alias | region 0x400000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x400004000 hostpc=0x337512b3c hinsn=0xacc10440 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=1 base=0x336ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x0 pc=0x337512b3c addr=0x400004000 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x400000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x337512b3c addr=0x400004000 x18=0x403050000 type=1 lr=0x337ffc190 sp=0x12833f350 x16=0xd47070a00 x17=0x7
+[guest-code] rev=ml333 pool_rip=0x1579ecc (PE 0x1579ecc) -- NO pool copy for this address (identity translate)
+[fault-host] 337512a3c: 91009118 b8384a64 110b4174 8b344278 b8bfc304 d503201f 4b070084 11002108
+[fault-host] 337512a5c: 7140049f 540000aa aa0403e5 91004118 b8384a65 14000006 52820014 91004118
+[fault-host] 337512a7c: b8384a74 91004118 b8784a65 110b3174 8b344278 b8bfc304 d503201f 0b070084
+[fault-host] 337512a9c: 9100b118 b8384a64 91007118 b8784a6b 9100b118 b8784a6a 91004118 b8784a67
+[fault-host] 337512abc: 120004e4 53027ce7 52800014 b943d395 f9459f81 710002bf 1a9f07e0 f860303f
+[fault-host] 337512adc: b943df96 f945ab81 710002df 1a9f07e0 f860303f 8b150177 8b16014c 398feb8f
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x403050000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-noalias] #2 rev=ml348 addr=0x400004000 insn=0xacc10440 pc=0x337512b3c NO pool/anon alias | region 0x400000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=READ p1=0x400004000 hostpc=0x337512b3c hinsn=0xacc10440 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=1 base=0x336ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x0 pc=0x337512b3c addr=0x400004000 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x400000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x337512b3c addr=0x400004000 x18=0x403050000 type=1 lr=0x337ffc190 sp=0x12833f350 x16=0xd47070a00 x17=0x7
+[guest-code] rev=ml333 pool_rip=0x1579ecc (PE 0x1579ecc) -- NO pool copy for this address (identity translate)
+[fault-host] 337512a9c: 9100b118 b8384a64 91007118 b8784a6b 9100b118 b8784a6a 91004118 b8784a67
+[fault-host] 337512abc: 120004e4 53027ce7 52800014 b943d395 f9459f81 710002bf 1a9f07e0 f860303f
+[fault-host] 337512adc: b943df96 f945ab81 710002df 1a9f07e0 f860303f 8b150177 8b16014c 398feb8f
+[fault-host] 337512afc: aa0703e0 aa1703e1 aa0c03e2 8b214261 8b224262 370804af b40003c0 cb020023
+[fault-host] 337512b1c: b6f80043 cb0303e3 d1008063 b7f802a3 d1002000 b7f80220 d1002000 b7f800e0
+[fault-host] 337512b3c: acc10440 ac810420 acc10440 ac810420 00000000 00000000 00000000 00000000
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x403050000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+0048:err:seh:bus_handler BUS->AV: unreadable target addr=0x400004000 pc=0x337512b3c rw=0 rev=ml420
+[footprint] rev=ml358 phys=1206 MB (peak 1206) internal=1172 MB compressed=0 MB external=69 MB reusable=5 MB (cycle=5)
+[footprint] rev=ml358 phys=1206 MB (peak 1206) internal=1172 MB compressed=0 MB external=69 MB reusable=5 MB (cycle=6)
+[WineProc] stopping wineserver...
+[frontend] returned to library
+[16:51:55.508] [INFO] Detaching debugger...
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=21 resident=1258MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1210 MB (peak 1210) internal=1179 MB compressed=0 MB external=80 MB reusable=7 MB (cycle=20)
+[footprint] rev=ml358 phys=1213 MB (peak 1213) internal=806 MB compressed=375 MB external=81 MB reusable=4 MB (cycle=21)
+[footprint] rev=ml358 phys=1213 MB (peak 1213) internal=806 MB compressed=375 MB external=81 MB reusable=4 MB (cycle=22)
+[footprint] rev=ml358 phys=1213 MB (peak 1213) internal=806 MB compressed=375 MB external=81 MB reusable=4 MB (cycle=23)
+[footprint] rev=ml358 phys=1213 MB (peak 1213) internal=806 MB compressed=375 MB external=81 MB reusable=4 MB (cycle=24)
+[footprint] rev=ml358 phys=1213 MB (peak 1213) internal=806 MB compressed=375 MB external=81 MB reusable=4 MB (cycle=25)

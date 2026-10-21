@@ -16,6 +16,10 @@ under AddressSanitizer and checks:
     program name the plan reads) is "provided" by Wine Mono: not run, its record
     written like a finished run's; without Wine Mono it waits ("needs Wine Mono");
     MADEIRA_DOCK_DOTNET_MONO=0 runs it as before;
+    madeira-bcd (round 579): a DirectX setup (dxsetup.exe) that already failed once in a game is provided by BCD from the next
+    start (record written, not run; MADEIRA_DOCK_DIRECTX_PROVIDED=0 keeps it pending); one that succeeds, never ran, hung or never
+    started is untouched; the one-time installs of a session that never started a program are offered once more instead of being
+    skipped for good (GTA V Legacy / Halo MCC state machine; MADEIRA_DOCK_INSTALL_RETRY=0 skips them as before);
   * the batch: result file, service-manager step (or "services off"), every
     redirection after a space, nothing written to the registry by the batch;
   * the result parser and the progress text;
@@ -63,14 +67,25 @@ madsync = (root / 'build/madsync/madsync.c').read_text(encoding='utf-8')
 # comment): these setups never finished under Wine, and Wine Mono is the runtime. Every other redistributable stays unnamed.
 net_fn = re.search(r'(?:    ///[^\n]*\n)+    static func isDotNetFramework\(.*?\n    \}\n', installers, re.S)
 require(net_fn is not None, 'isDotNetFramework is one function with its comment')
-lower = installers.replace(net_fn.group(0), '').lower() if net_fn else installers.lower()
+# madeira-bcd (round 579, ajan7-installers): the second program name the plan reads is Microsoft's DirectX setup (isDirectXSetup), and
+# only for a setup that already failed once in the game.
+dx_fn = re.search(r'(?:    ///[^\n]*\n)+    static func isDirectXSetup\(.*?\n    \}\n', installers, re.S)
+require(dx_fn is not None, 'isDirectXSetup is one function with its comment')
+lower = installers
+for fn in (net_fn, dx_fn):
+    if fn:
+        lower = lower.replace(fn.group(0), '')
+lower = lower.lower()
 require(not any(n in lower for n in ('dxsetup', 'vcredist', 'vc_redist', 'dotnetfx', 'dxwebsetup', 'physx', 'ndp4')),
-        'no redistributable names outside isDotNetFramework: nothing else is decided by program name')
+        'no redistributable names outside isDotNetFramework and isDirectXSetup: nothing else is decided by program name')
 require(net_fn is not None and not any(n in net_fn.group(0).lower() for n in ('dxsetup', 'vcredist', 'vc_redist', 'dxwebsetup', 'physx')),
         'isDotNetFramework names only .NET Framework files')
+require(dx_fn is not None and re.findall(r'"([^"]+\.exe)"', dx_fn.group(0)) == ['dxsetup.exe', 'dxwebsetup.exe'],
+        'isDirectXSetup names only the two DirectX setup files')
 require('SteamSignIn.flag(name, default: true)' in installers, 'every installer switch defaults on and reads env.NAME')
 for switch in ('MADEIRA_DOCK_INSTALLERS', 'MADEIRA_INSTALL_DEFAULT_KEY', 'MADEIRA_DOCK_INSTALL_CHOICE',
-               'MADEIRA_DOCK_INSTALL_SCM', 'MADEIRA_DOCK_INSTALL_SERVER_SYNC', 'MADEIRA_DOTNET_FUSION', 'MADEIRA_DOCK_DOTNET_MONO'):
+               'MADEIRA_DOCK_INSTALL_SCM', 'MADEIRA_DOCK_INSTALL_SERVER_SYNC', 'MADEIRA_DOTNET_FUSION', 'MADEIRA_DOCK_DOTNET_MONO',
+               'MADEIRA_DOCK_DIRECTX_PROVIDED', 'MADEIRA_DOCK_INSTALL_RETRY'):
     require(f'flag("{switch}")' in installers, f'switch {switch} is read')
 require('reg.exe' not in installers, 'the batch never writes the registry (no reg.exe in the bundle)')
 require(content.count('setenv("MADEIRA_MADSYNC_SESSION", "0", 1)') == 1 and
@@ -94,6 +109,8 @@ require(prep.index('absorbResults(') < prep.index('applyRequest(game, found: fou
         'a saved request is applied after the last results and before the plan reads the registry')
 require('var unfinished: [String: [String]]? = nil' in installers and 'var requests: [String: String]? = nil' in installers,
         'new ledger fields are optional (older files still load) and requests are stored by raw value')
+require('var failed: [String: [String]]? = nil' in installers and 'var skipWhy: [String: String]? = nil' in installers and
+        'var offeredAgain: [String]? = nil' in installers, 'the ledger fields of round 579 are optional too')
 require('DockInstallRequestRows' not in steam_games and 'DockInstallRequestRows' not in view
         and 'title: "Record as done…"' in bcd_dock and 'title: "Reset…"' in bcd_dock
         and 'recordQuestion(game)' in bcd_dock and 'resetQuestion(game)' in bcd_dock,
@@ -656,6 +673,290 @@ func pe(_ url: URL, machine: UInt16) throws {
         require(DockInstallLedger.load(prefix: prefix).unfinishedRuns(7013) == ["runtime"],
                 "an entry recorded as provided is no longer unfinished")
         require(!(DockInstallers.note ?? "").contains("Not finished last time: dotnet"), "the note does not call a provided setup unfinished")
+
+        // ---- madeira-bcd (round 579, ajan7-installers): DirectX's setup that failed once, and the choice after a session that never started
+        require(["C:\\x\\DXSETUP.exe", "C:\\x\\DXSetup.exe", "C:\\x\\dxsetup.exe", "C:\\x\\DXWebSetup.exe", "dxsetup.exe"].allSatisfy { DockInstallScripts.isDirectXSetup($0) } &&
+                !["C:\\x\\dxsetup.msi", "C:\\x\\mydxsetup.exe", "C:\\DirectX\\setup.exe", "C:\\x\\dxsetup.exe.bak", "C:\\x\\vcredist_x86.exe",
+                  "C:\\x\\DotNetFx35.exe", "C:\\dxsetup.exe\\x.exe", "C:\\x\\dxsetup64.exe"].contains { DockInstallScripts.isDirectXSetup($0) },
+                "DirectX's setup is told by Microsoft's file name only")
+        let dxProcess = SteamInstallProcess(run: SteamInstallRun(name: "directx", hive: .machine, key: "Software\\Valve\\Steam\\Apps\\7500", value: 1),
+                                            executable: "C:\\g\\DirectX\\DXSETUP.exe", arguments: "/silent")
+        let netProcess = SteamInstallProcess(run: SteamInstallRun(name: "dotnet", hive: .machine, key: "Software\\Valve\\Steam\\Apps\\7500", value: 1),
+                                             executable: "C:\\g\\DotNetFx35.exe", arguments: "/q")
+        let dxPlan = DockInstallScripts.plan([dxProcess, netProcess], done: { _ in false }, exists: { _ in true }, provided: { _ in true })
+        let dxNote = DockInstallScripts.note(dxPlan) ?? ""
+        require(DockInstallScripts.provider(dxProcess) == "BCD" && DockInstallScripts.provider(netProcess) == "Wine Mono" &&
+                dxNote.contains("Provided by Wine Mono, not run: dotnet") && dxNote.contains("Provided by BCD, not run: directx") &&
+                !dxNote.contains("Provided by Wine Mono, not run: dotnet, directx"), "the note names who provides what (\(dxNote))")
+        let plainNote = DockInstallScripts.note(DockInstallScripts.plan([dxProcess], done: { _ in false }, exists: { _ in true })) ?? ""
+        require(plainNote == "One-time installs for this start. To run: directx." &&
+                DockInstallScripts.plan([dxProcess], done: { _ in false }, exists: { _ in true }).map(\.status) == [.pending],
+                "without the provided closure a DirectX setup is planned like any program")
+
+        // The ledger's new fields are optional: an older file loads, a new one round-trips (the ledger the earlier checks left is put back).
+        let ledgerBefore = DockInstallLedger.load(prefix: prefix)
+        try write(prefix.appendingPathComponent(DockInstallLedger.fileName), "{\"runNext\":{\"7000\":false},\"session\":[],\"sessionApp\":0}")
+        let oldLedger = DockInstallLedger.load(prefix: prefix)
+        require(oldLedger.failed == nil && oldLedger.skipWhy == nil && oldLedger.offeredAgain == nil && oldLedger.whySkip(7000) == nil && oldLedger.failedRuns(7000).isEmpty,
+                "an older ledger file loads without the round 579 fields")
+        var fresh = DockInstallLedger()
+        fresh.setFailed(7000, ["directx"]); fresh.setSkipWhy(7000, "failed"); fresh.offeredAgain = ["7000"]
+        try fresh.save(prefix: prefix)
+        require(DockInstallLedger.load(prefix: prefix) == fresh && fresh.failedRuns(7000) == ["directx"] && fresh.whySkip(7000) == "failed", "the new fields round-trip")
+        fresh.setFailed(7000, []); fresh.setSkipWhy(7000, nil); fresh.offeredAgain = nil
+        require(fresh == DockInstallLedger(), "cleared fields are stored as absent")
+        try ledgerBefore.save(prefix: prefix)
+
+        // settleChoice: the decision, on its own.
+        func settle(_ why: String?, runNext: Bool, again: [String]?, _ outcome: DockSessionOutcome, retry: Bool = true) -> (offered: Bool, ledger: DockInstallLedger) {
+            var l = DockInstallLedger()
+            l.runNext["7000"] = runNext ? nil : false; l.setSkipWhy(7000, why); l.offeredAgain = again
+            let offered = l.settleChoice(7000, after: outcome, retry: retry)
+            return (offered, l)
+        }
+        let nothing = settle("install-start", runNext: false, again: nil, .nothingRan)
+        require(nothing.offered && nothing.ledger.runsNext(7000) && nothing.ledger.whySkip(7000) == nil && nothing.ledger.offeredAgain == ["7000"],
+                "settleChoice: a session in which nothing ran turns the choice back to Run, once")
+        let twice = settle("install-start", runNext: false, again: ["7000"], .nothingRan)
+        require(!twice.offered && !twice.ledger.runsNext(7000) && twice.ledger.whySkip(7000) == "nothing-ran", "settleChoice: not offered a second time (no loop)")
+        for outcome in [DockSessionOutcome.failed, .unfinished, .incomplete, .ok] {
+            let r = settle("install-start", runNext: false, again: ["7000"], outcome)
+            require(!r.offered && !r.ledger.runsNext(7000) && r.ledger.whySkip(7000) == outcome.rawValue && r.ledger.offeredAgain == nil,
+                    "settleChoice: \(outcome.rawValue) stays Skip, the reason is kept, the offer counter is cleared")
+        }
+        require(!settle("picked", runNext: false, again: nil, .nothingRan).offered && !settle(nil, runNext: false, again: nil, .nothingRan).offered &&
+                settle("picked", runNext: false, again: nil, .nothingRan).ledger.whySkip(7000) == "picked",
+                "settleChoice: a choice the user made, or one set before these fields, is left alone")
+        let noRetry = settle("install-start", runNext: false, again: nil, .nothingRan, retry: false)
+        require(!noRetry.offered && !noRetry.ledger.runsNext(7000) && noRetry.ledger.whySkip(7000) == "nothing-ran", "settleChoice: retry off keeps the old behaviour")
+
+        // Fixtures: games whose install scripts run a few programs from their own folder (each entry has its own file).
+        func dxScript(_ entries: [(String, String)]) -> String {
+            "\"installscript\" { \"run process\" {" + entries.map { " \"\($0.0)\" { \"process 1\" \"%INSTALLDIR%/\($0.1)\" }" }.joined() + " } }"
+        }
+        func dxGame(_ id: Int, _ name: String, _ entries: [(String, String, UInt16)]) throws -> DockGame {
+            let g = DockGame(id: id, name: name, installDir: name, library: "Program Files (x86)/Steam/steamapps", installed: true, customExecutables: false)
+            try write(common.appendingPathComponent(name + "/installscript.vdf"), dxScript(entries.map { ($0.0, $0.1) }))
+            for e in entries { try pe(common.appendingPathComponent(name + "/" + e.1), machine: e.2) }
+            return g
+        }
+        func since(_ mark: Int) -> String { LogStore.shared.lines.dropFirst(mark).joined(separator: "\n") }
+        func putResult(_ text: String) throws { try write(drive.appendingPathComponent("bcd-dock-installers.result"), text) }
+        func start(_ g: DockGame, mono: Bool = true) {
+            DockInstallers.prepare(g, drive: drive, prefix: prefix, has32Bit: true, hasMsiexec: true, hasWineMono: mono, fusionSource: nil)
+        }
+        func now() -> Int { LogStore.shared.lines.count }
+        func batchText() -> String { (try? String(contentsOf: drive.appendingPathComponent("bcd-dock-installers.cmd"), encoding: .utf8)) ?? "" }
+        let rockEntries: [(String, String, UInt16)] = [("240240", "Redistributables/Social-Club-Setup.exe", 0x8664), ("101093031", "Redistributables/Rockstar-Games-Launcher.exe", 0x8664)]
+
+        // ---- GTA V Legacy's one-time-install state machine (P36E54, YFYGD4, BT9TE3, 0DHNMC, NM88NQ, FMWZC5), reproduced from the logs
+        let rock = try dxGame(7020, "Rock", rockEntries)
+        var mark = now()
+        start(rock)
+        var out = since(mark)
+        ledger = DockInstallLedger.load(prefix: prefix)
+        require(DockInstallers.script != nil && DockInstallers.installsOnly && out.contains("app=7020 choice=run pending=2; the next start skips them") &&
+                !ledger.runsNext(7020) && ledger.whySkip(7020) == "install-start" && ledger.session.count == 2 && ledger.sessionApp == 7020,
+                "an install start turns the choice to Skip when it plans the installs, before any program ran (the hypothesis' mechanism)")
+        // The session was cut short before it started its batch (no result file): at the next start the installs are offered once more.
+        mark = now()
+        start(rock)
+        out = since(mark)
+        ledger = DockInstallLedger.load(prefix: prefix)
+        require(out.contains("app=7020 results reason=next-start none: the batch did not start") &&
+                out.contains("app=7020 choice=run again: the last session never started a program") && !out.contains("choice=skip pending=") &&
+                DockInstallers.script != nil && DockInstallers.skipsNextStart && (ledger.offeredAgain ?? []).contains("7020") && ledger.whySkip(7020) == "install-start" &&
+                (DockInstallers.note ?? "").hasPrefix("The one-time installs did not get to start last time, so they run now. One-time installs for this start. To run: 240240, 101093031."),
+                "nothing ran: offered again, the note says so (\(DockInstallers.note ?? ""))")
+        // It happened again: skipped as before, with the reason in the log, not offered a third time.
+        mark = now()
+        start(rock)
+        out = since(mark)
+        require(out.contains("results reason=next-start none: the batch did not start") && !out.contains("choice=run again") &&
+                out.contains("app=7020 choice=skip pending=2 why=nothing-ran") && DockInstallers.script == nil &&
+                logged("program=240240 file=Social-Club-Setup.exe status=pending") && (DockInstallers.note ?? "").contains("skipped this time"),
+                "nothing ran twice: skipped (no loop), choice=skip pending=2 recorded=- with its reason")
+        // The user picks Run (NM88NQ): a new cycle; both succeed; the next start records them (FMWZC5: done=2).
+        DockInstallers.setRunsNext(7020, true, prefix: prefix)
+        ledger = DockInstallLedger.load(prefix: prefix)
+        require(ledger.runsNext(7020) && ledger.whySkip(7020) == nil && !(ledger.offeredAgain ?? []).contains("7020"), "the user's pick starts a new cycle")
+        start(rock)
+        try putResult("begin 2 \r\nservices started\r\nstart 1 240240 \r\nexit 1 0 \r\nstart 2 101093031 \r\nexit 2 0 \r\nend \r\n")
+        mark = now()
+        start(rock)
+        out = since(mark)
+        require(out.contains("results reason=next-start succeeded=2 failed=0") && out.contains("program=240240 file=Social-Club-Setup.exe status=done") &&
+                out.contains("program=101093031 file=Rockstar-Games-Launcher.exe status=done") && !out.contains("choice=run again") && DockInstallers.script == nil &&
+                DockInstallLedger.load(prefix: prefix).whySkip(7020) == "ok", "installs that ran and succeeded: recorded, nothing changes")
+        // A session that got as far as its service step but started no program is the same as none.
+        let rock3 = try dxGame(7023, "Rock3", rockEntries)
+        start(rock3)
+        try putResult("begin 2 \r\nservices started\r\n")
+        mark = now()
+        start(rock3)
+        out = since(mark)
+        require(out.contains("app=7023 results reason=next-start succeeded=0 failed=2") && out.contains("statuses=240240=not-started,101093031=not-started") &&
+                out.contains("app=7023 choice=run again") && DockInstallers.script != nil, "a result file with no start line: nothing ran, offered again")
+        // What fails or hangs is NOT offered again (b30ff87e; the stall hint of 9bfcf72e relies on it): BT9TE3's state from 5BY8XF's statuses.
+        let rock2 = try dxGame(7021, "Rock2", rockEntries)
+        start(rock2)
+        try putResult("begin 2 \r\nservices started\r\nstart 1 240240 \r\nexit 1 1 \r\nstart 2 101093031 \r\nexit 2 -1073740791 \r\nend \r\n")
+        mark = now()
+        start(rock2)
+        out = since(mark)
+        require(out.contains("statuses=240240=1,101093031=-1073740791") && out.contains("app=7021 choice=skip pending=2 why=failed") && !out.contains("choice=run again") &&
+                DockInstallers.script == nil && DockInstallLedger.load(prefix: prefix).failedRuns(7021) == ["101093031", "240240"],
+                "failed exit statuses: skipped from now on, exactly the state of the tester's logs, now with its reason")
+        let rock4 = try dxGame(7024, "Rock4", rockEntries)
+        start(rock4)
+        try putResult("begin 2 \r\nservices started\r\nstart 1 240240 \r\n")
+        mark = now()
+        start(rock4)
+        out = since(mark)
+        require(out.contains("statuses=240240=unfinished,101093031=not-started") && out.contains("app=7024 choice=skip pending=2 why=unfinished") && !out.contains("choice=run again") &&
+                DockInstallers.script == nil, "an installer that never closed: skipped as before, the way out of the stall hint")
+        // A choice the user makes after the interrupted session wins.
+        let rock5 = try dxGame(7025, "Rock5", rockEntries)
+        start(rock5)
+        DockInstallers.setRunsNext(7025, false, prefix: prefix)
+        mark = now()
+        start(rock5)
+        out = since(mark)
+        require(out.contains("app=7025 choice=skip pending=2 why=picked") && !out.contains("choice=run again") && DockInstallers.script == nil,
+                "Skip picked after an interrupted session stays Skip")
+        // MADEIRA_DOCK_INSTALL_RETRY=0: as before.
+        setenv("MADEIRA_DOCK_INSTALL_RETRY", "0", 1)
+        let rock6 = try dxGame(7026, "Rock6", rockEntries)
+        start(rock6)
+        mark = now()
+        start(rock6)
+        out = since(mark)
+        require(out.contains("app=7026 choice=skip pending=2 why=nothing-ran") && !out.contains("choice=run again") && DockInstallers.script == nil &&
+                !(DockInstallLedger.load(prefix: prefix).offeredAgain ?? []).contains("7026"), "MADEIRA_DOCK_INSTALL_RETRY=0: skipped as before")
+        unsetenv("MADEIRA_DOCK_INSTALL_RETRY")
+        // A batch that could not be written runs nothing: the choice this start turned to Skip goes back to Run.
+        if getuid() != 0 {
+            let rock7 = try dxGame(7027, "Rock7", rockEntries)
+            chmod(drive.path, 0o555)
+            mark = now()
+            start(rock7)
+            chmod(drive.path, 0o755)
+            out = since(mark)
+            ledger = DockInstallLedger.load(prefix: prefix)
+            require(out.contains("app=7027 batch not written") && out.contains("app=7027 choice=run again: the batch was not written") && DockInstallers.script == nil &&
+                    ledger.runsNext(7027) && ledger.whySkip(7027) == nil && !DockInstallers.skipsNextStart, "a batch that was not written: nothing is skipped")
+        }
+
+        // ---- DirectX's setup: only one that already failed once is provided by BCD
+        let dxEntries: [(String, String, UInt16)] = [("directx", "DirectX/DXSetup.exe", 0x14c), ("extra", "extra.exe", 0x8664)]
+        let dxg = try dxGame(7030, "Dx", dxEntries)
+        mark = now()
+        start(dxg)
+        out = since(mark)
+        require(DockInstallers.script != nil && batchText().contains("DXSetup.exe") && batchText().contains("extra.exe") && !out.contains("provided by BCD") &&
+                out.contains("program=directx file=DXSetup.exe status=pending") && (DockInstallers.note ?? "").contains("To run: directx, extra"),
+                "the first time a DirectX setup is planned and run like any program")
+        try putResult("begin 2 \r\nservices started\r\nstart 1 directx \r\nexit 1 6 \r\nstart 2 extra \r\nexit 2 0 \r\nend \r\n")
+        let dxFound = DockInstallers.found(dxg, drive: drive, defaultKey: true).processes
+        mark = now()
+        start(dxg)
+        out = since(mark)
+        let dxSystem = (try? String(contentsOf: prefix.appendingPathComponent("system.reg"), encoding: .utf8)) ?? ""
+        ledger = DockInstallLedger.load(prefix: prefix)
+        require(out.contains("statuses=directx=6,extra=0") && ledger.failedRuns(7030) == ["directx"], "a failed DirectX setup is kept in the ledger")
+        require(out.contains("app=7030 program=directx file=DXSetup.exe status=provided") &&
+                out.contains("app=7030 program=directx skipped: provided by BCD; file=DXSetup.exe is DirectX's runtime setup, it failed in this game before") &&
+                out.contains("record: yes, 2 values") && out.contains("provided=1") && DockInstallers.script == nil &&
+                DockInstallScripts.marked(dxFound[0].run, in: dxSystem) && dxSystem.contains("[Software\\\\Wow6432Node\\\\Valve\\\\Steam\\\\Apps\\\\7030]") &&
+                (DockInstallers.note ?? "").contains("Provided by BCD, not run: directx"),
+                "the next start records it as provided (both views), runs nothing and says so (\(DockInstallers.note ?? ""))")
+        mark = now()
+        start(dxg)
+        out = since(mark)
+        require(out.contains("program=directx file=DXSetup.exe status=done") && !out.contains("skipped: provided by BCD") && DockInstallers.script == nil,
+                "after that it is simply done")
+        // A DirectX setup that succeeded is recorded by the normal path and never touched.
+        let dxOk = try dxGame(7031, "DxOk", [("directx", "DirectX/DXSETUP.exe", 0x14c)])
+        start(dxOk)
+        require(DockInstallers.script != nil && batchText().contains("DXSETUP.exe"), "a first start runs the DirectX setup")
+        try putResult("begin 1 \r\nservices started\r\nstart 1 directx \r\nexit 1 0 \r\nend \r\n")
+        mark = now()
+        start(dxOk)
+        out = since(mark)
+        require(out.contains("results reason=next-start succeeded=1 failed=0") && out.contains("program=directx file=DXSETUP.exe status=done") &&
+                !out.contains("provided by BCD") && DockInstallLedger.load(prefix: prefix).failedRuns(7031).isEmpty && DockInstallers.script == nil,
+                "a DirectX setup that succeeds: done through the normal record, never provided")
+        // One that hung, or never started, is not a failure.
+        let dxHung = try dxGame(7032, "DxHung", [("directx", "DirectX/DXSETUP.exe", 0x14c)])
+        start(dxHung)
+        try putResult("begin 1 \r\nservices started\r\nstart 1 directx \r\n")
+        mark = now()
+        start(dxHung)
+        out = since(mark)
+        require(out.contains("statuses=directx=unfinished") && out.contains("program=directx file=DXSETUP.exe status=pending") && !out.contains("provided by BCD") &&
+                DockInstallLedger.load(prefix: prefix).failedRuns(7032).isEmpty, "a DirectX setup that never closed is not provided")
+        let dxNever = try dxGame(7033, "DxNever", [("directx", "DirectX/DXSETUP.exe", 0x14c)])
+        start(dxNever)
+        mark = now()
+        start(dxNever)
+        out = since(mark)
+        require(out.contains("choice=run again") && DockInstallers.script != nil && batchText().contains("DXSETUP.exe") && !out.contains("provided by BCD"),
+                "a DirectX setup whose session never started is offered again, not provided")
+        // MADEIRA_DOCK_DIRECTX_PROVIDED=0: a failed setup stays pending, as before.
+        setenv("MADEIRA_DOCK_DIRECTX_PROVIDED", "0", 1)
+        let dxOff = try dxGame(7034, "DxOff", [("directx", "DirectX/DXSETUP.exe", 0x14c)])
+        start(dxOff)
+        try putResult("begin 1 \r\nservices started\r\nstart 1 directx \r\nexit 1 -1073741800 \r\nend \r\n")
+        mark = now()
+        start(dxOff)
+        out = since(mark)
+        require(out.contains("statuses=directx=-1073741800") && out.contains("app=7034 program=directx file=DXSETUP.exe status=pending") && !out.contains("provided by BCD") &&
+                out.contains("app=7034 choice=skip pending=1 why=failed") && out.contains("provided=0"), "MADEIRA_DOCK_DIRECTX_PROVIDED=0: stays pending and skipped, as before")
+        unsetenv("MADEIRA_DOCK_DIRECTX_PROVIDED")
+        // The default again, on the same game: the record is written at that start.
+        DockInstallers.setRunsNext(7034, true, prefix: prefix)
+        mark = now()
+        start(dxOff)
+        out = since(mark)
+        require(out.contains("app=7034 program=directx skipped: provided by BCD") && DockInstallers.script == nil, "the failure kept earlier is acted on once the key is on")
+        // Reset forgets the failure: the setup runs again at that start.
+        DockInstallers.setRequest(7034, .reset, prefix: prefix)
+        mark = now()
+        start(dxOff)
+        out = since(mark)
+        require(DockInstallLedger.load(prefix: prefix).failedRuns(7034).isEmpty && DockInstallers.script != nil && batchText().contains("DXSETUP.exe") && !out.contains("provided by BCD"),
+                "Reset clears the failure: the DirectX setup runs again")
+        // The restart alert after a failed DirectX setup.
+        let dxAlert = try dxGame(7036, "DxAlert", [("directx", "DirectX/DXSETUP.exe", 0x14c), ("other", "other.exe", 0x8664)])
+        start(dxAlert)
+        try putResult("begin 2 \r\nservices started\r\nstart 1 directx \r\nexit 1 6 \r\nstart 2 other \r\nexit 2 0 \r\nend \r\n")
+        let dxEnded = DockInstallers.poll(drive: drive) ?? ""
+        let dxWords = DockInstallers.restartNotice(dxEnded)
+        require(dxEnded == "Done with the one-time installs: 1 of 2 succeeded.\nFailed: directx (exit 6)" && DockInstallers.failedDirectX &&
+                dxWords.contains("A program that failed is not run again") &&
+                dxWords.contains("\nDirectX's setup is not needed: BCD ships the DirectX runtime libraries (D3DX, XAudio2, XInput, D3DCompiler) itself. The game starts without it, and it is recorded as provided at this game's next start.") &&
+                dxWords.hasSuffix("\nClose BCD and open it again to play the game."), "the restart alert says BCD provides DirectX (\(dxWords))")
+        let otherAlert = try dxGame(7037, "OtherAlert", [("other", "other.exe", 0x8664)])
+        start(otherAlert)
+        try putResult("begin 1 \r\nservices started\r\nstart 1 other \r\nexit 1 5 \r\nend \r\n")
+        let otherEnded = DockInstallers.poll(drive: drive) ?? ""
+        require(!DockInstallers.failedDirectX && !DockInstallers.restartNotice(otherEnded).contains("DirectX"), "no such sentence after another program failed")
+        setenv("MADEIRA_DOCK_DIRECTX_PROVIDED", "0", 1)
+        start(dxAlert)
+        try putResult("begin 2 \r\nservices started\r\nstart 1 directx \r\nexit 1 6 \r\nstart 2 other \r\nexit 2 0 \r\nend \r\n")
+        require(!DockInstallers.restartNotice(DockInstallers.poll(drive: drive)).contains("DirectX's setup is not needed"), "MADEIRA_DOCK_DIRECTX_PROVIDED=0: no such sentence")
+        unsetenv("MADEIRA_DOCK_DIRECTX_PROVIDED")
+        // An entry that holds the DirectX setup and another program that still has to run is held back (the .NET rule).
+        let dxMixed = try dxGame(7038, "DxMixed", [("directx", "DirectX/DXSETUP.exe", 0x14c)])
+        try write(common.appendingPathComponent("DxMixed/installscript.vdf"),
+                  "\"installscript\" { \"run process\" { \"directx\" { \"process 1\" \"%INSTALLDIR%/DirectX/DXSETUP.exe\" \"process 2\" \"%INSTALLDIR%/after.exe\" } } }")
+        try pe(common.appendingPathComponent("DxMixed/after.exe"), machine: 0x8664)
+        var mixedLedger = DockInstallLedger.load(prefix: prefix); mixedLedger.setFailed(7038, ["directx"]); try mixedLedger.save(prefix: prefix)
+        mark = now()
+        start(dxMixed)
+        out = since(mark)
+        require(out.contains("app=7038 program=directx skipped: provided by BCD") && out.contains("record: no, another program of this entry still has to run") &&
+                DockInstallers.script != nil && batchText().contains("after.exe") && !batchText().contains("DXSETUP"), "an entry with another program still to run is held back, only the other runs")
 
         // Fixture batch for the optional real cmd.exe run: stand-in programs under @DIR@.
         func fixture(_ name: String, _ file: String) -> SteamInstallProcess {

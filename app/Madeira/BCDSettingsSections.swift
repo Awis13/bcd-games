@@ -902,6 +902,8 @@ enum BCDDiagnostic: String, CaseIterable, Identifiable {
 }
 
 @MainActor protocol BCDLogsBackend: ObservableObject {
+    /// Said before a log is sent (an install without the increased memory limit); nil: nothing.
+    var sendLogAdvice: String? { get }
     /// The newest logs, newest first: only these can be sent.
     var recent: [BCDLogFile] { get }
     var sent: [BCDSentLog] { get }
@@ -921,6 +923,10 @@ enum BCDDiagnostic: String, CaseIterable, Identifiable {
     func setCrashTuning(_ on: Bool)
     var restartNeeded: Bool { get }
     func refresh()
+}
+
+extension BCDLogsBackend {
+    var sendLogAdvice: String? { nil }
 }
 
 struct BCDLogsSettings<Backend: BCDLogsBackend>: View {
@@ -993,8 +999,11 @@ struct BCDLogsSettings<Backend: BCDLogsBackend>: View {
     }
 
     private func confirmSend(_ log: BCDLogFile) {
+        // An install without the increased memory limit: the setup is the usual cause, so say what fixes it
+        // first (MemoryRights.swift, through the live backend); sending is still possible.
         model.ask(BCDSettingsConfirm(title: "Send \(BCDSettingsText.logName(log.name))?",
-                                     message: "\(BCDFormat.bytes(log.bytes)), cleaned on this device before it leaves.",
+                                     message: "\(BCDFormat.bytes(log.bytes)), cleaned on this device before it leaves."
+                                        + (backend.sendLogAdvice.map { "\n\n" + $0 } ?? ""),
                                      choices: [.init(title: "Send") { backend.send(log) }]))
     }
 }

@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "T3P8HK (Saints Row: The Third, build 576) with the two lines that say 'this session runs only the one-time installs' taken out, so the same DirectX installer failure sits in a session the app does not call installs-only (what MADEIRA_DOCK_INSTALL_SEPARATE=0 would give). infinst.exe, extracted into %TEMP% (the \\\\Temp\\\\DXa9e1.tmp\\\\infinst.exe path of line 6990), is the program whose main module failed with c0000018, and exe-window-fixed-base proposed exe-window-mb = 512 for the game. A helper of a one-time installer is not the game's program: no rule (round 579)",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "stuck"
+}

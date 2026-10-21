@@ -98,9 +98,13 @@ check("OpenAdapterFromDeviceName opens the registry GPU's interface only with th
       "if (!found && madeira_kmt_adapter_enabled())" in dn and "!strcmp( name + 4, kmt_id.path )" in dn)
 gdi = sp[sp.index("static NTSTATUS d3dkmt_open_adapter_from_gdi_display_name("):]
 gdi = gdi[:gdi.index("\n}\n")]
+# Round 579: the choice moved, unchanged, into ios_virtual_luid_locked (shared with QueryDisplayConfig's virtual path,
+# tests/host/check-vdcfg-path.py); the GDI-name function calls it under the display lock.
+vl = func(sp, "static void ios_virtual_luid_locked( LUID *out )")
 check("OpenAdapterFromGdiDisplayName's virtual adapter takes the LUID only with the switch",
-      "if (madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &virtual_luid ))" in gdi
-      and "else if (!list_empty( &gpus ) && first)" in gdi)
+      "if (madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &ios_virtual_adapter_luid ))" in vl
+      and "else if (!list_empty( &gpus ) && first)" in vl
+      and "pthread_mutex_lock( &display_lock );\n        ios_virtual_luid_locked( &luid_desc.AdapterLuid );" in gdi)
 reg = func(sp, "static void ios_register_virtual_gpu(void)")
 check("registry GPU: switch LUID, else a fresh one; switch size, else 4096 MB",
       "kmt = madeira_kmt_adapter_enabled() && madeira_kmt_adapter_luid( &gpu.luid );" in reg

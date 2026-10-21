@@ -6,7 +6,8 @@
 
 <p align="center">
   <b>Windows games on iPhone and iPad.</b><br>
-  A fast, controller-friendly launcher with Steam and GOG built in.
+  A fast, controller-friendly launcher with Steam and GOG built in.<br>
+  <sub>Alpha: early development, before beta. Many games run, many do not yet.</sub>
 </p>
 
 <p align="center">
@@ -18,6 +19,7 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/status-alpha-orange" alt="Alpha">
   <img src="https://img.shields.io/badge/iOS-18%2B-blue" alt="iOS 18+">
   <img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0">
   <img src="https://img.shields.io/badge/graphics-Metal-lightgrey" alt="Metal">

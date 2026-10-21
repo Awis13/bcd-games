@@ -2229,6 +2229,14 @@ struct ContentView: View {
             // step failed in 3 of 5 logged sessions (DockCEGService). No session runs yet.
             if !DockInstallers.installsOnly {
                 DockCEGService.prepare(game, drive: MadeiraDock.drive, prefix: MadeiraDock.prefix)
+                // madeira-bcd (2026-10-21): Valve's client added Counter-Strike 2's dependency on the
+                // redistributables app 228980, which BCD never installs, and every later start waited
+                // with error 17 (SteamSharedRedist). Only while 228980 is not fully installed.
+                if SteamSignIn.flag("MADEIRA_DOCK_SHARED_REDIST", default: true),
+                   let line = SteamSharedRedist.prepare(appID: game.id,
+                                                        steamApps: MadeiraDock.drive.appendingPathComponent(game.library, isDirectory: true)) {
+                    logStore.log(line)
+                }
             }
             if DockInstallers.installsOnly {
                 // No host runs in this session: nothing will take the sign-in transfer.

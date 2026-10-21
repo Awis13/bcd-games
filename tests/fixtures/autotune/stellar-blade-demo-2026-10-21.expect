@@ -1,0 +1,16 @@
+{
+ "dialogs": [
+  "Error"
+ ],
+ "end": {},
+ "matched": [
+  "x64-image-nocopy"
+ ],
+ "next": [
+  "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+ ],
+ "note": "Stellar Blade Demo (Steam 3564860), build 576, iPhone18,1 (Send Log YBX2WT): the 64-bit exe SB-Win64-Shipping.exe is a 314 MiB image; after exe-window-mb = 320 (list line, 575) it gets no JIT-pool copy ([jit-pool] EXHAUSTED (image 0x140000000+0x13a43000), c0000017). No region of any pool can take it after Wine's 187 MiB of copies (this session's pair: 432 + 256 MB), so pool-split-exhausted (imageMaxMB 300), which that app chose, stays out; x64-image-nocopy is the line (it has no pool copy to make). Not tried on a device.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

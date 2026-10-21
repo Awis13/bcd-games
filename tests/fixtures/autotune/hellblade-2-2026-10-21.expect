@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "twinapi-appcore-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = twinapi.appcore"
+ ],
+ "note": "Senua's Saga: Hellblade II (Hellblade2-Win64-Shipping.exe), build 576, iPad16,5 (Send Log XJ7Z6Y; a local library entry, not a Steam launch): XCurl.dll and Microsoft.Xbox.Services.GDK.C.Thunks.dll import api-ms-win-core-psm-appnotify-l1-1-0.dll, which Wine's apiset maps to twinapi.appcore.dll; BCD's 64-bit set ships none, so the exe's imports fail with c0000135 two seconds in. env.MADEIRA_OPTIN_DLLS = twinapi.appcore (build 579) links Wine's DLL for the game. Its RegisterAppStateChangeNotification is a stub that returns ERROR_CALL_NOT_IMPLEMENTED: what the GDK libraries do with that is not known. Not tried on a device.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

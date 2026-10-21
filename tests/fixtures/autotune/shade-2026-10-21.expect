@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "small-map-window-refusals"
+ ],
+ "next": [],
+ "note": "Shade: Wrath of Angels, build 578 (6NE7KH, iPhone13,4 iOS 18.6.2): loader passes, then every window placement is refused and an 8 MB request fails; auto-tune picked thread-stack-spill (wrong)",
+ "outcome": "exited-early",
+ "stage": 3,
+ "status": "known"
+}

@@ -8513,6 +8513,47 @@ static void ios_va_describe( void *addr, char *buf, size_t buflen )
     ios_va_describe_range( addr, 0, buf, buflen );
 }
 
+/* madeira-bcd (round 579, Shade 6NE7KH): the kernel's regions across [addr, addr+len), at most 6, as "0xBASE+0xSIZE p/m"
+ * (protection / maximum protection, " shared" when shared) and "free 0xA..0xB" for a hole. ios_va_describe names only
+ * the first region at an address; a refusal of a 0x810000-byte MAP_FIXED needs every region it would replace. Read-only,
+ * called only after a refusal (the failure path). */
+static void ios_va_regions( void *addr, size_t len, char *buf, size_t cap )
+{
+    mach_vm_address_t end = (mach_vm_address_t)(uintptr_t)addr + len, a = (mach_vm_address_t)(uintptr_t)addr;
+    size_t n = 0;
+    int shown = 0;
+
+    buf[0] = 0;
+    while (a < end && shown < 6 && n + 64 < cap)
+    {
+        mach_vm_address_t r = a;
+        mach_vm_size_t sz = 0;
+        vm_region_basic_info_data_64_t info;
+        mach_msg_type_number_t cnt = VM_REGION_BASIC_INFO_COUNT_64;
+        mach_port_t obj = MACH_PORT_NULL;
+
+        if (mach_vm_region( mach_task_self(), &r, &sz, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &cnt, &obj ) != KERN_SUCCESS)
+        {
+            n += snprintf( buf + n, cap - n, "%sfree 0x%llx..end", n ? "; " : "", (unsigned long long)a );
+            return;
+        }
+        if (r > a)
+        {
+            n += snprintf( buf + n, cap - n, "%sfree 0x%llx..0x%llx", n ? "; " : "", (unsigned long long)a,
+                           (unsigned long long)(r < end ? r : end) );
+            a = r;
+            shown++;
+            continue;
+        }
+        if (r < a) { sz -= a - r; r = a; }
+        n += snprintf( buf + n, cap - n, "%s0x%llx+0x%llx %x/%x%s", n ? "; " : "", (unsigned long long)r, (unsigned long long)sz,
+                       info.protection, info.max_protection, info.shared ? " shared" : "" );
+        a = r + sz;
+        shown++;
+    }
+    if (a < end && n + 12 < cap) snprintf( buf + n, cap - n, "; more" );
+}
+
 static const char *ios_scan_stop_name( int stop )
 {
     switch (stop)
@@ -20034,9 +20075,70 @@ static void *ios_reserved_retry( void *low, void *high, size_t size, int top_dow
     return ptr;
 }
 
-struct ios_reserved_ctx { size_t size; int top_down; int unix_prot; size_t align_mask; };
+/* madeira-bcd (round 579): `refused_list` / `nrefused` (every candidate the kernel refused in one placement, in order) and
+ * `next_pre` (what the kernel held at the LAST candidate tried after a refusal, before it was mapped; `next_pre_addr`) are
+ * only filled after a refusal, for the [reserved-area] line: the candidate that took the mapping, or the last one refused. */
+struct ios_reserved_ctx
+{
+    size_t size; int top_down; int unix_prot; size_t align_mask;
+    void *refused_list[40]; unsigned nrefused; void *next_pre_addr; char next_pre[200];
+};
 
 static void *map_reserved_area_once( void *limit_low, void *limit_high, void *ctx_, void **refused, int *err );
+
+/* madeira-bcd (round 579, Shade 6NE7KH): a LAST RESORT for a placement the kernel refused on every candidate.
+ *
+ * Shade: Wrath of Angels on build 578 (iPhone13,4, iOS 18.6.2, 63 GB map): every MAP_FIXED over our own PROT_NONE reservation
+ * at the lowest free range of the 4 GB window was refused with ENOMEM (9 times at load time, each refusal followed by a retry
+ * that placed it; the kernel's region there read "prot=0/0", a 64 KB region of its own), and a 0x810000-byte request (the
+ * game's 8 MB Direct3D 9 buffer, then a WoW64 stack) found every one of the 32 retries (64 KB apart, so 2 MB of range)
+ * refused: STATUS_NO_MEMORY, "Failed to create thread", exit 3. The refusal's reason is unknown; the line that follows each
+ * one now names the regions the refused range holds and what the next candidate held.
+ *
+ * Only when the placement has ended in NULL after a refusal (so the request fails otherwise), only on a small address map,
+ * and only for a candidate that Wine's own tables call free (no view overlaps it, it lies wholly in one reserved area and not
+ * in the JIT pool): the first refused candidate is unmapped and mapped again without overwriting (the mapping a no-clobber
+ * placement makes), which does not depend on the kernel accepting a MAP_FIXED over the region it refused. If that also fails
+ * the PROT_NONE reservation is put back and the request fails as before. A placement that succeeded, or that has not been
+ * refused, never gets here. env.MADEIRA_RESERVED_REMAP = 0 turns it off. virtual_mutex is held by the caller.
+ *
+ * remap-test:begin (tests/host/check-reserved-area-retry.py compiles this region) */
+static int ios_reserved_remap_enabled(void)
+{
+    static int on = -1;
+
+    if (on < 0)
+    {
+        const char *e = getenv( "MADEIRA_RESERVED_REMAP" );
+        on = !(e && e[0] == '0' && !e[1]);
+    }
+    return on;
+}
+
+/* The candidate when it is mapped (`how` says what was done), else NULL with nothing changed or the reservation put back. */
+static void *ios_reserved_remap( void *addr, size_t size, int unix_prot, char *how, size_t how_len )
+{
+    void *got;
+    int e_restore = 0, e_map = 0;
+
+    if (find_view_range( addr, size ))
+    { snprintf( how, how_len, "remap not tried: a view overlaps it" ); return NULL; }
+    if (mmap_is_in_reserved_area( addr, size ) != 1)
+    { snprintf( how, how_len, "remap not tried: not wholly inside one reserved area" ); return NULL; }
+    if (ios_jit_pool_intersects( addr, size ))
+    { snprintf( how, how_len, "remap not tried: it touches the JIT pool" ); return NULL; }
+    ios_pool_va_warn( "munmap", addr, size );
+    if (munmap( addr, size ))
+    { snprintf( how, how_len, "remap: munmap failed errno=%d (%s), nothing changed", errno, strerror( errno ) ); return NULL; }
+    got = anon_mmap_tryfixed( addr, size, unix_prot, 0 );
+    if (got == addr) { snprintf( how, how_len, "remap: munmap then a no-overwrite map placed it" ); return addr; }
+    e_map = errno;
+    e_restore = anon_mmap_fixed( addr, size, PROT_NONE, MAP_NORESERVE ) == addr ? 0 : errno;
+    snprintf( how, how_len, "remap: munmap ok, the no-overwrite map failed errno=%d (%s); reservation %s", e_map, strerror( e_map ),
+              e_restore ? "NOT put back" : "put back" );
+    return NULL;
+}
+/* remap-test:end */
 
 static void *map_reserved_area_inner( void *limit_low, void *limit_high, size_t size, int top_down,
                                       int unix_prot, size_t align_mask )
@@ -20044,25 +20146,56 @@ static void *map_reserved_area_inner( void *limit_low, void *limit_high, size_t 
     struct ios_reserved_ctx ctx = { size, top_down, unix_prot, align_mask };
     unsigned int refused_n;
     void *first_refused, *ptr;
-    int first_err;
+    char remap_how[200], regions[260];
+    int first_err, show = 0, big = size >= 0x100000;
+    static unsigned long ra_n, ra_big_n;
 
+    remap_how[0] = regions[0] = 0;
     ptr = ios_reserved_retry( limit_low, limit_high, size, top_down, align_mask,
                               ios_wow_small_va_slots ? IOS_RESERVED_RETRY_MAX : 0,
                               map_reserved_area_once, &ctx, &refused_n, &first_refused, &first_err );
     if (first_refused)
     {
-        static unsigned long ra_n;
-        char what[160];
-
-        if (++ra_n <= 8 || !(ra_n % 256))
+        /* madeira-bcd (round 579): a request of 1 MB or more has a budget of its own: the first eight lines were spent by the
+         * small ones at load time and left the 8 MB refusal of Shade unexplained. */
+        show = big ? (++ra_big_n <= 64 || !(ra_big_n % 64)) : (++ra_n <= 8 || !(ra_n % 256));
+        /* what the refused range held, taken before anything below changes it */
+        if (show && ctx.nrefused) ios_va_regions( first_refused, size, regions, sizeof(regions) );
+        /* every candidate was refused: the request would fail. See ios_reserved_remap. */
+        if (!ptr && first_err == ENOMEM && ios_wow_small_va_slots && ios_reserved_remap_enabled())
+            ptr = ios_reserved_remap( first_refused, size, unix_prot, remap_how, sizeof(remap_how) );
+        if (show)
         {
+            char what[160], next[260], list[200];
+            unsigned long n = big ? ra_big_n : ra_n;
+            unsigned i, k = 0;
+
             what[0] = 0;
             ios_va_describe( first_refused, what, sizeof(what) );
             dprintf( 2, "[reserved-area] #%lu MAP_FIXED over our own reservation refused: %p+0x%lx errno=%d (%s) | %s | "
                         "%s (%u refused in all; small address map retry %s) rev=ajan5-motor\n",
-                     ra_n, first_refused, (unsigned long)size, first_err, strerror( first_err ), what,
-                     ptr ? "the retry placed it" : "NOT placed", refused_n,
+                     n, first_refused, (unsigned long)size, first_err, strerror( first_err ), what,
+                     ptr ? (remap_how[0] ? "the last resort placed it" : "the retry placed it") : "NOT placed", refused_n,
                      ios_wow_small_va_slots ? "on" : "off" );
+            list[0] = 0;
+            for (i = 0; i < ctx.nrefused && i < 40 && k + 24 < sizeof(list); i++)
+                k += snprintf( list + k, sizeof(list) - k, "%s%p", i ? " " : "", ctx.refused_list[i] );
+            if (ctx.next_pre_addr)
+                snprintf( next, sizeof(next), "%p: %s (%s)", ctx.next_pre_addr, ctx.next_pre,
+                          ptr == ctx.next_pre_addr ? "it took the mapping" : "it was refused too" );
+            else snprintf( next, sizeof(next), "none was tried" );
+            dprintf( 2, "[reserved-area] #%lu detail: 0x%lx bytes %s%s; %u candidate(s) refused [%s%s]; kernel regions across the first "
+                        "refused range (p/m = protection/maximum): %s; last candidate tried after a refusal, before it was mapped: %s%s%s\n",
+                     n, (unsigned long)size, top_down ? "top-down" : "bottom-up", big ? " (>= 1 MB, own budget)" : "",
+                     ctx.nrefused, list, ctx.nrefused > 40 ? " ..." : "", regions, next,
+                     remap_how[0] ? " | last resort: " : "", remap_how );
+        }
+        else if (remap_how[0])
+        {   /* a game that asks again and again for what it cannot get: eight lines, then every 64th */
+            static unsigned long lr_n;
+
+            if (++lr_n <= 8 || !(lr_n % 64))
+                dprintf( 2, "[reserved-area] last resort at %p+0x%lx: %s\n", first_refused, (unsigned long)size, remap_how );
         }
     }
     return ptr;
@@ -20070,7 +20203,7 @@ static void *map_reserved_area_inner( void *limit_low, void *limit_high, size_t 
 
 static void *map_reserved_area_once( void *limit_low, void *limit_high, void *ctx_, void **refused, int *err )
 {
-    const struct ios_reserved_ctx *ctx = ctx_;
+    struct ios_reserved_ctx *ctx = ctx_;
     size_t size = ctx->size, align_mask = ctx->align_mask;
     int top_down = ctx->top_down, unix_prot = ctx->unix_prot;
     void *ptr = NULL;
@@ -20126,10 +20259,17 @@ static void *map_reserved_area_once( void *limit_low, void *limit_high, void *ct
             if (ptr) break;
         }
     }
+    if (ptr && ctx->nrefused)   /* madeira-bcd (round 579): only after a refusal in this placement; the last candidate's state is kept */
+    {
+        ctx->next_pre_addr = ptr;
+        ios_va_regions( ptr, size, ctx->next_pre, sizeof(ctx->next_pre) );
+    }
     if (ptr && anon_mmap_fixed( ptr, size, unix_prot, 0 ) != ptr)
     {
         *refused = ptr;          /* ajan5-motor: the MAP_FIXED failed, not the search (see ios_reserved_retry) */
         *err = errno;
+        if (ctx->nrefused < 40) ctx->refused_list[ctx->nrefused] = ptr;   /* madeira-bcd (round 579) */
+        ctx->nrefused++;
         ptr = NULL;
     }
     return ptr;
@@ -26164,10 +26304,18 @@ NTSTATUS WINAPI NtSetLdtEntries( ULONG sel1, ULONG entry1_low, ULONG entry1_high
 /***********************************************************************
  *           virtual_clear_tls_index
  */
+#include "ios_tls_clear.h"
 NTSTATUS virtual_clear_tls_index( ULONG index )
 {
     struct ntdll_thread_data *thread_data;
     sigset_t sigset;
+    /* ajan7-arkham: teb_list holds the threads of EVERY pseudo-process, not only the caller's (see ios_tls_clear.h). The default
+     * clears the cell in all of them, as before; MADEIRA_TLS_CLEAR_OWN_PROCESS=1 spares the other processes' threads. A live
+     * value cleared (or spared) in another process's thread is logged as [tls-cross-clear]. */
+    TEB *caller_teb = NtCurrentTeb();
+    void *caller_peb = caller_teb ? caller_teb->Peb : NULL;
+    unsigned caller_tid = caller_teb ? HandleToULong( caller_teb->ClientId.UniqueThread ) : 0;
+    int own_only = ios_tls_clear_own_process_only();
 
     if (index < TLS_MINIMUM_AVAILABLE)
     {
@@ -26175,10 +26323,27 @@ NTSTATUS virtual_clear_tls_index( ULONG index )
         LIST_FOR_EACH_ENTRY( thread_data, &teb_list, struct ntdll_thread_data, entry )
         {
             TEB *teb = CONTAINING_RECORD( thread_data, TEB, GdiTebBatch );
+            int foreign = ios_tls_clear_is_foreign( teb->Peb, caller_peb );
 #ifdef _WIN64
             WOW_TEB *wow_teb = get_wow_teb( teb );
+            if (foreign)
+            {
+                ULONG_PTR old = wow_teb ? wow_teb->TlsSlots[index] : (ULONG_PTR)teb->TlsSlots[index];
+
+                if (old) ios_tls_clear_note( own_only, index, caller_tid, caller_peb, HandleToULong( teb->ClientId.UniqueThread ),
+                                             teb->Peb, wow_teb != NULL, old );
+                if (own_only) continue;
+            }
             if (wow_teb) wow_teb->TlsSlots[index] = 0;
             else
+#else
+            if (foreign)
+            {
+                if (teb->TlsSlots[index]) ios_tls_clear_note( own_only, index, caller_tid, caller_peb,
+                                                              HandleToULong( teb->ClientId.UniqueThread ), teb->Peb, 1,
+                                                              (ULONG_PTR)teb->TlsSlots[index] );
+                if (own_only) continue;
+            }
 #endif
             teb->TlsSlots[index] = 0;
         }
@@ -26193,6 +26358,7 @@ NTSTATUS virtual_clear_tls_index( ULONG index )
         LIST_FOR_EACH_ENTRY( thread_data, &teb_list, struct ntdll_thread_data, entry )
         {
             TEB *teb = CONTAINING_RECORD( thread_data, TEB, GdiTebBatch );
+            int foreign = ios_tls_clear_is_foreign( teb->Peb, caller_peb );
 #ifdef _WIN64
             WOW_TEB *wow_teb = get_wow_teb( teb );
             if (wow_teb)
@@ -26206,12 +26372,29 @@ NTSTATUS virtual_clear_tls_index( ULONG index )
                         (ULONG_PTR)teb & ~(IOS_WOW_WINDOW_SIZE - 1) );
                     if (slot) slots += slot->base;
 #endif
+                    if (foreign)
+                    {
+                        if (((ULONG *)slots)[index]) ios_tls_clear_note( own_only, index + TLS_MINIMUM_AVAILABLE, caller_tid, caller_peb,
+                                                                         HandleToULong( teb->ClientId.UniqueThread ), teb->Peb, 1,
+                                                                         ((ULONG *)slots)[index] );
+                        if (own_only) continue;
+                    }
                     ((ULONG *)slots)[index] = 0;
                 }
             }
             else
 #endif
-            if (teb->TlsExpansionSlots) teb->TlsExpansionSlots[index] = 0;
+            if (teb->TlsExpansionSlots)
+            {
+                if (foreign)
+                {
+                    if (teb->TlsExpansionSlots[index]) ios_tls_clear_note( own_only, index + TLS_MINIMUM_AVAILABLE, caller_tid, caller_peb,
+                                                                           HandleToULong( teb->ClientId.UniqueThread ), teb->Peb,
+                                                                           0, (ULONG_PTR)teb->TlsExpansionSlots[index] );
+                    if (own_only) continue;
+                }
+                teb->TlsExpansionSlots[index] = 0;
+            }
         }
         server_leave_uninterrupted_section( &virtual_mutex, &sigset );
     }

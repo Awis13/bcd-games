@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "Saints Row: The Third (Steam 55230), build 576, iPhone18,1 (T3P8HK, 00:55): the installs-only session (choice=run, 'this session runs only the one-time installs'). Its DirectX setup extracted infinst.exe into %TEMP% and Wine could not create its main module (c0000018, line 6990); the batch ended 'failed=1' (line 7181) and the session ended by design. Auto-tune scored it 'crashed at stage 2' and matched exe-window-fixed-base, so the next session ran the GAME with exe-window-mb = 512 (3MN5RD, 75 minutes later). Round 579: a session whose one-time installs are over is no session of the game: inconclusive, no rule, nothing proposed",
+ "outcome": "inconclusive",
+ "stage": 2,
+ "status": "baseline"
+}

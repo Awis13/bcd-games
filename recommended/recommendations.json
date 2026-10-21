@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": 4,
+  "version": 5,
   "generated": "2026-10-21",
   "rules": [
     {
@@ -955,7 +955,7 @@
     {
       "id": "spelunky-2",
       "title": "Spelunky 2",
-      "version": 2,
+      "version": 3,
       "match": {
         "steamAppIDs": [418530],
         "steamFolders": ["spelunky 2"],
@@ -967,7 +967,7 @@
         "# BCD's recommended settings for Spelunky 2.",
         "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
         "env.MADEIRA_EC_HOOK_TRACE = 0",
-        "pool-split = 1",
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576},
         "env.DXMT_WSI_MONITOR_IDENTITY = 1",
         "env.DXMT_WSI_MODE_TABLE = 1"
       ],
@@ -1196,7 +1196,7 @@
     {
       "id": "stellar-blade-demo",
       "title": "Stellar Blade Demo",
-      "version": 1,
+      "version": 2,
       "match": {
         "steamAppIDs": [3564860],
         "steamFolders": ["stellarbladedemo"],
@@ -1208,12 +1208,23 @@
         "# BCD's recommended settings for Stellar Blade Demo.",
         "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
         "env.MADEIRA_EC_HOOK_TRACE = 0",
-        {"line": "exe-window-mb = 320", "minBuild": 575}
+        {"line": "exe-window-mb = 320", "minBuild": 575},
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576}
       ],
       "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
       "notes": [
         "Stellar Blade Demo (Steam 3564860), build 574, iPhone17,2 (Send Log WNDRGF): SB-Win64-Shipping.exe (314 MB,",
-        "relocations stripped) did not fit the 128 MB window at 0x140000000 (c0000018). exe-window-mb = 320 from 575."
+        "relocations stripped) did not fit the 128 MB window at 0x140000000 (c0000018). exe-window-mb = 320 from 575.",
+        "Version 2 (2026-10-21): env.MADEIRA_X64_IMAGE_NOCOPY = 1. With the window widened the exe loads and then gets no",
+        "JIT-pool copy: build 576, iPhone18,1 (Send Log YBX2WT) and build 578 (AVFMGC, the same phone, a fresh install) both end",
+        "at \"[jit-pool] EXHAUSTED (image 0x140000000+0x13a43000)\" (314 MiB), \"no JIT-pool copy for executable section .link\" and",
+        "c0000017; the pool is 480 MB on that phone (no hole fits 896 MB), 701 MB with pool-split, and Wine's own DLLs have",
+        "taken 187 MiB of it by then. A copy needs one region, and no pool this phone can build has one: the line runs the pure",
+        "x64 exe from its loaded image, which makes no copy (as GTA V Enhanced, Red Dead Redemption 2 and Horizon Forbidden West",
+        "do; the log's \"[x64-image] ... mapped without a pool copy\" line says it ran; Spelunky 2's 558 MiB exe loads that way,",
+        "Send Log JBNAZ1). pool-split is not listed: its regions were 432 and 256 MB. What follows the load is unknown; the",
+        "demo ran no further in any log. Not tried on a device yet. The full game's exe has the same name; its App ID is",
+        "not in any log, so this rule recognises it by that name only."
       ]
     },
     {
@@ -1267,7 +1278,7 @@
     {
       "id": "final-fantasy-resonance-demo",
       "title": "FINAL FANTASY RESONANCE DEMO",
-      "version": 1,
+      "version": 2,
       "match": {
         "steamAppIDs": [4474710],
         "steamFolders": ["final fantasy resonance demo"],
@@ -1279,13 +1290,21 @@
         "# BCD's recommended settings for FINAL FANTASY RESONANCE DEMO.",
         "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
         "env.MADEIRA_EC_HOOK_TRACE = 0",
-        {"line": "env.MADEIRA_VCRT_ARM64_KEY = 1", "minBuild": 576}
+        {"line": "env.MADEIRA_VCRT_ARM64_KEY = 1", "minBuild": 576},
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576}
       ],
       "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
       "notes": [
         "FINAL FANTASY RESONANCE DEMO (Steam 4474710), build 573, iPhone18,1 (Send Logs 4AW8BN, Q5KWDW): the Unreal",
         "start-up program FFRS.exe shows the same Microsoft Visual C++ 2015-2022 Redistributable (arm64) dialog and",
-        "exits 0x2329. env.MADEIRA_VCRT_ARM64_KEY = 1 (build 576); not tried on a device yet."
+        "exits 0x2329. env.MADEIRA_VCRT_ARM64_KEY = 1 (build 576); not tried on a device yet.",
+        "Version 2 (2026-10-21): env.MADEIRA_X64_IMAGE_NOCOPY = 1. Build 576, iPhone18,1 (Send Log EJDV7Z): with the key the",
+        "start-up program passes its check (\"[vcrt-arm64] ... 2 of 2 view(s) written\") and starts FFRS-Win64-Shipping.exe, a",
+        "474 MiB image, which gets no JIT-pool copy: \"[jit-pool] EXHAUSTED (image 0x120730000+0x1da1b000)\", \"no JIT-pool copy for",
+        "executable section .edata\", c0000017 three seconds in. The pool was 560 MB (a pair of 288 and 272 MB) with 107 MiB",
+        "already used, so no copy of that size fits whatever the split. The line runs the pure x64 exe from its loaded image,",
+        "which makes no copy (as GTA V Enhanced, Red Dead Redemption 2 and Horizon Forbidden West do). What follows the load is",
+        "unknown. Not tried on a device yet."
       ]
     },
     {
@@ -1589,6 +1608,181 @@
         "env.MADEIRA_OPTIN_DLLS = evr is not listed: the crash reporter's helper crs-video.exe ends with c0000135 because EVR.dll is",
         "missing (L15712) and the game plays on without it (HQFPWG too); the line would make that helper run its 5 s video capture",
         "inside a memory-bound session, which no log shows to be harmless."
+      ]
+    },
+    {
+      "id": "diablo-ii-resurrected",
+      "title": "Diablo II: Resurrected",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [2536520],
+        "steamFolders": ["diablo ii resurrected"],
+        "programs": [
+          {"name": "d2r.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Diablo II: Resurrected.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_OPTIN_DLLS = sfc,sfc_os,tbs", "minBuild": 579}
+      ],
+      "notes": [
+        "Diablo II: Resurrected (Steam 2536520), build 573, iPhone 16 Pro (bcd-games issue #3, 2026-10-20): D2R_loader.dll",
+        "imports sfc.dll and tbs.dll, which BCD's 64-bit set does not ship, and D2R.exe ended with c0000135. Build 579 ships",
+        "Wine's sfc, sfc_os (sfc.dll forwards to it) and tbs as opt-in DLLs, and the line gives them to this game only. With",
+        "Wine's copies placed by hand the reporter's run got past the imports and stopped later in D2R_loader.dll's start",
+        "(NoExec, c0000005; issue #4 looks at it), so the game is not expected to run yet. Not tried on a device yet."
+      ]
+    },
+    {
+      "id": "clair-obscur-expedition-33",
+      "title": "Clair Obscur: Expedition 33",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1903340],
+        "steamFolders": ["expedition 33"],
+        "programs": [
+          {"name": "expedition33_steam.exe"},
+          {"name": "sandfall-win64-shipping.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Clair Obscur: Expedition 33.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576}
+      ],
+      "notes": [
+        "Clair Obscur: Expedition 33 (Steam 1903340, SandFall-Win64-Shipping.exe), build 576, iPhone18,1 (Send Log YBF7CN):",
+        "no hole fit the 896 MB JIT pool (it shrank to 560 MB) and the game's x64 DLLs filled it: libxess.dll (74 MiB) and",
+        "amd_fidelityfx_upscaler_dx12.dll got no copy (\"[jit-pool] EXHAUSTED (image\", \"no JIT-pool copy\", c0000017), the failed",
+        "loads handed the game NULL (four unhandled faults at address 0, then the unhandled-exception filter) and its threads",
+        "idled to the end of the log. env.MADEIRA_X64_IMAGE_NOCOPY = 1 runs pure x64 images from their loaded copy instead of a",
+        "pool copy, as GTA V Enhanced, Red Dead Redemption 2 and Horizon Forbidden West do; auto-tune's x64-image-nocopy rule",
+        "proposes the same line for this signature. Only the standard line and that one: the log's other lines are the",
+        "tester's bcd.cfg (AVX, real-suspend, swap-mb), not this game's list. No switches: the game keeps what it has.",
+        "Not tried on a device yet."
+      ]
+    },
+    {
+      "id": "gta4-steam",
+      "title": "Grand Theft Auto IV: The Complete Edition (Steam)",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [12210],
+        "steamFolders": ["grand theft auto iv"],
+        "programs": [
+          {"name": "playgtaiv.exe", "steam": true},
+          {"name": "gtaiv.exe", "steam": true}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Grand Theft Auto IV: The Complete Edition (Steam).",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_DOCK_GAME_SCM = 1", "minBuild": 576},
+        {"line": "env.MADEIRA_FEX_AVX = 0", "minBuild": 576},
+        {"line": "env.MADEIRA_SPAWN_BLOCK = RockstarErrorHandler", "minBuild": 576},
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576}
+      ],
+      "notes": [
+        "Grand Theft Auto IV: The Complete Edition (Steam 12210), build 576, iPad13,6 (Send Log 4GAWSA; no memory",
+        "entitlements, so other stops may follow): PlayGTAIV.exe starts Rockstar's Launcher.exe, which starts",
+        "RockstarService.exe four times (each exits 1) and logs \"[svc] Unable to open SC manager! (1722)\" five times; no",
+        "services.exe is spawned and the Dock report has no game-scm line. A Dock game session runs no Wine service",
+        "manager unless env.MADEIRA_DOCK_GAME_SCM = 1 asks for it; GTA V's logs that carry the line spawn services.exe,",
+        "report game-scm=2 and keep the Launcher's window for minutes (FMWZC5). GTA San Andreas - The Definitive Edition",
+        "(MM0DAY, iPhone18,1, full memory rights) shows the same 1722 chain, so it is the Launcher and not the device.",
+        "Lines, each from GTA V's lists and kept to what the Launcher and its service need: DOCK_GAME_SCM (the 1722 above);",
+        "FEX_AVX = 0 (auto-tune's fex-avx-on turns AVX on in the Launcher's process only, RockstarService keeps it off and",
+        "the Launcher then cannot connect to it: GTA V and RDR2 logs GBY65K, Y5MEB6, A50T0Q against 8JXT6Q, DGNRT5; the",
+        "pin is the default, it only keeps that line out); SPAWN_BLOCK = RockstarErrorHandler (the Launcher's crash",
+        "handler is spawned here too, 4GAWSA L11391; in GTA V Enhanced's build 374 log it held 17 MB of copies and a 16 MB",
+        "code buffer, and this pool shrank to 624 MB; the \".be\\vc_redist\" part of GTA V's value is for that list's VC++ install step, which this game's",
+        "install batch does not have: dock-installers lists the Social Club and Launcher installers only); X64_IMAGE_NOCOPY",
+        "(the same Launcher on GTA San Andreas DE ran with it and filled no pool: MM0DAY; GTAIV.exe is 32-bit and not",
+        "affected, the line is for the Launcher's 64-bit files); DOCK_KEEP_ALIVE = Launcher.exe;GTAIV.exe (PlayGTAIV.exe is",
+        "the stub that waits for the Launcher, as PlayGTAV.exe: when the Launcher restarts itself the stub exits and the",
+        "Dock ended GTA V's session; CARRIED OVER, no log of this game shows the session ending that way yet).",
+        "Not carried over: GTA V's engine lines (D3D12, DXGI source, adapter, pool-split and the Social Club pool layout),",
+        "which no log of this game asks for. GTAIV.exe never started in any of these logs, so what follows the Launcher is",
+        "unknown. The owner's GTA IV (JA13M8, build 578, iPad16,5) is a local entry, C:\\Grand Theft Auto IV\\GTAIV.exe: no Dock,",
+        "no Launcher, no service; this rule needs a Steam library or App ID and does not match it. Not tried on a device yet."
+      ]
+    },
+    {
+      "id": "gtasa-de-steam",
+      "title": "GTA San Andreas - The Definitive Edition (Steam)",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1547000],
+        "steamFolders": ["gta san andreas - the definitive edition"],
+        "programs": [
+          {"name": "playgtasanandreas.exe", "steam": true}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for GTA San Andreas - The Definitive Edition (Steam).",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_DOCK_GAME_SCM = 1", "minBuild": 576},
+        {"line": "env.MADEIRA_FEX_AVX = 0", "minBuild": 576},
+        {"line": "env.MADEIRA_SPAWN_BLOCK = RockstarErrorHandler", "minBuild": 576},
+        {"line": "env.MADEIRA_X64_IMAGE_NOCOPY = 1", "minBuild": 576}
+      ],
+      "notes": [
+        "GTA San Andreas - The Definitive Edition (Steam 1547000), build 576, iPhone18,1 (11.7 GB, full memory rights, Send",
+        "Log MM0DAY): PlayGTASanAndreas.exe starts Rockstar's Launcher.exe (L8987), which starts RockstarService.exe four times",
+        "(each exits 1) and logs \"[svc] Unable to open SC manager! (1722)\" five times (L11460-21052); no services.exe is spawned",
+        "and the Dock report has no game-scm line. A Dock game session runs no Wine service manager unless",
+        "env.MADEIRA_DOCK_GAME_SCM = 1 asks for it; GTA V's logs that carry the line spawn services.exe, report game-scm=2",
+        "and keep the Launcher's window for minutes (FMWZC5). The same chain on Grand Theft Auto IV (4GAWSA, another phone",
+        "class). The game itself never started. Lines, each from GTA V's lists and kept to what the Launcher and its service",
+        "need: DOCK_GAME_SCM (the 1722 above); X64_IMAGE_NOCOPY (the pool shrank to 592 MB, the previous session ended with",
+        "a JIT-pool EXHAUSTED for an image and auto-tune proposed this line; with it the Launcher's x64 files mapped",
+        "\"without a pool copy\", no pool failure followed and the Launcher stayed up for the 50 s of the log; it is also on",
+        "GTA V's lists, for the 240 MB libcef.dll copy); FEX_AVX = 0 (auto-tune's fex-avx-on turns AVX on in the Launcher's process",
+        "only, RockstarService keeps it off and the Launcher cannot connect to it: GTA V and RDR2 logs GBY65K, Y5MEB6, A50T0Q",
+        "against 8JXT6Q, DGNRT5; the pin is the default, it only keeps that line out); SPAWN_BLOCK = RockstarErrorHandler (the",
+        "Launcher's crash handler is spawned here too, L10204; in GTA V Enhanced's build 374 log it held 17 MB of copies and",
+        "a 16 MB code buffer, and this pool shrank to 592 MB; GTA V's",
+        "\".be\\vc_redist\" part is for that list's VC++ install step, which this game's install batch does not have:",
+        "dock-installers lists the Social Club and Launcher installers only); DOCK_KEEP_ALIVE = Launcher.exe (PlayGTASanAndreas.exe",
+        "is the stub that waits for the Launcher, as PlayGTAV.exe: when the Launcher restarts itself the stub exits and the Dock",
+        "ended GTA V's session; CARRIED OVER, no log of this game shows that yet; the game's own exe name is in no log, so only",
+        "the Launcher is named). Not carried over: GTA V's engine lines and the Social Club pool layout, which no log of this",
+        "game asks for. Not tried on a device yet."
+      ]
+    },
+    {
+      "id": "unrailed-2-back-on-track",
+      "title": "Unrailed! 2: Back on Track",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [2211170],
+        "steamFolders": ["unrailed! 2 back on track"]
+      },
+      "config": [
+        "# BCD's recommended settings for Unrailed! 2: Back on Track.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.DOTNET_GCRegionRange = 400000000", "minBuild": 579}
+      ],
+      "notes": [
+        "Unrailed! 2: Back on Track (Steam 2211170), build 576, iPhone18,2 (Send Log CR8H6H): Bootstrap.exe, a .NET 7+ runtime",
+        "(Godot), stops at start with \"GC heap initialization failed with error 0x8007000E\" (E_OUTOFMEMORY) and \"Failed to",
+        "create CoreCLR\" (L28803-28817). The .NET 7+ GC reserves a range of virtual memory for its regions heap when it starts,",
+        "256 GB by default; the log's request is 0x3fd2d28000 (261421 MB), and BCD's map has no such gap: \"[mmap-place] ml1027",
+        "NO GAP FITS ... largest gap 32768 MB\", \"[jumbo] kernel-pick reserve failed (0xc0000017)\" (L28741-28742). Microsoft",
+        "documents DOTNET_GCRegionRange (hexadecimal bytes, .NET 7 and later) for exactly this E_OUTOFMEMORY; its advice is two to",
+        "five times the heap's committed size, or twice the physical memory the process has when that is unknown. BCD reports at",
+        "most 8 GB to a process (\"ml992: clamping reported physical memory 11722 MB -> 8192 MB\"), so 400000000 = 16 GB; it fits the",
+        "32 GB gap and is only reserved, never committed. DOTNET_GCHeapHardLimit would size the range too but also limits what the",
+        "GC may commit, which changes its behaviour; not used. The line needs build 579: older builds' policy for downloaded lists",
+        "does not know the name. What follows the GC start is unknown; the next stop may be the CLR's write-barrier assert",
+        "(Quaver's), for which auto-tune has its rule dotnet-wx-off. The rule has no programs: Bootstrap.exe is too generic a",
+        "name, so a copy outside Steam is not matched. Not tried on a device yet."
       ]
     },
     {

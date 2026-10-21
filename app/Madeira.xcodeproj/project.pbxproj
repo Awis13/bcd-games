@@ -81,6 +81,9 @@
 		A1000522 /* SteamKeyValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000522 /* SteamKeyValues.swift */; };
 		A1000523 /* SteamRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000523 /* SteamRuntime.swift */; };
 		A1000524 /* DockInstallers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000524 /* DockInstallers.swift */; };
+		A1000F12 /* MemoryRights.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F12 /* MemoryRights.swift */; };
+		A1000F11 /* UpdateNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F11 /* UpdateNotice.swift */; };
+		A1000F10 /* BCDUpdateCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F10 /* BCDUpdateCheck.swift */; };
 		A1000510 /* SwiftSteam/SteamSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000510 /* SteamSignIn.swift */; };
 		A1000512 /* SwiftSteam/Auth/SteamAuthAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000512 /* SteamAuthAPI.swift */; };
 		A1000513 /* SwiftSteam/Auth/SteamCredentialAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000513 /* SteamCredentialAuth.swift */; };
@@ -215,6 +218,7 @@
 		A1000B01 /* BCDCab.c in Sources */ = {isa = PBXBuildFile; fileRef = A2000B01 /* BCDCab.c */; };
 		A1000B03 /* VCRuntimeDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000B03 /* VCRuntimeDownload.swift */; };
 		A1000913 /* DockReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000913 /* DockReset.swift */; };
+		A1000F90 /* DockGameEnd.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F90 /* DockGameEnd.swift */; };
 		A1000209 /* StorageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000209 /* StorageModel.swift */; };
 		A1000211 /* SavesAndShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000211 /* SavesAndShortcuts.swift */; };
 		A1000400 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000400 /* Library.swift */; };
@@ -356,6 +360,9 @@
 		A2000522 /* SteamKeyValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SteamKeyValues.swift"; sourceTree = "<group>"; };
 		A2000523 /* SteamRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SteamRuntime.swift"; sourceTree = "<group>"; };
 		A2000524 /* DockInstallers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DockInstallers.swift"; sourceTree = "<group>"; };
+		A2000F12 /* MemoryRights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryRights.swift; sourceTree = "<group>"; };
+		A2000F11 /* UpdateNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateNotice.swift; sourceTree = "<group>"; };
+		A2000F10 /* BCDUpdateCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDUpdateCheck.swift; sourceTree = "<group>"; };
 		A2000510 /* SteamSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftSteam/SteamSignIn.swift"; sourceTree = "<group>"; };
 		A2000512 /* SteamAuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftSteam/Auth/SteamAuthAPI.swift"; sourceTree = "<group>"; };
 		A2000513 /* SteamCredentialAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftSteam/Auth/SteamCredentialAuth.swift"; sourceTree = "<group>"; };
@@ -504,6 +511,7 @@
 		A2000B02 /* BCDCab.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BCDCab.h; sourceTree = "<group>"; };
 		A2000B03 /* VCRuntimeDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCRuntimeDownload.swift; sourceTree = "<group>"; };
 		A2000913 /* DockReset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockReset.swift; sourceTree = "<group>"; };
+		A2000F90 /* DockGameEnd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockGameEnd.swift; sourceTree = "<group>"; };
 		A2000209 /* StorageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModel.swift; sourceTree = "<group>"; };
 		A2000211 /* SavesAndShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavesAndShortcuts.swift; sourceTree = "<group>"; };
 		A2000400 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
@@ -681,6 +689,9 @@
 				A2000522 /* SteamKeyValues.swift */,
 				A2000523 /* SteamRuntime.swift */,
 				A2000524 /* DockInstallers.swift */,
+				A2000F12 /* MemoryRights.swift */,
+				A2000F11 /* UpdateNotice.swift */,
+				A2000F10 /* BCDUpdateCheck.swift */,
 				A2000510 /* SteamSignIn.swift */,
 				A2000512 /* SteamAuthAPI.swift */,
 				A2000513 /* SteamCredentialAuth.swift */,
@@ -741,6 +752,7 @@
 				A2000FE0 /* FeedbackUpload.swift */,
 				A2000FE1 /* FeedbackUploadCore.swift */,
 				A2000913 /* DockReset.swift */,
+				A2000F90 /* DockGameEnd.swift */,
 				A2000209 /* StorageModel.swift */,
 				A2000211 /* SavesAndShortcuts.swift */,
 				A2000400 /* Library.swift */,
@@ -1128,6 +1140,9 @@
 				A1000522 /* SteamKeyValues.swift in Sources */,
 				A1000523 /* SteamRuntime.swift in Sources */,
 				A1000524 /* DockInstallers.swift in Sources */,
+				A1000F12 /* MemoryRights.swift in Sources */,
+				A1000F11 /* UpdateNotice.swift in Sources */,
+				A1000F10 /* BCDUpdateCheck.swift in Sources */,
 				A1000510 /* SteamSignIn.swift in Sources */,
 				A1000512 /* SteamAuthAPI.swift in Sources */,
 				A1000513 /* SteamCredentialAuth.swift in Sources */,
@@ -1187,6 +1202,7 @@
 				A1000FE0 /* FeedbackUpload.swift in Sources */,
 				A1000FE1 /* FeedbackUploadCore.swift in Sources */,
 				A1000913 /* DockReset.swift in Sources */,
+				A1000F90 /* DockGameEnd.swift in Sources */,
 				A1000209 /* StorageModel.swift in Sources */,
 				A1000211 /* SavesAndShortcuts.swift in Sources */,
 				A1000400 /* Library.swift in Sources */,

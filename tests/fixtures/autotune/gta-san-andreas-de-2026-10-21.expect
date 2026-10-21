@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "dock-game-scm"
+ ],
+ "next": [
+  "env.MADEIRA_DOCK_GAME_SCM = 1"
+ ],
+ "note": "GTA San Andreas - The Definitive Edition (Steam 1547000), build 576, iPhone18,1 (Send Log MM0DAY): PlayGTASanAndreas.exe starts Rockstar's Launcher.exe, which starts RockstarService.exe four times (each exits 1) and logs [svc] Unable to open SC manager! (1722) five times; no services.exe is spawned and the Dock report has no game-scm line. env.MADEIRA_DOCK_GAME_SCM = 1 starts Wine's service manager before the game (GTA V's sessions with it have no 1722). The fixture is replayed with no session end (the app was left, inactive): exited-early at stage 3. A user who quits at the Launcher's window after stage 3 is scored as having played, which no rule can change. Not tried on a device.",
+ "outcome": "exited-early",
+ "stage": 3,
+ "status": "trying"
+}

@@ -36,7 +36,8 @@ want = build[build.index('WANT="'):]
 want = want[:want.index('"\n', 6)]
 optin = re.search(r'OPTIN_WANT="([^"]*)"', build)
 names = optin.group(1).split() if optin else []
-check('OPTIN_WANT lists dxva2, evr and xpsprint (%s)' % names, {'dxva2', 'evr', 'xpsprint'} <= set(names))
+check('OPTIN_WANT lists dxva2, evr, xpsprint, sfc, sfc_os and tbs (Diablo II: Resurrected), twinapi.appcore (Hellblade II) (%s)' % names,
+      {'dxva2', 'evr', 'xpsprint', 'sfc', 'sfc_os', 'tbs', 'twinapi.appcore'} <= set(names))
 check('none of them is in the list shipped under its own name', not any(re.search(r'\b%s\b' % n, want) for n in names))
 opt = build[build.index('OPT=""'):]
 opt = opt[:opt.index('\nfi\n') + 4]
@@ -78,8 +79,27 @@ for name, log in (('dxva2', 'dxva2.dll'), ('xpsprint', 'XPSPRINT.DLL')):
     check('auto-tune adds %s after "Library %s ... not found", not again once linked' % (name, log),
           '"lines": ["env.MADEIRA_OPTIN_DLLS = %s"]' % name in rule and 'Library %s' % log in rule and
           'MADEIRA_OPTIN_DLLS: %s.dll -> %s-optin.dll' % (name, name) in rule)
+# Senua's Saga: Hellblade II (tester's log XJ7Z6Y, build 576): XCurl.dll and Microsoft.Xbox.Services.GDK.C.Thunks.dll import
+# api-ms-win-core-psm-appnotify-l1-1-0.dll; Wine's apisetschema.spec maps it to twinapi.appcore.dll ("[dll-missing] #1
+# twinapi.appcore.dll c0000135"), whose directory holds RegisterAppStateChangeNotification (a stub returning
+# ERROR_CALL_NOT_IMPLEMENTED) and the Psm* stubs. A dotted name: the bridge keeps it whole (only ",; " split the list, and a
+# trailing ".dll" is cut off), and the shipped file is twinapi.appcore-optin.dll.
+rule = rules[rules.index('"id": "twinapi-appcore-dll-optin"'):]
+rule = rule[:rule.index('\n    },')]
+check('auto-tune adds twinapi.appcore after "Library api-ms-win-core-psm-appnotify-l1-1-0.dll ... not found", not again once linked',
+      '"lines": ["env.MADEIRA_OPTIN_DLLS = twinapi.appcore"]' in rule and 'err:module:import_dll Library api-ms-win-core-psm-appnotify' in rule and
+      'MADEIRA_OPTIN_DLLS: twinapi.appcore.dll -> twinapi.appcore-optin.dll' in rule and '"noRetry": True' in rule)
+check('the bridge\'s link name for it is the one the rule\'s "none" signal reads: "<name>.dll -> <file>"',
+      'dll.UTF8String, file.UTF8String' in blk and 'stringByAppendingString:@".dll"' in blk and 'substringToIndex:file.length - 10' in bridge)
 fx = root / 'tests/fixtures/autotune'
-check('fixtures prove the rules', any(fx.glob('fort-solis-*.expect')) and any(fx.glob('animal-well-*.expect')))
+check('fixtures prove the rules', any(fx.glob('fort-solis-*.expect')) and any(fx.glob('animal-well-*.expect')) and
+      any(fx.glob('hellblade-2-*.expect')))
+import json
+recs = json.loads((root / 'recommended/recommendations.json').read_text())
+# Senua's Saga: Hellblade II has no list: its only log (XJ7Z6Y) was a copy outside Steam (the lead, round 579); the
+# twinapi.appcore DLL and the auto-tune rule are engine-level and stay. No list may name twinapi.appcore before build 579.
+named = [r['id'] for r in recs['rules'] if 'twinapi.appcore' in json.dumps(r)]
+check("no list names twinapi.appcore (Hellblade II's only log was a copy; the DLL and the rule stay engine-level)", named == [])
 wf = (root / '.github/workflows/build-ipa.yml').read_text()
 check('CI runs this check', 'python3 tests/host/check-optin-dlls.py' in wf)
 print('PASS: opt-in DLLs' if ok else 'FAILED: opt-in DLLs')

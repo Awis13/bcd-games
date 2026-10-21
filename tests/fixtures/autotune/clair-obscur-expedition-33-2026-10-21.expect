@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x64-image-nocopy",
+  "pool-split-exhausted"
+ ],
+ "next": [
+  "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+ ],
+ "note": "Clair Obscur: Expedition 33 (Steam 1903340), build 576, iPhone18,1 (Send Log YBF7CN): a 560 MB pool filled with x64 DLL copies (74 MiB libxess.dll, amd_fidelityfx_upscaler_dx12.dll); the failed loads hand the game NULL and it idles. Images are small, so both JIT-pool rules match and x64-image-nocopy comes first (as GTA V Enhanced, RDR2, HFW). Not tried on a device.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

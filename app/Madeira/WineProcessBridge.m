@@ -658,6 +658,24 @@ static BOOL madeira_bundle_has_i386(NSString *bundle)
     return access(ntdll.fileSystemRepresentation, R_OK) == 0;
 }
 
+/* madeira-bcd cmd-bundle (round 579): the Windows command interpreter is the one
+ * program whose session core cannot be left to the name heuristic. Library.swift
+ * starts every .bat/.cmd entry as "C:\windows\system32\cmd.exe /c <file>" (a
+ * backslash path, so the heuristic picks arm64ec-windows), but cmd.exe is shipped
+ * only as a native aarch64 program (aarch64-windows and i386-windows; arm64ec-windows
+ * has none) and a native ARM64 process cannot load the ARM64EC kernel32: "could not
+ * load kernel32.dll, status c000007b" after 0.5 s (VSWVB0, JFFRDP, H579EM, ZSRKW7).
+ * For cmd.exe, and only for it, the core is aarch64-windows, the one the Wine desktop
+ * (explorer.exe /desktop=... cmd /c x.bat) already runs it in. The name is matched
+ * exactly, bare or in system32: a program of the user's own called cmd.exe lives in
+ * another folder and keeps the heuristic's answer. A pure function, compiled by
+ * tests/host/check-cmd-bundle.py. */
+static BOOL madeira_target_is_cmd(const char *exe)
+{
+    return exe && (strcasecmp(exe, "cmd.exe") == 0 ||
+                   strcasecmp(exe, "C:\\windows\\system32\\cmd.exe") == 0);
+}
+
 /* C:\windows\syswow64: the i386 farm, the Windows name for this pattern. A
  * 32-bit process's system32 is redirected here, and the unix loader's
  * machine -> directory mapping looks here for the 32-bit ntdll, kernel32 and
@@ -1661,6 +1679,11 @@ static void *wine_process_thread(void *arg) {
                 is_i386_target ? " (i386: WoW64)" :
                 target_machine == MADEIRA_IMAGE_FILE_MACHINE_I386 ? " (i386, but the bundle has no i386-windows)" : "");
         if (is_i386_target) use_arm64ec = NO;
+        if (madeira_target_is_cmd(madeira_exe)) {   /* madeira-bcd cmd-bundle: cmd.exe is aarch64-only, see madeira_target_is_cmd */
+            if (use_arm64ec)
+                dprintf(STDERR_FILENO, "[WineProc] cmd.exe exists only in aarch64-windows: that core runs it (the name heuristic's arm64ec-windows ends in c000007b)\n");
+            use_arm64ec = NO;
+        }
         const char *bundle_subdir = use_arm64ec ? "arm64ec-windows" : "aarch64-windows";
         LOG("Target exe: %{public}s (bundle=%{public}s)", madeira_exe, bundle_subdir);
         dprintf(STDERR_FILENO, "[WineProc] Target exe: %s (bundle=%s)\n", madeira_exe, bundle_subdir);
@@ -2521,6 +2544,24 @@ void wine_session_abandon(void)
     dprintf(STDERR_FILENO, "[WineProc] madeira-bcd: the program exited (status %d) on a thread other than the boot thread "
             "%.1f s ago and __wine_main never returned; ending the session here\n", (int)code, seconds);
     wine_session_end();
+}
+
+/* madeira-bcd (round 579, BCD Dock): a Dock session's initial program is Wine's desktop (explorer), which never ends by
+ * itself on iOS, so a game that died (Dying Light 32FEAT, The Binding of Isaac VV5NHZ: c0000005, the host reported the game
+ * over and finished) left the session on its dead desktop for good. The library's watch (LibraryModel.watchDockGameEnd,
+ * DockGameEnd.swift) calls this once it has seen the game's last process end with an error status, nothing of the game
+ * left, the grace time passed and the host finished. The status becomes the session's exit status
+ * (wine_crash_exit_status: the library's exit report and its crash status), then the end work runs, as
+ * wine_session_abandon does. Wine's own programs are idle and are not waited for. Returns 1 when it ended the session. */
+int wine_session_dock_game_ended(int32_t status)
+{
+    uint64_t none = 0;
+    if (!g_wine_running || __atomic_load_n(&g_session_end_claim, __ATOMIC_ACQUIRE)) return 0;
+    __atomic_compare_exchange_n(&g_launch_exit, &none, (UINT64_C(1) << 32) | (uint32_t)status, 0, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE);
+    dprintf(STDERR_FILENO, "[WineProc] madeira-bcd: the Dock game's last process ended with status 0x%x and nothing of it is left; "
+            "ending the session here\n", (unsigned)status);
+    wine_session_end();
+    return 1;
 }
 
 int wine_process_start(const char *prefix_path) {

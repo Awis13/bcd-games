@@ -2,13 +2,12 @@
  "dialogs": [],
  "end": {},
  "matched": [
-  "x64-image-nocopy",
-  "pool-split-exhausted"
+  "x64-image-nocopy"
  ],
  "next": [
   "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
  ],
- "note": "Spelunky 2 (Spel2.exe), build 574, iPad16,3 (Send Log J2YJF8): no hole fits the 896 MB pool (ml1036), the pool shrinks and fills while DLLs load ([jit-pool] EXHAUSTED, STATUS_NO_MEMORY); the same signature as Counter-Strike 2 on the owner's iPhone18,2, where x64-image-nocopy did not help and pool-split = 1 started the game. noRetry: the first line comes at once, no unchanged retry; pool-split follows nocopy",
+ "note": "Spelunky 2 (Spel2.exe), build 574, iPad16,3 (Send Log J2YJF8): no hole fits the 896 MB pool (ml1036), the pool shrinks and fills while DLLs load ([jit-pool] EXHAUSTED, STATUS_NO_MEMORY); the same signature as Counter-Strike 2 on the owner's iPhone18,2, where x64-image-nocopy did not help and pool-split = 1 started the game. noRetry: the first line comes at once, no unchanged retry. Build 579: the exe is a 558 MiB image (Spel2.exe, SizeOfImage 0x22e73000), which no region of a split pool can take, so pool-split-exhausted (imageMaxMB 300) no longer follows nocopy here; Send Log JBNAZ1 (build 574, iPad16,3, a 512 MB pool) ran with env.MADEIRA_X64_IMAGE_NOCOPY = 1 and loaded the exe",
  "outcome": "crashed",
  "stage": 2,
  "status": "trying"

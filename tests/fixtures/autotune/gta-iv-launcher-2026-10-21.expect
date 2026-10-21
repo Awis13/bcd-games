@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "dock-game-scm"
+ ],
+ "next": [
+  "env.MADEIRA_DOCK_GAME_SCM = 1"
+ ],
+ "note": "Grand Theft Auto IV: The Complete Edition (Steam 12210), build 576, iPad13,6 (no memory entitlements; Send Log 4GAWSA): PlayGTAIV.exe starts Rockstar's Launcher.exe and the same RockstarService.exe / [svc] Unable to open SC manager! (1722) chain as GTA San Andreas DE (MM0DAY); no services.exe, no game-scm line. env.MADEIRA_DOCK_GAME_SCM = 1 starts Wine's service manager before the game. Replayed with no session end: exited-early at stage 2. Not tried on a device.",
+ "outcome": "exited-early",
+ "stage": 2,
+ "status": "trying"
+}

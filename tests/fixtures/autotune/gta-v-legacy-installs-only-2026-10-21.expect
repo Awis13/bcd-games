@@ -1,0 +1,13 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [],
+ "next": [],
+ "note": "Grand Theft Auto V Legacy (Steam 271590), build 576, iPhone17,2 (NM88NQ, 10:44): the installs-only session with choice=run: both Rockstar installs succeeded (lines 7448, 23555-23556, 'end succeeded=2 failed=0'), 45 s later the restart was offered and BCD quit itself ('[session-once] closed by the user for a restart', line 25995). The next start (FMWZC5 line 28) scored it 'killed at stage 3 after 60 s; matched swap-8gb-memory-kill,swap-8gb-more' after asking what happened. The end is reconstructed: the user's 'It closed by itself' answer reproduces that line exactly (the marker's own memory limit is not in the log); the same end now gives an inconclusive session that is neither scored nor asked about (round 579)",
+ "outcome": "inconclusive",
+ "stage": 3,
+ "status": "baseline"
+}

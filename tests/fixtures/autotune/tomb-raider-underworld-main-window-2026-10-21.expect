@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "wow-window-main-image-hang"
+ ],
+ "next": [],
+ "note": "Tomb Raider: Underworld (Steam 8140, 32-bit tru.exe) started from the library (Start with: the game), build 576, iPhone12,1 (Send Log ZWAA2K): the 32-bit main program could not get its 4 GB window ([wow-window] main-process reserve FAILED 0xc0000017, 6319 MB free of 4096 + MADEIRA_WOW_MIN_FREE_GB left over); fatal_error() ended the boot thread with pthread_exit, the session never ended and the app showed running for 3 minutes (detach-wait running=1). Build 579 leaves by the normal exit: the session ends at once and says so. The cause (the install's address space) is not changed",
+ "outcome": "hung",
+ "stage": 3,
+ "status": "known"
+}

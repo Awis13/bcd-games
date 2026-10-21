@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "cmd-exe-arm64ec-core"
+ ],
+ "next": [],
+ "note": "A .bat library entry (Play NeoEE.bat, Empire Earth, build 576, iPad17,3): cmd.exe /c <file> started in the arm64ec-windows core, could not load kernel32.dll, status c000007b after 0.5 s; fixed in 579 (madeira_target_is_cmd). JFFRDP, H579EM, ZSRKW7 (build 574) show the same lines.",
+ "outcome": "crashed",
+ "stage": 1,
+ "status": "known"
+}

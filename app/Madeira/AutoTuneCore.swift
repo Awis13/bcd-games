@@ -49,6 +49,11 @@ struct AutoTuneRule: Codable {
     /// How far the session got (AutoTuneLogFacts.stage).
     var minStage: Int?
     var maxStage: Int?
+    /// The largest image that got no JIT-pool copy ("[jit-pool] EXHAUSTED (image BASE+SIZE)") was at most this many
+    /// MiB. A session whose log has no such line passes (an anonymous allocation that failed, or no pool failure).
+    /// pool-split-exhausted uses it: no region of a split pool takes an image of 300 MiB or more after the 100-190 MiB of
+    /// Wine copies that are already placed, so the attempt cannot help (Stellar Blade Demo, FINAL FANTASY RESONANCE DEMO).
+    var imageMaxMB: Int?
     /// May replace a line auto-tune kept earlier with the same key (a larger swap file
     /// after the first was not enough). Never a key the user sets.
     var upgrade: Bool?
@@ -136,9 +141,23 @@ struct AutoTuneLogFacts: Codable, Equatable {
     /// build nor a download has Wine Mono" line is written at every start of a device without
     /// Mono, for games that do not need .NET too.
     var monoMissing = false
+    /// The largest image in the log's "[jit-pool] EXHAUSTED (image 0xBASE+0xSIZE)" lines, in MiB (rounded down): the
+    /// loader found no room in the JIT pool for that image's copy. nil when no image failed that way.
+    var jitImageFailMB: Int?
     /// Crash evidence already in the log when the user asked to quit: a Steam game through
     /// Madeira Dock can crash and leave the session open until the user closes it.
     var crashEvidenceAtQuit: Int?
+    /// This app run was a Madeira Dock session of the one-time installs only ("[madeira-dock] app N: this session runs only
+    /// the one-time installs; the host starts after a restart"): no game runs in it.
+    var installsOnly = false
+    /// The install batch ended ("[dock-installers] end succeeded=N failed=M of=T; the session ends, the game starts after a
+    /// restart"): what the session does after that is BCD's own restart, not the game.
+    var installsEnded = false
+    /// The one-time installs are over and no game ran: BCD closes the session itself for a restart (Grand Theft Auto V's
+    /// Rockstar installs, NM88NQ), or an installer's helper failed and the batch ended with it (Saints Row: The Third's DirectX
+    /// setup, T3P8HK). Such a run is no session of the game: nothing in it is a failure of the game's settings. A batch that
+    /// never ended (Batman: Arkham City's .NET setup) is not this: its hang is scored as before.
+    var installsOver: Bool { installsOnly && installsEnded }
 
     var crashEvidence: Int { unhandled + errorExits + (runtimeErrorDialog ? 1 : 0) + (exitStatus == nil ? 0 : 1) }
 }
@@ -267,6 +286,10 @@ final class AutoTuneLogScanner {
     private static let mWineStart = Array("[phase] wine-start".utf8)
     private static let mModule = Array("Load module ".utf8)
     private static let mX64Image = Array("[x64-image]".utf8)
+    private static let mJitImageFail = Array("[jit-pool] EXHAUSTED (image 0x".utf8)
+    /// "+0x" as bytes, not as an Array("...".utf8) literal: tools/autotune-fixture.py keeps every line a literal of that
+    /// shape matches, and "+0x" would match far more than the pool's line.
+    private static let mPlus0x: [UInt8] = [0x2B, 0x30, 0x78]
     private static let mPresenting = Array("Game is presenting (#1".utf8)
     private static let mSettled = Array("Early detach: game presenting and settled".utf8)
     private static let mAlive = Array("[freeze] alive t+".utf8)
@@ -305,6 +328,14 @@ final class AutoTuneLogScanner {
     private static let mMonoMissing = Array("Wine Mono is not installed".utf8)
     private static let mWinName = Array("[win-name] #".utf8)
     private static let mText = Array(" text=\"".utf8)
+    /// The app's own words for a Madeira Dock session that runs only the one-time installs: in the "[madeira-dock] app N: ..." line
+    /// and again in the "[dock-installers] app=N ..." line, once per such session and in no other.
+    private static let mInstallsOnly = Array("this session runs only the one-time installs".utf8)
+    private static let mInstallsEnded = Array("[dock-installers] end succeeded=".utf8)
+    /// Window titles that read like an error and are not one. GameMaker's runner creates a hidden form named "Error Messages"
+    /// at start, long before the game's own window (Hotline Miami, logs 339R82 and 1VPXSG, lines 1913 and 1919 of 12,400);
+    /// counted as the game's error box it made a game that ended itself with exit 0 a "crash".
+    private static let notDialogs: Set<String> = ["Error Messages"]
     private static let errorWords = ["error", "Error", "ERROR", "could not", "Could not", "Could Not", "failed", "Failed",
                                      "not supported", "unable", "Unable", "cannot", "Cannot", "Fatal", "fatal"].map { Array($0.utf8) }
 
@@ -321,6 +352,10 @@ final class AutoTuneLogScanner {
         if facts.stage < 2, S.find(l, S.mModule) != nil || S.find(l, S.mX64Image) != nil { facts.stage = 2 }
         if facts.stage < 3, S.find(l, S.mPresenting) != nil { facts.stage = 3 }
         if facts.stage < 4, S.find(l, S.mSettled) != nil { facts.stage = 4 }
+        if let at = S.find(l, S.mJitImageFail),
+           let size = S.number(UnsafeRawBufferPointer(rebasing: l[at...]), after: S.mPlus0x, hex: true) {
+            facts.jitImageFailMB = max(facts.jitImageFailMB ?? 0, Int(min(size >> 20, 1 << 20)))
+        }
         if let v = S.number(l, after: S.mAlive) { facts.aliveSeconds = max(facts.aliveSeconds, Int(v)) }
         if facts.limitMB == nil, let at = S.find(l, S.mLimitLine),
            let v = S.number(UnsafeRawBufferPointer(rebasing: l[at...]), after: S.mLimitEq), v >= 1024, v <= 65536 {
@@ -355,6 +390,8 @@ final class AutoTuneLogScanner {
             || S.find(l, S.mChildNegative) != nil || S.find(l, S.mInitFailed) != nil
             || S.find(l, S.mObjCException) != nil || S.find(l, S.mRedelivKill) != nil { facts.errorExits += 1 }
         if !facts.monoMissing, S.find(l, S.mMscoreeErr) != nil, S.find(l, S.mMonoMissing) != nil { facts.monoMissing = true }
+        if !facts.installsOnly, S.find(l, S.mInstallsOnly) != nil { facts.installsOnly = true }
+        if !facts.installsEnded, S.find(l, S.mInstallsEnded) != nil { facts.installsEnded = true }
         if facts.dialogs.count < 4, S.find(l, S.mWinName) != nil, let t = S.find(l, S.mText) {
             let start = t + S.mText.count
             var end = start
@@ -362,7 +399,7 @@ final class AutoTuneLogScanner {
             let text = String(decoding: UnsafeRawBufferPointer(rebasing: l[start..<min(end, start + 200)]), as: UTF8.self)
             // A caption alone ("Critical error") says less than the box's own line; keep both, once each.
             if S.errorWords.contains(where: { S.find(UnsafeRawBufferPointer(rebasing: l[start..<end]), $0) != nil }),
-               !facts.dialogs.contains(text) { facts.dialogs.append(text) }
+               !S.notDialogs.contains(text), !facts.dialogs.contains(text) { facts.dialogs.append(text) }
         }
     }
 }
@@ -406,6 +443,9 @@ struct AutoTuneReport: Codable, Equatable {
     /// The session failed and a .NET Framework program in it found no Wine Mono
     /// (AutoTuneLogFacts.monoMissing). Optional, so that a saved state without it still loads.
     var monoMissing: Bool?
+    /// The largest image that got no JIT-pool copy, in MiB (AutoTuneLogFacts.jitImageFailMB). Optional, so that a saved
+    /// state without it still loads.
+    var jitImageFailMB: Int?
 
     var failed: Bool { ["crashed", "killed", "hung", "exited-early"].contains(outcome) }
     var played: Bool { outcome == "ran" || outcome == "quit" }
@@ -415,6 +455,12 @@ enum AutoTuneEngine {
     static let maxAttempts = 8
 
     static func outcome(_ end: AutoTuneSessionEnd, _ f: AutoTuneLogFacts) -> String {
+        // madeira-bcd (round 579): an app run that only ran the one-time installs (Dock, DockInstallers.installsOnly), and whose
+        // batch ended, ran no game: BCD closes it for a restart (the next start asked what happened, the user said "closed by
+        // itself", and it was scored "killed ... matched swap-8gb-memory-kill": GTA V Legacy NM88NQ), or an installer's helper
+        // failed (Saints Row: The Third's DirectX setup, T3P8HK, scored "crashed" and given exe-window-mb = 512 for the game).
+        // Nothing to learn about the game's settings.
+        if f.installsOver { return "inconclusive" }
         let crashedInLog = f.unhandled > 0 || f.runtimeErrorDialog || f.exitStatus != nil || f.errorExits > 0
             || (!f.dialogs.isEmpty && f.stage < 4)
         if end.killed {
@@ -471,7 +517,7 @@ enum AutoTuneEngine {
         let r = AutoTuneReport(outcome: out, stage: stage, seconds: max(end.seconds, Double(f.aliveSeconds)),
                                presents: presents, peakMB: f.peakFootprintMB, dock: f.dock,
                                d3d12: f.d3d12, ramMB: f.ramMB, matched: [], evidence: scanner.evidence,
-                               dialogs: f.dialogs, build: f.build)
+                               dialogs: f.dialogs, build: f.build, jitImageFailMB: f.jitImageFailMB)
         var report = r
         if f.monoMissing && report.failed { report.monoMissing = true }
         report.matched = rules.filter { matches($0, report: r, counts: scanner.counts, signals: signals) }
@@ -506,6 +552,7 @@ enum AutoTuneEngine {
         if let hi = rule.ramMaxMB, (report.ramMB ?? Int.max) > hi { return false }
         if let lo = rule.minStage, report.stage < lo { return false }
         if let hi = rule.maxStage, report.stage > hi { return false }
+        if let hi = rule.imageMaxMB, let image = report.jitImageFailMB, image > hi { return false }
         guard !rule.all.isEmpty, rule.all.allSatisfy(seen) else { return false }
         if let any = rule.any, !any.isEmpty, !any.contains(where: seen) { return false }
         if let none = rule.none, none.contains(where: seen) { return false }

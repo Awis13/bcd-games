@@ -556,13 +556,13 @@ check('it says what it linked', 'MADEIRA_OPTIN_DLLS: %s -> %s' in blk)
 # ---- policy, catalog, recommendation, auto-tune, CI -----------------------------
 policy = (root / 'app/Madeira/GameRecommendationsList.swift').read_text()
 check('RecommendationsPolicy lets a downloaded list name setupapi (and still only the shipped -optin names)',
-      '["dxva2", "evr", "xpsprint", "setupapi"].contains($0)' in policy and
-      'may only name dxva2, evr, xpsprint or setupapi' in policy)
+      '["dxva2", "evr", "xpsprint", "sfc", "sfc_os", "tbs", "twinapi.appcore", "setupapi"].contains($0)' in policy and
+      'may only name dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore or setupapi' in policy)
 gen = (root / 'build/tools/gen-config-catalog.py').read_text()
 note = gen[gen.index('"env.MADEIRA_OPTIN_DLLS": {'):]
 note = note[:note.index('"env.MADEIRA_WINTYPES"')]
 check('the catalog note names setupapi and says it is the one name shipped for every game',
-      '(dxva2, evr, xpsprint, setupapi)' in note and 'setupapi is the one name BCD already ships for every game' in note and
+      '(dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore, setupapi)' in note and 'setupapi is the one name BCD already ships for every game' in note and
       'tools/patch-wine-setupapi-devinst-lock.py' in note)
 recs = json.loads((root / 'recommended/recommendations.json').read_text())
 dying = [r for r in recs['rules'] if r['id'] == 'dying-light']

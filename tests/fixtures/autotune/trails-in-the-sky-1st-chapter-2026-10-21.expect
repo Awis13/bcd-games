@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "vdcfg-virtual-path"
+ ],
+ "next": [
+  "env.MADEIRA_VDCFG_PATH = 1"
+ ],
+ "note": "Trails in the Sky 1st Chapter, Dock start, build 578 (24VADD): QueryDisplayConfig answers 0 paths after GetDisplayConfigBufferSizes said 1; NULL read at sora_1st.exe+0x5215E0 2 s after the game starts",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

@@ -1498,6 +1498,218 @@ static int ios_xp_cmp_u64( const void *a, const void *b )
     return x < y ? -1 : x > y;
 }
 
+/* madeira-bcd (round 579): [spin] ml1140 -- a guest thread that makes millions of the same cheap call a second.
+ *
+ * Stardew Valley (BD8079, S4QB4S, XK1A2J, build 576): about 10 s after the process starts, one or two threads of the
+ * .NET runtime call GetLastError / SetLastError 12-19 million times a second for as long as the log goes on, with no
+ * window and no syscall in between ([xp-api] x64->EC, [xp-api-top] names only the callee). [thread-sample] puts them in
+ * coreclr.dll+0x22f40..0x25555, but the older [spin] ml677 snapshot (signal_arm64_ios.c, ios_dump_all_thread_stacks)
+ * keys on ONE 4 KB host-pc window and a loop that alternates between FEX's code cache and the ARM64EC copy of
+ * kernelbase / ntdll never sits in one: it printed nothing. This one keys on what the xprobe already measures: the
+ * x64->EC call rate with one target taking nearly all of the sampled calls, for several reports in a row.
+ *
+ * It runs on the xprobe thread (the only reader of these counters), once a second does nothing but compare two numbers;
+ * on the first hit it looks at the one or two Wine threads that used >= 80% of a core: their registers (the ARM64EC
+ * register mapping, as [x86_live]), the x86 code around the guest RIP, and the return addresses on the x86 stack that
+ * have a CALL right before them, with module and offset. Twice at most for one streak (4 s and 20 s: does the loop
+ * move?), three looks a run. With MADEIRA_LEAN_DIAG no thread is touched: one line only. Off the hot path: nothing runs
+ * in the game's threads and nothing is recorded per call. */
+static int ios_lean_diag;   /* defined with the sampler below */
+
+/* spin-test:begin (tests/host/check-spin-diag.py compiles this region) */
+#define IOS_SPIN_RATE   5.0e6     /* x64->EC calls per second, all threads */
+#define IOS_SPIN_SHARE  0.80      /* of the sampled call targets, the same one */
+#define IOS_SPIN_SECS   4         /* consecutive reports (about 1 s each) */
+#define IOS_SPIN_AGAIN  20        /* a second look at the same streak */
+#define IOS_SPIN_SHOTS  3         /* looks per run */
+struct ios_spin_state { uint64_t callee; int streak, shots; };
+
+/* One report in, 0 (nothing), 1 (first look) or 2 (second look) out. */
+static int ios_spin_step( struct ios_spin_state *s, double rate, uint64_t top, double share )
+{
+    if (rate < IOS_SPIN_RATE || !top || share < IOS_SPIN_SHARE) { s->callee = 0; s->streak = 0; return 0; }
+    if (top != s->callee) { s->callee = top; s->streak = 0; }
+    s->streak++;
+    if (s->shots >= IOS_SPIN_SHOTS) return 0;
+    if (s->streak == IOS_SPIN_SECS) { s->shots++; return 1; }
+    if (s->streak == IOS_SPIN_AGAIN) { s->shots++; return 2; }
+    return 0;
+}
+
+/* b: the 8 bytes right before an address v. A return address has a CALL immediately before it: E8 rel32 (5 bytes), or
+ * FF /2 (2 to 7 bytes, whose length the ModRM / SIB / displacement say). NULL: not preceded by a call. */
+static const char *ios_spin_call_kind( const unsigned char b[8] )
+{
+    int len;
+    if (b[3] == 0xe8) return "call rel32";
+    for (len = 2; len <= 7; len++)
+    {
+        const unsigned char *p = b + 8 - len;
+        int mod, rm, want;
+        if (p[0] != 0xff || ((p[1] >> 3) & 7) != 2) continue;
+        mod = p[1] >> 6; rm = p[1] & 7;
+        if (mod == 3) want = 2;
+        else if (mod == 0) want = rm == 5 ? 6 : rm == 4 ? ((len >= 3 && (p[2] & 7) == 5) ? 7 : 3) : 2;
+        else if (mod == 1) want = rm == 4 ? 4 : 3;
+        else want = rm == 4 ? 7 : 6;
+        if (want == len) return "call indirect";
+    }
+    return NULL;
+}
+
+static void ios_spin_hex( const unsigned char *b, int n, char *out )
+{
+    int i;
+    for (i = 0; i < n; i++) { out[i * 3] = "0123456789abcdef"[b[i] >> 4]; out[i * 3 + 1] = "0123456789abcdef"[b[i] & 15]; out[i * 3 + 2] = ' '; }
+    out[n ? n * 3 - 1 : 0] = 0;
+}
+/* spin-test:end */
+
+/* The module list of the process a TEB belongs to, into a caller-owned array (the xprobe's own map follows ONE process and
+ * the sampler's is shared with another thread). */
+static int ios_spin_modmap( uint64_t teb, struct ios_xp_mod *out, int cap )
+{
+    uint64_t peb = 0, ldr = 0, head, cur; int guard = 0, n = 0;
+    if (!teb || !ios_ts_read( teb + 0x60, &peb, 8 ) || !peb || !ios_ts_read( peb + 0x18, &ldr, 8 ) || !ldr) return 0;
+    head = ldr + 0x10;
+    if (!ios_ts_read( head, &cur, 8 )) return 0;
+    while (cur && cur != head && guard++ < 400 && n < cap)
+    {
+        uint64_t base = 0, buf = 0, next = 0; uint32_t size = 0; uint16_t len = 0, w[40]; int k;
+        if (!ios_ts_read( cur + 0x30, &base, 8 ) || !ios_ts_read( cur + 0x40, &size, 4 ) ||
+            !ios_ts_read( cur + 0x58, &len, 2 ) || !ios_ts_read( cur + 0x60, &buf, 8 )) break;
+        if (base && size)
+        {
+            struct ios_xp_mod *m = &out[n++];
+            m->base = base; m->size = size; len /= 2; if (len > 39) len = 39;
+            if (len && ios_ts_read( buf, w, len * 2 )) { for (k = 0; k < len; k++) m->name[k] = w[k] < 128 ? (char)tolower( w[k] ) : '?'; m->name[len] = 0; }
+            else strcpy( m->name, "?" );
+        }
+        if (!ios_ts_read( cur, &next, 8 )) break;
+        cur = next;
+    }
+    return n;
+}
+static void ios_spin_where( const struct ios_xp_mod *mods, int n, uint64_t a, char *out, size_t cap )
+{
+    int i;
+    for (i = 0; i < n; i++)
+        if (a >= mods[i].base && a < mods[i].base + mods[i].size) { snprintf( out, cap, "%s+0x%llx", mods[i].name, (unsigned long long)(a - mods[i].base) ); return; }
+    snprintf( out, cap, "no module" );
+}
+
+static void ios_spin_capture( const char *wall, int look, double rate, double share, int streak, uint64_t top, const char *top_sym )
+{
+    extern int ios_jit_pool_image_pc( uintptr_t pc, uintptr_t *pe_addr_out );
+    extern uint64_t ios_native_rip_from_hostpc( uint64_t, uint64_t, const char ** );
+    mach_port_t self_port = pthread_mach_thread_np( pthread_self() );
+    thread_act_array_t tl; mach_msg_type_number_t tc; unsigned k; int seen = 0;
+    static struct ios_xp_mod mods[160];
+
+    wine_log_write( "[spin] ml1140 %s look %d: x64->EC %.0f/s, %.0f%% of the sampled calls for %d s go to %s (0x%llx)%s",
+                    wall, look, rate, share * 100.0, streak, top_sym, (unsigned long long)top,
+                    ios_lean_diag ? "; MADEIRA_LEAN_DIAG: no thread is looked at" : "" );
+    if (ios_lean_diag) return;
+    if (task_threads( mach_task_self(), &tl, &tc ) != KERN_SUCCESS) return;
+    for (k = 0; k < tc && seen < 2; k++)
+    {
+        thread_basic_info_data_t bi; mach_msg_type_number_t bic = THREAD_BASIC_INFO_COUNT;
+        arm_thread_state64_t st; mach_msg_type_number_t cnt = ARM_THREAD_STATE64_COUNT;
+        uint64_t teb, frame[16], rip_exact = 0, rip_state = 0, rsp = 0, stack_base = 0, stack_limit = 0, bb = 0, stk[96];
+        unsigned char code[128], before[8];
+        int have_frame, have_code, have_stk, nmods, cand, wtid = 0, ni;
+        const char *why = "", *rsp_note = "";
+        pthread_t pt;
+        uint64_t cands[3];
+        char where[96], rwhere[96], hex[128 * 3 + 4], line[1000];
+        if (tl[k] == self_port) continue;
+        if (thread_info( tl[k], THREAD_BASIC_INFO, (thread_info_t)&bi, &bic ) != KERN_SUCCESS || bi.cpu_usage < 800) continue;
+        pt = pthread_from_mach_thread_np( tl[k] );   /* before the suspend: libpthread's list lock must never be taken by a suspended thread's owner */
+        if (!(teb = ios_ts_teb( pt ))) continue;
+        if (thread_suspend( tl[k] ) != KERN_SUCCESS) continue;
+        if (thread_get_state( tl[k], ARM_THREAD_STATE64, (thread_state_t)&st, &cnt ) != KERN_SUCCESS) { thread_resume( tl[k] ); continue; }
+        /* Everything read here is a plain read of a few hundred bytes (vm_read_overwrite, no lock): the thread is held for
+         * microseconds. */
+        have_frame = st.__x[28] > 0x10000 && ios_ts_read( st.__x[28] + 0x18, frame, sizeof(frame) );
+        ios_ts_read( st.__x[28], &bb, 8 );
+        ios_ts_read( teb + 0x08, &stack_base, 8 );
+        ios_ts_read( teb + 0x10, &stack_limit, 8 );
+        ios_ts_read( teb + 0x48, &wtid, 4 );
+        {   /* the x86 RSP: x23 while the thread runs FEX-translated code, sp while it runs ARM64EC code (the guest stack is the host stack there) */
+            uintptr_t pe_probe = 0;
+            int in_ec = ios_jit_pool_image_pc( (uintptr_t)arm_thread_state64_get_pc( st ), &pe_probe );
+            cands[0] = in_ec ? arm_thread_state64_get_sp( st ) : st.__x[23];
+            cands[1] = in_ec ? st.__x[23] : arm_thread_state64_get_sp( st );
+            cands[2] = have_frame ? frame[1 + 4] : 0;
+        }
+        for (cand = 0; cand < 3; cand++)
+            if (cands[cand] >= stack_limit && cands[cand] < stack_base && !(cands[cand] & 7)) { rsp = cands[cand]; break; }
+        rsp_note = rsp ? "" : " (outside the TEB's stack range: the first readable candidate)";
+        for (cand = 0; cand < 3 && !rsp; cand++)   /* the TEB's range need not be the guest stack's (a WoW64 or EC stack): the first readable one, said so */
+            if (cands[cand] >= 0x100000000ULL && !(cands[cand] & 7) && ios_ts_read( cands[cand], &bb, 8 )) rsp = cands[cand];
+        have_stk = rsp && ios_ts_read( rsp, stk, sizeof(stk) );
+        rip_state = have_frame ? frame[0] : 0;
+        if (bb > 0x10000) rip_exact = ios_native_rip_from_hostpc( bb, arm_thread_state64_get_pc( st ), &why );
+        have_code = 0;
+        {
+            uint64_t at = rip_exact ? rip_exact : rip_state;
+            if (at > 64) have_code = ios_ts_read( at - 32, code, sizeof(code) );
+            if (!have_code && at) { memset( code, 0, sizeof(code) ); have_code = ios_ts_read( at, code + 32, 96 ); }
+        }
+        thread_resume( tl[k] );
+        seen++;
+
+        nmods = ios_spin_modmap( teb, mods, 160 );
+        {
+            uint64_t at = rip_exact ? rip_exact : rip_state; uintptr_t pe = 0; const char *cls;
+            uint64_t pc = arm_thread_state64_get_pc( st );
+            ios_spin_where( mods, nmods, at, where, sizeof(where) );
+            cls = ios_jit_pool_image_pc( (uintptr_t)pc, &pe ) ? "ARM64EC image copy" : "FEX code or native";
+            wine_log_write( "[spin] ml1140 thread %04x teb=0x%llx cpu=%d%% host pc=0x%llx (%s) lr=0x%llx sp=0x%llx x23=0x%llx | guest RIP exact=0x%llx (%s) State.rip=0x%llx%s",
+                            (unsigned)wtid, (unsigned long long)teb, bi.cpu_usage / 10, (unsigned long long)pc, cls,
+                            (unsigned long long)arm_thread_state64_get_lr( st ), (unsigned long long)arm_thread_state64_get_sp( st ),
+                            (unsigned long long)st.__x[23], (unsigned long long)rip_exact, rip_exact ? where : why,
+                            (unsigned long long)rip_state, have_frame ? "" : " (frame unreadable)" );
+        }
+        /* The x86 registers by the ARM64EC mapping (as [x86_live]); exact while the thread is in translated or EC code. */
+        wine_log_write( "[spin] ml1140   RAX=0x%llx RCX=0x%llx RDX=0x%llx RBX=0x%llx RSP=0x%llx RBP=0x%llx RSI=0x%llx RDI=0x%llx"
+                        " R8=0x%llx R9=0x%llx R10=0x%llx R11=0x%llx R12=0x%llx R13=0x%llx R14=0x%llx R15=0x%llx",
+                        (unsigned long long)st.__x[8], (unsigned long long)st.__x[0], (unsigned long long)st.__x[1], (unsigned long long)st.__x[27],
+                        (unsigned long long)rsp, (unsigned long long)st.__fp, (unsigned long long)st.__x[25], (unsigned long long)st.__x[26],
+                        (unsigned long long)st.__x[2], (unsigned long long)st.__x[3], (unsigned long long)st.__x[4], (unsigned long long)st.__x[5],
+                        (unsigned long long)st.__x[19], (unsigned long long)st.__x[20], (unsigned long long)st.__x[21], (unsigned long long)st.__x[22] );
+        if (have_code)
+        {
+            ios_spin_hex( code, (int)sizeof(code), hex );
+            wine_log_write( "[spin] ml1140   x86 code from RIP-32 (RIP is byte 32): %s", hex );
+        }
+        else wine_log_write( "[spin] ml1140   x86 code at the guest RIP is unreadable" );
+        if (have_stk)
+        {
+            int n = snprintf( line, sizeof(line), "[spin] ml1140   return addresses on the x86 stack (a CALL right before them) from RSP=0x%llx%s:", (unsigned long long)rsp, rsp_note ), shown = 0;
+            for (ni = 0; ni < 96 && shown < 12 && n < (int)sizeof(line) - 120; ni++)
+            {
+                const char *kind;
+                if (stk[ni] < 0x10000 || !ios_ts_read( stk[ni] - 8, before, 8 )) continue;
+                if (!(kind = ios_spin_call_kind( before ))) continue;
+                ios_spin_where( mods, nmods, stk[ni], rwhere, sizeof(rwhere) );
+                n += snprintf( line + n, sizeof(line) - n, " sp+0x%x=%s(%s)", ni * 8, rwhere, kind );
+                shown++;
+            }
+            if (!shown) n += snprintf( line + n, sizeof(line) - n, " none in the first %d qwords", 96 );
+            wine_log_write( "%s", line );
+            wine_log_write( "[spin] ml1140   first stack qwords: %llx %llx %llx %llx %llx %llx %llx %llx", (unsigned long long)stk[0], (unsigned long long)stk[1],
+                            (unsigned long long)stk[2], (unsigned long long)stk[3], (unsigned long long)stk[4], (unsigned long long)stk[5],
+                            (unsigned long long)stk[6], (unsigned long long)stk[7] );
+        }
+        else wine_log_write( "[spin] ml1140   no readable x86 stack (x23, sp and the frame's RSP: none readable; the TEB's stack is 0x%llx..0x%llx)",
+                             (unsigned long long)stack_limit, (unsigned long long)stack_base );
+    }
+    for (k = 0; k < tc; k++) mach_port_deallocate( mach_task_self(), tl[k] );
+    vm_deallocate( mach_task_self(), (vm_address_t)tl, tc * sizeof(*tl) );
+    if (!seen) wine_log_write( "[spin] ml1140 no Wine thread used 80%% of a core at this moment" );
+}
+
 static void ios_xp_api_report( const char *wall, double wall_s )
 {
     extern volatile long long ios_xp_set_event, ios_xp_reset_event, ios_xp_pulse_event;
@@ -1591,6 +1803,8 @@ static void ios_xp_api_report( const char *wall, double wall_s )
             wine_log_write( "%s", line );
 
             /* top x64->EC call targets from the ring entries appended since the last report */
+            uint64_t spin_top = 0;          /* madeira-bcd (round 579): the one target that takes most of the sampled calls */
+            double spin_share = 0;
             if (got_fex && have_fex && ecc > 0)
             {
                 uint64_t idx = fex[392], pidx = fex_prev[392], newn = idx - pidx, k, run = 0;
@@ -1609,6 +1823,7 @@ static void ios_xp_api_report( const char *wall, double wall_s )
                         cnt = 1;
                     }
                     if (!bestn) break;
+                    if (!shown) { spin_top = best; spin_share = (double)bestn / (double)newn; }
                     {
                         char sym[160];
                         ios_xp_symbol( best, sym, sizeof(sym) );
@@ -1620,6 +1835,17 @@ static void ios_xp_api_report( const char *wall, double wall_s )
                 }
                 (void)run;
                 wine_log_write( "%s", line );
+            }
+            /* madeira-bcd (round 579): [spin] -- two numbers compared once a second; a look only on a streak (ios_spin_step) */
+            {
+                static struct ios_spin_state spin_state;
+                int look = ios_spin_step( &spin_state, got_fex && have_fex ? ecc / dt : 0.0, spin_top, spin_share );
+                if (look)
+                {
+                    char sym[160];
+                    ios_xp_symbol( spin_top, sym, sizeof(sym) );
+                    ios_spin_capture( wall, look, ecc / dt, spin_share, spin_state.streak, spin_top, sym );
+                }
             }
             /* QPC: per-thread gap distribution, busiest four slots */
             if (got_nt && have_nt)
@@ -4855,6 +5081,13 @@ void process_exit_wrapper( int status )
         {   /* madeira-bcd (round 577): this child's process ended; its slot in process_ios.c must not keep a session alive */
             extern void ios_child_slot_exited( void *peb );
             ios_child_slot_exited( dead_peb );
+        }
+        {   /* madeira-bcd (round 579): and the status it ended with stays in the table's ring (BCD Dock's game-end watch);
+             * an error status of a process no slot holds is said once per exit, so a log shows when the watch missed one */
+            extern int ios_child_slot_note_exit( void *peb, int status );
+            if (!ios_child_slot_note_exit( dead_peb, status ) && ((unsigned)status & 0xC0000000u) == 0xC0000000u)
+                wine_log_write("[child-table] a process ended with status 0x%x and the table has no slot for it (peb=%p)",
+                               (unsigned)status, dead_peb);
         }
         ios_dead_pebs[__sync_fetch_and_add( &ios_dead_peb_next, 1 ) % IOS_DEAD_PEB_MAX] = dead_peb;
         /* ml571: drop this pseudo-process's fd cache and close what it held.

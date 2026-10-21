@@ -644,6 +644,11 @@ final class LibraryModel: ObservableObject {
     private var endedByWatch: Int32?
     /// What watchProgramEnd logged last, so each state is logged once.
     private var endWatchNote = ""
+    /// madeira-bcd (round 579, BCD Dock): the library itself ended the session because the game's last process ended
+    /// with an error status and nothing of it was left (watchDockGameEnd); nothing is asked again.
+    private var endedByDockGame = false
+    /// What watchDockGameEnd logged last, so each state is logged once.
+    private var dockEndNote = ""
     private func exitReport() -> String? {
         guard !quitRequested, MadeiraConfig.flag("MADEIRA_EXIT_REPORT") else { return nil }
         var status: UInt32 = 0
@@ -1010,6 +1015,7 @@ final class LibraryModel: ObservableObject {
         wine_exit_status_reset()
         quitRequested = false
         endedByWatch = nil; endWatchNote = ""
+        endedByDockGame = false; dockEndNote = ""
         // madeira-bcd: auto-tune's session marker (AutoTune.swift); off, nothing.
         if AutoTune.enabled { AutoTune.sessionBegan(entry, remember: remember, dockWithoutEntry: dock != nil && !remember) }
         LibraryController.shared.configure(enabled: true, ownsInput: false)
@@ -1073,6 +1079,7 @@ final class LibraryModel: ObservableObject {
             sawProcess = true
             if sessionMessage == "Starting…" { sessionMessage = "" }
             watchProgramEnd()
+            watchDockGameEnd()
         } else if sawProcess && wineserver_is_running() == 0 { finish() }
         // The first frame gives Aspect and Fill height the drawable's shape.
         if current != nil, !laidOutAfterFirstPresent, madeira_get_present_count() != MetalBackedView.presentCountAtLaunch {
@@ -1111,6 +1118,39 @@ final class LibraryModel: ObservableObject {
             LogStore.shared.log("[session-end] main program exited code=\(code); no game process left; returning")
             // The engine's own end work: it joins the wineserver thread, which is not for the main queue.
             DispatchQueue.global(qos: .userInitiated).async { wine_session_abandon() }
+        }
+    }
+    /// madeira-bcd (round 579, BCD Dock: the game died and the session stayed open): a Dock session's initial program is
+    /// Wine's desktop, which never ends by itself on iOS, so a game that crashed left its dead desktop on the screen for
+    /// good (Dying Light 32FEAT, The Binding of Isaac VV5NHZ). Only a Dock session, only after the game was seen
+    /// to run, and only when DockGameEndRules says it is over: the game's last process ended with an error status
+    /// (c0000005 ...), nothing of it runs, the grace time has passed and the host finished. The session then ends as any
+    /// other does: finish() shows the library with the exit report (the game's status) and hands the status to
+    /// auto-tune. Off: env.MADEIRA_DOCK_GAME_END = 0; env.MADEIRA_DOCK_GAME_END_GRACE = seconds (default 10).
+    private func watchDockGameEnd() {
+        guard !endedByDockGame, DockStartScreen.shared.active, MadeiraConfig.flag("MADEIRA_DOCK_GAME_END") else { return }
+        var text = [CChar](repeating: 0, count: 32768)
+        guard madeira_child_report(&text, Int32(text.count)) > 0 else { return }
+        let table = DockGameEndRules.parse(String(decoding: text.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self))
+        let grace = DockGameEndRules.grace(MadeiraConfig.get("env.MADEIRA_DOCK_GAME_END_GRACE"))
+        let verdict = DockGameEndRules.verdict(table, places: .standard, grace: grace) {
+            let report = MainActor.assumeIsolated { MadeiraDock.pollReport() }
+            return DockHostState(gameRan: report.fields["launch-game-running"] == "1",
+                                 gameOver: report.fields["launch-game-ended"] == "1", finished: report.result != nil)
+        }
+        switch verdict {
+        case .none:
+            break
+        case .wait(let status, let file, let why):
+            let note = "\(file) \(status) \(why)"
+            if dockEndNote != note {
+                dockEndNote = note
+                LogStore.shared.log("[dock-game-end] \(file) ended with status 0x\(String(status, radix: 16)); the session goes on for now (\(why))")
+            }
+        case .end(let status, let file, let lived):
+            endedByDockGame = true
+            LogStore.shared.log("[dock-game-end] \(file) ended with status 0x\(String(status, radix: 16)) after \(Int(lived)) s, the host finished and nothing of the game runs: ending the session")
+            DispatchQueue.global(qos: .userInitiated).async { _ = wine_session_dock_game_ended(Int32(bitPattern: status)) }
         }
     }
     /// `reason`: what stopped the launch, when the caller knows (the JIT pool's failure).
@@ -1203,10 +1243,31 @@ final class LibraryModel: ObservableObject {
             save(entry)
         }
     }
+    /// madeira-bcd (round 579): reads the log on a utility queue and, if the game said Steam was missing, shows the hint in
+    /// place of the generic report (or alone), unless something else has taken the alert meanwhile.
+    private func sayNoSteam(replacing report: String?) {
+        let log = LogStore.shared.logFileURL
+        DispatchQueue.global(qos: .utility).async {
+            guard SteamStartHint.logSaysNoSteam(log) else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.error == report else { return }
+                LogStore.shared.log("[steam-start] the game said it found no Steam and closed; it was started without BCD Dock")
+                self.error = SteamStartHint.text
+            }
+        }
+    }
     private func finish() {
         // madeira-bcd: auto-tune reads this session's log afterwards (AutoTune.swift); off, nothing.
         if AutoTune.enabled { autoTuneSessionEnded() }
-        if sawProcess, let report = exitReport() { error = report }
+        let report = sawProcess ? exitReport() : nil
+        if let report { error = report }
+        // madeira-bcd (round 579): a Steam game started without Dock that said it found no Steam: text only, read once from
+        // the log after a short session that ended by itself (SteamStartHint). Every other session is not touched.
+        if sawProcess, SteamStartHint.applies(directSteamStart: activeEntry?.startsSteamGameDirectly == true,
+                                              quitRequested: quitRequested,
+                                              seconds: Date().timeIntervalSince(launchStarted)) {
+            sayNoSteam(replacing: report)
+        }
         timer?.invalidate(); timer = nil
         saveCurrentProfile()
         controllerMode = nil
@@ -1272,6 +1333,96 @@ enum SessionEndRules {
         guard exitCode != 0 else { return nil }
         let shown = exitCode > 0 && exitCode < 65536 ? String(exitCode) : "0x" + String(UInt32(bitPattern: exitCode), radix: 16, uppercase: true)
         return "The game closed (exit code \(shown)). If it keeps happening, open its page and send its log."
+    }
+}
+
+/// madeira-bcd (round 579): a Steam game started with "Start with: The game's own program" that says Steam is missing
+/// and ends by itself (Trails in the Sky 1st Chapter W3D1CP and 5JMRWZ: "SteamAPI_Init() failed.", exit code 1 after 1 s;
+/// Katana ZERO DVTCGN and X7YKSJ: "Steam must be running to play this game", then an access violation in its own failure
+/// branch). Without Valve's client such a game cannot start; BCD Dock can. Only text: nothing about how the session starts or
+/// ends changes (LibraryModel.finish asks, once, after the session ended). Pure and Foundation-only
+/// (tests/host/check-session-end.py).
+enum SteamStartHint {
+    /// A start that failed at once ends in seconds; a longer session is a game that ran (and printed a Steam failure on
+    /// the way, which many DRM-free games do).
+    static let maxSeconds = 120.0
+    /// What the user reads.
+    static let text = "The game could not find Steam and closed. It needs Steam: open its page, set Start with to "
+        + "BCD Dock (Steam's client), then play it again."
+    /// What a log line says when the game, Valve's steam_api or BCD's own diagnostic found no Steam client.
+    static let needles = ["SteamAPI_Init() failed", "did not locate a running instance of Steam",
+                          "steam_api found no running Steam", "Steam must be running to play this game"]
+    /// The line the library writes when a Steam game starts without Dock (ContentView.launchLibraryEntry).
+    static let startMarker = "[steam-start] app="
+    static let startMode = " direct source="
+
+    /// Whether the session's log is worth reading: a direct Steam start that ended by itself, soon.
+    static func applies(directSteamStart: Bool, quitRequested: Bool, seconds: Double) -> Bool {
+        directSteamStart && !quitRequested && seconds >= 0 && seconds <= maxSeconds
+    }
+
+    /// The log read line by line, in chunks of any size with fixed state: `said` is true when a needle line comes after
+    /// the LAST direct-start line (an earlier session of the same app run does not count).
+    struct LogScan {
+        private(set) var started = false
+        private(set) var said = false
+        private var carry: [UInt8] = []
+        private static let maxLine = 16384
+        private static let start = Array(SteamStartHint.startMarker.utf8)
+        private static let mode = Array(SteamStartHint.startMode.utf8)
+        private static let words = SteamStartHint.needles.map { Array($0.utf8) }
+
+        mutating func feed(_ data: [UInt8]) {
+            data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+                guard let base = raw.baseAddress else { return }
+                var from = 0
+                while from < raw.count {
+                    if let nl = memchr(base + from, 0x0A, raw.count - from) {
+                        let end = from + (UnsafeRawPointer(nl) - (base + from))
+                        let piece = UnsafeRawBufferPointer(start: base + from, count: end - from)
+                        if carry.isEmpty { line(piece) }
+                        else {
+                            append(piece)
+                            let whole = carry
+                            carry.removeAll(keepingCapacity: true)
+                            whole.withUnsafeBytes { line($0) }
+                        }
+                        from = end + 1
+                    } else {
+                        append(UnsafeRawBufferPointer(start: base + from, count: raw.count - from))
+                        break
+                    }
+                }
+            }
+        }
+        mutating func finish() {
+            guard !carry.isEmpty else { return }
+            let whole = carry
+            carry.removeAll()
+            whole.withUnsafeBytes { line($0) }
+        }
+        private mutating func append(_ piece: UnsafeRawBufferPointer) {
+            let room = Self.maxLine - carry.count
+            if room > 0 { carry.append(contentsOf: piece.prefix(room)) }
+        }
+        private static func has(_ hay: UnsafeRawBufferPointer, _ needle: [UInt8]) -> Bool {
+            guard let base = hay.baseAddress, hay.count >= needle.count else { return false }
+            return needle.withUnsafeBytes { memmem(base, hay.count, $0.baseAddress, $0.count) != nil }
+        }
+        private mutating func line(_ text: UnsafeRawBufferPointer) {
+            if Self.has(text, Self.start) && Self.has(text, Self.mode) { started = true; said = false; return }
+            if started && !said && Self.words.contains(where: { Self.has(text, $0) }) { said = true }
+        }
+    }
+
+    /// Reads the whole log once, 64 KB at a time. Not for the main thread.
+    static func logSaysNoSteam(_ url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? handle.close() }
+        var scan = LogScan()
+        while let data = try? handle.read(upToCount: 65536), !data.isEmpty { scan.feed([UInt8](data)) }
+        scan.finish()
+        return scan.said
     }
 }
 

@@ -1,0 +1,132 @@
+[05:17:15.035] [INFO] Checking entitlements...
+[05:17:15.036] [INFO] [build] v0.1.576 (576)
+[05:17:15.036] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=11695MB available=8169MB cores=6
+[05:17:15.036] [INFO] [device] address-map=[0x102aa0000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[05:17:15.057] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[05:17:19.080] [INFO] [bcd] library launch Unrailed! 2 Back on Track: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[05:17:19.081] [INFO] Requesting JIT with Built-in StikJIT...
+[05:17:21.600] [INFO] [dock-launch] image-retire=1
+[05:17:21.600] [INFO] [dock-launch] image-map-guard=1
+[05:17:21.604] [INFO] [dock-installers] app=2211170 scripts=0 programs=0
+[05:17:21.611] [INFO] Running full Wine sequence...
+[05:17:21.611] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102aa0000,0x8000000000) 512GB available=8154MB low-power=0 thermal=serious
+[05:17:21.614] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[05:17:21.614] [INFO] Allocating 896MB JIT pool via debugger...
+[05:17:21.614] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[05:17:21.614] [INFO] [jit-debugger] attached=1 at the pool request
+[05:17:21.615] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[05:17:22.378] [INFO] RX pool at 0x148000000
+[05:17:22.400] [INFO] Detaching debugger...
+[phase] wine-start             t+  1.729s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7546 MB + phys_footprint=645 MB = 8192 MB (hw.memsize says 11695 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=658 MB (peak 658) internal=657 MB compressed=0 MB external=86 MB reusable=12 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #8 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  2.166s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1498d4000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x149a0c000)
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x149aa2000)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  2.240s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x14ae70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11B750000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14ee8d000)
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:load_dll [dll-missing] rev=ml336 #41 L"libswscale-9.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:load_dll [dll-missing] rev=ml336 #42 L"video64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1007 MB (peak 1007) internal=1006 MB compressed=0 MB external=157 MB reusable=12 MB (cycle=2)
+[footprint] rev=ml358 phys=1144 MB (peak 1144) internal=1143 MB compressed=0 MB external=160 MB reusable=12 MB (cycle=3)
+[footprint] rev=ml358 phys=1149 MB (peak 1149) internal=1147 MB compressed=0 MB external=160 MB reusable=12 MB (cycle=4)
+[footprint] rev=ml358 phys=1139 MB (peak 1149) internal=1137 MB compressed=0 MB external=160 MB reusable=12 MB (cycle=5)
+0050:err:module:load_dll [dll-missing] rev=ml336 #43 L"C:\\Program Files (x86)\\Steam\\SDL3.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #44 L"C:\\Program Files (x86)\\Steam\\SDL3.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"SDL3.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"SDL3.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Unrailed! 2 Back on Track\\data_UnrailedGodot_windows_x86_64\\Bootstrap.exe" t+ 10.868s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+D AC Load module coml2.dll (coml2.dll-735614df14a136bf): 71F4300000
+[copy-verify] oleaut32.dll: OK, 24 .text pages executable (copy @0x15378c000)
+D AC Load module OLEAUT32.dll (oleaut32.dll-ed3f8116102cb254): 71F41D0000
+D AC Load module SHELL32.dll (shell32.dll-a220962968ad1278): 71F3850000
+D AC Load module shlwapi.dll (shlwapi.dll-ce1cdcc1d59e3a45): 71F37A0000
+D AC Load module shcore.dll (shcore.dll-3f5429270fe01a6d): 71F3720000
+D AC Load module imm32.dll (imm32.dll-d32ec4d784d2a68d): 71F3680000
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000017
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000017
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000017
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000017
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000017
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000017
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000018
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000018
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000018
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000018
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000018
+[map-sec] virtual_map_section handle=0x2c prot=0x40 size=0x10000 -> 0xc0000018
+[jumbo] kernel-pick reserve failed (0xc0000017) for size=0x3fd2d28000 — top window is full
+[alloc-fail] ml814 #2 status=c0000017 hint=0x0 size=0x3fd2d28000 type=0x2000 protect=0x4 tid=00ac | STAGE=anon-mmap err=12 at 0x0+0x3fd2d38000
+00ac:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".........................E"
+00ac:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: "GC heap initialization failed with error 0x8007000E"
+00ac:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: "......................E..E"
+00ac:err:eventlog:ReportEventW L"Message: GC heap initialization failed with error 0x8007000E\n"
+00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x80008089) syscalls=0 unix_calls=8434
+[store-noalias] #1 rev=ml348 addr=0xf0 insn=0xf940794b pc=0x1525ac6b8 NO pool/anon alias | region 0x102aa0000+0x1ff4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0xf0 hostpc=0x1525ac6b8 hinsn=0xf940794b rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x1523c22fc pc=0x1525ac6b8 addr=0xf0 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x102aa0000+0x1ff4000 [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x1525ac6b8 addr=0xf0 x18=0x71fff00000 type=1 lr=0x15239f9a0 sp=0x703b80fa90 x16=0xffffffffffff x17=0x5496
+[guest-code] rev=ml333 pool_rip=0x1523c22fc (PE 0x1523c22fc) -- NO pool copy for this address (identity translate)
+[fault-host] 1525ac5b8: 91006280 aa1303e1 aa1903e2 97fb9efb f9002a9f aa1603e0 94021c91 aa1303e0
+[fault-host] 1525ac5d8: aa1503e1 f9405bfe a94a6bf9 a9495bf5 a94853f3 910303ff d65f03c0 97ff9b1d
+[fault-host] 1525ac5f8: d4200020 14000001 aa0003f3 910003e0 97fffdbf aa1303e0 94024ba0 d4200020
+[fault-host] 1525ac618: 97ff9b14 d4200020 aa0003f3 aa1a03e0 97fb6cfa aa1303e0 94024b98 d4200020
+[fault-host] 1525ac638: 97ff9b0c d4200020 000c8f7d d10243ff a90653f3 a9075bf5 a9087bf9 f9402808
+[fault-host] 1525ac658: d53bd069 927df129 eb09011f 54000101 f00014c8 9105c108 c85f7d09 91000529
+[fault-host] 1525ac678: c80a7d09 35ffffaa 1400004d aa0003f3 f100003f f9402c00 92402c28 da9f1049
+[fault-host] 1525ac698: 9000070c 8b090108 f940000a f940158c 913ffd08 2a0303f5 9274cc34 9274cd08
+[fault-host] 1525ac6b8: f940794b f940018c eb08013f 9000064a 00000000 00000000 00000000 00000000
+[footprint] rev=ml358 phys=1250 MB (peak 1250) internal=1248 MB compressed=0 MB external=187 MB reusable=12 MB (cycle=6)
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=41 resident=1448MB dbg=DEBUGGED rev=ml525
+[05:17:53.457] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=40 resident=1450MB dbg=DEBUGGED rev=ml525
+[05:18:23.569] [INFO] detach-wait: presents=0 running=1 elapsed=60s
+[footprint] rev=ml358 phys=1252 MB (peak 1253) internal=1252 MB compressed=0 MB external=186 MB reusable=11 MB (cycle=32)
+[footprint] rev=ml358 phys=1252 MB (peak 1253) internal=1252 MB compressed=0 MB external=186 MB reusable=11 MB (cycle=33)
+[footprint] rev=ml358 phys=1252 MB (peak 1253) internal=1252 MB compressed=0 MB external=186 MB reusable=11 MB (cycle=34)
+[footprint] rev=ml358 phys=1252 MB (peak 1253) internal=1252 MB compressed=0 MB external=186 MB reusable=11 MB (cycle=35)
+[footprint] rev=ml358 phys=1253 MB (peak 1253) internal=1252 MB compressed=0 MB external=186 MB reusable=11 MB (cycle=36)
+[launch-view] dismissed reason=show-desktop logs=1
+[footprint] rev=ml358 phys=1249 MB (peak 1253) internal=1248 MB compressed=0 MB external=186 MB reusable=12 MB (cycle=37)

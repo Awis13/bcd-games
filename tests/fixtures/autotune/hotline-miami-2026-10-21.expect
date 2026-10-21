@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "Hotline Miami (GameMaker, the Direct3D 8 build; a folder, library entry), build 576, iPhone18,1 (339R82): wined3d finds no GL context (line 12074), the game shows its own message, the user taps OK and it exits with code 0 after 12.7 s (lines 12378-12405). Auto-tune scored it 'crashed at stage 3' because the scanner counted a [win-name] titled 'Error Messages' (line 1913, long before) as the game's error box: it is GameMaker's own hidden form, present in every start (1VPXSG too). Not an error box now: no crash evidence, the session is 'exited-early'. No rule matches either way (the failure needs OpenGL); only the label changes (round 579)",
+ "outcome": "exited-early",
+ "stage": 3,
+ "status": "stuck"
+}

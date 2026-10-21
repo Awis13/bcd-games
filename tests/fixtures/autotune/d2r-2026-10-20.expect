@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "sfc-tbs-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = sfc,sfc_os,tbs"
+ ],
+ "note": "Diablo II: Resurrected (Steam 2536520), build 573, iPhone 16 Pro (bcd-games issue #3): D2R_loader.dll imports sfc.dll and tbs.dll, which BCD's 64-bit set does not ship; D2R.exe ends with c0000135. SYNTHETIC: the import lines quoted in the issue, placed in the Fort Solis build 574 session frame (fort-solis-2026-10-20), as no Send Log of the game exists yet. env.MADEIRA_OPTIN_DLLS = sfc,sfc_os,tbs (build 579) links Wine's DLLs for the game.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

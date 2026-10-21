@@ -419,7 +419,7 @@ struct RecommendationsPolicy {
     /// (build/tools/autotune_rules.py), nothing else. A new name joins this list in the build
     /// that reads it; a downloaded line that uses it carries that build as its minBuild.
     static let allowedEnvNames: Set<String> = [
-        "DOTNET_EnableWriteXorExecute",
+        "DOTNET_EnableWriteXorExecute", "DOTNET_GCRegionRange",
         "DXMT_SMALL_RINGS", "DXMT_WSI_MODE_TABLE", "DXMT_WSI_MONITOR_IDENTITY", "FEX_VECTORTSOENABLED", "LC_ALL",
         "MADEIRA_ALIAS_RELEASE", "MADEIRA_APP_DLL_SHADOW", "MADEIRA_BAND_CENSUS", "MADEIRA_CAGE_RELEASE",
         "MADEIRA_CHILD_ARGS", "MADEIRA_D3D11_SRC", "MADEIRA_DEVICE_STATS", "MADEIRA_DOCK_GAME_SCM",
@@ -463,8 +463,8 @@ struct RecommendationsPolicy {
                 // Only DLLs BCD ships as <name>-optin.dll (tools/build-wine-extra-dlls.sh: OPTIN_WANT, and setupapi,
                 // the shipped setupapi.dll with a lock round its device node table).
                 let names = value.lowercased().split(whereSeparator: { ",; ".contains($0) })
-                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint", "setupapi"].contains($0) }) else {
-                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint or setupapi")
+                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint", "sfc", "sfc_os", "tbs", "twinapi.appcore", "setupapi"].contains($0) }) else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore or setupapi")
                 }
             case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX":
                 guard value == "0" || value == "1" else {
@@ -474,6 +474,15 @@ struct RecommendationsPolicy {
                 // The .NET runtime's own switch; only turning it off is ever listed.
                 guard value == "0" else {
                     throw RecommendationsError.policy("\(path): DOTNET_EnableWriteXorExecute may only be 0")
+                }
+            case "DOTNET_GCRegionRange":
+                // The .NET runtime's own switch (hexadecimal bytes, with or without 0x; .NET 7 and later): the address range
+                // its garbage collector reserves for the heap, 256 GB by default. Only a range of 1 to 64 GB: the largest
+                // free gap of BCD's address map is 32 GB.
+                let digits = value.lowercased().hasPrefix("0x") ? String(value.dropFirst(2)) : value
+                guard digits.range(of: #"^[0-9A-Fa-f]{1,11}$"#, options: .regularExpression) != nil,
+                      let bytes = UInt64(digits, radix: 16), bytes >= 0x4000_0000, bytes <= 0x10_0000_0000 else {
+                    throw RecommendationsError.policy("\(path): DOTNET_GCRegionRange is a hexadecimal size from 1 GB to 64 GB")
                 }
             case "WINEDLLOVERRIDES":
                 // Only switching a DLL off, or to Wine's own: never a native DLL from a game's folder.

@@ -12,7 +12,8 @@
 //              file, the marker, the analysis after a session, a killed run recovered at
 //              the next start, and the question when its log says nothing.
 // AUTOTUNE_TEST_CONFIGS, AUTOTUNE_TEST_DOCS and AUTOTUNE_TEST_LOG name temporary paths;
-// AUTOTUNE_TEST_CRASH and AUTOTUNE_TEST_SILENT name fixtures (a crash, a silent end).
+// AUTOTUNE_TEST_CRASH and AUTOTUNE_TEST_SILENT name fixtures (a crash, a silent end); AUTOTUNE_TEST_INSTALLS and
+// AUTOTUNE_TEST_INSTALLS_FAILED name sessions that only ran the one-time installs (they succeeded; one failed).
 
 import Foundation
 
@@ -262,6 +263,35 @@ struct AutoTuneGlueChecks {
         AutoTune.answer("froze")
         _ = settle(until: { false }, seconds: 0.5)
         expect(AutoTune.state(game.windowsPath).attempts.count == before + 1, "a second answer does nothing")
+
+        // A session that only ran the one-time installs and whose batch ended is no session of the game (round 579): BCD closes
+        // itself for a restart, the leftover marker would read as a kill and the user would be asked about it (NM88NQ).
+        AutoTuneOffers.shared.offer = nil
+        let beforeInstalls = AutoTune.state(game.windowsPath)
+        copy(env["AUTOTUNE_TEST_INSTALLS"]!, to: log)
+        AutoTune.sessionBegan(game, remember: true, dockWithoutEntry: false)
+        try? FileManager.default.removeItem(at: prev)
+        try? FileManager.default.moveItem(at: log, to: prev)
+        AutoTune.recoverUnfinishedSession()
+        _ = settle(until: { LogStore.shared.lines.contains { $0.contains("this session ran only the one-time installs") } }, seconds: 3)
+        _ = settle(until: { false }, seconds: 0.5)
+        expect(AutoTuneOffers.shared.offer == nil, "an installs-only session that BCD closed itself is not asked about")
+        expect(AutoTune.state(game.windowsPath) == beforeInstalls, "and changes nothing: no attempt, no candidate, no kept line")
+        expect(LogStore.shared.lines.contains { $0.hasPrefix("[autotune] Test Game: this session ran only the one-time installs") },
+               "the log says it was not scored")
+        expect(!FileManager.default.fileExists(atPath: AutoTune.markerURL!.path)
+               && !FileManager.default.fileExists(atPath: configs.appendingPathComponent("autotune-session.pending.json").path),
+               "its marker is gone too")
+        // The same when the session ended on its own (an installer failed, the batch ended with it).
+        copy(env["AUTOTUNE_TEST_INSTALLS_FAILED"]!, to: log)
+        AutoTune.sessionBegan(game, remember: true, dockWithoutEntry: false)
+        AutoTune.sessionEnded(AutoTuneSessionEnd(sawProcess: true, seconds: 12))
+        expect(settle(until: { !FileManager.default.fileExists(atPath: AutoTune.markerURL!.path) }),
+               "an installs-only session that ended on its own is analysed")
+        _ = settle(until: { false }, seconds: 0.5)
+        expect(AutoTuneOffers.shared.offer == nil && AutoTune.state(game.windowsPath) == beforeInstalls,
+               "and it also offers nothing and changes nothing, whatever its installer's helper logged")
+        AutoTuneOffers.shared.offer = nil
 
         // A game that already plays is not asked about after a silent end.
         AutoTuneOffers.shared.offer = nil

@@ -37,6 +37,15 @@ void wine_session_abandon(void);
 // file names go to names. A child that could not be tracked counts as running.
 int madeira_live_user_processes(char *names, int len);
 
+// BCD Dock's game-end watch (madeira-bcd, round 579; process_ios.c, WineProcessBridge.m "Session end", DockGameEnd.swift).
+// madeira_child_report: a text snapshot of the process table, one tab-separated line per process (running ones, then the
+// last ones that ended with the status each ended with), the image path last; returns the number of process lines.
+// wine_session_dock_game_ended: a Dock session whose game's last process ended with an error status and left nothing:
+// records the status as the session's exit status and does the end work. Blocks until the wineserver thread is
+// joined: call it off the main queue. 1 when it ended the session.
+int madeira_child_report(char *buf, int len);
+int wine_session_dock_game_ended(int32_t status);
+
 // Steam S0 net-test VPN gate: write C:\madeira-continue.flag into the
 // prefix's drive_c so the paused winhttp-test.exe resumes to the Steam
 // stage. Called by the "Continue Net Test" UI button after the user has

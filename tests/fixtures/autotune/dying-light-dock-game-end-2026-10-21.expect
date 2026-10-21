@@ -1,0 +1,19 @@
+{
+ "dialogs": [],
+ "end": {
+  "crashStatus": 3221225477,
+  "presents": 0,
+  "seconds": 80
+ },
+ "matched": [
+  "locale-en-us-ansi",
+  "dock-game-died-session-open"
+ ],
+ "next": [
+  "env.LC_ALL = en_US.UTF-8"
+ ],
+ "note": "Dying Light (Steam 239140) through BCD Dock, the owner's iPhone18,2, build 578 (Send Log 32FEAT): the game's process ended with 0xc0000005 at 16:00:05 (abort_process on its boot thread, MiniDump refused), Valve's client reported the game over at 16:00:12, the host finished (probe-result 0), and the session stayed open on its dead desktop (detach-wait ... running=1 at 30 s and 60 s). Build 579 ends such a session (DockGameEnd.swift): the end facts here are what the library hands auto-tune then (crashStatus 0xc0000005). The experiment locale-en-us-ansi matches the same log and stays the best match; dock-game-died-session-open (fixedIn 579) comes after it",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

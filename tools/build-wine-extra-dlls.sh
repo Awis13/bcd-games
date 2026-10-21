@@ -126,8 +126,13 @@ fi
 # semicolon separated; app/Madeira/WineProcessBridge.m), so no program that loads one optionally today
 # sees a change. dxva2: Fort Solis and DRAGON BALL Sparking! ZERO import it and ended at once with
 # c0000135 (testers' logs 94MSWJ, NZ3ANE, H6XVPV, build 574); evr: Spider-Man: Miles Morales'
-# crs-video.exe (PD7S1E); xpsprint: Animal Well (NWHG8J, build 565). MADEIRA_OPTIN_BUILD=0 skips them.
-OPTIN_WANT="dxva2 evr xpsprint"
+# crs-video.exe (PD7S1E); xpsprint: Animal Well (NWHG8J, build 565); sfc, sfc_os and tbs: Diablo II: Resurrected's
+# D2R_loader.dll imports sfc.dll and tbs.dll and ended with c0000135 (bcd-games issue #3, build 573; sfc.dll forwards
+# to sfc_os.dll); twinapi.appcore: Senua's Saga: Hellblade II's XCurl.dll and Microsoft.Xbox.Services.GDK.C.Thunks.dll
+# import api-ms-win-core-psm-appnotify-l1-1-0.dll, which Wine's apiset maps to twinapi.appcore.dll, and the program ended
+# with c0000135 (tester's log XJ7Z6Y, build 576; Wine's DLL has RegisterAppStateChangeNotification and its three
+# neighbours, each a stub that returns ERROR_CALL_NOT_IMPLEMENTED). MADEIRA_OPTIN_BUILD=0 skips them.
+OPTIN_WANT="dxva2 evr xpsprint sfc sfc_os tbs twinapi.appcore"
 OPT=""
 if [ "${MADEIRA_OPTIN_BUILD:-1}" != 0 ]; then
     for d in $OPTIN_WANT; do

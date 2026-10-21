@@ -116,3 +116,96 @@ enum SteamInstallFiles {
         return state
     }
 }
+
+/// madeira-bcd (2026-10-21): Steamworks Common Redistributables (app 228980) and a game's Dock start.
+///
+/// Many games list Valve's redistributable installers (DirectX, VC++) as `sharedinstall` depots of app
+/// 228980. BCD's downloader never installs them (Wine needs none of them), so 228980 is never "Fully
+/// Installed" here. While Counter-Strike 2 ran, Valve's client added the game's dependency on it
+/// (content_log.txt: "Dependency added: parent 228980, child 730, depot 228988"), wrote `SharedDepots`
+/// entries naming 228980 into the game's record and marked 228980 "Update Required"; from then on every
+/// start ended with "Failed running app 730 (required app 228980 not ready)" (Dock launch error 17, the
+/// "Steam is installing content" wait), since Valve's client downloads nothing in a Dock session. The
+/// record without those entries, as BCD's own download writes it, started the game (owner's iPhone,
+/// 2026-10-21 10:33, log AJJ4RC; the next start, with the entries back, waited: SK27KV).
+///
+/// Before a Dock start, the entries naming 228980 come out of the game's record, and only while
+/// 228980's own record is missing or not fully installed: the one state in which the start cannot work
+/// today. Everything else in the file stays byte for byte. `env.MADEIRA_DOCK_SHARED_REDIST = 0` turns
+/// it off. Foundation only (tests/host/check-steam-games.py).
+enum SteamSharedRedist {
+    static let ownerAppID = 228980
+
+    /// The record's text with the `SharedDepots` entries that name the owner removed (the whole block
+    /// when none is left), and the depots taken out; nil when it names none, or when anything about the
+    /// text is not the plain shape Valve's client writes (then the file is left alone).
+    static func withoutOwner(_ text: String, appID: Int) -> (text: String, depots: [Int])? {
+        var lines = text.components(separatedBy: "\n")
+        func bare(_ line: String) -> String { line.trimmingCharacters(in: .whitespacesAndNewlines) }
+        var depth = 0, key: Int?
+        for (index, line) in lines.enumerated() {
+            let t = bare(line)
+            if t == "{" { depth += 1; continue }
+            if t == "}" { depth -= 1; if depth < 0 { return nil }; continue }
+            if depth == 1, t.caseInsensitiveCompare("\"SharedDepots\"") == .orderedSame {
+                guard key == nil else { return nil }   // one block, as Valve writes it
+                key = index
+            }
+        }
+        guard depth == 0, let start = key, start + 2 < lines.count, bare(lines[start + 1]) == "{" else { return nil }
+        var end: Int?
+        var drop: [Int] = [], depots: [Int] = [], kept = 0
+        for index in (start + 2)..<lines.count {
+            let t = bare(lines[index])
+            if t == "}" { end = index; break }
+            let parts = t.split(separator: "\"", omittingEmptySubsequences: false)
+            // "<depot>"<tabs>"<owner>" splits into ["", depot, tabs, owner, ""].
+            guard parts.count == 5, parts[0].isEmpty, parts[4].isEmpty, parts[2].allSatisfy({ $0 == " " || $0 == "\t" }),
+                  !parts[2].isEmpty, let depot = Int(parts[1]), let owner = Int(parts[3]), depot > 0, owner > 0 else { return nil }
+            if owner == ownerAppID { drop.append(index); depots.append(depot) } else { kept += 1 }
+        }
+        guard let close = end, !drop.isEmpty else { return nil }
+        if kept == 0 { lines.removeSubrange(start...close) } else { for index in drop.reversed() { lines.remove(at: index) } }
+        let edited = lines.joined(separator: "\n")
+        // The edit must leave the same record: same app, state, build, folder and installed depots,
+        // and no entry naming the owner.
+        func state(_ s: String) -> SteamValue? {
+            guard var parser = try? SteamKeyValues(Data(s.utf8)), let root = try? parser.read(),
+                  let st = root["AppState"], st["appid"]?.string == String(appID) else { return nil }
+            return st
+        }
+        guard let before = state(text), let after = state(edited) else { return nil }
+        for name in ["StateFlags", "buildid", "installdir", "name"] where before[name]?.string != after[name]?.string { return nil }
+        let installed = { (v: SteamValue) in v["InstalledDepots"]?.fields.keys.sorted() ?? [] }
+        guard installed(before) == installed(after), Set(before.fields.keys) == Set(after.fields.keys).union(kept == 0 ? ["shareddepots"] : []),
+              !(after["SharedDepots"]?.fields.values.contains { $0.string == String(ownerAppID) } ?? false) else { return nil }
+        return (edited, depots.sorted())
+    }
+
+    /// 228980's own `StateFlags`, or nil when it has no readable record.
+    static func ownerFlags(steamApps: URL) -> Int? {
+        let url = steamApps.appendingPathComponent("appmanifest_\(ownerAppID).acf")
+        guard let data = try? Data(contentsOf: url), data.count <= 1 << 20,
+              var parser = try? SteamKeyValues(data), let root = try? parser.read(),
+              let state = root["AppState"], state["appid"]?.string == String(ownerAppID) else { return nil }
+        return state["StateFlags"]?.string.flatMap { Int($0) }
+    }
+
+    /// Before a Dock start of `appID`: takes the entries out when 228980 is not fully installed.
+    /// Returns the log line when the record changed, nil otherwise.
+    nonisolated static func prepare(appID: Int, steamApps: URL) -> String? {
+        let flags = ownerFlags(steamApps: steamApps)
+        if let flags, flags & 4 != 0 { return nil }
+        let url = steamApps.appendingPathComponent("appmanifest_\(appID).acf")
+        guard let data = try? Data(contentsOf: url), data.count <= 1 << 20,
+              let text = String(data: data, encoding: .utf8),
+              let result = withoutOwner(text, appID: appID) else { return nil }
+        do {
+            try Data(result.text.utf8).write(to: url, options: .atomic)
+        } catch {
+            return "[dock-shared-redist] app=\(appID) could not rewrite its record (\(type(of: error))); left as it was"
+        }
+        return "[dock-shared-redist] app=\(appID) owner=\(ownerAppID) owner-state=\(flags.map(String.init) ?? "missing") " +
+            "removed depots=\(result.depots.map(String.init).joined(separator: ","))"
+    }
+}

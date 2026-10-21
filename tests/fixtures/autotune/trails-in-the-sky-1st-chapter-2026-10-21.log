@@ -1,0 +1,223 @@
+[05:48:44.706] [INFO] Checking entitlements...
+[05:48:44.707] [INFO] [build] v0.1.578 (578)
+[05:48:44.708] [INFO] [device] model=iPhone18,1 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=11722MB available=8140MB cores=6
+[05:48:44.708] [INFO] [device] address-map=[0x10473c000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[05:48:44.722] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[05:48:53.316] [INFO] Requesting JIT with Built-in StikJIT...
+[05:48:56.002] [INFO] [bcd] library launch Trails in the Sky 1st Chapter: avx=0 wine-vcrt=1 nvidia=0 game-config=1 metalfx=off
+[05:48:56.040] [INFO] [dock-launch] image-retire=1
+[05:48:56.040] [INFO] [dock-launch] image-map-guard=1
+[05:48:56.057] [INFO] [dock-installers] app=3375780 scripts=0 programs=0
+[05:48:56.066] [INFO] Running full Wine sequence...
+[05:48:56.066] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x10473c000,0x8000000000) 512GB available=8137MB low-power=0 thermal=nominal
+[05:48:56.070] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[05:48:56.070] [INFO] Allocating 896MB JIT pool via debugger...
+[05:48:56.070] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[05:48:56.070] [INFO] [jit-debugger] attached=1 at the pool request
+[05:48:56.072] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[05:48:56.763] [INFO] RX pool at 0x148000000
+[05:48:56.780] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.753s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7561 MB + phys_footprint=630 MB = 8192 MB (hw.memsize says 11722 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+0024:err:seh:init_syscall_frame page0: trying debugger (BRK #0xf00d, x16=3)...
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=639 MB (peak 639) internal=638 MB compressed=0 MB external=69 MB reusable=17 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  1.201s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1498d4000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x149a0c000)
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x149aa2000)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.277s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x14ae70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11B400000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[steer] #1 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c05400000
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14ee8d000)
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1096 MB (peak 1096) internal=1094 MB compressed=0 MB external=144 MB reusable=19 MB (cycle=2)
+[win-name] #31 hwnd=0x1005e class='' text="Default IME" rev=ml853
+[win-name] #32 hwnd=0x20056 class='' text="WineD3D fake window" rev=ml853
+[footprint] rev=ml358 phys=1174 MB (peak 1174) internal=1172 MB compressed=0 MB external=148 MB reusable=28 MB (cycle=3)
+[footprint] rev=ml358 phys=1179 MB (peak 1179) internal=1178 MB compressed=0 MB external=148 MB reusable=28 MB (cycle=4)
+[footprint] rev=ml358 phys=1192 MB (peak 1192) internal=1192 MB compressed=0 MB external=148 MB reusable=28 MB (cycle=5)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Trails in the Sky 1st Chapter\\sora_1st.exe" t+ 10.679s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] shlwapi.dll: OK, 8 .text pages executable (copy @0x154524000)
+[footprint] rev=ml358 phys=1382 MB (peak 1382) internal=1382 MB compressed=0 MB external=179 MB reusable=28 MB (cycle=6)
+D B0 Load module tier0_s64.dll (tier0_s64.dll-46fed3100444d04b): 71F0700000
+D B0 Load module vstdlib_s64.dll (vstdlib_s64.dll-0805e0d24f89e963): 71F0630000
+D B0 Load module MSWSOCK.dll (mswsock.dll-e1b26fc99ab81cd3): 71F05A0000
+D B0 Load module Secur32.dll (secur32.dll-f6ff7e0cf92170a6): 71F0510000
+[alloc-fail] ml814 #2 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00b0 | STAGE=none err=3 at 0x73fff60000+0x90000
+[steer] #2 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c4a000000
+D B0 Load module uxtheme.dll (uxtheme.dll-4e1d696344b97035): 71F0460000
+[footprint] rev=ml1060 fast phys=1400 MB compressed=0 MB
+0050:err:module:load_dll [dll-missing] rev=ml336 #53 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #54 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D B0 Load module gameoverlayrenderer64.dll (gameoverlayrenderer64.dll-662268bc678e11f2): 71F0360000
+[alloc-fail] ml814 #3 status=c0000018 hint=0x71f51e2000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #4 status=c0000018 hint=0x71f51e3000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #5 status=c0000018 hint=0x71f51e4000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #6 status=c0000018 hint=0x71f51e5000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #7 status=c0000018 hint=0x71f51e6000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #8 status=c0000018 hint=0x71f51e7000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x71f51e8000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #10 status=c0000018 hint=0x71f51e9000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #11 status=c0000018 hint=0x71f51ea000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #12 status=c0000018 hint=0x71f51eb000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #13 status=c0000018 hint=0x71f51ec000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #14 status=c0000018 hint=0x71f51ed000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #15 status=c0000018 hint=0x71f51ee000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #16 status=c0000018 hint=0x71f51ef000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #17 status=c0000018 hint=0x71f5978000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #18 status=c0000018 hint=0x71f5979000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #19 status=c0000018 hint=0x71f597a000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #20 status=c0000018 hint=0x71f597b000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #21 status=c0000018 hint=0x71f597c000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #22 status=c0000018 hint=0x71f597d000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #23 status=c0000018 hint=0x71f597e000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #24 status=c0000018 hint=0x71f597f000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #25 status=c0000018 hint=0x71f5984000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #26 status=c0000018 hint=0x71f5985000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #27 status=c0000018 hint=0x71f5986000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #28 status=c0000018 hint=0x71f5987000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #29 status=c0000018 hint=0x71f5988000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #30 status=c0000018 hint=0x71f5989000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #31 status=c0000018 hint=0x71f598a000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #32 status=c0000018 hint=0x71f598b000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #33 status=c0000018 hint=0x71f598c000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #34 status=c0000018 hint=0x71f598d000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #35 status=c0000018 hint=0x71f598e000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #36 status=c0000018 hint=0x71f598f000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #37 status=c0000018 hint=0x71f6457000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #38 status=c0000018 hint=0x71f6458000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #39 status=c0000018 hint=0x71f6459000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #40 status=c0000018 hint=0x71f645a000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #41 status=c0000018 hint=0x71f645b000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #42 status=c0000018 hint=0x71f645c000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #43 status=c0000018 hint=0x71f645d000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #44 status=c0000018 hint=0x71f645e000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #45 status=c0000018 hint=0x71f645f000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #46 status=c0000018 hint=0x71f6af7000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #47 status=c0000018 hint=0x71f6af8000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #48 status=c0000018 hint=0x71f6af9000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #49 status=c0000018 hint=0x71f6afa000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #50 status=c0000018 hint=0x71f6afb000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #51 status=c0000018 hint=0x71f6afc000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #52 status=c0000018 hint=0x71f6afd000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #53 status=c0000018 hint=0x71f6afe000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #54 status=c0000018 hint=0x71f6aff000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #55 status=c0000018 hint=0x71f7197000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #56 status=c0000018 hint=0x71f7198000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #57 status=c0000018 hint=0x71f7199000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #58 status=c0000018 hint=0x71f719a000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #59 status=c0000018 hint=0x71f719b000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #60 status=c0000018 hint=0x71f719c000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #61 status=c0000018 hint=0x71f719d000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #62 status=c0000018 hint=0x71f719e000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #63 status=c0000018 hint=0x71f719f000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #64 status=c0000018 hint=0x71f78c7000 size=0x1000 type=0x3000 protect=0x40 tid=00b0 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[win-name] #34 hwnd=0x3005a class='' text="Trails in the Sky 1st Chapter" rev=ml853
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[footprint] rev=ml1060 fast phys=1561 MB compressed=0 MB
+[win-name] #35 hwnd=0x3005a class='' text="Trails in the Sky 1st Chapter" rev=ml853
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[win-name] #38 hwnd=0x3005a class='' text="Trails in the Sky 1st Chapter" rev=ml853
+[store-noalias] #1 rev=ml348 addr=0x10 insn=0xd9410021 pc=0x1693a91ac NO pool/anon alias | region 0x10473c000+0x2014000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x10 hostpc=0x1693a91ac hinsn=0xd9410021 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x168ff8000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x12a5515c0 pc=0x1693a91ac addr=0x10 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x10473c000+0x2014000 [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x1693a91ac addr=0x10 x18=0x0 type=1 lr=0x169ff8354 sp=0x71f53d0000 x16=0xfffffffffffff0b0 x17=0x71f53ccc10
+[guest-code] rev=ml333 pool_rip=0x1524a35c0 (PE 0x12a5515c0): 48 83 ec 48 48 8b 05 75 8a 56 00 48 33 c4 48 89
+[av-args] rev=ajan3-dyinglight #1 NULL-class fault addr=0x10 at host pc=0x1693a91ac; x86 registers that point at a module, an object with a vtable or text:
+[av-args]   RBX=0x740035f140 [RBX]=sora_deploy_steam.exe+0x9d0a68
+[av-args]   RSI=0x12ab0fab0 = sora_deploy_steam.exe+0xadfab0 [RSI]=sora_deploy_steam.exe+0x9a7338
+[av-args]   RDI=0x74001b3f40 [RDI]=sora_deploy_steam.exe+0x9d3f48
+[fault-host] 1693a90ac: d63f0140 00000000 00000000 f44beae0 00000071 ffffff28 ffffffff 14000002
+[fault-host] 1693a90cc: d61f0140 5800024a d63f0140 00000000 00000000 f44bde9c 00000071 ffffff30
+[fault-host] 1693a90ec: ffffffff 14000002 d61f0140 5800010a d63f0140 00000000 00000000 f44bc474
+[fault-host] 1693a910c: 00000071 ffffff38 ffffffff 69ff820c 00000001 0000023c 00000000 f44bdffc
+[fault-host] 1693a912c: 00000071 00000041 00000000 00000010 00000028 00000000 00000000 05800180
+[fault-host] 1693a914c: 10078951 76105645 25452545 00003745 d503201f 00000168 10ffffea f900038a
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fff00000 TEB=0x71fff00000 TEB[0x58]=0x703afe3500 *(gs_cached+0x58)=0x703afe3500
+[store-noalias] #2 rev=ml348 addr=0x10 insn=0xd9410021 pc=0x1693a91ac NO pool/anon alias | region 0x10473c000+0x2014000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=READ p1=0x10 hostpc=0x1693a91ac hinsn=0xd9410021 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x168ff8000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x12a5515c0 pc=0x1693a91ac addr=0x10 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x10473c000+0x2014000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x1693a91ac addr=0x10 x18=0x0 type=1 lr=0x169ff8354 sp=0x71f53d0000 x16=0xfffffffffffff0b0 x17=0x71f53ccc10
+[guest-code] rev=ml333 pool_rip=0x1524a35c0 (PE 0x12a5515c0): 48 83 ec 48 48 8b 05 75 8a 56 00 48 33 c4 48 89
+[fault-host] 1693a910c: 00000071 ffffff38 ffffffff 69ff820c 00000001 0000023c 00000000 f44bdffc
+[fault-host] 1693a912c: 00000071 00000041 00000000 00000010 00000028 00000000 00000000 05800180
+[fault-host] 1693a914c: 10078951 76105645 25452545 00003745 d503201f 00000168 10ffffea f900038a
+[fault-host] 1693a916c: b945eb8b 3400004b d4395fc0 d10122f7 d2940806 f2a55566 f2c00026 d94000c8
+[fault-host] 1693a918c: d503201f ca170108 f1000109 f9001ae8 3dc00040 d9468000 d503201f 910082e2
+[fault-host] 1693a91ac: d9410021 d503201f 2a0303e8 3d800ae0 00000000 00000000 00000000 00000000
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fff00000 TEB=0x71fff00000 TEB[0x58]=0x703afe3500 *(gs_cached+0x58)=0x703afe3500
+00b0:err:seh:segv_handler   [guest-rip-sec] rip=0x12a5515c0 in image 0x12a030000: rva 0x5215c0, section #0 '.text' rva 0x1000+0x77fa2e chars 0x60000020 (R-X CODE), vprot=0x25
+00b0:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 RIP=0x1693a91ac RX from -32, 64 of 64 bytes: 1f 20 03 d5 08 01 17 ca 09 01 00 f1 e8 1a 00 f9 40 00 c0 3d 00 80 46 d9 1f 20 03 d5 e2 82 00 91 21 00 41 d9 1f 20 03 d5 e8 03 03 2a e0 0a 80 3d 03 00 40 d9 1f 20 03 d5 26 0c 08 8b c1 00 40 d9 
+00b0:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 no RW alias for 0x1693a91ac (not an anon-JIT page)
+00b0:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #2 RIP=0x12a5515e0 RX from -32, 64 of 64 bytes: 48 83 ec 48 48 8b 05 75 8a 56 00 48 33 c4 48 89 44 24 30 41 0f 10 00 48 8b 49 68 4c 8d 44 24 20 48 8b 52 10 41 8b c1 0f 11 44 24 20 4c 8b 09 48 8b 14 c2 41 ff 91 90 01 00 00 33 c0 48 8b 4c 24 
+00b0:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #2 no RW alias for 0x12a5515e0 (not an anon-JIT page)
+00b0:err:seh:call_seh_handlers [unwind-root] ml633 ACCEPTING terminal root frame 703afe0000 (== stack hi) ControlPc=71f5622dd8 handler=00000071F55E5388 — this is the unhandled-exception filter frame
+wine: Unhandled page fault on read access to 0000000000000010 at address 000000012A5515E0 (thread 00b0), starting debugger...
+00b0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=10461
+[Wine ntdll/server] process_exit_wrapper(-1073741819): closing child fd_socket=469
+[Wine ntdll/server] process_exit_wrapper(-1073741819)
+[Wine child thread] child exited with code -1073741819
+[footprint] rev=ml1060 fast phys=1643 MB compressed=0 MB
+0050:err:module:load_dll [dll-missing] rev=ml336 #55 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #56 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #57 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #58 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1523 MB (peak 1652) internal=1521 MB compressed=0 MB external=204 MB reusable=28 MB (cycle=10)
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=10920
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=10928
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=102
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=133
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0)
+[footprint] rev=ml358 phys=1427 MB (peak 1652) internal=1425 MB compressed=0 MB external=202 MB reusable=28 MB (cycle=11)
+[footprint] rev=ml358 phys=1427 MB (peak 1652) internal=1425 MB compressed=0 MB external=202 MB reusable=28 MB (cycle=12)
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=1427 MB (peak 1652) internal=1425 MB compressed=0 MB external=202 MB reusable=28 MB (cycle=13)
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=1428 MB (peak 1652) internal=1426 MB compressed=0 MB external=202 MB reusable=28 MB (cycle=14)
+[footprint] rev=ml358 phys=1429 MB (peak 1652) internal=1427 MB compressed=0 MB external=202 MB reusable=28 MB (cycle=15)

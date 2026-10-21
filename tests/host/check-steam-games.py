@@ -414,6 +414,56 @@ func record(_ appID: Int, _ name: String, _ folder: String, flags: Int) -> Strin
                 D.blocker(installed: true, program: nil)?.contains("Program") == true &&
                 D.blocker(installed: true, program: "") != nil && D.blocker(installed: true, program: "a.exe") == nil,
                 "Play for \"The game\": installed, not updating, a program chosen; no client or sign-in needed")
+
+        // Steamworks Common Redistributables (228980) before a Dock start (SteamSharedRedist):
+        // Counter-Strike 2's record as Valve's client wrote it on the owner's iPhone (2026-10-21).
+        typealias SR = SteamSharedRedist
+        let head730 = "\"AppState\"\n{\n\t\"appid\"\t\t\"730\"\n\t\"name\"\t\t\"Counter-Strike 2\"\n\t\"StateFlags\"\t\t\"4\"\n" +
+            "\t\"installdir\"\t\t\"Counter-Strike Global Offensive\"\n\t\"buildid\"\t\t\"26087496\"\n\t\"InstalledDepots\"\n\t{\n" +
+            "\t\t\"2347770\"\n\t\t{\n\t\t\t\"manifest\"\t\t\"6962766052972832680\"\n\t\t\t\"size\"\t\t\"65024032313\"\n\t\t}\n\t}\n"
+        let tail730 = "\t\"UserConfig\"\n\t{\n\t\t\"language\"\t\t\"english\"\n\t\t\"DisabledDLC\"\t\t\"2279721\"\n\t}\n}\n"
+        let shared730 = "\t\"SharedDepots\"\n\t{\n\t\t\"228988\"\t\t\"228980\"\n\t\t\"228990\"\t\t\"228980\"\n\t}\n"
+        let cs2 = SR.withoutOwner(head730 + shared730 + tail730, appID: 730)
+        require(cs2?.text == head730 + tail730 && cs2?.depots == [228988, 228990],
+                "shared redist: both 228980 entries and the then empty block come out, every other byte stays")
+        let mixed = SR.withoutOwner(head730 + "\t\"SharedDepots\"\n\t{\n\t\t\"1899671\"\t\t\"1899670\"\n\t\t\"228990\"\t\t\"228980\"\n\t}\n" + tail730, appID: 730)
+        require(mixed?.text == head730 + "\t\"SharedDepots\"\n\t{\n\t\t\"1899671\"\t\t\"1899670\"\n\t}\n" + tail730 && mixed?.depots == [228990],
+                "shared redist: another owner's entry (GTA V's 1899670) stays")
+        require(SR.withoutOwner(head730 + "\t\"SharedDepots\"\n\t{\n\t\t\"1899671\"\t\t\"1899670\"\n\t}\n" + tail730, appID: 730) == nil,
+                "shared redist: a record naming no 228980 entry is left alone")
+        require(SR.withoutOwner(head730 + tail730, appID: 730) == nil, "shared redist: a record without SharedDepots is left alone")
+        require(SR.withoutOwner(head730 + shared730 + tail730, appID: 731) == nil, "shared redist: a record of another app is left alone")
+        require(SR.withoutOwner(head730 + "\t\"SharedDepots\"\n\t{\n\t\t\"228988\"\t\t\"228980\" // x\n\t}\n" + tail730, appID: 730) == nil &&
+                SR.withoutOwner(head730 + "\t\"SharedDepots\" {\n\t\t\"228988\"\t\t\"228980\"\n\t}\n" + tail730, appID: 730) == nil &&
+                SR.withoutOwner(head730 + shared730 + shared730 + tail730, appID: 730) == nil,
+                "shared redist: any shape other than Valve's plain one is left alone")
+        let crlf = (head730 + shared730 + tail730).replacingOccurrences(of: "\n", with: "\r\n")
+        require(SR.withoutOwner(crlf, appID: 730)?.text == (head730 + tail730).replacingOccurrences(of: "\n", with: "\r\n"),
+                "shared redist: CRLF line ends are kept")
+
+        let redistApps = drive.appendingPathComponent("redist-steamapps")
+        let rec730 = redistApps.appendingPathComponent("appmanifest_730.acf")
+        let rec228980 = redistApps.appendingPathComponent("appmanifest_228980.acf")
+        func owner(_ flags: Int) -> String {
+            "\"AppState\"\n{\n\t\"appid\"\t\t\"228980\"\n\t\"name\"\t\t\"Steamworks Common Redistributables\"\n\t\"StateFlags\"\t\t\"\(flags)\"\n" +
+            "\t\"installdir\"\t\t\"Steamworks Shared\"\n\t\"buildid\"\t\t\"0\"\n\t\"InstalledDepots\"\n\t{\n\t}\n}\n"
+        }
+        try write(rec730, head730 + shared730 + tail730)
+        try write(rec228980, owner(4))
+        require(SR.prepare(appID: 730, steamApps: redistApps) == nil &&
+                (try? String(contentsOf: rec730, encoding: .utf8)) == head730 + shared730 + tail730,
+                "shared redist: with 228980 fully installed nothing changes (that start works today)")
+        try write(rec228980, owner(2))
+        let line = SR.prepare(appID: 730, steamApps: redistApps)
+        require(line == "[dock-shared-redist] app=730 owner=228980 owner-state=2 removed depots=228988,228990" &&
+                (try? String(contentsOf: rec730, encoding: .utf8)) == head730 + tail730,
+                "shared redist: 228980 \"Update Required\" (StateFlags 2, as on the owner's iPhone): the entries come out: \(line ?? "nil")")
+        require(SR.prepare(appID: 730, steamApps: redistApps) == nil, "shared redist: a second start finds nothing to change")
+        try fm.removeItem(at: rec228980)
+        try write(rec730, head730 + shared730 + tail730)
+        require(SR.prepare(appID: 730, steamApps: redistApps)?.contains("owner-state=missing") == true,
+                "shared redist: no 228980 record at all counts as not ready")
+        require(SR.prepare(appID: 999, steamApps: redistApps) == nil, "shared redist: a game without a record is left alone")
         if failures > 0 { print("FAILURES: \(failures)"); exit(1) }
         print("PASS: all Steam games Swift checks")
     }

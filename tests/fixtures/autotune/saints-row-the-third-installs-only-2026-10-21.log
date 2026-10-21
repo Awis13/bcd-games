@@ -1,0 +1,170 @@
+[00:54:36.330] [INFO] Checking entitlements...
+[00:54:36.330] [INFO] [build] v0.1.576 (576)
+[00:54:36.331] [INFO] [device] model=iPhone18,1 idiom=phone os=iOS Version 27.2 (Build 24B5089g) ram=11722MB available=8172MB cores=6
+[00:54:36.331] [INFO] [device] address-map=[0x100b20000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[00:54:36.343] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[00:55:22.472] [INFO] [bcd] library launch Saints Row the Third: avx=0 wine-vcrt=1 nvidia=0 game-config=1 metalfx=off
+[00:55:22.472] [INFO] Requesting JIT with StikDebug...
+[00:55:22.495] [INFO] Opening StikDebug to enable JIT...
+[00:55:26.456] [INFO] [dock-launch] image-retire=1
+[00:55:26.457] [INFO] [dock-launch] image-map-guard=1
+[00:55:26.548] [INFO] [dock-installers] app=55230 choice=run pending=1; the next start skips them
+[00:55:26.588] [INFO] [dock-installers] app=55230 program=visual c 2008 sp1 redistributable package x86 file=vcredist_x86.exe status=done key=HKLM\Software\Valve\Steam\Apps\55230 recorded=1 minimum=1
+[00:55:26.629] [INFO] [dock-installers] app=55230 program=directx file=DXSetup.exe status=pending key=HKLM\Software\Valve\Steam\Apps\55230 recorded=- minimum=1
+[00:55:26.629] [INFO] [dock-installers] app=55230 dotnet-fusion=present
+[00:55:26.629] [INFO] [dock-installers] app=55230 scripts=1 programs=2 pending=1 done=1 missing=0 unsupported=0 default-key=1 services-step=start session-madsync-off=1 installs-only=1
+[00:55:26.630] [INFO] [dock-installers] app=55230 this session runs only the one-time installs; the game starts after BCD is restarted (MADEIRA_DOCK_INSTALL_SEPARATE=0: in the same session)
+[00:55:26.630] [INFO] [madeira-dock] app 55230: this session runs only the one-time installs; the host starts after a restart
+[00:55:26.638] [INFO] Running full Wine sequence...
+[00:55:26.638] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100b20000,0x8000000000) 512GB available=8135MB low-power=0 thermal=fair
+[00:55:26.641] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[00:55:26.642] [INFO] Allocating 896MB JIT pool via debugger...
+[00:55:26.642] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[00:55:26.642] [INFO] [jit-debugger] attached=1 at the pool request
+[00:55:26.643] [OK] [exe-window] executable window widened to [0x140000000,+512MB) for this game (exe-window-mb)
+[00:55:26.643] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 448MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[00:55:26.644] [ERR] ⚠️ SMALL JIT POOL (448MB) on this launch: expect ~1 s freezes in heavy games. Quit and relaunch the app for a smooth session.
+[00:55:28.078] [INFO] RX pool at 0x123200000
+[phase] wine-start             t+  1.533s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7674 MB + phys_footprint=517 MB = 8192 MB (hw.memsize says 11722 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x123204000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x123278000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x123390000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x123438000)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1235b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x12368c000)
+[footprint] rev=ml358 phys=524 MB (peak 524) internal=523 MB compressed=0 MB external=119 MB reusable=14 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #5 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\cmd.exe" t+  1.931s rev=ml526
+[copy-verify] ?: OK, 7 .text pages executable (copy @0x124a34000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x124ad8000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x124bf0000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x124c84000)
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.984s rev=ml526
+[copy-verify] imm32.dll: OK, 4 .text pages executable (copy @0x1261ac000)
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  2.033s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+D 4C Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11DF30000
+D 4C Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FC900000
+D 4C Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FAEF0000
+D 4C Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FAE70000
+D 4C Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FAD60000
+D 50 Load module rpcrt4.dll (rpcrt4.dll-5ef8bc180117faf4): 71FAC30000
+[phase] spawn:L"C:\\windows\\system32\\services.exe" t+  2.165s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[free-delay] #1 release of 0x7022cc0000+0x100000 held for 2000 ms (1 in flight)
+[phase] spawn:L"C:\\windows\\system32\\rpcss.exe" t+  2.211s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x1287d8000)
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=1060
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=1074
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=140
+[Wine ntdll/server] process_exit_wrapper(0)
+[00:55:29.106] [INFO] [dock-installers] start 1/1 program=directx
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Saints Row the Third\\DirectX\\DXSETUP.exe" t+  2.467s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+009c:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[free-delay] #2 release of 0x702b490000+0x100000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x702b590000+0x200000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x702b790000+0x400000 held for 2000 ms (4 in flight)
+[free-delay] #5 release of 0x702bb90000+0x800000 held for 2000 ms (5 in flight)
+[free-delay] #6 release of 0x702c390000+0xfd0000 held for 2000 ms (6 in flight)
+[free-delay] #7 release of 0x702d360000+0xfd0000 held for 2000 ms (7 in flight)
+[free-delay] #8 release of 0x702e330000+0xfd0000 held for 2000 ms (8 in flight)
+[store-undecoded] #1 rev=ml350 insn=0xb8e11314 pc=0x13d207090 addr=0x7901ed0024 rw_addr=0x7006320024 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[av-detail] ml613 #1 p0=WRITE p1=0x7901ed0024 hostpc=0x13d207090 hinsn=0xb8e11314 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x13d1fc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x0 pc=0x13d207090 addr=0x7901ed0024 kr=2(PROTECTION_FAILURE) entryprot=5 nowprot=5 region=0x7901ed0000+0x10000 rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x13d207090 addr=0x7901ed0024 x18=0x0 type=1 lr=0x13d2063c0 sp=0x1200ff350 x16=0x1200feea0 x17=0x128bc1ee4
+[guest-code] rev=ml333 pool_rip=0xfff62d80 (PE 0xfff62d80) -- NO pool copy for this address (identity translate)
+[fault-host] 13d206f90: 54002e08 52800414 53103ce0 6b14401f 54002ea8 710000ff 54002f81 1400017f
+[fault-host] 13d206fb0: 52800034 b3401e86 f90f639f 17ffff5d 510018b4 8b344278 78bfc305 d503201f
+[fault-host] 13d206fd0: 530d30aa 0b070d4b 5280100a 7140217f 54002e68 52880034 6b14017f 540025e3
+[fault-host] 13d206ff0: 53103ca5 2a0500e7 92880014 0b070e8a 530a7d4a 1101c14a 14000169 aa0403e5
+[fault-host] 13d207010: 51004134 8b344278 b8bfc307 d503201f 5100b134 8b344278 d503201f 889fff06
+[fault-host] 13d207030: 51011134 8b344278 b8bfc304 d503201f 110020b4 8b344278 d503201f 889fff04
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-undecoded] #2 rev=ml350 insn=0xb8e11314 pc=0x13d207090 addr=0x7901ed0024 rw_addr=0x7006320024 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[av-detail] ml613 #2 p0=WRITE p1=0x7901ed0024 hostpc=0x13d207090 hinsn=0xb8e11314 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x13d1fc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x0 pc=0x13d207090 addr=0x7901ed0024 kr=2(PROTECTION_FAILURE) entryprot=5 nowprot=5 region=0x7901ed0000+0x10000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x13d207090 addr=0x7901ed0024 x18=0x0 type=1 lr=0x13d2063c0 sp=0x1200ff350 x16=0x1200feea0 x17=0x128bc1ee4
+[guest-code] rev=ml333 pool_rip=0xfff62d80 (PE 0xfff62d80) -- NO pool copy for this address (identity translate)
+[fault-host] 13d206ff0: 53103ca5 2a0500e7 92880014 0b070e8a 530a7d4a 1101c14a 14000169 aa0403e5
+[fault-host] 13d207010: 51004134 8b344278 b8bfc307 d503201f 5100b134 8b344278 d503201f 889fff06
+[fault-host] 13d207030: 51011134 8b344278 b8bfc304 d503201f 110020b4 8b344278 d503201f 889fff04
+[fault-host] 13d207050: 110010b4 8b344278 b8bfc304 d503201f 5ac00086 5ac010c6 12800024 aa0503eb
+[fault-host] 13d207070: aa0703e5 aa0603e7 924010f4 cb1403f4 1ad42c84 11001174 8b344278 2a2403e1
+[fault-host] 13d207090: b8e11314 1b057cc6 51008135 8b354278 00000000 00000000 00000000 00000000
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+009c:err:seh:bus_handler [bus-rgn]   PAGE-CENSUS 16KB pages from 0x7901ed0000: [....]  ('.'=materialises 'X'=fails; fault is at +0x24) rev=ml561
+[store-noalias] #1 rev=ml348 addr=0x7900000004 insn=0x889fff0b pc=0x13d201620 NO pool/anon alias | region 0x7900000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #3 p0=WRITE p1=0x7900000004 hostpc=0x13d201620 hinsn=0x889fff0b rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x13d1fc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=3 rip=0x0 pc=0x13d201620 addr=0x7900000004 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7900000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #3 pc=0x13d201620 addr=0x7900000004 x18=0x0 type=1 lr=0x13d2042f0 sp=0x1200ff350 x16=0x7c02136080 x17=0xfff8d4ec
+[guest-code] rev=ml333 pool_rip=0xfff8d4ec (PE 0xfff8d4ec) -- NO pool copy for this address (identity translate)
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-noalias] #2 rev=ml348 addr=0x7900000004 insn=0x889fff0b pc=0x13d201620 NO pool/anon alias | region 0x7900000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #4 p0=WRITE p1=0x7900000004 hostpc=0x13d201620 hinsn=0x889fff0b rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x13d1fc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=4 rip=0x0 pc=0x13d201620 addr=0x7900000004 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7900000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #4 pc=0x13d201620 addr=0x7900000004 x18=0x0 type=1 lr=0x13d2042f0 sp=0x1200ff350 x16=0x7c02136080 x17=0xfff8d4ec
+[guest-code] rev=ml333 pool_rip=0xfff8d4ec (PE 0xfff8d4ec) -- NO pool copy for this address (identity translate)
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+009c:err:seh:bus_handler BUS->AV: unreadable target addr=0x7900000004 pc=0x13d201620 rw=1 rev=ml420
+[store-noalias] #3 rev=ml348 addr=0x7900000000 insn=0xb8bfc306 pc=0x13d667188 NO pool/anon alias | region 0x7900000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #5 p0=READ p1=0x7900000000 hostpc=0x13d667188 hinsn=0xb8bfc306 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x13d1fc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=5 rip=0x0 pc=0x13d667188 addr=0x7900000000 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7900000000+0x110000 rev=ml555
+[mach_exc] UNHANDLED #5 pc=0x13d667188 addr=0x7900000000 x18=0x7900300000 type=1 lr=0x13f1fc1d8 sp=0x1200ff350 x16=0x7c02081280 x17=0x7a446e24
+[guest-code] rev=ml333 pool_rip=0x7a446e24 (PE 0x7a446e24) -- NO pool copy for this address (identity translate)
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[store-noalias] #4 rev=ml348 addr=0x7900000000 insn=0xb8bfc306 pc=0x13d667188 NO pool/anon alias | region 0x7900000000+0x110000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #6 p0=READ p1=0x7900000000 hostpc=0x13d667188 hinsn=0xb8bfc306 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x13d1fc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=6 rip=0x0 pc=0x13d667188 addr=0x7900000000 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7900000000+0x110000 rev=ml555
+009c:err:seh:bus_handler BUS->AV: unreadable target addr=0x7900000000 pc=0x13d667188 rw=1 rev=ml420
+[footprint] rev=ml358 phys=733 MB (peak 733) internal=731 MB compressed=0 MB external=193 MB reusable=14 MB (cycle=2)
+[footprint] rev=ml358 phys=744 MB (peak 744) internal=743 MB compressed=0 MB external=192 MB reusable=17 MB (cycle=3)
+[footprint] rev=ml358 phys=752 MB (peak 752) internal=750 MB compressed=0 MB external=192 MB reusable=17 MB (cycle=4)
+D 9C Load module setupapi.dll (setupapi.dll-eb8e8a5cf9bad3ad): 797A390000
+D 9C Load module cfgmgr32.dll (cfgmgr32.dll-9e9ee325c5d90363): 797A480000
+D 9C Load module setupapi.dll (setupapi.dll-eb8e8a5cf9bad3ad): 797A390000
+D 9C Load module cfgmgr32.dll (cfgmgr32.dll-9e9ee325c5d90363): 797A480000
+D 9C Load module setupapi.dll (setupapi.dll-eb8e8a5cf9bad3ad): 797A390000
+D 9C Load module cfgmgr32.dll (cfgmgr32.dll-9e9ee325c5d90363): 797A480000
+[phase] spawn:L"C:\\users\\<user>\\AppData\\Local\\Temp\\DXa9e1.tmp\\infinst.exe" t+  8.927s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+wine: failed to create main module for L"C:\\users\\<user>\\AppData\\Local\\Temp\\DXa9e1.tmp\\infinst.exe", status c0000018
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000018) syscalls=0 unix_calls=3246
+[Wine ntdll/server] process_exit_wrapper(-1073741800): closing child fd_socket=214
+[Wine ntdll/server] process_exit_wrapper(-1073741800)
+[Wine child thread] child exited with code -1073741800
+[footprint] rev=ml358 phys=732 MB (peak 752) internal=731 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=5)
+009c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0xc0000018) syscalls=0 unix_calls=3258
+009c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000018) syscalls=0 unix_calls=3259
+[Wine ntdll/server] process_exit_wrapper(-1073741800): closing child fd_socket=139
+[Wine ntdll/server] process_exit_wrapper(-1073741800)
+[Wine child thread] child exited with code -1073741800
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0xc0000018) syscalls=0 unix_calls=3269
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000018) syscalls=0 unix_calls=3272
+[Wine ntdll/server] process_exit_wrapper(-1073741800): closing child fd_socket=102
+[Wine ntdll/server] process_exit_wrapper(-1073741800)
+[Wine child thread] child exited with code -1073741800
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=126
+[Wine ntdll/server] process_exit_wrapper(0)
+[00:55:37.108] [INFO] [dock-installers] end succeeded=0 failed=1 of=1; the session ends, the game starts after a restart
+[footprint] rev=ml358 phys=721 MB (peak 752) internal=720 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=6)
+[footprint] rev=ml358 phys=722 MB (peak 752) internal=720 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=7)
+[footprint] rev=ml358 phys=722 MB (peak 752) internal=720 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=8)
+[footprint] rev=ml358 phys=722 MB (peak 752) internal=720 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=9)
+[footprint] rev=ml358 phys=722 MB (peak 752) internal=720 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=10)
+[footprint] rev=ml358 phys=722 MB (peak 752) internal=720 MB compressed=0 MB external=193 MB reusable=17 MB (cycle=11)
