@@ -162,7 +162,8 @@ There is no warranty.
 Steam is a trademark of Valve Corporation. Windows, DirectX, Direct3D and Visual C++ are
 trademarks of the Microsoft group of companies. Apple, iPhone, iPad, iOS, iPadOS and Metal
 are trademarks of Apple Inc. BCD is an independent project, not affiliated with or endorsed
-by Valve, Microsoft, Apple or the authors of Madeira.
+by Valve, Microsoft, Apple or the authors of Madeira. Game titles named here belong to their
+respective owners; BCD is not affiliated with or endorsed by them.
 
 ## Credits
 
