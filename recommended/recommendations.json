@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "version": 1,
-  "generated": "2026-10-18",
+  "version": 2,
+  "generated": "2026-10-21",
   "rules": [
     {
       "id": "rdr2-steam",
@@ -845,7 +845,7 @@
     {
       "id": "counter-strike-2",
       "title": "Counter-Strike 2",
-      "version": 1,
+      "version": 2,
       "match": {
         "steamAppIDs": [730],
         "steamFolders": ["counter-strike global offensive"],
@@ -856,10 +856,15 @@
       "config": [
         "# BCD's recommended settings for Counter-Strike 2.",
         "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
-        "env.MADEIRA_EC_HOOK_TRACE = 0"
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        "pool-split = 1"
       ],
       "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
       "notes": [
+        "v2 (2026-10-20, the owner's iPhone18,2, build 574, logs d38e1274, 981cb2fc, b657f2e4): no hole",
+        "fits the 896 MB JIT pool, it shrinks to 544-592 MB and cs2.exe's DLLs fill it ([jit-pool]",
+        "EXHAUSTED, \"ran out of memory while loading the game\"). pool-split = 1, added by hand,",
+        "started it (two runs, about 880 MB).",
         "Counter-Strike 2 (Steam 730), not yet run here (owner, 2026-10-16: about to install it).",
         "Direct3D 11 by default, so DXMT, as Crysis Remastered, which runs with the standard",
         "line and every switch off. CS2 requires SSE4.2 and no AVX: FEX reports SSE4.2",
@@ -924,6 +929,390 @@
         "writable, so one swap faulted until the redelivery guard ended the app. As plain",
         "memory the swap lands (ml1279; its automatic mode only knows Wine Mono, not Unity's).",
         "Build 563, owner: with the line the game runs well."
+      ]
+    },
+    {
+      "id": "spelunky-2",
+      "title": "Spelunky 2",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [418530],
+        "steamFolders": ["spelunky 2"],
+        "programs": [
+          {"name": "spel2.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Spelunky 2.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        "pool-split = 1"
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Spelunky 2 (Steam 418530), build 574, iPad16,3 (Send Log J2YJF8, 2026-10-20): the JIT pool shrank",
+        "(no hole for 896 MB) and filled while the game's DLLs loaded ([jit-pool] EXHAUSTED, exit c0000017),",
+        "as Counter-Strike 2, which pool-split = 1 started. The standard line plus the split pool."
+      ]
+    },
+    {
+      "id": "albion-online",
+      "title": "Albion Online",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [761890],
+        "steamFolders": ["albion online"],
+        "programs": [
+          {"name": "albionlauncher.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Albion Online.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        "pool-split = 1"
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Albion Online (Steam 761890), its Qt 6 launcher, build 574, iPhone17,1 (Send Logs BYBFCH, PGKTDD,",
+        "2026-10-19): the shrunken JIT pool filled while Qt6*.dll loaded ([jit-pool] EXHAUSTED, exit",
+        "c0000135). As Counter-Strike 2: the standard line plus the split pool."
+      ]
+    },
+    {
+      "id": "megabonk",
+      "title": "Megabonk",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [3405340],
+        "steamFolders": ["megabonk"],
+        "programs": [
+          {"name": "megabonk.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Megabonk.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_WINTYPES = 1", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Megabonk (Steam 3405340), Unity IL2CPP, build 574, iPhone18,1 (Send Log J7VAJV, 2026-10-20): GameAssembly.dll",
+        "imports api-ms-win-core-winrt-robuffer-l1-1-0.dll, which Wine's apiset maps to wintypes.dll; the 64-bit set",
+        "ships none and the game ended at once with c0000135. Build 575 ships Wine's wintypes.dll as",
+        "wintypes-optin.dll, linked for a game with env.MADEIRA_WINTYPES = 1 (that build and later only)."
+      ]
+    },
+    {
+      "id": "no-im-not-a-human",
+      "title": "No, I'm not a Human",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [3180070],
+        "steamFolders": ["no, i'm not a human"],
+        "programs": [
+          {"name": "noimnotahuman.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for No, I'm not a Human.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_WINTYPES = 1", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "No, I'm not a Human (Steam 3180070), Unity IL2CPP, build 574, iPhone17,2 (Send Log TZB1JX, 2026-10-20):",
+        "the same missing wintypes.dll as Megabonk (c0000135 at once); env.MADEIRA_WINTYPES = 1 from build 575."
+      ]
+    },
+    {
+      "id": "over-the-hill",
+      "title": "Over the Hill",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [2929250],
+        "steamFolders": ["over the hill"],
+        "programs": [
+          {"name": "over the hill.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Over the Hill.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_WINTYPES = 1", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Over the Hill (Steam 2929250), Unity IL2CPP, build 574, iPhone18,2 (Send Log HXQQN1, 2026-10-20):",
+        "the same missing wintypes.dll as Megabonk (c0000135 at once); env.MADEIRA_WINTYPES = 1 from build 575."
+      ]
+    },
+    {
+      "id": "fort-solis",
+      "title": "Fort Solis",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1931730],
+        "steamFolders": ["fort solis"],
+        "programs": [
+          {"name": "fortsolis.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Fort Solis.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_OPTIN_DLLS = dxva2", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Fort Solis (Steam 1931730), Unreal Engine 5, build 574, iPad16,4 (Send Logs 94MSWJ, NZ3ANE, 2026-10-19):",
+        "fortsolis.exe imports dxva2.dll, which the 64-bit set does not ship; c0000135 at once. Build 575 ships",
+        "Wine's dxva2.dll as dxva2-optin.dll, linked for a game that lists it in env.MADEIRA_OPTIN_DLLS."
+      ]
+    },
+    {
+      "id": "dragon-ball-sparking-zero",
+      "title": "DRAGON BALL: Sparking! ZERO",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1790600],
+        "steamFolders": ["dragon ball sparking! zero"],
+        "programs": [
+          {"name": "sparkingzero-win64-shipping.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for DRAGON BALL: Sparking! ZERO.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_OPTIN_DLLS = dxva2", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "DRAGON BALL: Sparking! ZERO (Steam 1790600), build 574, iPhone16,1 (Send Log H6XVPV, 2026-10-20): the same",
+        "missing dxva2.dll as Fort Solis (c0000135 at once); env.MADEIRA_OPTIN_DLLS = dxva2 from build 575."
+      ]
+    },
+    {
+      "id": "animal-well",
+      "title": "Animal Well",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [813230],
+        "steamFolders": ["animal well"],
+        "programs": [
+          {"name": "animal well.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Animal Well.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_OPTIN_DLLS = xpsprint", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Animal Well (Steam 813230), build 565, iPhone18,2 (Send Log NWHG8J, 2026-10-17): Animal Well.exe imports",
+        "XPSPRINT.DLL, which BCD does not ship; c0000135 at once. env.MADEIRA_OPTIN_DLLS = xpsprint from build 575."
+      ]
+    },
+    {
+      "id": "hogwarts-legacy",
+      "title": "Hogwarts Legacy",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [990080],
+        "steamFolders": ["hogwarts legacy"],
+        "programs": [
+          {"name": "hogwartslegacy.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Hogwarts Legacy.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "exe-window-mb = 448", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Hogwarts Legacy (Steam 990080), build 574, iPhone18,1 (Send Log D67PYY, 2026-10-20): its 445 MB program has",
+        "its relocations stripped and must load at 0x140000000; the 128 MB window held only part of it and the JIT",
+        "pool the rest (failed to create main module, c0000018). exe-window-mb (build 575) keeps 448 MB there."
+      ]
+    },
+    {
+      "id": "metal-gear-solid-v",
+      "title": "METAL GEAR SOLID V: THE PHANTOM PAIN",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [287700],
+        "steamFolders": ["mgs_tpp"],
+        "programs": [
+          {"name": "mgsvtpp.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for METAL GEAR SOLID V: THE PHANTOM PAIN.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "exe-window-mb = 176", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Metal Gear Solid V (Steam 287700), build 565, iPhone19,3 (Send Log 6E40B4): mgsvtpp.exe (160 MB, relocations",
+        "stripped) did not fit the 128 MB window at 0x140000000 (c0000018). exe-window-mb = 176 from build 575."
+      ]
+    },
+    {
+      "id": "stellar-blade-demo",
+      "title": "Stellar Blade Demo",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [3564860],
+        "steamFolders": ["stellarbladedemo"],
+        "programs": [
+          {"name": "sb-win64-shipping.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Stellar Blade Demo.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "exe-window-mb = 320", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Stellar Blade Demo (Steam 3564860), build 574, iPhone17,2 (Send Log WNDRGF): SB-Win64-Shipping.exe (314 MB,",
+        "relocations stripped) did not fit the 128 MB window at 0x140000000 (c0000018). exe-window-mb = 320 from 575."
+      ]
+    },
+    {
+      "id": "star-wars-galactic-racer",
+      "title": "STAR WARS Galactic Racer",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [4078430],
+        "steamFolders": ["star wars galactic racer"],
+        "programs": [
+          {"name": "swgr-win64-shipping.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for STAR WARS Galactic Racer.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "exe-window-mb = 496", "minBuild": 575}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "STAR WARS Galactic Racer (Steam 4078430), build 569, iPhone17,2 (Send Logs 3HWREK, XDCPK7): its 480 MB program",
+        "(relocations stripped) did not fit the 128 MB window at 0x140000000 (c0000018). exe-window-mb = 496 from 575 (16 MB over the image)."
+      ]
+    },
+    {
+      "id": "denshattack",
+      "title": "Denshattack!",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [2524850],
+        "steamFolders": ["denshattack"],
+        "programs": [
+          {"name": "denshattack_proto.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Denshattack!.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_VCRT_ARM64_KEY = 1", "minBuild": 576}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Denshattack! (Steam 2524850), builds 565 and 574, iPhone18,x (Send Logs BEB3XY, MKT2TW): the Unreal start-up",
+        "program Denshattack_Proto.exe asks for Microsoft Visual C++ 2015-2022 Redistributable (arm64) and exits",
+        "0x2329. env.MADEIRA_VCRT_ARM64_KEY = 1 (build 576) adds that entry to the session's registry; not tried on a",
+        "device yet (the program's registry reads are not in the log)."
+      ]
+    },
+    {
+      "id": "final-fantasy-resonance-demo",
+      "title": "FINAL FANTASY RESONANCE DEMO",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [4474710],
+        "steamFolders": ["final fantasy resonance demo"],
+        "programs": [
+          {"name": "ffrs.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for FINAL FANTASY RESONANCE DEMO.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_VCRT_ARM64_KEY = 1", "minBuild": 576}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "FINAL FANTASY RESONANCE DEMO (Steam 4474710), build 573, iPhone18,1 (Send Logs 4AW8BN, Q5KWDW): the Unreal",
+        "start-up program FFRS.exe shows the same Microsoft Visual C++ 2015-2022 Redistributable (arm64) dialog and",
+        "exits 0x2329. env.MADEIRA_VCRT_ARM64_KEY = 1 (build 576); not tried on a device yet."
+      ]
+    },
+    {
+      "id": "no-rest-for-the-wicked",
+      "title": "No Rest for the Wicked",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [1371980],
+        "steamFolders": ["norestforthewicked"],
+        "programs": [
+          {"name": "norestforthewicked.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for No Rest for the Wicked.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.MADEIRA_FEX_BAND_KEEP_MB = 6144", "minBuild": 576}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "No Rest for the Wicked (Steam 1371980), build 574, iPhone18,1 (Send Log 0M4SJD): played at up to 60 fps for",
+        "about 100 s, then \"FEXAlloc could not allocate\" and exit 0xc000001d. The game (Unity IL2CPP) reserved 24",
+        "ranges of 511 MB; the steer valve put 23 of them in the emulator's 16 GB range (11.7 GB of it) and no 4 MB-",
+        "aligned gap was left for the emulator, which held 3.8 GB at the first refusal and 4.0 GB 4500 lines later.",
+        "env.MADEIRA_FEX_BAND_KEEP_MB = 6144 (build 576) keeps the lowest 6 GB of that range for the emulator; the",
+        "reservations that no longer fit go to the range below it. Not tried on a device yet."
+      ]
+    },
+    {
+      "id": "quaver",
+      "title": "Quaver",
+      "version": 1,
+      "match": {
+        "steamAppIDs": [980610],
+        "steamFolders": ["quaver"],
+        "programs": [
+          {"name": "quaver.exe"}
+        ]
+      },
+      "config": [
+        "# BCD's recommended settings for Quaver.",
+        "# Reset to Recommended, at the bottom of the game's settings, brings them back.",
+        "env.MADEIRA_EC_HOOK_TRACE = 0",
+        {"line": "env.DOTNET_EnableWriteXorExecute = 0", "minBuild": 576}
+      ],
+      "switches": {"avx": false, "nvidia": false, "wineVCRT": false, "display": "fit"},
+      "notes": [
+        "Quaver (Steam 980610), a self-contained .NET runtime, build 574, iPad16,3 (Send Log DKEQ3C, 2026-10-20): the",
+        "runtime stopped at start with \"CLR: Assert failure ... m_pRegionToGenTableImmediate\" and exit 0xc0000602.",
+        "It keeps its code in two views of one memory section (write-xor-execute); BCD gives the executable view a",
+        "copy of its own, so what the runtime writes never shows there. env.DOTNET_EnableWriteXorExecute = 0 (build 576)",
+        "makes the runtime use plain executable memory. Not tried on a device yet."
       ]
     },
     {

@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "readback-probe-freed-buffer"
+ ],
+ "next": [
+  "env.MADEIRA_LUM_PROBE = 0"
+ ],
+ "note": "Batman: Arkham Asylum GOTY (Steam, 32-bit), build 574, iPhone18,2 (Send Log 1Q05G8): the [rb-tex] readback probe read a freed staging buffer (BUS->AV at MTLBlitCommandEncoder_encodeCommands+3260); env.MADEIRA_LUM_PROBE = 0 avoids it on 574, build 575 reads safely. Same in Brutal Legend 82BAXZ and Dishonored 0RA62D/5B06QT",
+ "outcome": "crashed",
+ "stage": 5,
+ "status": "trying"
+}

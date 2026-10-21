@@ -1,0 +1,78 @@
+[21:36:17.078] [INFO] [build] v0.1.574 (574)
+[21:36:17.078] [INFO] [device] model=iPad16,3 idiom=pad os=iPadOS Version 27.0.1 (Build 24A446) ram=7455MB available=8168MB cores=9
+[21:36:17.078] [INFO] [device] address-map=[0x102294000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[21:36:17.090] [INFO] [device] gpu="Apple M4 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[21:36:27.883] [INFO] [bcd] library launch PanzerPaladin: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[21:36:27.893] [INFO] [dock-launch] image-retire=1
+[21:36:27.894] [INFO] [dock-launch] image-map-guard=1
+[21:36:27.910] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102294000,0x8000000000) 512GB available=8147MB low-power=0 thermal=nominal
+[21:36:27.913] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[21:36:27.914] [INFO] [jit-debugger] attached=1 at the pool request
+[21:36:27.915] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[21:36:28.603] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  0.749s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=663 MB (peak 663) internal=662 MB compressed=0 MB external=78 MB reusable=11 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11A920000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1041 MB (peak 1041) internal=1040 MB compressed=0 MB external=150 MB reusable=11 MB (cycle=2)
+[footprint] rev=ml358 phys=1130 MB (peak 1130) internal=1128 MB compressed=0 MB external=152 MB reusable=11 MB (cycle=3)
+[footprint] rev=ml358 phys=1134 MB (peak 1134) internal=1133 MB compressed=0 MB external=152 MB reusable=11 MB (cycle=4)
+[footprint] rev=ml358 phys=1124 MB (peak 1134) internal=1123 MB compressed=0 MB external=152 MB reusable=11 MB (cycle=5)
+D A4 Load module msxml3.dll (msxml3.dll-7bbbb6ed26e9e85c): 797A8F0000
+D A4 Load module urlmon.dll (urlmon.dll-95e9544414617c01): 797A870000
+D A4 Load module oleaut32.dll (oleaut32.dll-ed26e11610f90dbb): 797A7B0000
+D A4 Load module wininet.dll (wininet.dll-7ed1ba985c0d782c): 797A730000
+D A4 Load module mpr.dll (mpr.dll-09c67d52a3fd9a8d): 797A700000
+D A4 Load module ws2_32.dll (ws2_32.dll-5902ca9b51c3d7bf): 797A6C0000
+00a4:err:mscoree:CLRRuntimeInfo_GetRuntimeHost Wine Mono is not installed
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0xffffffff) syscalls=0 unix_calls=7895
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xffffffff) syscalls=0 unix_calls=7895
+[Wine child thread] child exited with code -1
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1183 MB (peak 1183) internal=1182 MB compressed=0 MB external=157 MB reusable=11 MB (cycle=6)
+0050:err:module:load_dll [dll-missing] rev=ml336 #47 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #48 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1102 MB (peak 1194) internal=1100 MB compressed=0 MB external=156 MB reusable=11 MB (cycle=9)
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=8547
+[footprint] rev=ml358 phys=1027 MB (peak 1194) internal=1026 MB compressed=0 MB external=153 MB reusable=11 MB (cycle=10)
+[footprint] rev=ml358 phys=1027 MB (peak 1194) internal=1026 MB compressed=0 MB external=154 MB reusable=11 MB (cycle=11)
+[footprint] rev=ml358 phys=1027 MB (peak 1194) internal=1026 MB compressed=0 MB external=154 MB reusable=11 MB (cycle=12)
+[frontend] graceful close requested
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=1027 MB (peak 1194) internal=1026 MB compressed=0 MB external=154 MB reusable=11 MB (cycle=13)
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=1022 MB (peak 1194) internal=1020 MB compressed=0 MB external=175 MB reusable=17 MB (cycle=14)

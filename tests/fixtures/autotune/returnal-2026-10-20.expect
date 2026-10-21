@@ -1,0 +1,16 @@
+{
+ "dialogs": [
+  "LowLevelFatalError [File:Unknown] [Line: 578] ?pDevice1->CreatePipelineLibrary(nullptr, 0, IID_PPV_ARGS(PipelineLibrary.GetInitReference())) failed ? at D:/TeamCity/Work/Build/Engine/Source/Runtime/D"
+ ],
+ "end": {},
+ "matched": [
+  "d3d12-pipeline-library-fatal"
+ ],
+ "next": [
+  "d3d12-pipeline-library = 1"
+ ],
+ "note": "Returnal (Steam, Unreal, through BCD Dock under LiveContainer), build 574, iPhone18,2 (Send Log CWKVD7): the engine makes its pipeline library at start (pDevice1->CreatePipelineLibrary(nullptr, 0, ...)); the runtime's stub answered E_NOTIMPL and the engine's LowLevelFatalError ended the game (exit 3, 34 s). Auto-tune had already tried env.MADEIRA_FEX_AVX and env.MADEIRA_X64_IMAGE_NOCOPY on this run.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

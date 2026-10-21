@@ -209,7 +209,7 @@ known = set(re.findall(r'ConfigOption\(key: "([^"]+)"', catalog))
 NOT_FROM_LAYER = {"metalfx-upscale", "fps-limit", "env.MADEIRA_PAD_MODE", "pool", "wx", "usd-time", "d3d9", "metal-validation"}
 LINE = re.compile(r"^([A-Za-z0-9._-]+) = (\S.*)$")
 FIELDS = {"id", "lines", "priority", "all", "any", "none", "outcomes", "session", "api", "ramMinMB", "ramMaxMB",
-          "minStage", "maxStage", "upgrade", "reason", "evidence", "fixedIn"}
+          "minStage", "maxStage", "upgrade", "noRetry", "reason", "evidence", "fixedIn"}
 ids = [r["id"] for r in rules]
 check("rule ids are unique", len(ids) == len(set(ids)))
 for r in rules:
@@ -301,8 +301,11 @@ with tempfile.TemporaryDirectory(prefix="madeira-autotune-") as tmp:
                                    capture_output=True, text=True)
                 runs[chunk] = json.loads(r.stdout) if r.returncode == 0 else {"error": r.stderr}
             got = runs[0]
-            same = all(runs[c].get(k) == got.get(k) for c in (4093, 7) for k in KEYS + ("facts",))
+            same = all(runs[c].get(k) == got.get(k) for c in (4093, 7) for k in KEYS + ("facts", "monoMissing"))
             diff = {k: (exp.get(k), got.get(k)) for k in KEYS if exp.get(k) != got.get(k)}
+            # Wine Mono missing (the game page's hint): only a fixture whose .expect says so may show it.
+            if bool(exp.get("monoMissing")) != bool(got.get("monoMissing")):
+                diff["monoMissing"] = (bool(exp.get("monoMissing")), bool(got.get("monoMissing")))
             check(f"{p.stem}: {got.get('outcome')}, stage {got.get('stage')}, next {got.get('next') or '-'}",
                   not diff and same, "expected/got: %s; chunk sizes agree: %s" % (diff, same))
             # A crash read from the log alone (the app never came back) reads the same when the

@@ -432,7 +432,14 @@ import os
         // The limit does not change while BCD runs: measured once.
         if system.memoryLimitBytes == nil {
             system.memoryLimitBytes = Self.memoryLimit()
-            system.increasedMemoryLimit = EntitlementStatus.check().increasedMemory
+            let entitlements = EntitlementStatus.check()
+            system.increasedMemoryLimit = entitlements.increasedMemory
+            // The measured address map, not the entitlement string: the map ends at 63 GB without
+            // extended virtual addressing and at 454-512 GB with it, while the entitlement check read 0
+            // on 253 of 364 tester logs, most of them 512 GB installs that play large games (and 1 on a
+            // 63 GB one, DVXWGA). Unknown: no note.
+            var low: UInt64 = 0, high: UInt64 = 0
+            system.extendedAddressing = jit_task_map_range(&low, &high) ? high >= 128 << 30 : true
         }
         let pad = GCController.current.flatMap { $0.extendedGamepad != nil ? $0 : nil }
             ?? GCController.controllers().first { $0.extendedGamepad != nil }

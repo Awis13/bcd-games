@@ -31,6 +31,10 @@ struct BCDFrontEnd: View {
 
     private var layout: BCDLayout { BCDLayout.of(horizontal: horizontal, vertical: vertical) }
 
+    /// The hint bar under the screen: a controller was the last input and the screen has buttons.
+    /// (Never on an upright iPhone, which has the tab bar there.) The screens read it as `\.bcdHintBar`.
+    private var hintBarShown: Bool { layout != .phonePortrait && focus.controllerActive && !focus.hints.isEmpty }
+
     var body: some View {
         Group {
             if store.inGame {
@@ -53,13 +57,14 @@ struct BCDFrontEnd: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             if layout == .phonePortrait { portraitTabs }
-            else if focus.controllerActive && !focus.hints.isEmpty { hintBar }
+            else if hintBarShown { hintBar }
         }
         .background { BCDBackdrop() }
         .coordinateSpace(name: BCDFocus.space)
         // The menu reads the focus and the layout from the environment: it sits inside them.
         .modifier(BCDMenuHost(model: cardMenu))
         .environment(\.bcdLayout, layout)
+        .environment(\.bcdHintBar, hintBarShown)
         .environmentObject(focus)
         .environmentObject(store)
         .environment(\.bcdMenu, cardMenu)

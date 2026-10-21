@@ -1,0 +1,129 @@
+[03:16:09.095] [INFO] [build] v0.1.574 (574)
+[03:16:09.096] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.2 (Build 24B115) ram=11695MB available=8171MB cores=6
+[03:16:09.097] [INFO] [device] address-map=[0x100e88000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[03:16:09.138] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[03:16:27.192] [INFO] [bcd] library launch Left 4 Dead 2: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[03:16:32.048] [INFO] [dock-launch] image-retire=1
+[03:16:32.048] [INFO] [dock-launch] image-map-guard=1
+[03:16:32.074] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100e88000,0x8000000000) 512GB available=8155MB low-power=0 thermal=fair
+[03:16:32.077] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[03:16:32.077] [INFO] [jit-debugger] attached=1 at the pool request
+[03:16:32.079] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 608MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[03:16:32.835] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  0.821s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=672 MB (peak 672) internal=671 MB compressed=0 MB external=91 MB reusable=11 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11FB60000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1102 MB (peak 1102) internal=1100 MB compressed=0 MB external=165 MB reusable=11 MB (cycle=2)
+[footprint] rev=ml358 phys=1153 MB (peak 1153) internal=1152 MB compressed=0 MB external=165 MB reusable=11 MB (cycle=3)
+[footprint] rev=ml358 phys=1157 MB (peak 1157) internal=1156 MB compressed=0 MB external=165 MB reusable=11 MB (cycle=4)
+[footprint] rev=ml358 phys=1147 MB (peak 1157) internal=1146 MB compressed=0 MB external=165 MB reusable=11 MB (cycle=5)
+[alloc-fail] ml814 #2 status=c0000018 hint=0x79ffeeffee size=0x1 type=0x2000 protect=0x1 tid=00ac | STAGE=none err=1 at 0x100000000+0x800000
+[win-name] #37 hwnd=0x10086 class='' text="Default IME" rev=ml853
+[win-name] #38 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[win-name] #39 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[win-name] #43 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[win-name] #44 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[win-name] #45 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[win-name] #46 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[rb-tex] madeira-bcd new readback #1: fmt 80 32x32 level 0 (texture 32x32, 1 mips)
+[rb-tex] madeira-bcd new readback #7: fmt 72 32x32 level 0 (texture 32x32, 1 mips)
+[launch-view] dismissed reason=game-window logs=0
+[footprint] rev=ml358 phys=1582 MB (peak 1582) internal=1513 MB compressed=0 MB external=189 MB reusable=11 MB (cycle=6)
+[win-name] #47 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[win-name] #48 hwnd=0x10084 class='' text="Left 4 Dead 2 - Direct3D 9" rev=ml853
+[rb-tex] madeira-bcd new readback #13: fmt 10 1280x720 level 0 (texture 1280x720, 1 mips)
+00ac:err:module:load_dll [dll-missing] rev=ml336 #35 L"c:\\program files (x86)\\steam\\steamapps\\common\\left 4 dead 2\\left4dead2_dlc2\\bin\\server.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #36 L"c:\\program files (x86)\\steam\\steamapps\\common\\left 4 dead 2\\left4dead2_dlc1\\bin\\server.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[03:17:02.964] [INFO] detach-wait: presents=269 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=70 resident=1977MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 9.99 s of audio in 10.00 s (99.9%) over 1872 wakes; device short 10.0 ms in 1 of 998 passes (largest pass 480 frames); ring 0..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.1%) over 1885 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+D 16C Load module cryptnet.dll (cryptnet.dll-c704d270b3af7370): 7973E80000
+D 16C Load module cryptnet.dll (cryptnet.dll-c704d270b3af7370): 7973E80000
+D 16C Load module cryptnet.dll (cryptnet.dll-c704d270b3af7370): 7973E80000
+D 16C Load module cryptnet.dll (cryptnet.dll-c704d270b3af7370): 7973E80000
+D 16C Load module cryptnet.dll (cryptnet.dll-c704d270b3af7370): 7973E80000
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1881 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.1 ms; clamped 0 samples
+[03:17:33.057] [INFO] detach-wait: presents=892 running=1 elapsed=60s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=79 resident=2467MB dbg=DEBUGGED rev=ml525
+[rb-tex] madeira-bcd new readback #34: fmt 110 512x256 level 0 (texture 512x256, 1 mips)
+[rb-tex] madeira-bcd new readback #42: fmt 110 512x128 level 0 (texture 512x128, 1 mips)
+D AC Load module vaudio_speex.dll (vaudio_speex.dll-6d9264c8a6765dbf): 7973E60000
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1880 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1880 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1883 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 7435 samples
+[03:18:03.142] [INFO] detach-wait: presents=2036 running=1 elapsed=90s
+[freeze] alive t+90s beats=3 gaps=0 iter=357 gen=1 threads=85 resident=2978MB dbg=DEBUGGED rev=ml525
+[freeze] alive t+120s beats=4 gaps=0 iter=476 gen=1 threads=84 resident=2987MB dbg=DEBUGGED rev=ml525
+[03:18:33.226] [INFO] detach-wait: presents=3286 running=1 elapsed=120s
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1880 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 17317 samples
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1874 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 8681 samples
+[03:19:03.273] [INFO] detach-wait: presents=4389 running=1 elapsed=150s
+[freeze] alive t+150s beats=5 gaps=0 iter=595 gen=1 threads=85 resident=3025MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1871 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 15758 samples
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1876 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 6431 samples
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1878 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.0 ms; clamped 5328 samples
+[03:19:33.333] [INFO] detach-wait: presents=5565 running=1 elapsed=180s
+[freeze] alive t+180s beats=6 gaps=0 iter=714 gen=1 threads=85 resident=3047MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x11914ae00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.1%) over 1877 wakes; device short 0.0 ms in 0 of 1000 passes (largest pass 480 frames); ring 480..1440 frames; worst late wake 0.1 ms; clamped 14079 samples
+[x18-emul3] UNRECOGNIZED insn=b9980e5c pc=0x151b801d8 teb+0x180c
+[store-noalias] #1 rev=ml348 addr=0x180c insn=0xb9980e5c pc=0x151b801d8 NO pool/anon alias | region 0x100e88000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x180c hostpc=0x151b801d8 hinsn=0xb9980e5c rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x0 pc=0x151b801d8 addr=0x180c kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x100e88000+0x1fc8000 rev=ml555
+[guest-code] rev=ml333 pool_rip=0x0 (PE 0x0) -- NO pool copy for this address (identity translate)
+[x18-emul3] UNRECOGNIZED insn=b9980e5c pc=0x151b801d8 teb+0x180c
+[store-noalias] #2 rev=ml348 addr=0x180c insn=0xb9980e5c pc=0x151b801d8 NO pool/anon alias | region 0x100e88000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=READ p1=0x180c hostpc=0x151b801d8 hinsn=0xb9980e5c rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x0 pc=0x151b801d8 addr=0x180c kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x100e88000+0x1fc8000 rev=ml555
+[guest-code] rev=ml333 pool_rip=0x0 (PE 0x0) -- NO pool copy for this address (identity translate)
+[x18-emul3] UNRECOGNIZED insn=b9980e5c pc=0x151b801d8 teb+0x180c
+[store-noalias] #3 rev=ml348 addr=0x180c insn=0xb9980e5c pc=0x151b801d8 NO pool/anon alias | region 0x100e88000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #3 p0=READ p1=0x180c hostpc=0x151b801d8 hinsn=0xb9980e5c rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+00ac:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x151b801d8
+00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=104738
+[Wine child thread] child exited with code -1073741819
+[store-noalias] #4 rev=ml348 addr=0x6410e830 insn=0xa940daa8 pc=0x102003e3c NO pool/anon alias | region 0x100e88000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #5 rev=ml348 addr=0x2ce4e800 insn=0xa940daa8 pc=0x102003e3c NO pool/anon alias | region 0x100e88000+0x1fc8000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+0050:err:module:load_dll [dll-missing] rev=ml336 #51 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #52 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #53 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #54 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=3013 MB (peak 3105) internal=2859 MB compressed=0 MB external=193 MB reusable=11 MB (cycle=101)
+[footprint] rev=ml358 phys=3013 MB (peak 3105) internal=2859 MB compressed=0 MB external=193 MB reusable=11 MB (cycle=102)
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=105124
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=105132
+[footprint] rev=ml358 phys=2718 MB (peak 3105) internal=2565 MB compressed=0 MB external=189 MB reusable=11 MB (cycle=103)
+[footprint] rev=ml358 phys=2717 MB (peak 3105) internal=2565 MB compressed=0 MB external=189 MB reusable=11 MB (cycle=104)
+[footprint] rev=ml358 phys=2687 MB (peak 3105) internal=2565 MB compressed=0 MB external=189 MB reusable=11 MB (cycle=105)
+[03:20:03.344] [INFO] detach-wait: presents=6200 running=1 elapsed=210s
+[freeze] alive t+210s beats=7 gaps=0 iter=833 gen=1 threads=30 resident=2766MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=2684 MB (peak 3105) internal=2561 MB compressed=0 MB external=190 MB reusable=14 MB (cycle=106)

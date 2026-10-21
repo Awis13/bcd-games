@@ -106,6 +106,12 @@ struct BCDContentFile: Codable, Hashable {
     var digest: BCDDigest?
 }
 
+/// An error that has a short reason of its own for the log (BCDContentQueue.reason): the queue
+/// would otherwise print the error's type name, which says nothing about the step that failed.
+protocol BCDLogReasonError: Error {
+    var logReason: String { get }
+}
+
 enum BCDContentError: Error, Equatable, LocalizedError {
     case notEnoughSpace(needed: Int64, available: Int64)
     case badPlan(String)
@@ -163,6 +169,8 @@ enum BCDContentError: Error, Equatable, LocalizedError {
         }
     }
 }
+
+extension BCDContentError: BCDLogReasonError {}
 
 // MARK: - Paths
 

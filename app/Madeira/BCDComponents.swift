@@ -30,7 +30,15 @@ extension EnvironmentValues {
         get { self[BCDLayoutKey.self] }
         set { self[BCDLayoutKey.self] = newValue }
     }
+    /// The controller's hint bar is up under the screen (BCDFrontEnd.hintBar): a screen has 40 pt
+    /// less height than the bare layout says. Home draws a tighter layout while it is; false otherwise.
+    var bcdHintBar: Bool {
+        get { self[BCDHintBarKey.self] }
+        set { self[BCDHintBarKey.self] = newValue }
+    }
 }
+
+private struct BCDHintBarKey: EnvironmentKey { static let defaultValue = false }
 
 /// A game's picture in one of the stores' shapes, with the placeholder (the game's colours,
 /// its initial and title) for a game no store has a picture of, such as one added from Files.

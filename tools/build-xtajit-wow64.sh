@@ -11,6 +11,13 @@
 #    inside Function_8000_0002h before its first frame (log 2026-09-30 11:57).
 #  - patch-fex-ios-teb-tsd.py: the WinAPI shims' GetCurrentTEB() read x18,
 #    which is 0 on some iOS threads (32-bit Crysis, TlsGetValue, log 12:25).
+#  - patch-fex-ios-wow-threads-ctor.py: the failure-path safety net of the 32-bit start on
+#    iOS 18 (builds 573/574: every 32-bit program died in BTCpuThreadInit on the module's
+#    all-zero global thread map). The cause is fixed in build/ntdll-unix/virtual_ios.c
+#    ([wow-cpu-pool], build 576: the module's constructors ran in its executable PE view, the
+#    exports in its pool copy); this overlay only constructs the map when it still finds it
+#    zero and logs [wow64-ctor] lines with its state, so the next iOS 18 log shows which of
+#    the two happened. A map the static initialiser touched is never touched.
 set -eu
 R="$(pwd)"
 MINGW="${MINGW:-$R/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin}"
@@ -23,7 +30,9 @@ JOBS="$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
 git -C FEX diff --name-only | while read -r f; do git -C FEX checkout -- "$f"; done
 python3 "$R/tools/patch-fex-ios-cpuid-index.py" "$R/FEX/$CPUIDF"
 python3 "$R/tools/patch-fex-ios-teb-tsd.py" "$R/FEX/Source/Windows/Common/Priv.h"
-restore() { git -C "$R/FEX" checkout -- "$CPUIDF" Source/Windows/Common/Priv.h; }
+# the safety net must never cost the two required fixes above: a drifted anchor only skips it
+python3 "$R/tools/patch-fex-ios-wow-threads-ctor.py" "$R/FEX" || echo "::warning::the thread-map guard was not applied (FEX anchor changed); xtajit.dll is built without it"
+restore() { git -C "$R/FEX" checkout -- "$CPUIDF" Source/Windows/Common/Priv.h Source/Windows/WOW64/Module.cpp; }
 trap restore EXIT
 
 cmake -S "$R/FEX" -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -46,4 +55,4 @@ if ! diff "$B.old-exports" "$B.new-exports"; then
     exit 1
 fi
 cp "$B/Bin/libwow64fex.dll" "$SHIP"
-echo "::notice::xtajit.dll (WOW64) built from FEX $(git -C FEX rev-parse --short HEAD) with the CPUID index wrap and the TSD-slot TEB for the WinAPI shims, and shipped"
+echo "::notice::xtajit.dll (WOW64) built from FEX $(git -C FEX rev-parse --short HEAD) with the CPUID index wrap, the TSD-slot TEB for the WinAPI shims and the thread-map guard, and shipped"

@@ -56,7 +56,7 @@ import CryptoKit
 import UIKit
 #endif
 
-// MARK: - Source, checks and installer (Foundation and CryptoKit only; tests/host/check-vcruntime-download.py compiles this part)
+// MARK: - Source, checks and installer (Foundation and CryptoKit only, plus WineMonoInstaller.sha256 from WineMono.swift; tests/host/check-vcruntime-download.py compiles this part with the installer part of WineMono.swift)
 
 enum VCRuntimeError: LocalizedError, Equatable {
     case busy
@@ -267,14 +267,6 @@ enum VCRuntimeInstaller {
         return PEImage(data)?.fileVersion ?? ""
     }
 
-    static func sha256(of file: URL) throws -> String {
-        let handle = try FileHandle(forReadingFrom: file)
-        defer { try? handle.close() }
-        var hasher = SHA256()
-        while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty { hasher.update(data: chunk) }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
-    }
-
     /// An x64 DLL as Microsoft ships it: PE32+, AMD64, a DLL, its signature attached.
     static func check(_ data: Data, name: String) throws {
         guard let image = PEImage(data) else { throw VCRuntimeError.extraction("\(name) in the installer is not a Windows DLL.") }
@@ -392,7 +384,7 @@ enum VCRuntimeInstaller {
         let fm = FileManager.default
         let staging = Self.staging(in: root), folder = Self.folder(in: root)
         if let url, let expected = VCRuntimeSource.expectedSHA256(in: url) {
-            guard try sha256(of: installer) == expected else { throw VCRuntimeError.checksumMismatch }
+            guard try WineMonoInstaller.sha256(of: installer) == expected else { throw VCRuntimeError.checksumMismatch }
         }
         try? fm.removeItem(at: staging)
         defer { try? fm.removeItem(at: staging) }

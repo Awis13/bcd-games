@@ -154,6 +154,11 @@ final class DepotDownloader {
         state.phase = .downloading
         report(state)
         SteamLog.event("[steam-depot] install begin app=\(app.appID) depots=\(plans.count) files=\(prepared.fileCount) resume=\(prepared.doneBytes > 0 ? 1 : 0)")
+        // The percentage outlives the app (a pause, then a close from the app
+        // switcher): the next start lists the game as paused at this point.
+        Self.saveSnapshot(state, journalDir: journalDir)
+        var lastSnapshot = Date()
+        defer { Self.saveSnapshot(state, journalDir: journalDir) }
 
         let remaining = prepared.remainingUncompressed
         if remaining > 0 {
@@ -197,6 +202,10 @@ final class DepotDownloader {
                         let elapsed = now.timeIntervalSince(started)
                         if elapsed > 1 { state.bytesPerSecond = Double(state.doneBytes - resumedBytes) / elapsed }
                         report(state)
+                    }
+                    if now.timeIntervalSince(lastSnapshot) >= 2 {
+                        lastSnapshot = now
+                        Self.saveSnapshot(state, journalDir: journalDir)
                     }
                     enqueue()
                 }
@@ -261,6 +270,38 @@ final class DepotDownloader {
     static func hasPartialDownload(appID: UInt32, steamApps: URL) -> Bool {
         let dir = steamApps.appendingPathComponent("downloading/\(appID)", isDirectory: true)
         return ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []).contains { $0.hasSuffix(".journal") }
+    }
+
+    private static let snapshotName = "progress.json"
+    private struct Snapshot: Codable { var totalBytes: UInt64; var doneBytes: UInt64 }
+
+    /// Writes the byte counts next to the journals. Never creates the folder:
+    /// a finished install has removed it, and nothing is written then.
+    static func saveSnapshot(_ progress: SteamDownloadProgress, journalDir: URL) {
+        guard progress.totalBytes > 0,
+              let data = try? JSONEncoder().encode(Snapshot(totalBytes: progress.totalBytes, doneBytes: progress.doneBytes))
+        else { return }
+        try? data.write(to: journalDir.appendingPathComponent(snapshotName), options: .atomic)
+    }
+
+    /// The App IDs with resumable progress in `steamApps/downloading`, with the
+    /// last saved byte counts (zero when an older build left the journals).
+    static func partialDownloads(steamApps: URL) -> [UInt32: SteamDownloadProgress] {
+        let root = steamApps.appendingPathComponent("downloading", isDirectory: true)
+        var result: [UInt32: SteamDownloadProgress] = [:]
+        for name in ((try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []).prefix(500) {
+            guard let appID = UInt32(name), appID > 0, hasPartialDownload(appID: appID, steamApps: steamApps) else { continue }
+            var progress = SteamDownloadProgress()
+            progress.phase = .downloading
+            let url = root.appendingPathComponent(name, isDirectory: true).appendingPathComponent(snapshotName)
+            if let data = try? Data(contentsOf: url), data.count < 4096,
+               let saved = try? JSONDecoder().decode(Snapshot.self, from: data), saved.totalBytes > 0 {
+                progress.totalBytes = saved.totalBytes
+                progress.doneBytes = min(saved.doneBytes, saved.totalBytes)
+            }
+            result[appID] = progress
+        }
+        return result
     }
 
     // MARK: - Plan

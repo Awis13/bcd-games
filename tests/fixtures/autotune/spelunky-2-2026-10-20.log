@@ -1,0 +1,74 @@
+[21:50:13.045] [INFO] [build] v0.1.574 (574)
+[21:50:13.045] [INFO] [device] model=iPad16,3 idiom=pad os=iPadOS Version 27.0.1 (Build 24A446) ram=7455MB available=8168MB cores=9
+[21:50:13.045] [INFO] [device] address-map=[0x1020f8000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[21:50:13.057] [INFO] [device] gpu="Apple M4 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[21:50:34.045] [INFO] [bcd] library launch Spelunky 2: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[21:50:34.062] [INFO] [dock-launch] image-retire=1
+[21:50:34.062] [INFO] [dock-launch] image-map-guard=1
+[21:50:34.071] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x1020f8000,0x8000000000) 512GB available=8144MB low-power=0 thermal=nominal
+[21:50:34.073] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[21:50:34.073] [INFO] [jit-debugger] attached=1 at the pool request
+[21:50:34.074] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[21:50:34.768] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  0.758s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=660 MB (peak 660) internal=659 MB compressed=0 MB external=76 MB reusable=14 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11B5E0000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+0050:err:module:load_dll [dll-missing] rev=ml336 #37 L"libavfilter-11.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #38 L"libavformat-62.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #39 L"libavutil-60.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #40 L"libswresample-6.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #41 L"libswscale-9.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #42 L"video64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D 50 Load module dsound.dll (dsound.dll-541ca4d6eb8180ce): 71F5D00000
+D 50 Load module mmdevapi.dll (mmdevapi.dll-57db4935cb1d4a81): 71F5C60000
+[footprint] rev=ml358 phys=1015 MB (peak 1015) internal=1014 MB compressed=0 MB external=151 MB reusable=14 MB (cycle=2)
+D 50 Load module winhttp.dll (winhttp.dll-940743fb9f87d8d4): 71F5AF0000
+D 50 Load module jsproxy.dll (jsproxy.dll-cf964b9ca28dbd5b): 71F5A50000
+D 8C Load module dhcpcsvc.dll (dhcpcsvc.dll-ddd225dc767891f4): 71F5990000
+D 8C Load module cryptnet.dll (cryptnet.dll-c70a2270b30e54e3): 71F5830000
+[footprint] rev=ml358 phys=1128 MB (peak 1128) internal=1126 MB compressed=0 MB external=154 MB reusable=14 MB (cycle=3)
+[footprint] rev=ml358 phys=1132 MB (peak 1132) internal=1131 MB compressed=0 MB external=154 MB reusable=14 MB (cycle=4)
+[footprint] rev=ml358 phys=1122 MB (peak 1132) internal=1121 MB compressed=0 MB external=154 MB reusable=14 MB (cycle=5)
+[jit-pool] EXHAUSTED (image 0x703a7e0000+0x22e73000): want=0x22e78000 bump=0x99f4000/0x25000000 tail_resv=0x1004000 freelist=0 — FAILING the load (was: silent BUS loop)
+[jit-pool] EXHAUSTED (image 0x703a7e0000+0x22e73000): want=0x22e78000 bump=0x99f4000/0x25000000 tail_resv=0x1004000 freelist=0 — FAILING the load (was: silent BUS loop)
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000017) syscalls=0 unix_calls=7400
+[Wine child thread] child exited with code -1073741801
+[footprint] rev=ml358 phys=1122 MB (peak 1132) internal=1121 MB compressed=0 MB external=153 MB reusable=14 MB (cycle=6)
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x2d) syscalls=0 unix_calls=7841
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x2d) syscalls=0 unix_calls=7850
+[footprint] rev=ml358 phys=963 MB (peak 1132) internal=962 MB compressed=0 MB external=150 MB reusable=14 MB (cycle=11)
+[footprint] rev=ml358 phys=963 MB (peak 1132) internal=962 MB compressed=0 MB external=150 MB reusable=14 MB (cycle=12)
+[footprint] rev=ml358 phys=963 MB (peak 1132) internal=962 MB compressed=0 MB external=150 MB reusable=14 MB (cycle=13)
+[frontend] graceful close requested
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=965 MB (peak 1132) internal=963 MB compressed=0 MB external=150 MB reusable=13 MB (cycle=14)
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=965 MB (peak 1132) internal=964 MB compressed=0 MB external=150 MB reusable=13 MB (cycle=15)
+[21:51:04.963] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=23 resident=1151MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=965 MB (peak 1132) internal=965 MB compressed=0 MB external=172 MB reusable=13 MB (cycle=16)

@@ -68,7 +68,10 @@ enum BCDGOGContent {
 
     /// The newest public generation-2 build (the list is newest first).
     static func newestBuild(_ object: [String: Any]) throws -> BCDGOGBuild {
-        guard let items = object["items"] as? [[String: Any]] else { throw BCDGOGError.badReply("builds") }
+        guard let items = object["items"] as? [[String: Any]] else {
+            BCDContentLog.write("[gog-content] builds reply: " + BCDGOGAPI.shape(object, lists: ["items"]))
+            throw BCDGOGError.badReply("builds")
+        }
         var older = false
         for item in items {
             let generation = (item["generation"] as? NSNumber)?.intValue ?? 0
@@ -77,7 +80,19 @@ enum BCDGOGContent {
             guard generation == 2 else { continue }
             let id = (item["build_id"] as? String) ?? (item["build_id"] as? NSNumber)?.stringValue ?? ""
             guard BCDGOGCatalog.validID(id), let text = item["link"] as? String, let link = URL(string: text),
-                  BCDGOGAPI.trusted(link) else { throw BCDGOGError.badReply("build") }
+                  BCDGOGAPI.trusted(link) else {
+                // The host of the link is GOG's own to say, so it is the one thing named: BCD follows only gog.com
+                // and gog-statics.com hosts. The build's id is a number of GOG's, not the player's.
+                let where_: String
+                if let text = item["link"] as? String, let target = URL(string: text) {
+                    where_ = BCDGOGAPI.trusted(target) ? "gog" : (target.scheme == "https" ? "other-host" : "not-secure")
+                } else {
+                    where_ = "none"
+                }
+                BCDContentLog.write("[gog-content] build entry: id=\(BCDGOGCatalog.validID(id) ? "ok" : "bad") target=\(where_) "
+                                    + BCDGOGAPI.shape(item, lists: []))
+                throw BCDGOGError.badReply("build")
+            }
             let version = ((item["version_name"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return BCDGOGBuild(id: id, version: String(version.prefix(80)), link: link)
         }
@@ -87,11 +102,18 @@ enum BCDGOGContent {
     static func parseBuildManifest(_ object: [String: Any]) throws -> BCDGOGBuildManifest {
         func text(_ value: Any?) -> String? { (value as? String) ?? (value as? NSNumber)?.stringValue }
         guard (object["version"] as? NSNumber)?.intValue == 2, let base = text(object["baseProductId"]), BCDGOGCatalog.validID(base),
-              let depots = object["depots"] as? [[String: Any]] else { throw BCDGOGError.badReply("manifest") }
+              let depots = object["depots"] as? [[String: Any]] else {
+            BCDContentLog.write("[gog-content] build manifest: " + BCDGOGAPI.shape(object, lists: ["depots"]))
+            throw BCDGOGError.badReply("manifest")
+        }
         var list: [BCDGOGBuildManifest.Depot] = []
         for depot in depots {
             guard let hash = depot["manifest"] as? String, validHash(hash), let product = text(depot["productId"]),
-                  BCDGOGCatalog.validID(product) else { throw BCDGOGError.badReply("depot") }
+                  BCDGOGCatalog.validID(product) else {
+                BCDContentLog.write("[gog-content] build manifest depot: " + BCDGOGAPI.shape(depot, lists: []) +
+                                    " hash-bytes=\((depot["manifest"] as? String)?.utf8.count ?? -1)")
+                throw BCDGOGError.badReply("depot")
+            }
             let languages = (depot["languages"] as? [String] ?? []).map { $0.trimmingCharacters(in: .whitespaces) }
             list.append(.init(manifest: hash, productID: product, languages: languages,
                               bitness: depot["osBitness"] as? [String], gogDepot: depot["isGogDepot"] as? Bool ?? false))

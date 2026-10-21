@@ -85,6 +85,17 @@ OVERLAY = {
                         "arenas). A game that really uses the whole reservation would fault, so set it per game. Logged "
                         "as [jumbo-half]. Read at every such request.",
                 "sources": ["build/ntdll-unix/virtual_ios.c"]},
+    "env.MADEIRA_FEX_BAND_KEEP_MB": {"category": "Memory & JIT pool", "title": "Keep the lowest MB of the emulator's address range for the emulator",
+                "kind": "int", "default": "0",
+                "note": "Default 0 (off). N MB: reservations of 32 MB to 1 GB that BCD places above the game's own range "
+                        "because that range is tight may not take the lowest N MB of the emulator's 16 GB range, so "
+                        "the emulator keeps room for its own memory; what no longer fits goes to the range below it, "
+                        "as every such reservation already does once the 16 GB are full. For a game that reserves "
+                        "many 511 MB ranges and ends with \"FEXAlloc could not allocate\" (No Rest for the Wicked "
+                        "reserved 12 GB of it in 24 steps; the emulator held 4 GB). 6144 gives the emulator "
+                        "6 GB. Only applies when the emulator's range is the 16 GB one at 0x7c00000000. Logged as "
+                        "[fex-keep]. Read once per session.",
+                "sources": ["build/ntdll-unix/virtual_ios.c"]},
     "env.MADEIRA_PRELOAD_DLLS": {"category": "Memory & JIT pool", "title": "Load these DLLs with the D3D12 device",
                 "kind": "text", "default": "",
                 "note": "Default empty. DLL names separated by ';' (e.g. xinput1_4.dll): each program loads and pins "
@@ -112,6 +123,16 @@ OVERLAY = {
                         "image, as 32-bit programs already do, and its executable protections are applied without "
                         "EXEC. Frees the pool for hybrid DLL copies and code buffers. Hybrid images keep their "
                         "copy. Set it in the game's own file; restart the session after changing it."},
+    "env.MADEIRA_WOW_CPU_POOL_ONLY": {"category": "Memory & JIT pool", "title": "32-bit emulator module runs from its JIT-pool copy only",
+                "kind": "bool", "default": "1",
+                "note": "On by default. Where the kernel lets BCD make an image executable in place (iOS 18; iOS 26 "
+                        "without TXM), the 32-bit emulator module (xtajit.dll) kept an executable PE view next to its "
+                        "JIT-pool copy: its start-up code and C++ constructors ran in the view while the emulator "
+                        "was called in the copy, whose globals were still zero (every 32-bit program stopped before "
+                        "its first instruction, builds 573 and 574). 1: EXEC is taken back from that view when its "
+                        "pool copy exists, so both use the copy, as on iOS 27. 0 restores the previous behaviour. "
+                        "Logged as [wow-cpu-pool] and [exec-split]. Read once per session.",
+                "sources": ["build/ntdll-unix/virtual_ios.c"]},
     "env.MADEIRA_FIXED_BASE_GUARD": {"category": "Memory & JIT pool", "title": "Keep 0x140000000 for a fixed-base game",
                 "kind": "bool", "default": "0",
                 "note": "Default off. 1: a resource-only image view (a version or resource query, e.g. the Rockstar "
@@ -397,6 +418,13 @@ OVERLAY = {
                 "note": "Default 2. 3: OPTIONS reports resource binding tier 3, as Apple's D3DMetal and vkd3d-proton do; "
                         "a game can take another binding path for it. Anything else keeps tier 2. Read once per game "
                         "start."},
+    "d3d12-pipeline-library": {"category": "Direct3D 12", "title": "Pipeline library for the game",
+                "kind": "bool", "default": "0",
+                "note": "Default off: CreatePipelineLibrary fails (E_NOTIMPL), as before. 1: it makes a library that "
+                        "keeps no pipeline (loads answer \"not in the library\", stores are accepted and forgotten, "
+                        "the saved form is 16 bytes). For an Unreal title that ends in a fatal error when the call "
+                        "fails (Returnal); GTA V and Red Dead Redemption 2 call it and carry on without. Read once "
+                        "per game start."},
     "d3d12-raw-typed-views": {"category": "Direct3D 12", "title": "Raw buffer views readable as typed",
                 "kind": "bool", "default": "0",
                 "note": "Default off. 1: raw and structured buffer views also carry a texture-buffer view (R32, or "
@@ -598,6 +626,14 @@ OVERLAY = {
                         "Off (default): the sound stays off until the game is restarted, as before. Logged as "
                         "[audio] interruption began / ended, resumed=1. Read when the session starts.",
                 "sources": ["build/ntdll-unix/audio_null_ios.c", "app/Madeira/WineProcessBridge.m"]},
+    "env.MADEIRA_LUM_PROBE": {"category": "Direct3D 9/10/11 (DXMT)",
+                "title": "Log GPU readback values", "kind": "bool", "default": "1",
+                "note": "1 (default): the log names what the game reads back from the GPU ([rb-tex], [rb-buf], "
+                        "[lum-readback]) with the values of small readbacks. 0: none of these lines. Builds before 575 "
+                        "read a freed readback buffer there and ended the game (Batman: Arkham Asylum, Brutal Legend, "
+                        "Dishonored); 0 avoids that on them. Read once per session.",
+                "sources": ["tools/patch-winemetal-lum-probe.py", "tools/patch-winemetal-readback-census.py",
+                            "tools/patch-winemetal-probe-safe-read.py"]},
     "env.MADEIRA_PAUSE_IN_BACKGROUND": {"category": "Direct3D 9/10/11 (DXMT)",
                 "title": "Pause GPU work while BCD is not active", "kind": "bool", "default": "0",
                 "note": "1: Metal command buffers and presents wait from the moment BCD stops being active until it is "
@@ -671,6 +707,23 @@ OVERLAY = {
                         "becomes a third debugger region for the emulator's code buffers, so the whole JIT pool is "
                         "left to DLL copies (GTA V: about 300 MB more). Needs the pool above the window; costs the "
                         "region's size in memory. Off by default; read at launch, the game's own file wins."},
+    "env.MADEIRA_TAIL_CARVE_EXEC_CHECK": {"category": "Memory & JIT pool",
+                "title": "Refuse a code buffer that cannot execute", "kind": "bool", "default": "1",
+                "note": "1 (default): a new emulator code buffer whose first 16 MB hold a JIT-pool page that lost "
+                        "execute permission for good is refused, and the emulator asks for half the size elsewhere "
+                        "(Dead Space, Star Wars: The Force Unleashed ended there). A buffer that can execute is "
+                        "granted as before. 0: every buffer is granted, as in build 575 and earlier. Read once per "
+                        "session.",
+                "sources": ["build/ntdll-unix/virtual_ios.c"]},
+    "exe-window-mb": {"category": "Memory & JIT pool", "title": "Room for a fixed-address program (MB)",
+                "kind": "int", "default": "128",
+                "note": "A program whose relocations are stripped runs only at 0x140000000; BCD keeps 128 MB there. "
+                        "A larger one (Hogwarts Legacy 445 MB, Star Wars Galactic Racer 480 MB) ran into the JIT pool "
+                        "and failed to start (\"failed to create main module ... c0000018\"). Up to 1024: the room "
+                        "grows to this size before the pool is placed, so the pool may be smaller. 128 (default): as "
+                        "before. Read when the JIT pool is made (the first game after BCD starts). Auto-tune adds 512 "
+                        "after that failure.",
+                "sources": ["app/Madeira/StikJITHelper.swift"]},
     "pool-low-margin": {"category": "Memory & JIT pool", "title": "Code-buffer region: MB left free below the window",
                 "kind": "int", "default": "128",
                 "note": "With pool-low on: how much of the free run below the executable window stays free for "
@@ -847,6 +900,18 @@ OVERLAY = {
                         "crossing to the native code and back (Horizon Zero Dawn: 2-4 million such calls a second). "
                         "Same results; a negative or NaN sqrt still goes to Wine's native sqrt. Off (default): the "
                         "shipped ucrtbase.dll. Set it in the game's own file; read at session start."},
+    # madeira-bcd: ios_vcrt_arm64_key_publish (build/ntdll-unix/server_ios.c).
+    "env.MADEIRA_VCRT_ARM64_KEY": {"category": "Wine core (ntdll)", "title": "ARM64 Visual C++ runtime marker (Unreal bootstrap)",
+                "kind": "text", "default": "",
+                "sources": ["build/ntdll-unix/server_ios.c"],
+                "note": "1: the session has the ARM64 Visual C++ 2015-2022 redistributable's \"Installed\" marker, "
+                        "HKLM\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\arm64 (also under Wow6432Node), "
+                        "with version 14.42.34433.0; a version such as 14.44.35211 writes that one. The keys are "
+                        "volatile (not saved with the prefix) and a key the prefix already has is left alone. For Unreal "
+                        "Engine's bootstrap program (Denshattack_Proto.exe, FFRS.exe), an x64 program that sees an ARM64 "
+                        "machine and stops with \"Microsoft Visual C++ 2015-2022 Redistributable (arm64)\" (exit "
+                        "0x2329). Off (default): nothing written. Set it in the game's own file; read at session start. "
+                        "Not tried on a device yet."},
     # madeira-bcd: kernelbase-fibertrace.dll (tools/patch-wine-kernelbase-fibertrace.py, linked by WineProcessBridge.m).
     "env.MADEIRA_DXMT_FAULT_INFO": {"category": "Debugging / logs", "title": "Name the DXMT encoder of a GPU fault or hang",
                 "kind": "bool", "default": "0",
@@ -856,6 +921,24 @@ OVERLAY = {
                         "\"Device error at frame N\" a [fault-enc] line names the faulted, affected and unknown encoders. "
                         "For D3D9/10/11 games that hang or fault the GPU (GTA V Legacy at Story Mode, build 546). A "
                         "diagnostic with some GPU cost; off (default): unchanged. Set it in the game's own file."},
+    "env.MADEIRA_OPTIN_DLLS": {"category": "Wine libraries", "title": "Give the game more of Wine's DLLs",
+                "kind": "text", "default": "",
+                "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
+                "note": "A comma-separated list (dxva2, evr, xpsprint): each named DLL, which BCD ships as <name>-optin.dll and "
+                        "never for every game, runs as <name>.dll for this game. For a program that imports one and "
+                        "exits at once with c0000135 (\"Library dxva2.dll ... not found\"; Fort Solis, DRAGON BALL "
+                        "Sparking! ZERO). Programs that load these DLLs optionally keep running without them. An "
+                        "earlier session's links are removed when a name is gone. Set it in the game's own file; read "
+                        "at session start. Auto-tune adds it after that failure."},
+    "env.MADEIRA_WINTYPES": {"category": "Wine libraries", "title": "Give the game Wine's wintypes.dll",
+                "kind": "bool", "default": "0",
+                "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
+                "note": "1: the game runs wintypes-optin.dll as wintypes.dll, Wine's own Windows Runtime types "
+                        "library, for a program that imports it (or api-ms-win-core-winrt-robuffer-l1-1-0.dll, which "
+                        "maps to it) and exits at once with c0000135: Unity IL2CPP games such as Megabonk. BCD ships "
+                        "no 64-bit wintypes.dll for every game: Steam's web helper loads it optionally and works "
+                        "without it. An earlier session's link is removed when the line is gone. Set it in the "
+                        "game's own file; read at session start. Auto-tune adds it after that failure."},
     "env.MADEIRA_WER": {"category": "Wine libraries", "title": "Give the game Wine's wer.dll",
                 "kind": "bool", "default": "0",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],
@@ -865,6 +948,16 @@ OVERLAY = {
                         "68 unimplemented exports, so only a game with this line gets it, and an earlier session's "
                         "link is removed when the line is gone. Set it in the game's own file; read at session start. "
                         "Auto-tune adds it after that failure."},
+    "env.DOTNET_EnableWriteXorExecute": {"category": "Memory & JIT pool", "title": "Write-xor-execute memory for .NET 7+ games",
+                "kind": "bool", "default": "1",
+                "sources": ["build/tools/autotune_rules.py"],
+                "note": "Read by the game's own .NET runtime (self-contained .NET 7 and later: hostfxr.dll, coreclr.dll), "
+                        "not by BCD. On (the runtime's default): the runtime keeps its code in two views of one memory "
+                        "section, one it writes and one it runs. BCD gives the executable view a separate copy, so the "
+                        "two differ and the runtime stops with \"CLR: Assert failure ... m_pRegionToGenTableImmediate\" "
+                        "(exit c0000602; Quaver). 0: the runtime uses plain executable memory, which BCD serves as it "
+                        "serves Wine Mono's JIT. Set it in the game's own file; read when the game starts. Auto-tune "
+                        "adds it after that failure."},
     "env.MADEIRA_FIBER_TRACE": {"category": "Debugging / logs", "title": "Log the fiber calls (kernelbase)",
                 "kind": "bool", "default": "0",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/patch-wine-kernelbase-fibertrace.py"],

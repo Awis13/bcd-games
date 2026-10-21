@@ -1,0 +1,17 @@
+{
+ "dialogs": [
+  "Fatal error",
+  "Failed to load il2cpp"
+ ],
+ "end": {},
+ "matched": [
+  "wintypes-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_WINTYPES = 1"
+ ],
+ "note": "Megabonk (Steam, Unity IL2CPP), build 574, iPhone18,1 (Send Log J7VAJV): GameAssembly.dll imports api-ms-win-core-winrt-robuffer-l1-1-0.dll -> wintypes.dll, which the 64-bit set does not ship; c0000135 at once. env.MADEIRA_WINTYPES = 1 links Wine's wintypes.dll for the game. Same in No, I'm not a Human (TZB1JX) and Over the Hill (HXQQN1)",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

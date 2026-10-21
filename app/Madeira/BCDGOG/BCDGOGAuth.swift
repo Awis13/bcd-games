@@ -45,6 +45,8 @@ enum BCDGOGError: Error, Equatable, LocalizedError {
     }
 }
 
+extension BCDGOGError: BCDLogReasonError {}
+
 /// The signed-in account's tokens. Printing one shows nothing of them.
 struct BCDGOGTokens: Codable, Equatable, CustomStringConvertible, CustomDebugStringConvertible {
     var accessToken: String
@@ -250,9 +252,34 @@ final class BCDGOGAPI: @unchecked Sendable {
     func json(_ url: URL, signedIn: Bool, limit: Int = 8 << 20) async throws -> [String: Any] {
         let data = try await self.data(url, signedIn: signedIn, limit: limit)
         guard let object = try? JSONSerialization.jsonObject(with: BCDZlib.jsonData(data, limit: 256 << 20)) as? [String: Any] else {
+            // Why an install said "GOG's reply wasn't what BCD expects" (2026-10-20, build 574, two games): only the
+            // size and the first byte, never the address or the text.
+            BCDContentLog.write("[gog-content] reply is not a JSON object: bytes=\(data.count) first=" +
+                                (data.first.map { String(format: "0x%02x", $0) } ?? "none"))
             throw BCDGOGError.badReply("json")
         }
         return object
+    }
+
+    /// What a reply looks like, for the log when a step of the install cannot read it: its keys with the kind of each
+    /// value (s string, n number, b bool, N null, a array, o object), and for `lists` the count and the first entry's
+    /// keys the same way. Never a value.
+    static func shape(_ object: [String: Any], lists: [String]) -> String {
+        func kind(_ value: Any) -> String {
+            if value is NSNull { return "N" }
+            if value is String { return "s" }
+            if let number = value as? NSNumber { return CFGetTypeID(number) == CFBooleanGetTypeID() ? "b" : "n" }
+            if value is [Any] { return "a" }
+            return value is [String: Any] ? "o" : "?"
+        }
+        func keys(_ item: [String: Any]) -> String { item.keys.sorted().prefix(40).map { $0 + "=" + kind(item[$0]!) }.joined(separator: ",") }
+        var text = "top[" + keys(object) + "]"
+        for name in lists {
+            guard let list = object[name] as? [Any] else { continue }
+            text += " " + name + "=\(list.count)"
+            if let first = list.first as? [String: Any] { text += " first[" + keys(first) + "]" }
+        }
+        return text
     }
 
     /// An address from one of GOG's replies that BCD follows: https on GOG's own hosts.

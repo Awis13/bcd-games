@@ -70,3 +70,8 @@ struct GameProfile {
     }
     var values: [String: String] { MadeiraConfig.parse(text) }
 }
+
+/// WineMono.swift's model: whether Wine Mono is here (AUTOTUNE_TEST_MONO=1 says it is).
+@MainActor enum WineMonoModel {
+    nonisolated static var available: Bool { ProcessInfo.processInfo.environment["AUTOTUNE_TEST_MONO"] == "1" }
+}

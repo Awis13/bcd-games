@@ -5440,6 +5440,123 @@ void ios_hw_registry_publish(void)
                     smbios_len ? "SMBIOS" : "no SMBIOS table", bios.defaults, extra );
 }
 /* hw-registry-test:end */
+
+/* vcrt-arm64-test:begin (tests/host/check-vcrt-arm64-key.py compiles from here to the end mark) */
+static void ios_vcrt_sz( HANDLE key, const char *name, const char *value )
+{
+    WCHAR nameW[32], data[48];
+    UNICODE_STRING str;
+    size_t n = strnlen( value, ARRAY_SIZE(data) - 1 );
+
+    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
+    ascii_to_unicode( data, value, n );
+    data[n] = 0;
+    init_unicode_string( &str, nameW );
+    NtSetValueKey( key, &str, 0, REG_SZ, data, (n + 1) * sizeof(WCHAR) );
+}
+
+static void ios_vcrt_dword( HANDLE key, const char *name, DWORD value )
+{
+    WCHAR nameW[32];
+    UNICODE_STRING str;
+
+    ascii_to_unicode( nameW, name, strlen( name ) + 1 );
+    init_unicode_string( &str, nameW );
+    NtSetValueKey( key, &str, 0, REG_DWORD, &value, sizeof(value) );
+}
+
+/* "14.42.34433" or "14.42.34433.0": three or four decimal numbers of at most five digits
+ * separated by dots, nothing else. 1 = parsed into v[0..3] (the fourth is 0 when absent). */
+static int ios_vcrt_version( const char *s, unsigned int v[4] )
+{
+    unsigned int part, digits;
+
+    for (part = 0; part < 4; part++)
+    {
+        v[part] = 0;
+        for (digits = 0; *s >= '0' && *s <= '9'; s++, digits++) v[part] = v[part] * 10 + (*s - '0');
+        if (!digits || digits > 5) return 0;
+        if (!*s) return part >= 2;
+        if (*s++ != '.') return 0;
+    }
+    return 0;
+}
+
+/***********************************************************************
+ *           ios_vcrt_arm64_key_publish
+ *
+ * madeira-bcd: the "Installed" marker of Microsoft's ARM64 Visual C++ 2015-2022
+ * redistributable, HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\arm64
+ * (and the same key under Wow6432Node, where the prefix template keeps its x64
+ * one). Unreal Engine's BootstrapPackagedGame.exe (Denshattack_Proto.exe,
+ * FFRS.exe of FINAL FANTASY RESONANCE's demo; four logs, builds 565-574) is an
+ * x64 program, but the session reports an ARM64 machine, so it stops with "The
+ * following component(s) are required to run this program: Microsoft Visual
+ * C++ 2015-2022 Redistributable (arm64)" and exits 0x2329. The prefix has the
+ * x64 and x86 markers only (prefix-template.tar.gz). Off unless the game's own
+ * file says env.MADEIRA_VCRT_ARM64_KEY = 1 (the template's version, 14.42.34433.0)
+ * or a version such as 14.44.35211. The keys are volatile, as wineboot's
+ * hardware keys: nothing is saved with the prefix, a key already there is left
+ * alone. Written once per session by the first process, before the program
+ * starts.
+ */
+void ios_vcrt_arm64_key_publish(void)
+{
+    static const char machine[] = "\\Registry\\Machine";
+    static const char *const keys[] =
+    {
+        "Software\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\arm64",
+        "Software\\Wow6432Node\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\arm64",
+    };
+    const char *sw = getenv( "MADEIRA_VCRT_ARM64_KEY" );
+    unsigned int v[4] = { 14, 42, 34433, 0 }, i, made = 0, kept = 0, failed = 0;
+    char version[32], path[160];
+    WCHAR pathW[160];
+    UNICODE_STRING name;
+    OBJECT_ATTRIBUTES attr;
+    HANDLE key;
+
+    if (!sw || !sw[0] || !strcmp( sw, "0" )) return;
+    if (strcmp( sw, "1" ) && !ios_vcrt_version( sw, v ))
+    {
+        wine_log_write( "[vcrt-arm64] madeira-bcd: MADEIRA_VCRT_ARM64_KEY=\"%.40s\" is neither 1 nor a version "
+                        "like 14.42.34433.0, nothing written", sw );
+        return;
+    }
+    snprintf( version, sizeof(version), "%u.%u.%u.%u", v[0], v[1], v[2], v[3] );
+
+    for (i = 0; i < ARRAY_SIZE(keys); i++)
+    {
+        snprintf( path, sizeof(path), "%s\\%s", machine, keys[i] );
+        ascii_to_unicode( pathW, path, strlen( path ) + 1 );
+        init_unicode_string( &name, pathW );
+        InitializeObjectAttributes( &attr, &name, OBJ_CASE_INSENSITIVE, 0, NULL );
+        if (!NtOpenKey( &key, KEY_QUERY_VALUE, &attr ))
+        {
+            NtClose( key );
+            kept++;
+            continue;
+        }
+        if (!(key = ios_hidpad_key( machine, keys[i] )))
+        {
+            failed++;
+            continue;
+        }
+        ios_vcrt_dword( key, "Bld", v[2] );
+        ios_vcrt_dword( key, "Installed", 1 );
+        ios_vcrt_dword( key, "Major", v[0] );
+        ios_vcrt_dword( key, "Minor", v[1] );
+        ios_vcrt_dword( key, "Rbld", v[3] );
+        ios_vcrt_sz( key, "Version", version );
+        NtClose( key );
+        made++;
+    }
+    wine_log_write( "[vcrt-arm64] madeira-bcd: HKLM\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\arm64 "
+                    "(volatile) Installed=1 Version %s: %u of %u view(s) written, %u already there and left alone, "
+                    "%u could not be made; MADEIRA_VCRT_ARM64_KEY unset or 0 turns it off",
+                    version, made, (unsigned int)ARRAY_SIZE(keys), kept, failed );
+}
+/* vcrt-arm64-test:end */
 #endif
 
 

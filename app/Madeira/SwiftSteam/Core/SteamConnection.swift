@@ -85,8 +85,13 @@ actor SteamConnection {
         task.resume()
 
         // Verify the connection completed (WebSocket handshake + ping round-trip)
+        // The pong handler can run twice (a reply, then the connection's abort): resume once only.
+        // A second resume ended the app ("connect() tried to resume its continuation more than once,
+        // throwing connectionFailed(... Software caused connection abort)", tester log ZH16KH, build 574).
+        let once = SteamSession.LogonResumeGuard()
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             task.sendPing { error in
+                guard once.claim() else { return }
                 if let error {
                     cont.resume(throwing: SteamError.connectionFailed(error.localizedDescription))
                 } else {

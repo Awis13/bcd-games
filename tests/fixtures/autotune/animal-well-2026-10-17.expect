@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "xpsprint-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = xpsprint"
+ ],
+ "note": "Animal Well (Steam 813230), build 565, iPhone18,2 (Send Log NWHG8J): Animal Well.exe imports XPSPRINT.DLL, which BCD does not ship; c0000135 at once. env.MADEIRA_OPTIN_DLLS = xpsprint links Wine's xpsprint.dll for the game",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

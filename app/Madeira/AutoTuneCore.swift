@@ -52,6 +52,9 @@ struct AutoTuneRule: Codable {
     /// May replace a line auto-tune kept earlier with the same key (a larger swap file
     /// after the first was not enough). Never a key the user sets.
     var upgrade: Bool?
+    /// The failure comes back the same on every start (the JIT pool filling up while DLLs
+    /// load): when it matches, the unchanged retry is skipped and the first line is tried at once.
+    var noRetry: Bool?
     /// One sentence the app shows with the attempt.
     var reason: String
     /// Fixture names and notes the rule was taken from.
@@ -120,6 +123,12 @@ struct AutoTuneLogFacts: Codable, Equatable {
     /// negative code, or a DLL whose initialisation failed: in none of the logs of a session
     /// that played (2026-10-16 corpus: 16 of 16 clean), in most crashes.
     var errorExits = 0
+    /// A .NET Framework program asked Wine's mscoree for Wine Mono and this device has none
+    /// ("err:mscoree:CLRRuntimeInfo_GetRuntimeHost Wine Mono is not installed", Panzer Paladin,
+    /// logs 5G8ZKE and AXKB2X). Only that err line counts: the "[wine-mono] ml1275 neither this
+    /// build nor a download has Wine Mono" line is written at every start of a device without
+    /// Mono, for games that do not need .NET too.
+    var monoMissing = false
     /// Crash evidence already in the log when the user asked to quit: a Steam game through
     /// Madeira Dock can crash and leave the session open until the user closes it.
     var crashEvidenceAtQuit: Int?
@@ -278,6 +287,8 @@ final class AutoTuneLogScanner {
     /// self-modifying code). Both leave a killed run whose log says why.
     private static let mObjCException = Array("*** Terminating app due to uncaught exception".utf8)
     private static let mRedelivKill = Array("[redeliv] terminating process".utf8)
+    private static let mMscoreeErr = Array("err:mscoree:".utf8)
+    private static let mMonoMissing = Array("Wine Mono is not installed".utf8)
     private static let mWinName = Array("[win-name] #".utf8)
     private static let mText = Array(" text=\"".utf8)
     private static let errorWords = ["error", "Error", "ERROR", "could not", "Could not", "Could Not", "failed", "Failed",
@@ -321,6 +332,7 @@ final class AutoTuneLogScanner {
         if (S.find(l, S.mTerminate) != nil && (S.find(l, S.mErrorCode) != nil || S.find(l, S.mWarningCode) != nil))
             || S.find(l, S.mChildNegative) != nil || S.find(l, S.mInitFailed) != nil
             || S.find(l, S.mObjCException) != nil || S.find(l, S.mRedelivKill) != nil { facts.errorExits += 1 }
+        if !facts.monoMissing, S.find(l, S.mMscoreeErr) != nil, S.find(l, S.mMonoMissing) != nil { facts.monoMissing = true }
         if facts.dialogs.count < 4, S.find(l, S.mWinName) != nil, let t = S.find(l, S.mText) {
             let start = t + S.mText.count
             var end = start
@@ -369,6 +381,9 @@ struct AutoTuneReport: Codable, Equatable {
     var dialogs: [String] = []
     /// The Madeira build the session ran ("[build] v0.1.N").
     var build: Int?
+    /// The session failed and a .NET Framework program in it found no Wine Mono
+    /// (AutoTuneLogFacts.monoMissing). Optional, so that a saved state without it still loads.
+    var monoMissing: Bool?
 
     var failed: Bool { ["crashed", "killed", "hung", "exited-early"].contains(outcome) }
     var played: Bool { outcome == "ran" || outcome == "quit" }
@@ -421,6 +436,7 @@ enum AutoTuneEngine {
                                d3d12: f.d3d12, ramMB: f.ramMB, matched: [], evidence: scanner.evidence,
                                dialogs: f.dialogs, build: f.build)
         var report = r
+        if f.monoMissing && report.failed { report.monoMissing = true }
         report.matched = rules.filter { matches($0, report: r, counts: scanner.counts, signals: signals) }
             .sorted { ($0.priority, $0.id) < ($1.priority, $1.id) }
             .map(\.id)
@@ -509,6 +525,18 @@ struct AutoTuneState: Codable, Equatable {
     var knownReason: String?
     var knownFixedIn: Int?
     var knownBuild: Int?
+    /// The last session that reached a verdict failed with a .NET program finding no Wine Mono
+    /// (AutoTuneReport.monoMissing); a later one that did not clears it. The game page says where
+    /// to download Wine Mono, while this device has none. Optional: a state saved before it existed
+    /// still loads, and a game without the problem keeps the same file as before.
+    var monoMissing: Bool?
+
+    /// What the search tried, for "no known fix" (the rule ids, and the unchanged retry).
+    var triedSummary: String {
+        var list = tried
+        if retried { list.insert("the same settings once more", at: 0) }
+        return list.isEmpty ? "nothing: no rule matched" : list.joined(separator: ", ")
+    }
 
     /// What to tell the user about a "known" failure.
     var knownAdvice: String {
@@ -553,6 +581,7 @@ extension AutoTuneEngine {
             s.attempts.append(attempt)
             return s   // the same lines run once more
         }
+        s.monoMissing = report.monoMissing == true ? true : nil
         if let best = s.best, s.candidateRule != nil {
             let keep = better(report, than: best, tried: s.candidateRule)
             attempt.kept = keep
@@ -590,7 +619,10 @@ extension AutoTuneEngine {
         }
         // A failure the first time round may be the first start after an update
         // (four such failures in the history cleared on the second start): run once unchanged.
-        if !s.retried && s.kept.isEmpty && s.tried.isEmpty {
+        // Not for a failure that comes back the same every time (a rule with noRetry): Counter-Strike 2
+        // filled the JIT pool on both starts, and the line that helped came only on the third.
+        let firm = report.matched.contains { id in rules.first { $0.id == id }?.noRetry == true }
+        if !s.retried && s.kept.isEmpty && s.tried.isEmpty && !firm {
             s.retried = true
             s.candidate = []
             s.candidateRule = "retry"

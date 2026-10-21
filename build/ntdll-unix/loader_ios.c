@@ -2449,6 +2449,31 @@ static void load_ntdll_wow64_functions( HMODULE module )
     exports = get_module_data_dir( module, IMAGE_FILE_EXPORT_DIRECTORY, NULL );
     assert( exports );
 
+    /* ajan2-tani (2026-10-21): LOG ONLY. The block this function fills belongs to the SESSION's
+     * 64-bit ntdll image, which every i386 pseudo-process's wow64.dll reads through
+     * pLdrSystemDllInitBlock when it dispatches an exception / APC / callback into its own 32-bit
+     * ntdll; each i386 child boot overwrites it again (load_wow64_ntdll in the child path). The
+     * values only agree while every i386 process has its ntdll at the same guest address. Garry's
+     * Mod (T14SYR, 2026-10-19): the main process's ntdll is at 0xfff40000, the relaunched GPU
+     * process got 0xffe90000 (the dead one's image was still in the shared window), and the main
+     * process's next OutputDebugString exception was dispatched to 0xffede3e8 = the NEW
+     * process's KiUserExceptionDispatcher ("NoExec instruction in entry block: FFEDE3E8", 2000
+     * redeliveries). Say so when a boot replaces a DIFFERENT ntdll base (the first boot sees 0 and
+     * stays silent; the same base stays silent); at most 4 lines. */
+    {
+        static LONG overwrites;
+        ULONG64 old_handle = pLdrSystemDllInitBlock->ntdll_handle;
+        ULONG64 old_exc = pLdrSystemDllInitBlock->pKiUserExceptionDispatcher;
+
+        if (old_handle && old_handle != TO_GUEST( (ULONG_PTR)module ) && InterlockedIncrement( &overwrites ) <= 4)
+            ERR( "[wow-initblock] rev=ajan2-tani the session LdrSystemDllInitBlock held ntdll_handle=0x%llx "
+                 "KiUserExceptionDispatcher=0x%llx; this i386 boot replaces it with ntdll_handle=0x%llx "
+                 "(wow_base=0x%llx) -- an older i386 process whose ntdll sits at the old base now dispatches "
+                 "exceptions to the new one's address\n",
+                 (unsigned long long)old_handle, (unsigned long long)old_exc,
+                 (unsigned long long)TO_GUEST( (ULONG_PTR)module ), (unsigned long long)wow_base );
+    }
+
     pLdrSystemDllInitBlock->ntdll_handle = TO_GUEST( (ULONG_PTR)module );
 
 #define GET_FUNC(name) pLdrSystemDllInitBlock->p##name = \
@@ -3205,6 +3230,15 @@ static void start_main_thread(void)
         extern void ios_hw_registry_publish(void);
         WINE_IOS_LOG("ios_hw_registry_publish...");
         ios_hw_registry_publish();
+    }
+#endif
+#ifdef WINE_IOS
+    /* madeira-bcd: env.MADEIRA_VCRT_ARM64_KEY, off by default: the volatile ARM64 Visual C++
+     * redistributable marker an Unreal bootstrap asks for (server_ios.c). Reads its one
+     * switch and returns at once without it. First process of a session only. */
+    {
+        extern void ios_vcrt_arm64_key_publish(void);
+        ios_vcrt_arm64_key_publish();
     }
 #endif
     WINE_IOS_LOG("init_files...");

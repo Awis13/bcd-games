@@ -419,18 +419,22 @@ struct RecommendationsPolicy {
     /// (build/tools/autotune_rules.py), nothing else. A new name joins this list in the build
     /// that reads it; a downloaded line that uses it carries that build as its minBuild.
     static let allowedEnvNames: Set<String> = [
+        "DOTNET_EnableWriteXorExecute",
         "DXMT_SMALL_RINGS", "DXMT_WSI_MODE_TABLE", "DXMT_WSI_MONITOR_IDENTITY", "FEX_VECTORTSOENABLED", "LC_ALL",
         "MADEIRA_ALIAS_RELEASE", "MADEIRA_APP_DLL_SHADOW", "MADEIRA_BAND_CENSUS", "MADEIRA_CAGE_RELEASE",
         "MADEIRA_CHILD_ARGS", "MADEIRA_D3D11_SRC", "MADEIRA_DEVICE_STATS", "MADEIRA_DOCK_GAME_SCM",
         "MADEIRA_DOCK_KEEP_ALIVE", "MADEIRA_DXGI_BUDGET_EVENTS", "MADEIRA_DXGI_SRC", "MADEIRA_EC_HOOK_TRACE",
-        "MADEIRA_EXECREQ_LEAVE", "MADEIRA_FASTSYNC_SEM", "MADEIRA_FEX_AVX", "MADEIRA_FREE_DELAY_MS",
+        "MADEIRA_EXECREQ_LEAVE", "MADEIRA_FASTSYNC_SEM", "MADEIRA_FEX_AVX", "MADEIRA_FEX_BAND_KEEP_MB",
+        "MADEIRA_FREE_DELAY_MS",
         "MADEIRA_INPUT_FOREGROUND", "MADEIRA_JUMBO_HALF", "MADEIRA_KMT_ADAPTER", "MADEIRA_LD_BOUNDS",
+        "MADEIRA_OPTIN_DLLS", "MADEIRA_WINTYPES",
         "MADEIRA_LEAN_DIAG", "MADEIRA_LOCK_ORPHAN", "MADEIRA_METAL_HUD_MAIN", "MADEIRA_PAD_MODE",
         "MADEIRA_PIN_GRAPHICS_DLLS", "MADEIRA_POOL_HEAD_RESERVE_MB", "MADEIRA_POOL_LOW_IMAGES",
         "MADEIRA_POOL_RECYCLE_IMAGES", "MADEIRA_PRELOAD_DLLS", "MADEIRA_RDR2_VA_HOLD", "MADEIRA_SC_PA_POOLS",
         "MADEIRA_SMALL_STACK_EXES", "MADEIRA_SPAWN_BLOCK", "MADEIRA_SRV_FGETPATH", "MADEIRA_SWAP_MIN_KB",
         "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TOUCH_MOUSE",
-        "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WOW_MIN_FREE_GB", "MADEIRA_WOW_RWX_PLAIN",
+        "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_VCRT_ARM64_KEY", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WOW_MIN_FREE_GB",
+        "MADEIRA_WOW_RWX_PLAIN",
         "MADEIRA_X64_GRAPHICS_ENTRY", "MADEIRA_X64_IMAGE_NOCOPY", "SteamDeck", "WINEDEBUG", "WINEDLLOVERRIDES",
         "WINE_D3D_CONFIG",
     ]
@@ -454,6 +458,21 @@ struct RecommendationsPolicy {
                 throw RecommendationsError.policy("\(path): \(key) is not on the list of environment lines a download may set")
             }
             switch name {
+            case "MADEIRA_OPTIN_DLLS":
+                // Only DLLs BCD ships as <name>-optin.dll (tools/build-wine-extra-dlls.sh, OPTIN_WANT).
+                let names = value.lowercased().split(whereSeparator: { ",; ".contains($0) })
+                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint"].contains($0) }) else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr or xpsprint")
+                }
+            case "MADEIRA_WINTYPES":
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_WINTYPES is 0 or 1")
+                }
+            case "DOTNET_EnableWriteXorExecute":
+                // The .NET runtime's own switch; only turning it off is ever listed.
+                guard value == "0" else {
+                    throw RecommendationsError.policy("\(path): DOTNET_EnableWriteXorExecute may only be 0")
+                }
             case "WINEDLLOVERRIDES":
                 // Only switching a DLL off, or to Wine's own: never a native DLL from a game's folder.
                 guard value.range(of: #"^[A-Za-z0-9_.,-]+=b?(;[A-Za-z0-9_.,-]+=b?)*$"#, options: .regularExpression) != nil else {

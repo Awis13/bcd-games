@@ -133,6 +133,8 @@ struct BCDSystemStatus: Hashable {
     /// What iOS lets the app use, measured; nil before the first measurement.
     var memoryLimitBytes: Int64?
     var increasedMemoryLimit = false
+    /// The extended virtual addressing entitlement (a ~63 GB address map without it). True until measured, so nothing shows early.
+    var extendedAddressing = true
     var controllerName: String?
     var controllerBattery: Int?     // percent
     var freeDeviceBytes: Int64?

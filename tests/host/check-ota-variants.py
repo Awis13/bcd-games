@@ -192,9 +192,13 @@ bn = workflow.index("      - name: Build number\n        id: bn\n")
 assert bn < workflow.index("      - name: Toolchain versions") < workflow.index("Stamp version 0.1.${{ steps.bn.outputs.n }}")
 assert "grep -v '^#' docs/local-build/BUILD-NUMBER" in workflow
 assert workflow.count("github.run_number") == 1  # only the notice
-numbers = [l.strip() for l in (ROOT / "docs/local-build/BUILD-NUMBER").read_text().splitlines() if l.strip() and not l.startswith("#")]
-assert len(numbers) == 1 and numbers[0].isdigit(), numbers
-print("PASS: the version is docs/local-build/BUILD-NUMBER (%s), read once before the build; run_number only in a notice" % numbers[0])
+bn_file = ROOT / "docs/local-build/BUILD-NUMBER"
+if bn_file.is_file():
+    numbers = [l.strip() for l in bn_file.read_text().splitlines() if l.strip() and not l.startswith("#")]
+    assert len(numbers) == 1 and numbers[0].isdigit(), numbers
+    print("PASS: the version is docs/local-build/BUILD-NUMBER (%s), read once before the build; run_number only in a notice" % numbers[0])
+else:
+    print("SKIP: docs/local-build/BUILD-NUMBER is absent (the public export has no docs/); run_number only in a notice")
 assert "python3 tests/host/check-ota-variants.py" in workflow
 signer = (ROOT / "tools/sign-and-publish-ota.sh").read_text()
 assert signer.count('python3 "$OTA_HELPER" mail') == 1

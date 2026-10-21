@@ -301,7 +301,7 @@ struct AutoTuneOffer: Equatable {
         switch state.status {
         case "found": return "\(title) played with the lines auto-tune found"
         case "ok": return "\(title) played"
-        case "stuck": return "\(title): no known fix fits this failure"
+        case "stuck": return "\(title): no known fix fits this failure (tried: \(state.triedSummary))"
         case "gave-up": return "\(title): auto-tune stopped after \(AutoTuneEngine.maxAttempts) attempts"
         case "known": return "\(title): a crash in BCD, not a setting"
         default: return "\(title) \(AutoTuneOffer.outcomeText(report.outcome))"
@@ -316,6 +316,11 @@ struct AutoTuneOffer: Equatable {
         // The game's own error box says more than any rule (Darksiders II: an unsupported resolution).
         if let said = report.dialogs.last(where: { $0.count > 20 }) ?? report.dialogs.last {
             text += "The game said: \u{201C}\(said.replacingOccurrences(of: "?", with: " "))\u{201D}\n\n"
+        }
+        // Wine's own "Wine Mono is not installed" (a .NET program, Panzer Paladin): no setting helps
+        // until Mono is downloaded, so say that first (the game page shows the same note).
+        if report.monoMissing == true && !WineMonoModel.available {
+            text += "This game needs Wine Mono (.NET). Download it in Settings \u{203A} .NET Framework, then play again.\n\n"
         }
         switch state.status {
         case "found":

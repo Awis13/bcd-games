@@ -8,7 +8,8 @@
 # stripped and padded by 64 KB past SizeOfImage like the shipped builtins.
 # Also ucrtbase-x64math.dll, an opt-in variant of ucrtbase (see UCX below), and
 # kernelbase-fibertrace.dll, an opt-in diagnostic kernelbase (see FBT below), and
-# wer-optin.dll, Wine's own wer.dll for the one game that imports it (see WER below).
+# wer-optin.dll, Wine's own wer.dll for the one game that imports it (see WER below), and
+# wintypes-optin.dll, Wine's own wintypes.dll for the games that import it (see WTY below).
 # A DLL upstream already ships is never replaced. Run from the repository
 # root; needs llvm-mingw on PATH (or MINGW) and the native wine tools.
 #   usage: build-wine-extra-dlls.sh [native tools dir]
@@ -109,7 +110,32 @@ WER=""
 if [ "${MADEIRA_WER_BUILD:-1}" != 0 ] && [ -d "$R/wine/dlls/wer" ] && ! shipped wer; then
     targets="$targets dlls/wer/arm64ec-windows/wer.dll"; WER=wer
 fi
-[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER" ] || { echo "nothing to build"; exit 0; }
+# madeira-bcd: wintypes-optin.dll, the same way. Unity IL2CPP games' GameAssembly.dll imports
+# api-ms-win-core-winrt-robuffer-l1-1-0.dll, which Wine's apiset maps to wintypes.dll; the 64-bit
+# set ships none, so Megabonk, No, I'm not a Human and Over the Hill ended at once with c0000135
+# (testers' logs J7VAJV, TZB1JX, HXQQN1, build 574). Not shipped as wintypes.dll: Chromium (Steam's
+# web helper) loads wintypes.dll optionally today and works without it. Only a game with
+# env.MADEIRA_WINTYPES = 1 gets it, linked as wintypes.dll for that session. MADEIRA_WTY_BUILD=0 skips it.
+WTY=""
+if [ "${MADEIRA_WTY_BUILD:-1}" != 0 ] && [ -d "$R/wine/dlls/wintypes" ] && ! shipped wintypes; then
+    targets="$targets dlls/wintypes/arm64ec-windows/wintypes.dll"; WTY=wintypes
+fi
+# madeira-bcd: more DLLs a game's program imports that the set lacks, each shipped as <name>-optin.dll
+# and linked as <name>.dll only for a game whose file lists it in env.MADEIRA_OPTIN_DLLS (comma or
+# semicolon separated; app/Madeira/WineProcessBridge.m), so no program that loads one optionally today
+# sees a change. dxva2: Fort Solis and DRAGON BALL Sparking! ZERO import it and ended at once with
+# c0000135 (testers' logs 94MSWJ, NZ3ANE, H6XVPV, build 574); evr: Spider-Man: Miles Morales'
+# crs-video.exe (PD7S1E); xpsprint: Animal Well (NWHG8J, build 565). MADEIRA_OPTIN_BUILD=0 skips them.
+OPTIN_WANT="dxva2 evr xpsprint"
+OPT=""
+if [ "${MADEIRA_OPTIN_BUILD:-1}" != 0 ]; then
+    for d in $OPTIN_WANT; do
+        [ -d "$R/wine/dlls/$d" ] || continue
+        shipped "$d" && continue
+        targets="$targets dlls/$d/arm64ec-windows/$d.dll"; OPT="$OPT $d"
+    done
+fi
+[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER$WTY$OPT" ] || { echo "nothing to build"; exit 0; }
 
 # The cached tree may have disabled winegstreamer because macOS has no
 # GStreamer headers. Only its real PE frontend is needed here; the iOS unix
@@ -354,6 +380,44 @@ PY
         echo "::warning::wer-optin.dll did not build; env.MADEIRA_WER = 1 does nothing"
     fi
 fi
+if [ -n "$WTY" ]; then
+    f="$B/dlls/wintypes/arm64ec-windows/wintypes.dll"
+    if [ -f "$f" ]; then
+        cp "$f" "$SHIP/wintypes-optin.dll.tmp"
+        "$MINGW/llvm-strip" "$SHIP/wintypes-optin.dll.tmp"
+        python3 - "$SHIP/wintypes-optin.dll.tmp" <<'PY'
+import struct, sys
+p = sys.argv[1]; d = open(p, 'rb').read()
+pe = struct.unpack_from('<I', d, 0x3c)[0]
+target = struct.unpack_from('<I', d, pe + 24 + 56)[0] + 0x10000
+if len(d) < target:
+    open(p, 'ab').write(b'\0' * (target - len(d)))
+PY
+        mv "$SHIP/wintypes-optin.dll.tmp" "$SHIP/wintypes-optin.dll"
+        echo "::notice::wintypes-optin.dll (Wine's wintypes.dll, linked as wintypes.dll only with env.MADEIRA_WINTYPES = 1): built; no wintypes.dll is shipped"
+    else
+        echo "::warning::wintypes-optin.dll did not build; env.MADEIRA_WINTYPES = 1 does nothing"
+    fi
+fi
+for d in $OPT; do
+    f="$B/dlls/$d/arm64ec-windows/$d.dll"
+    if [ -f "$f" ]; then
+        cp "$f" "$SHIP/$d-optin.dll.tmp"
+        "$MINGW/llvm-strip" "$SHIP/$d-optin.dll.tmp"
+        python3 - "$SHIP/$d-optin.dll.tmp" <<'PY'
+import struct, sys
+p = sys.argv[1]; d = open(p, 'rb').read()
+pe = struct.unpack_from('<I', d, 0x3c)[0]
+target = struct.unpack_from('<I', d, pe + 24 + 56)[0] + 0x10000
+if len(d) < target:
+    open(p, 'ab').write(b'\0' * (target - len(d)))
+PY
+        mv "$SHIP/$d-optin.dll.tmp" "$SHIP/$d-optin.dll"
+        echo "::notice::$d-optin.dll (Wine's $d.dll, linked as $d.dll only for a game with $d in env.MADEIRA_OPTIN_DLLS): built"
+    else
+        echo "::warning::$d-optin.dll did not build; env.MADEIRA_OPTIN_DLLS = $d does nothing"
+    fi
+done
 echo "::notice::built $built extra Wine DLLs for arm64ec${failed:+ (failed:$failed)}"
 [ -n "$failed" ] && grep -m 10 "error" "$B.build.log"
 exit 0

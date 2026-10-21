@@ -1,0 +1,78 @@
+[18:32:42.615] [INFO] [build] v0.1.574 (574)
+[18:32:42.615] [INFO] [device] model=iPad16,5 idiom=pad os=iPadOS Version 27.2 (Build 24B5089g) ram=15416MB available=16367MB cores=10
+[18:32:42.615] [INFO] [device] address-map=[0x104240000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[18:32:42.627] [INFO] [device] gpu="Apple M4 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[18:33:44.666] [INFO] [bcd] library launch GTAIV.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[18:33:44.684] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104240000,0x8000000000) 512GB available=16350MB low-power=0 thermal=nominal
+[18:33:44.689] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[18:33:44.689] [INFO] [jit-debugger] attached=1 at the pool request
+[18:33:44.691] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[18:33:45.339] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  0.706s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=637 MB (peak 637) internal=633 MB compressed=0 MB external=73 MB reusable=14 MB (cycle=1)
+D 24 Load module GTAIV.exe (gtaiv.exe-4308eaba905d71e5): 7100D90000
+D 24 Load module ntdll.dll (ntdll.dll-3903196a83fc7ec2): 71FFF40000
+D 24 Load module kernel32.dll (kernel32.dll-3a7c334be1e18a1b): 717BED0000
+D 24 Load module kernelbase.dll (kernelbase.dll-1bada4728a9998eb): 717BC40000
+D 24 Load module USER32.dll (user32.dll-7d7be97280edb38a): 717BA80000
+D 24 Load module gdi32.dll (gdi32.dll-c59f4f8a5a8df6e7): 717B9F0000
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L".\\modloader\\modupdater.asi" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L".\\modloader\\modloader.asi" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #7 hwnd=0x10034 class='' text="Default IME" rev=ml853
+[win-name] #8 hwnd=0x20030 class='' text="GTAIV" rev=ml853
+[win-name] #9 hwnd=0x20030 class='' text="GTAIV" rev=ml853
+[win-name] #15 hwnd=0x20030 class='' text="GTAIV" rev=ml853
+[win-name] #16 hwnd=0x20030 class='' text="GTAIV" rev=ml853
+[win-name] #17 hwnd=0x20030 class='' text="GTAIV" rev=ml853
+[footprint] rev=ml358 phys=1401 MB (peak 1401) internal=1339 MB compressed=0 MB external=78 MB reusable=14 MB (cycle=2)
+[18:33:48.444] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[launch-view] dismissed reason=present logs=0
+[footprint] rev=ml358 phys=2091 MB (peak 2091) internal=1962 MB compressed=0 MB external=80 MB reusable=14 MB (cycle=3)
+[footprint] rev=ml358 phys=2083 MB (peak 2091) internal=1954 MB compressed=0 MB external=80 MB reusable=14 MB (cycle=4)
+[footprint] rev=ml358 phys=1894 MB (peak 2091) internal=1765 MB compressed=0 MB external=80 MB reusable=14 MB (cycle=5)
+[footprint] rev=ml358 phys=1920 MB (peak 2091) internal=1791 MB compressed=0 MB external=80 MB reusable=14 MB (cycle=6)
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.1%) over 1194 wakes; device short 0.0 ms in 0 of 468 passes (largest pass 1024 frames); ring 0..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.0%) over 1194 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[18:34:08.586] [OK] Early detach: game presenting and settled
+[freeze] alive t+30s beats=1 gaps=0 iter=120 gen=1 threads=46 resident=2240MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.01 s (100.0%) over 1196 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.0%) over 1194 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.01 s (100.0%) over 1196 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[freeze] alive t+60s beats=2 gaps=0 iter=240 gen=1 threads=44 resident=1972MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.0%) over 1192 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 9.98 s of audio in 10.00 s (99.8%) over 1191 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"C:\\windows\\system32\\QuickTime.qts" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #4 L"C:\\windows\\system32\\QuickTime\\QuickTime.qts" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.0%) over 1194 wakes; device short 0.0 ms in 0 of 468 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+[freeze] alive t+91s beats=3 gaps=0 iter=360 gen=1 threads=46 resident=1923MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x122aacc00 lead 60 ms: client wrote 10.01 s of audio in 10.00 s (100.1%) over 1193 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 416..1440 frames; worst late wake 0.0 ms; clamped 0 samples
+wine: Call from 000000717BC52F79 to unimplemented function d3dx9_43.dll.D3DXCreateVolumeTextureFromResourceExW, aborting
+wine: Call from 7BC52F79 to unimplemented function d3dx9_43.dll.D3DXCreateVolumeTextureFromResourceExW, aborting
+[win-name] #27 hwnd=0x10050 class='' text="Default IME" rev=ml853
+[win-name] #28 hwnd=0x10048 class='' text="WineD3D fake window" rev=ml853
+00b8:err:module:load_dll [dll-missing] rev=ml336 #5 L"ir50_32.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #31 hwnd=0x20050 class='' text="Default IME" rev=ml853
+[win-name] #32 hwnd=0x20048 class='' text="WineD3D fake window" rev=ml853
+D B8 Load module msvidc32.dll (msvidc32.dll-94652812bd26d929): 71788D0000
+D B8 Load module iccvid.dll (iccvid.dll-18c680a1e4abfd04): 71788D0000
+00b8:err:module:load_dll [dll-missing] rev=ml336 #6 L"ir50_32.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D B8 Load module dxdiagn.dll (dxdiagn.dll-45312bb75b19f473): 7178B90000
+[win-name] #35 hwnd=0x30050 class='' text="Default IME" rev=ml853
+[win-name] #36 hwnd=0x30048 class='' text="WineD3D fake window" rev=ml853
+D B8 Load module msrle32.dll (msrle32.dll-a301bb193515f3ab): 71788D0000
+D B8 Load module msvidc32.dll (msvidc32.dll-94652812bd26d929): 71788D0000
+D B8 Load module iccvid.dll (iccvid.dll-18c680a1e4abfd04): 71788D0000
+00b8:err:module:load_dll [dll-missing] rev=ml336 #7 L"ir50_32.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00b8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000100) syscalls=0 unix_calls=6154
+[footprint] rev=ml358 phys=2212 MB (peak 2475) internal=2066 MB compressed=0 MB external=81 MB reusable=14 MB (cycle=58)
+[footprint] rev=ml358 phys=2212 MB (peak 2475) internal=2066 MB compressed=0 MB external=81 MB reusable=14 MB (cycle=59)
+[footprint] rev=ml358 phys=2212 MB (peak 2475) internal=2066 MB compressed=0 MB external=81 MB reusable=14 MB (cycle=60)
+[freeze] alive t+121s beats=4 gaps=0 iter=479 gen=1 threads=20 resident=2161MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=2212 MB (peak 2475) internal=2066 MB compressed=0 MB external=81 MB reusable=14 MB (cycle=61)
+[footprint] rev=ml358 phys=2212 MB (peak 2475) internal=2066 MB compressed=0 MB external=81 MB reusable=14 MB (cycle=62)
+[footprint] rev=ml358 phys=2212 MB (peak 2475) internal=2066 MB compressed=0 MB external=81 MB reusable=14 MB (cycle=63)
+[store-noalias] #1 rev=ml348 addr=0x16c1bde40 insn=0x3dc00020 pc=0x19c9678e4 NO pool/anon alias | region 0x16c250000+0x4000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #2 rev=ml348 addr=0x16c1bde40 insn=0x3dc00020 pc=0x19c9678e4 NO pool/anon alias | region 0x16c250000+0x4000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)

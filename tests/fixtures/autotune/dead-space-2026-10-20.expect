@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "tail-carve-lost-exec"
+ ],
+ "next": [],
+ "note": "Dead Space (2008) (Dead Space.exe, Steam), build 574, iPhone18,2 (Send Log 97E8JF): FEX's 128 MB code buffer lay on pool pages that had lost EXEC (pool 512 MB after ml1036); EXECUTE faults at carve+0x1c, redelivery storm; build 576 refuses such a carve (known)",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

@@ -52,7 +52,7 @@ PUBLIC_REPO = KAYNAK / "bcd-public.git"
 NEEDLES = Path.home() / "madeira-local" / "state" / "alpha-needles.txt"
 
 # Paths that stay private. A directory removes everything under it.
-PRIVATE = ["CLAUDE.md", "AGENTS.md", "docs", "bcd-logs", "research", "tools/pull-logs.py",
+PRIVATE = ["CLAUDE.md", "AGENTS.md", "docs", "bcd-logs", "research", "tools/pull-logs.py", "tools/cluster-logs.py", "tools/log-facts.py",
            ".github/workflows/cleanup-artifacts.yml", ".github/workflows/inspect-ipa.yml",
            ".github/workflows/protect-refs.yml", ".github/workflows/sdk-probe.yml",
            # Apple's Metal Shader Converter: only inside IPAs (its agreement, section 2.B).

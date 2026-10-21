@@ -20348,6 +20348,131 @@ static HRESULT STDMETHODCALLTYPE device_SetEventOnMultipleFenceCompletion(ID3D12
     }
 }
 
+/* ---- ID3D12PipelineLibrary (ID3D12Device1::CreatePipelineLibrary) ------------
+ * madeira-bcd, opt-in: bcd.cfg / game file d3d12-pipeline-library = 1. Off (the default) the call is
+ * the generated stub, E_NOTIMPL, as before.
+ *
+ * Returnal (Unreal; Send Log CWKVD7, build 574, iPhone18,2) makes the library while the RHI starts
+ * and ends in a LowLevelFatalError when the call fails ("pDevice1->CreatePipelineLibrary(nullptr, 0,
+ * ...) failed", L16518 / L16524). GTA V Enhanced and Red Dead Redemption 2 call it too and carry on
+ * with the failure, which is why the default stays. With the key on the library is an object that
+ * keeps nothing: the loads answer E_INVALIDARG, what D3D12 returns for a name that is not in the
+ * library, so the engine compiles the pipeline itself; StorePipeline accepts and forgets; the
+ * serialized form is 16 bytes (a magic and reserved zeros), so an engine that writes the library to
+ * disk and hands it back at the next start finds a blob it can use. A blob of anything else is
+ * D3D12_ERROR_DRIVER_VERSION_MISMATCH, which engines answer by starting an empty library. */
+#define MAD_D3D12_ERROR_DRIVER_VERSION_MISMATCH ((HRESULT)0x887E0002L)
+/* piplib-test:begin */
+#define MAD_PIPLIB_MAGIC "MADPLIB1"
+#define MAD_PIPLIB_BLOB_SIZE 16
+/* 1: nothing, or the blob Serialize writes (the library keeps no pipeline, so both mean an empty library). */
+static int mad_piplib_blob_ok(const void *blob, SIZE_T size) {
+    if (!size) return 1;
+    return blob && size == MAD_PIPLIB_BLOB_SIZE && !memcmp(blob, MAD_PIPLIB_MAGIC, 8);
+}
+static HRESULT mad_piplib_serialize(void *data, SIZE_T size) {
+    if (!data || size < MAD_PIPLIB_BLOB_SIZE) return E_INVALIDARG;
+    memset(data, 0, MAD_PIPLIB_BLOB_SIZE);
+    memcpy(data, MAD_PIPLIB_MAGIC, 8);
+    return S_OK;
+}
+/* piplib-test:end */
+static int mad_piplib_on(void) {
+    static int v = -1;
+    if (v < 0) {
+        v = mad_cfg_int_pe("d3d12-pipeline-library", 0) ? 1 : 0;   /* 1: CreatePipelineLibrary makes an empty library (loads say "not found", stores are forgotten); 0: E_NOTIMPL, as before */
+        if (v) d3d12_log("[madeira-d3d12] d3d12-pipeline-library = 1 (opt-in): CreatePipelineLibrary makes a library that keeps "
+                         "no pipeline (loads answer not-found, stores are accepted and forgotten)\n");
+    }
+    return v;
+}
+struct mad_piplib {
+    ID3D12PipelineLibrary1Vtbl *vtbl;
+    LONG refs;
+    const IID *iid;
+    const char *name;
+    struct mad_device *device;
+};
+static ID3D12PipelineLibrary1Vtbl g_piplib_vtbl;
+
+static HRESULT STDMETHODCALLTYPE piplib_QI(ID3D12PipelineLibrary1 *This, REFIID riid, void **out) {
+    struct mad_obj *o = (struct mad_obj *)This;
+    if (!out) return E_POINTER;
+    /* ID3D12PipelineLibrary is the object's iid (mad_qi); ID3D12PipelineLibrary1 is the same object with one more method */
+    if (IsEqualGUID(riid, &IID_ID3D12PipelineLibrary1)) { InterlockedIncrement(&o->refs); *out = This; return S_OK; }
+    return mad_qi(o, riid, out, 1);
+}
+static ULONG STDMETHODCALLTYPE piplib_AddRef(ID3D12PipelineLibrary1 *This) { return mad_addref((struct mad_obj *)This); }
+static ULONG STDMETHODCALLTYPE piplib_Release(ID3D12PipelineLibrary1 *This) { return mad_release((struct mad_obj *)This); }
+static HRESULT STDMETHODCALLTYPE piplib_GetPrivateData(ID3D12PipelineLibrary1 *This, REFGUID g, UINT *n, void *d) {
+    return mad_pd_get(This, g, n, d);
+}
+static HRESULT STDMETHODCALLTYPE piplib_SetPrivateData(ID3D12PipelineLibrary1 *This, REFGUID g, UINT n, const void *d) {
+    return mad_pd_set(This, g, n, d);
+}
+static HRESULT STDMETHODCALLTYPE piplib_SetPrivateDataInterface(ID3D12PipelineLibrary1 *This, REFGUID g, const IUnknown *d) {
+    return mad_pd_set_iface(This, g, d);
+}
+static HRESULT STDMETHODCALLTYPE piplib_SetName(ID3D12PipelineLibrary1 *This, const WCHAR *name) { (void)This; (void)name; return S_OK; }
+static HRESULT STDMETHODCALLTYPE piplib_GetDevice(ID3D12PipelineLibrary1 *This, REFIID riid, void **out) {
+    struct mad_piplib *l = (struct mad_piplib *)This;
+    return l->device->vtbl->QueryInterface((ID3D12Device10 *)l->device, riid, out);
+}
+static HRESULT STDMETHODCALLTYPE piplib_StorePipeline(ID3D12PipelineLibrary1 *This, const WCHAR *name, ID3D12PipelineState *pso) {
+    (void)This;
+    if (!name || !pso) return E_INVALIDARG;
+    return S_OK;   /* accepted and forgotten */
+}
+static HRESULT STDMETHODCALLTYPE piplib_LoadGraphicsPipeline(ID3D12PipelineLibrary1 *This, const WCHAR *name,
+        const D3D12_GRAPHICS_PIPELINE_STATE_DESC *desc, REFIID riid, void **pso) {
+    (void)This; (void)name; (void)desc; (void)riid;
+    if (pso) *pso = NULL;
+    return E_INVALIDARG;   /* D3D12's answer for a name the library does not hold */
+}
+static HRESULT STDMETHODCALLTYPE piplib_LoadComputePipeline(ID3D12PipelineLibrary1 *This, const WCHAR *name,
+        const D3D12_COMPUTE_PIPELINE_STATE_DESC *desc, REFIID riid, void **pso) {
+    (void)This; (void)name; (void)desc; (void)riid;
+    if (pso) *pso = NULL;
+    return E_INVALIDARG;
+}
+static HRESULT STDMETHODCALLTYPE piplib_LoadPipeline(ID3D12PipelineLibrary1 *This, const WCHAR *name,
+        const D3D12_PIPELINE_STATE_STREAM_DESC *desc, REFIID riid, void **pso) {
+    (void)This; (void)name; (void)desc; (void)riid;
+    if (pso) *pso = NULL;
+    return E_INVALIDARG;
+}
+static SIZE_T STDMETHODCALLTYPE piplib_GetSerializedSize(ID3D12PipelineLibrary1 *This) { (void)This; return MAD_PIPLIB_BLOB_SIZE; }
+static HRESULT STDMETHODCALLTYPE piplib_Serialize(ID3D12PipelineLibrary1 *This, void *data, SIZE_T size) {
+    (void)This;
+    return mad_piplib_serialize(data, size);
+}
+static HRESULT STDMETHODCALLTYPE device_CreatePipelineLibrary(ID3D12Device10 *This, const void *blob, SIZE_T blob_size,
+        REFIID riid, void **out) {
+    struct mad_piplib *l;
+    HRESULT hr;
+    if (!mad_piplib_on()) return stub_ID3D12Device10_CreatePipelineLibrary(This, blob, blob_size, riid, out);
+    if (!mad_piplib_blob_ok(blob, blob_size)) {
+        d3d12_log("[madeira-d3d12] CreatePipelineLibrary: a blob of %llu bytes that is not this runtime's: DRIVER_VERSION_MISMATCH\n",
+                  (unsigned long long)blob_size);
+        return MAD_D3D12_ERROR_DRIVER_VERSION_MISMATCH;
+    }
+    if (!out) return S_FALSE;   /* the documented capability test: valid arguments, nothing created */
+    *out = NULL;
+    l = calloc(1, sizeof *l);
+    if (!l) return E_OUTOFMEMORY;
+    l->vtbl = &g_piplib_vtbl; l->refs = 1; l->iid = &IID_ID3D12PipelineLibrary; l->name = "PipelineLibrary";
+    l->device = (struct mad_device *)This;
+    hr = piplib_QI((ID3D12PipelineLibrary1 *)l, riid, out);
+    piplib_Release((ID3D12PipelineLibrary1 *)l);
+    {
+        static LONG said;
+        if (InterlockedIncrement(&said) <= 4)
+            d3d12_log("[madeira-d3d12] CreatePipelineLibrary(%llu bytes) -> an empty library, hr %#lx\n",
+                      (unsigned long long)blob_size, (unsigned long)hr);
+    }
+    return hr;
+}
+
 /* Pipeline-state stream (ID3D12Device2). Each subobject is a UINT type tag
  * followed by its payload at the payload's own alignment, and the next
  * subobject starts pointer-aligned -- the layout of D3DX12's
@@ -20557,6 +20682,7 @@ static void build_vtables(void) {
     g_device_vtbl.RemoveDevice                       = device_RemoveDevice;
     g_device_vtbl.SetBackgroundProcessingMode        = device_SetBackgroundProcessingMode;
     g_device_vtbl.SetEventOnMultipleFenceCompletion  = device_SetEventOnMultipleFenceCompletion;
+    g_device_vtbl.CreatePipelineLibrary              = device_CreatePipelineLibrary;   /* madeira-bcd: d3d12-pipeline-library (the stub when off) */
     g_device_vtbl.QueryInterface = (void *)device_QI;
     g_device_vtbl.GetAdapterLuid = device_GetAdapterLuid;   /* madeira-bcd */
     g_device_vtbl.GetDeviceRemovedReason = device_GetDeviceRemovedReason;   /* madeira-bcd */
@@ -20603,6 +20729,21 @@ static void build_vtables(void) {
     g_cmdsig_vtbl.SetPrivateDataInterface = cmdsig_SetPrivateDataInterface;
     g_cmdsig_vtbl.SetName                 = cmdsig_SetName;
     g_cmdsig_vtbl.GetDevice               = cmdsig_GetDevice;
+
+    g_piplib_vtbl.QueryInterface          = piplib_QI;   /* madeira-bcd: d3d12-pipeline-library */
+    g_piplib_vtbl.AddRef                  = piplib_AddRef;
+    g_piplib_vtbl.Release                 = piplib_Release;
+    g_piplib_vtbl.GetPrivateData          = piplib_GetPrivateData;
+    g_piplib_vtbl.SetPrivateData          = piplib_SetPrivateData;
+    g_piplib_vtbl.SetPrivateDataInterface = piplib_SetPrivateDataInterface;
+    g_piplib_vtbl.SetName                 = piplib_SetName;
+    g_piplib_vtbl.GetDevice               = piplib_GetDevice;
+    g_piplib_vtbl.StorePipeline           = piplib_StorePipeline;
+    g_piplib_vtbl.LoadGraphicsPipeline    = piplib_LoadGraphicsPipeline;
+    g_piplib_vtbl.LoadComputePipeline     = piplib_LoadComputePipeline;
+    g_piplib_vtbl.GetSerializedSize       = piplib_GetSerializedSize;
+    g_piplib_vtbl.Serialize               = piplib_Serialize;
+    g_piplib_vtbl.LoadPipeline            = piplib_LoadPipeline;
     g_device_vtbl.CreateCommittedResource = (void *)device_CreateCommittedResource;
     g_device_vtbl.CreateRootSignature = (void *)device_CreateRootSignature;
     g_device_vtbl.CreateDescriptorHeap = (void *)device_CreateDescriptorHeap;

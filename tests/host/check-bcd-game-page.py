@@ -17,7 +17,7 @@ Checks:
     Steam, a cover picture), cloud saves with the saves that differ, recommended settings (and the
     online list), auto-tune, the game's config, shortcut, saves, report, uninstall, and the Wine
     desktop's page; frame generation only from iOS 26; the page closes for the engine's notices;
-    nothing opens the old page any more;
+    nothing opens the old page any more; the Wine Mono note after a start that needed it;
   - the page's rules, compiled on this Mac with BCDStore.swift and run: the main action, the
     actions beside it, the progress and the lines about what stands in the way for every state;
     the facts; a setting's summary; the questions before what deletes, replaces or sends (a
@@ -187,6 +187,8 @@ for what, needle in [
     ("a cloud conflict is settled by the engine", "await SteamOwnedLibrary.shared.resolveCloud(id, useCloud: fromCloud)"),
     ("auto-tune only for a game it can tune", "AutoTune.enabled && AutoTune.eligible(entry)"),
     ("auto-tune's switch only while it is on", "if AutoTune.enabled { AutoTune.setOn(path, on) }"),
+    ("the Wine Mono note: after a start that needed it, while none is installed (read with auto-tune's state, so only while it is on)",
+     "d.needsWineMono = state.monoMissing == true && !WineMonoModel.available"),
     ("auto-tune's found lines go into the game's file", "if parts.count == 2 { profile.set(parts[0], parts[1]) }"),
     ("auto-tune's report, read only while it is on", "guard let state = AutoTune.enabled ? AutoTune.state(path) : nil else { return nil }"),
     ("Add to Home Screen is the existing shortcut link", "ShortcutRouter.link(for: $0.windowsPath)"),

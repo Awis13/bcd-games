@@ -2062,6 +2062,184 @@ NTSTATUS send_debug_event( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_c
 }
 
 
+#ifdef WINE_IOS
+/* madeira-bcd: [steam-api] -- what a process sees of the Steam client the moment Valve's steam_api64.dll says there is none.
+ *
+ * The Rockstar Games Launcher (GTA V Legacy/Enhanced, RDR2) loads ThirdParty\Steam\steam_api64.dll a second after it
+ * starts and gets "[S_API] SteamAPI_Init(): SteamAPI_IsSteamRunning() did not locate a running instance of Steam..",
+ * then stops with LAUNCHER_ERR_STEAM_FAILED: 20 of the 40 distinct Rockstar-launcher Dock sessions in the 2026-10-19/20
+ * logs (56KFE8, EBJWJS, 6NTGC0, G4NBN4 ...). In the other 13 (4N1GNN, 69692H, XKWV2T ...) the same call loads
+ * steamclient64.dll. The Dock host (dockhost.exe, pid 0x34) did the same in both (published the Steam client in the
+ * registry, asked Valve's client to start the game, reported launch-client-error=0), so the logs cannot say which of the
+ * values steam_api reads, the process or the IPC objects the launcher does not find. This reports them from the failing
+ * process itself, from NtRaiseException when the message arrives as an OutputDebugString exception. It only reads:
+ *   HKCU\Software\Valve\Steam\ActiveProcess  pid, ActiveUser (only zero / not zero), SteamClientDll64
+ *   HKCU\Software\Valve\Steam                SteamPath
+ *   HKLM\Software\Valve\Steam (32- and 64-bit view)  SteamPID, InstallPath
+ *   OpenProcess(pid) and its exit status (259 = still running); the named objects STEAM_DIPC_CONSUME / _PRODUCE.
+ * At most twice per process; one safe read of the debug string, and only for strings of 80-200 bytes. Nothing is written
+ * and nothing changes for any other debug string. (A PE kernelbase patch could not carry this: the shipped
+ * kernelbase.dll is a committed binary the workflow does not rebuild.) */
+/* steam-api-diag-test:begin (tests/host/check-steam-api-diag.py compiles this region) */
+static NTSTATUS ios_sd_key( const char *path, ACCESS_MASK wow, HANDLE *key )
+{
+    WCHAR wide[128];
+    UNICODE_STRING name;
+    OBJECT_ATTRIBUTES attr;
+    size_t i;
+
+    for (i = 0; path[i] && i < 127; i++) wide[i] = (unsigned char)path[i];
+    wide[i] = 0;
+    name.Buffer = wide;
+    name.Length = name.MaximumLength = (USHORT)(i * sizeof(WCHAR));
+    InitializeObjectAttributes( &attr, &name, OBJ_CASE_INSENSITIVE, NULL, NULL );
+    return NtOpenKey( key, KEY_QUERY_VALUE | wow, &attr );
+}
+
+/* One value of an open key. dword: the value when it is a DWORD (else untouched); hide: report a DWORD only as zero or
+ * not zero (the account id). */
+static NTSTATUS ios_sd_value( const char *path, ACCESS_MASK wow, const char *vname, const char *label, int hide,
+                              ULONG *dword )
+{
+    union { KEY_VALUE_PARTIAL_INFORMATION info; char raw[sizeof(KEY_VALUE_PARTIAL_INFORMATION) + 520]; } buf;
+    WCHAR wide[64];
+    UNICODE_STRING name;
+    HANDLE key = 0;
+    ULONG len = 0, i, n;
+    NTSTATUS status = ios_sd_key( path, wow, &key );
+
+    if (status)
+    {
+        ERR_(seh)( "[steam-api]   %s: key not opened, status %#x\n", label, (unsigned int)status );
+        return status;
+    }
+    for (i = 0; vname[i] && i < 63; i++) wide[i] = (unsigned char)vname[i];
+    wide[i] = 0;
+    name.Buffer = wide;
+    name.Length = name.MaximumLength = (USHORT)(i * sizeof(WCHAR));
+    memset( &buf, 0, sizeof(buf) );
+    status = NtQueryValueKey( key, &name, KeyValuePartialInformation, &buf, sizeof(buf), &len );
+    NtClose( key );
+    if (status)
+        ERR_(seh)( "[steam-api]   %s: no value, status %#x\n", label, (unsigned int)status );
+    else if (buf.info.Type == REG_DWORD && buf.info.DataLength == sizeof(ULONG))
+    {
+        ULONG v;
+        memcpy( &v, buf.info.Data, sizeof(v) );
+        if (dword) *dword = v;
+        if (hide) ERR_(seh)( "[steam-api]   %s: DWORD, %s\n", label, v ? "not zero" : "zero" );
+        else ERR_(seh)( "[steam-api]   %s: DWORD %u\n", label, (unsigned int)v );
+    }
+    else if (buf.info.Type == REG_SZ || buf.info.Type == REG_EXPAND_SZ)
+    {
+        char text[96];
+        const WCHAR *w = (const WCHAR *)buf.info.Data;
+
+        n = min( buf.info.DataLength / sizeof(WCHAR), (ULONG)(sizeof(text) - 1) );
+        for (i = 0; i < n && w[i]; i++) text[i] = (w[i] >= 32 && w[i] < 127) ? (char)w[i] : '?';
+        text[i] = 0;
+        ERR_(seh)( "[steam-api]   %s: %s \"%s\"\n", label, buf.info.Type == REG_SZ ? "SZ" : "EXPAND_SZ", text );
+    }
+    else
+        ERR_(seh)( "[steam-api]   %s: type %u, %u bytes\n", label, (unsigned int)buf.info.Type,
+                   (unsigned int)buf.info.DataLength );
+    return status;
+}
+
+static void ios_sd_object( const char *name )
+{
+    WCHAR wide[96];
+    UNICODE_STRING us;
+    OBJECT_ATTRIBUTES attr;
+    HANDLE h = 0;
+    NTSTATUS status;
+    size_t i;
+
+    for (i = 0; name[i] && i < 95; i++) wide[i] = (unsigned char)name[i];
+    wide[i] = 0;
+    us.Buffer = wide;
+    us.Length = us.MaximumLength = (USHORT)(i * sizeof(WCHAR));
+    InitializeObjectAttributes( &attr, &us, OBJ_CASE_INSENSITIVE, NULL, NULL );
+    status = NtOpenSemaphore( &h, SYNCHRONIZE, &attr );
+    if (status) status = NtOpenEvent( &h, SYNCHRONIZE, &attr );
+    if (!status)
+    {
+        ERR_(seh)( "[steam-api]   %s: opens\n", name );
+        NtClose( h );
+    }
+    else ERR_(seh)( "[steam-api]   %s: not opened, status %#x\n", name, (unsigned int)status );
+}
+
+static void ios_steam_api_diag( void )
+{
+    static LONG told;
+    static const char active[] = "\\Registry\\User\\S-1-5-21-0-0-0-1000\\Software\\Valve\\Steam\\ActiveProcess";
+    static const char user_steam[] = "\\Registry\\User\\S-1-5-21-0-0-0-1000\\Software\\Valve\\Steam";
+    static const char machine_steam[] = "\\Registry\\Machine\\Software\\Valve\\Steam";
+    ULONG pid = 0;
+
+    if (InterlockedIncrement( &told ) > 2) return;
+    ERR_(seh)( "[steam-api] steam_api found no running Steam; process %04x sees:\n",
+               (unsigned int)HandleToULong( NtCurrentTeb()->ClientId.UniqueProcess ) );
+    ios_sd_value( active, 0, "pid", "HKCU ActiveProcess pid", 0, &pid );
+    ios_sd_value( active, 0, "ActiveUser", "HKCU ActiveProcess ActiveUser", 1, NULL );
+    ios_sd_value( active, 0, "SteamClientDll64", "HKCU ActiveProcess SteamClientDll64", 0, NULL );
+    ios_sd_value( user_steam, 0, "SteamPath", "HKCU Steam SteamPath", 0, NULL );
+    ios_sd_value( machine_steam, KEY_WOW64_32KEY, "SteamPID", "HKLM(32) Steam SteamPID", 0, NULL );
+    ios_sd_value( machine_steam, KEY_WOW64_32KEY, "InstallPath", "HKLM(32) Steam InstallPath", 0, NULL );
+    ios_sd_value( machine_steam, KEY_WOW64_64KEY, "InstallPath", "HKLM(64) Steam InstallPath", 0, NULL );
+    if (pid)
+    {
+        OBJECT_ATTRIBUTES attr;
+        CLIENT_ID id;
+        HANDLE process = 0;
+        NTSTATUS status;
+
+        InitializeObjectAttributes( &attr, NULL, 0, NULL, NULL );
+        id.UniqueProcess = ULongToHandle( pid );
+        id.UniqueThread = 0;
+        status = NtOpenProcess( &process, PROCESS_QUERY_LIMITED_INFORMATION, &attr, &id );
+        if (status)
+            ERR_(seh)( "[steam-api]   OpenProcess(%u): status %#x\n", (unsigned int)pid, (unsigned int)status );
+        else
+        {
+            PROCESS_BASIC_INFORMATION pbi;
+
+            memset( &pbi, 0, sizeof(pbi) );
+            status = NtQueryInformationProcess( process, ProcessBasicInformation, &pbi, sizeof(pbi), NULL );
+            if (status)
+                ERR_(seh)( "[steam-api]   OpenProcess(%u): opens, query status %#x\n", (unsigned int)pid,
+                           (unsigned int)status );
+            else
+                ERR_(seh)( "[steam-api]   OpenProcess(%u): opens, exit status %u (259 = still running)\n",
+                           (unsigned int)pid, (unsigned int)pbi.ExitStatus );
+            NtClose( process );
+        }
+    }
+    ios_sd_object( "\\BaseNamedObjects\\STEAM_DIPC_CONSUME" );
+    ios_sd_object( "\\BaseNamedObjects\\STEAM_DIPC_PRODUCE" );
+}
+
+/* Whether this OutputDebugString exception carries steam_api's "no Steam running" text. */
+static int ios_steam_api_message( const EXCEPTION_RECORD *rec )
+{
+    char text[208];
+    SIZE_T got = 0, len;
+
+    if (rec->ExceptionCode != DBG_PRINTEXCEPTION_C || rec->NumberParameters < 2 || !rec->ExceptionInformation[1])
+        return 0;
+    len = rec->ExceptionInformation[0];
+    if (len < 80 || len > 200) return 0;
+    if (NtReadVirtualMemory( NtCurrentProcess(), (const void *)rec->ExceptionInformation[1], text, len, &got ) || got != len)
+        return 0;
+    text[len - 1] = 0;
+    return text[0] == '[' && text[1] == 'S' && text[2] == '_' &&
+           strstr( text, "SteamAPI_IsSteamRunning() did not locate a running instance" ) != NULL;
+}
+/* steam-api-diag-test:end */
+
+#endif
+
 /*******************************************************************
  *		NtRaiseException (NTDLL.@)
  */
@@ -2142,6 +2320,10 @@ NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL 
                            (unsigned long)(rec->ExceptionInformation[0] >> 20), rec->ExceptionAddress );
         }
     }
+#endif
+#ifdef WINE_IOS
+    /* madeira-bcd: [steam-api] (see ios_steam_api_diag): reads only, logs at most twice per process. */
+    if (rec && first_chance && ios_steam_api_message( rec )) ios_steam_api_diag();
 #endif
     status = send_debug_event( rec, context, first_chance, !(is_win64 || is_wow64() || is_old_wow64()) );
 

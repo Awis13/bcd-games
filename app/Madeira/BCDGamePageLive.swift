@@ -627,6 +627,9 @@ import UniformTypeIdentifiers
         let tuned = AutoTune.enabled && AutoTune.eligible(entry) ? (on: AutoTune.isOn(path), state: AutoTune.state(path), most: AutoTuneEngine.maxAttempts) : nil
         guard let tuned else { return }
         let state = tuned.state
+        // The last start failed because a .NET program found no Wine Mono (AutoTuneState.monoMissing), and nothing has
+        // been downloaded since: the page says where to get it. Read here, so only while auto-tune is on.
+        d.needsWineMono = state.monoMissing == true && !WineMonoModel.available
         let history = !state.attempts.isEmpty || !state.kept.isEmpty
         let steps = state.attempts.reversed().map { step -> (title: String, detail: String) in
             var words = [Self.said(step.outcome), "stage \(step.stage)", "\(Int(step.seconds)) s", "\(step.presents) frames"]
@@ -645,8 +648,8 @@ import UniformTypeIdentifiers
             }
         case "found": status = "Found: " + state.kept.joined(separator: "; ")
         case "ok": status = "It played without changes."
-        case "stuck": status = "No known fix fits the last failure. Share the report to send it."
-        case "gave-up": status = "Stopped after \(tuned.most) attempts. Share the report to send it."
+        case "stuck": status = "No known fix fits the last failure (tried: \(state.triedSummary)). " + Self.reportAdvice
+        case "gave-up": status = "Stopped after \(tuned.most) attempts. " + Self.reportAdvice
         case "known":
             status = "A crash in BCD itself, not a setting: \(state.knownReason ?? state.known ?? "a known problem")."
             if let fixed = state.knownFixedIn {
@@ -661,6 +664,12 @@ import UniformTypeIdentifiers
         d.tuning = BCDGameTuning(on: tuned.on, status: tuned.on || history ? status : nil, canUndo: history, found: state.kept, history: steps)
         if tuned.on && history { d.settings = "Auto-tune on" }   // on for every game now: the label says so only once it has a search or kept lines, so "Recommended" and "Your own" stay visible
     }
+
+    /// Without the increased memory limit the setup, not BCD, is the usual cause, and a report
+    /// cannot fix it: say what can (2026-10-20: 54 of 257 logs came from such installs).
+    private static let reportAdvice: String = EntitlementStatus.check().increasedMemory
+        ? "Share the report to send it."
+        : "This install lacks the increased memory limit, the usual cause on it: add it with GetMoreRam, or sign BCD with a paid developer account, before sending a report."
 
     /// How a start ended, in auto-tune's words.
     private static func said(_ outcome: String) -> String { AutoTune.enabled ? AutoTuneOffer.outcomeText(outcome) : outcome }

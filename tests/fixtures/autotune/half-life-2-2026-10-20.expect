@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "wow64-thread-map-uninitialised"
+ ],
+ "next": [],
+ "note": "Half-Life 2 (Steam, 32-bit, through BCD Dock), build 574, iPad16,3 on iOS 18.5 (63 GB address map; Send Log TCKWZY; the same first fault ended all 16 32-bit sessions of the intake from iOS 18 devices, e.g. Duck Game QDH12X): xtajit.dll's entry point and C++ constructors ran in its executable PE view while BTCpuThreadInit ran in the pool copy, whose global thread map was still zero (Threads.emplace: __next_prime overflow, then a NULL TEB[0x58] read in __cxa_get_globals); build 576 takes EXEC back from that view (known)",
+ "outcome": "exited-early",
+ "stage": 2,
+ "status": "known"
+}

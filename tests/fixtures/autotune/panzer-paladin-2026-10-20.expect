@@ -1,0 +1,13 @@
+{
+ "dialogs": [],
+ "end": {
+  "quitRequested": true
+ },
+ "matched": [],
+ "monoMissing": true,
+ "next": [],
+ "note": "Panzer Paladin (5G8ZKE, build 574): a .NET 4.5.2 game on a device with no Wine Mono; err:mscoree:CLRRuntimeInfo_GetRuntimeHost Wine Mono is not installed, exit 0xffffffff. Not an auto-tune fix: the game page says where to download Wine Mono (monoMissing)",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "stuck"
+}

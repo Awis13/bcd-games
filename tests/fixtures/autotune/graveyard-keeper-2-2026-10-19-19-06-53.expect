@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "excl-logical-rwx-page"
+ ],
+ "next": [],
+ "note": "Graveyard Keeper 2 (Steam, Unity, through BCD Dock), build 574, iPad17,1 (11.5 GB; a tester's Send Log 1D97EP, two more identical: 3R8N90, G09HFW): ntdll's LDAXR; AND; STLXR on a critical-section word in the RWX memory of the Mono runtime was refused by ml1284's emulation until the redelivery guard ended the app",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

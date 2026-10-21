@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "excl-logical-rwx-page"
+ ],
+ "next": [],
+ "note": "TEVI (Steam, Unity), build 574, iPhone17,2 (Send Log J75807): played, then ntdll's LDAXR/AND/STLXR on a Mono RWX word (insn 0x880cfd0b at ntdll+0x28408, [store-undecoded]; no [guest-bytes] line for it) faulted until the redelivery guard ended the app: Graveyard Keeper 2's crash, fixed in 575 (excl-logical-rwx-page, known)",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "known"
+}

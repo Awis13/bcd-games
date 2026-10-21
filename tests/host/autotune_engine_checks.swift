@@ -219,6 +219,22 @@ struct AutoTuneEngineChecks {
                                    userKeys: [], fingerprint: "o", log: nil)
         expect(x.status == "stuck", "an upgrade needs a line auto-tune kept: it never adds a first swap-mb on its own")
 
+        // 15b. A failure that comes back the same every start (a noRetry rule, the JIT pool filling up):
+        // no unchanged retry; nocopy first, then the split pool (Counter-Strike 2, 2026-10-20).
+        let nocopy = "x64-image-nocopy", split = "pool-split-exhausted"
+        expect(rules.first { $0.id == split }?.noRetry == true && rules.first { $0.id == nocopy }?.noRetry == true,
+               "the JIT pool rules skip the retry")
+        var p = AutoTuneEngine.advance(AutoTuneState(), report: report("crashed", stage: 2, matched: [nocopy, split]),
+                                       rules: rules, userKeys: [], fingerprint: "n", log: nil)
+        expect(!p.retried && p.candidateRule == nocopy && p.candidate == ["env.MADEIRA_X64_IMAGE_NOCOPY = 1"],
+               "a full JIT pool gets its first line at once (\(p.candidateRule ?? "-"))")
+        p = AutoTuneEngine.advance(p, report: report("crashed", stage: 2, matched: [nocopy, split]), rules: rules,
+                                   userKeys: [], fingerprint: "n", log: nil)
+        expect(p.candidateRule == split && p.candidate == ["pool-split = 1"], "then the split pool")
+        let plain = AutoTuneEngine.advance(AutoTuneState(), report: report("crashed", stage: 3, matched: [cage]), rules: rules,
+                                           userKeys: [], fingerprint: "n2", log: nil)
+        expect(plain.candidateRule == "retry", "other failures still get the unchanged retry first")
+
         // 16. A crash only a change in Madeira fixes (a fixedIn rule): no attempt, not even the retry.
         let layer = "metal-layer-format"
         expect(rules.first { $0.id == layer }?.fixedIn == 560 && rules.first { $0.id == layer }?.lines == [],
@@ -258,6 +274,62 @@ struct AutoTuneEngineChecks {
         objc.feed(Data("[redeliv] terminating process rev=ml465\n".utf8))
         objc.finish()
         expect(objc.facts.errorExits == 2, "the app's own end (an Objective-C exception, the redelivery guard) is crash evidence")
+
+        // 17. Wine Mono missing (Panzer Paladin, 2026-10-20): the game page says where to download it. Only the err line
+        // of mscoree counts; the "[wine-mono] ml1275 neither ..." line is written at every start of a device without
+        // Mono, for games that do not need .NET too.
+        let monoErr = "00a4:err:mscoree:CLRRuntimeInfo_GetRuntimeHost Wine Mono is not installed\n"
+        let monoLine = "[wine-mono] ml1275 neither this build nor a download has Wine Mono\n"
+        let monoLineNew = "[wine-mono] ml1275 neither this build nor a download has Wine Mono -- a .NET Framework game then exits 0xffffffff with \"Wine Mono is not installed\"; Settings > .NET Framework downloads it\n"
+        let otherMscoree = "00a4:err:mscoree:CLRRuntimeInfo_GetRuntimeHost could not load the runtime\n"
+        func scanned(_ text: String, chunk: Int = 1 << 20) -> AutoTuneLogScanner {
+            let sc = AutoTuneLogScanner(signals: [])
+            let bytes = Data(text.utf8)
+            var i = 0
+            while i < bytes.count { sc.feed(bytes.subdata(in: i..<min(i + chunk, bytes.count))); i += chunk }
+            sc.finish()
+            return sc
+        }
+        for chunk in [1, 5, 64, 1 << 20] {
+            expect(scanned("[phase] wine-start t+ 0.7s\n" + monoLine + monoErr + "[exit-report] status=0xFFFFFFFF\n", chunk: chunk).facts.monoMissing,
+                   "the scanner sees the mscoree err line (\(chunk)-byte chunks)")
+        }
+        expect(!scanned(monoLine + monoLineNew).facts.monoMissing,
+               "the [wine-mono] ml1275 line alone (old or new wording) is no evidence: every start of a device without Mono writes it")
+        expect(!scanned(otherMscoree + "00a4:fixme:mscoree:parse_supported_runtime sku=L\".NETFramework,Version=v4.5.2\" not implemented\n").facts.monoMissing,
+               "other mscoree lines are not it")
+        let failedEnd = AutoTuneSessionEnd(sawProcess: true, quitRequested: true, seconds: 40)
+        let monoScan = scanned("[phase] wine-start t+ 0.7s\n" + monoErr + "[exit-report] status=0xFFFFFFFF\n")
+        let monoReport = AutoTuneEngine.report(failedEnd, monoScan, rules: rules, signals: [])
+        expect(monoReport.failed && monoReport.monoMissing == true, "a failed session that showed it: the report says Wine Mono is missing (\(monoReport.outcome))")
+        let playedScan = scanned("[phase] wine-start t+ 0.7s\n" + monoErr + "[freeze] alive t+305s beats\n")
+        let playedReport = AutoTuneEngine.report(AutoTuneSessionEnd(sawProcess: true, seconds: 400), playedScan, rules: rules, signals: [])
+        expect(playedReport.played && playedReport.monoMissing == nil,
+               "a session that played shows nothing, whatever a side process logged (\(playedReport.outcome))")
+        let plainReport = AutoTuneEngine.report(failedEnd, scanned("[phase] wine-start t+ 0.7s\n" + monoLine + "[exit-report] status=0xC0000005\n"),
+                                                rules: rules, signals: [])
+        expect(plainReport.failed && plainReport.monoMissing == nil, "a failure without the err line shows nothing, the ml1275 line or not")
+        var mono = AutoTuneEngine.advance(AutoTuneState(), report: monoReport, rules: rules, userKeys: [], fingerprint: "mono", log: nil)
+        expect(mono.monoMissing == true, "the state keeps it for the game page")
+        mono = AutoTuneEngine.advance(mono, report: report("inconclusive", stage: 1), rules: rules, userKeys: [], fingerprint: "mono", log: nil)
+        expect(mono.monoMissing == true, "an inconclusive session changes nothing")
+        mono = AutoTuneEngine.advance(mono, report: monoReport, rules: rules, userKeys: [], fingerprint: "mono", log: nil)
+        expect(mono.monoMissing == true && mono.status == "stuck", "it stays while the failure comes back; auto-tune itself behaves as before (\(mono.status))")
+        if let d = try? JSONEncoder().encode(mono), let back = try? JSONDecoder().decode(AutoTuneState.self, from: d) {
+            expect(back == mono && back.monoMissing == true, "the flag round-trips through JSON")
+        } else { expect(false, "the Mono state encodes") }
+        mono = AutoTuneEngine.advance(mono, report: report("quit", stage: 5, seconds: 400), rules: rules, userKeys: [], fingerprint: "mono", log: nil)
+        expect(mono.monoMissing == nil, "a session that played clears it")
+        let neverMono = AutoTuneEngine.advance(AutoTuneState(), report: report("crashed", stage: 3, matched: [cage]), rules: rules,
+                                               userKeys: [], fingerprint: "n3", log: nil)
+        expect(neverMono.monoMissing == nil, "a game that never showed it has none")
+        if let d = try? JSONEncoder().encode(neverMono) {
+            expect(!String(decoding: d, as: UTF8.self).contains("monoMissing"), "and its saved file is the same as before: no new key")
+        } else { expect(false, "the plain state encodes") }
+        let savedBefore = Data(#"{"version":1,"status":"found","kept":["x = 1"],"tried":[],"retried":false,"attempts":[],"best":{"outcome":"crashed","stage":3,"seconds":30,"presents":0,"dock":false,"d3d12":false,"matched":[],"evidence":[],"dialogs":[]}}"#.utf8)
+        let loaded = try? JSONDecoder().decode(AutoTuneState.self, from: savedBefore)
+        expect(loaded?.kept == ["x = 1"] && loaded?.monoMissing == nil && loaded?.best?.monoMissing == nil,
+               "a state saved before the flag existed still loads, with its kept lines")
 
         // 15. State survives JSON (the app saves it between sessions).
         if let d = try? JSONEncoder().encode(s), let back = try? JSONDecoder().decode(AutoTuneState.self, from: d) {

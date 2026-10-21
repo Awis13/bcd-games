@@ -398,6 +398,16 @@ func contentPhase(_ fx: Fixture) async {
     do { _ = try BCDGOGContent.newestBuild(json(#"{"items":[]}"#)) } catch { check(error as? BCDGOGError == .noWindowsBuild, "no build: no Windows download") }
     check((try? BCDGOGContent.newestBuild(json(#"{"items":[{"build_id":"5","generation":2,"branch":null,"link":"https://evil.example/m"}]}"#))) == nil,
           "a build link off GOG's hosts is refused")
+    // The queue's "[content] failed ... reason=" used to print the error's type name for every GOG failure ("BCDGOGError",
+    // 2026-10-20, two testers' installs); now the step: which reply GOG sent that BCD could not read.
+    let reasonA = await BCDContentQueue.reason(BCDGOGError.badReply("builds"))
+    let reasonB = await BCDContentQueue.reason(BCDGOGError.noWindowsBuild)
+    let reasonC = await BCDContentQueue.reason(BCDContentError.http(403))
+    check(reasonA == "reply-builds" && reasonB == "no-windows-build" && reasonC == "http-403",
+          "a failed GOG job logs its step (reply-builds, ...), not the error's type name")
+    check(BCDGOGAPI.shape(json(#"{"items":[{"build_id":5,"generation":2,"branch":null,"link":"x"}],"total_count":1}"#), lists: ["items"])
+          == "top[items=a,total_count=n] items=1 first[branch=N,build_id=n,generation=n,link=s]",
+          "a reply's shape for the log: keys and kinds, never a value")
 
     func L(_ offered: [String], _ preferred: [String]) -> String { BCDGOGContent.language(offered: offered, preferred: preferred) }
     let offered = ["de-DE", "en-US", "fr-FR", "zh-Hans", "pt-BR"]

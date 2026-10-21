@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "AoE IV c000001d at RelicCardinal.exe+0x3de24f0 (bytes d5 dc ca a3 bc): invalid opcode, AVX on does not help; fex-avx-on must not propose",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "stuck"
+}

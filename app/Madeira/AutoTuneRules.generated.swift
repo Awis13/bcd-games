@@ -31,6 +31,148 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "identical redeliveries"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[guest-bytes]",
+     "6b 01 0a 0a 0b fd 0c 88"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0x880cfd0b"
+    ]
+   }
+  ],
+  "evidence": [
+   "graveyard-keeper-2-2026-10-19-19-06-53",
+   "tevi-2026-10-19 (J75807)",
+   "Cult of the Lamb Q2MJ7N, Mafia II DE 8KJGTX, Caves of Qud PZYMXY",
+   "tests/host/check-excl-rmw.py (build 575)"
+  ],
+  "fixedIn": 575,
+  "id": "excl-logical-rwx-page",
+  "lines": [],
+  "priority": 1,
+  "reason": "A locked bit-clear in memory BCD keeps writable only through an alias was not emulated, and the same fault came back until BCD ended the game."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[exec-recover] pg=",
+     "mprotect_rx=-1",
+     "pool-rx"
+    ]
+   },
+   {
+    "has": [
+     "[av-detail] ml613",
+     "p0=EXECUTE",
+     "p1_in_carve=1"
+    ]
+   },
+   {
+    "has": [
+     "[fault_rip]",
+     "PROTECTION_FAILURE",
+     "entryprot=3 nowprot=3"
+    ]
+   },
+   {
+    "has": [
+     "BUS EXEC in JIT .data"
+    ]
+   }
+  ],
+  "evidence": [
+   "dead-space-2026-10-20 (97E8JF)",
+   "star-wars-the-force-unleashed 81A30H, R10XKS, 5EAVVG",
+   "tests/host/check-tail-carve-exec.py (build 576)"
+  ],
+  "fixedIn": 576,
+  "id": "tail-carve-lost-exec",
+  "lines": [],
+  "priority": 1,
+  "reason": "Part of the JIT pool had lost the right to run code, and the 128 MB buffer the emulator asked for was placed on it; from this build on BCD refuses such a buffer and the emulator takes a smaller one."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[x18-emul3] UNRECOGNIZED insn="
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Unhandled exception"
+    ]
+   },
+   {
+    "has": [
+     "ACCEPTING terminal root frame"
+    ]
+   },
+   {
+    "has": [
+     "Runtime error!"
+    ]
+   }
+  ],
+  "evidence": [
+   "left-4-dead-2-2026-10-20 (RTTGKM)",
+   "FFXIV TY3K5R (same instruction, same offset)",
+   "tests/host/check-x18-signed-load.py (build 576)"
+  ],
+  "fixedIn": 576,
+  "id": "x18-repair-unrecognized-load",
+  "lines": [],
+  "priority": 1,
+  "reason": "iOS cleared a register the emulator relies on, and BCD could not repair the access that followed; from this build on it can."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[mach_exc] pc PE: libwow64fex.dll+"
+    ]
+   },
+   {
+    "has": [
+     "[x86_seg]",
+     "TEB[0x58]=0x0"
+    ]
+   },
+   {
+    "has": [
+     "[jit-nodebug] debugger-less JIT pool: allowed"
+    ]
+   }
+  ],
+  "evidence": [
+   "half-life-2-2026-10-20 (TCKWZY, iPad16,3, iOS 18.5)",
+   "Duck Game QDH12X (iPhone13,1, iOS 18.6): [x18-emul3] #1 pc=0x3ffac10a8 = libwow64fex base 0x3ffac0000 + _CRT_INIT+0xa8",
+   "pes2013 4GQK0Y, 853B78, 7Y599P, B39EXN, KF01JG, TYAKAG; Dead Space DVXWGA, E05X42; Stick Fight KDY8E6; Terraria 9VGQVC; Yume Nikki E69NBH; You Have 10 Seconds TTHVRF; speed.exe BFRJ1Z; S67X5G",
+   "docs/research/ios18-2026-10-18/runtime.md section 3.4 (PE images may execute in place on iOS 18)",
+   "tests/host/check-wow-cpu-pool.py, tests/host/check-fex-wow-threads-ctor.py (build 576)"
+  ],
+  "fixedIn": 576,
+  "id": "wow64-thread-map-uninitialised",
+  "lines": [],
+  "priority": 1,
+  "reason": "BCD ran the 32-bit emulator's start-up code from a different copy of the module than the one it then used, so every 32-bit program stopped before its first instruction; from this build on both use the same copy."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "Debugger failed to allocate RX memory"
     ]
    },
@@ -167,6 +309,47 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 90,
   "reason": "iOS 18 refused the Direct3D 12 runtime's helper shaders, so indirect tessellation draws were skipped; from this build on BCD carries a copy iOS 18 loads."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[store-noalias]",
+     "prot=1 max=3"
+    ]
+   },
+   {
+    "has": [
+     "[wr-strip-declined]",
+     "SEC_IMAGE"
+    ]
+   },
+   {
+    "has": [
+     "[redeliv]",
+     "identical redeliveries"
+    ]
+   }
+  ],
+  "evidence": [
+   "mad-max-2026-10-20 (VZKCF3, KK9H24, 6DB55D)",
+   "virtual_ios.c ml1030 / ios_x64_image_nocopy_enabled (the same symptom for 32-bit images)",
+   "Dark Souls II, one iPhone, 2026-10-19: with the line (DN5QSB, E6G3RQ) 379 s of play after the same 256-delivery warning; without it (72R0CG, P9C7DG) the session ended 34 s in"
+  ],
+  "id": "x64-image-smc-nocopy",
+  "lines": [
+   "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "[x64-image]",
+     "mapped without a pool copy"
+    ]
+   }
+  ],
+  "priority": 14,
+  "reason": "The game rewrites its own code and the emulator's write permission never reached the program's memory, so one store faulted until BCD ended the game; the line lets the program's image take writes the way the emulator's trap expects."
  },
  {
   "all": [
@@ -316,6 +499,105 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[alloc-fail] ml798 FEXAlloc could not allocate",
+     "band=0x7c00000000..0x7fffffffff"
+    ]
+   },
+   {
+    "count": 3,
+    "has": [
+     "[steer] #",
+     "above ceiling 0x7c"
+    ]
+   }
+  ],
+  "evidence": [
+   "no-rest-for-the-wicked-2026-10-20 (0M4SJD, build 574)",
+   "tests/host/check-fex-band-keep.py (build 576)"
+  ],
+  "id": "fex-band-steer-keep",
+  "lines": [
+   "env.MADEIRA_FEX_BAND_KEEP_MB = 6144"
+  ],
+  "none": [
+   {
+    "has": [
+     "[fex-keep] madeira-bcd:"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 20,
+  "reason": "The game's own reservations filled the memory range BCD keeps for the emulator, and the emulator ran out of room and stopped; the line keeps the lowest 6 GB of that range for the emulator, and the game's reservations that no longer fit go elsewhere."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "CLR: Assert failure",
+     "m_pRegionToGenTableImmediate"
+    ]
+   }
+  ],
+  "evidence": [
+   "quaver-2026-10-20 (DKEQ3C, build 574)"
+  ],
+  "id": "dotnet-wx-off",
+  "lines": [
+   "env.DOTNET_EnableWriteXorExecute = 0"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game DOTNET_EnableWriteXorExecute=0"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 10,
+  "reason": "The game's .NET runtime keeps its code in two views of one memory section, and BCD cannot keep the two views the same; the line makes the runtime use plain executable memory."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[madeira-d3d12] unimplemented: ID3D12Device10::CreatePipelineLibrary"
+    ]
+   },
+   {
+    "has": [
+     "LowLevelFatalError",
+     "CreatePipelineLibrary"
+    ]
+   }
+  ],
+  "evidence": [
+   "returnal-2026-10-20 (CWKVD7, build 574)",
+   "tests/host/check-d3d12-pipeline-library.py (build 576)"
+  ],
+  "id": "d3d12-pipeline-library-fatal",
+  "lines": [
+   "d3d12-pipeline-library = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "[madeira-d3d12] d3d12-pipeline-library = 1"
+    ]
+   }
+  ],
+  "priority": 12,
+  "reason": "The game's engine insists that Direct3D 12 can make a pipeline library and stops when the call fails; the line makes BCD answer it with a library that keeps nothing."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[nls-getptr] type=11 id=857"
     ]
    }
@@ -349,6 +631,50 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 12,
   "reason": "Wine used the phone's Turkish locale and the game failed right after loading its code page; the line gives Wine an English locale for this game."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[nls-getptr] type=11 id=1254"
+    ]
+   },
+   {
+    "has": [
+     "[win-name] #",
+     "text=\"Dying Light\""
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Unhandled exception"
+    ]
+   },
+   {
+    "has": [
+     "ACCEPTING terminal root frame"
+    ]
+   },
+   {
+    "has": [
+     "Runtime error!"
+    ]
+   }
+  ],
+  "evidence": [
+   "dying-light-owner-2026-10-20 (SAHIP4, SAHIP5, SAHIP6; MXXHZK, 8VB504)",
+   "rift-apart-2026-10-16-10-43-45 (same phone, same kind of event, LC_ALL fixed it)",
+   "UNPROVEN: the first session with the line decides"
+  ],
+  "id": "locale-en-us-ansi",
+  "lines": [
+   "env.LC_ALL = en_US.UTF-8"
+  ],
+  "noRetry": true,
+  "priority": 12,
+  "reason": "The game asked for the phone's Turkish code page and ended at start-up; Rift Apart did the same and ran with an English locale, so this attempt gives Wine one for this game."
  },
  {
   "all": [
@@ -440,6 +766,61 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "BUS->AV: unreadable target",
+     "rw=0"
+    ]
+   },
+   {
+    "count": 8,
+    "has": [
+     "[rb-tex] madeira-bcd new readback"
+    ]
+   }
+  ],
+  "evidence": [
+   "batman-arkham-asylum-2026-10-19 (1Q05G8)",
+   "brutal-legend 82BAXZ, dishonored 0RA62D/5B06QT",
+   "tests/host/check-probe-safe-read.py"
+  ],
+  "id": "readback-probe-freed-buffer",
+  "lines": [
+   "env.MADEIRA_LUM_PROBE = 0"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "identical redeliveries"
+    ]
+   }
+  ],
+  "priority": 5,
+  "reason": "A logging probe read GPU readback memory the game had already freed; turning the probe off avoids it (build 575 reads it safely)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[jit-pool] EXHAUSTED"
+    ]
+   }
+  ],
+  "evidence": [
+   "counter-strike-2-owner-2026-10-20 (pool-split by hand started it)",
+   "albion-launcher BYBFCH/PGKTDD, spelunky-2 J2YJF8 (2026-10-20)"
+  ],
+  "id": "pool-split-exhausted",
+  "lines": [
+   "pool-split = 1"
+  ],
+  "noRetry": true,
+  "priority": 11,
+  "reason": "The JIT pool was smaller than usual and filled up while the game loaded; a split pool is about 880 MB."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[jit-pool] EXHAUSTED (image"
     ]
    }
@@ -452,6 +833,7 @@ enum AutoTuneBuiltInRules {
   "lines": [
    "env.MADEIRA_X64_IMAGE_NOCOPY = 1"
   ],
+  "noRetry": true,
   "priority": 10,
   "reason": "The JIT pool ran out while DLLs were copied into it; pure x64 DLLs can run without a copy."
  },
@@ -542,6 +924,168 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "err:module:import_dll Library",
+     "not found"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "err:module:import_dll Library api-ms-win-core-winrt-robuffer-l1-1-0.dll",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library wintypes.dll",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "megabonk-2026-10-20 (J7VAJV), No, I'm not a Human TZB1JX, Over the Hill HXQQN1 (c0000135 at once)"
+  ],
+  "id": "wintypes-dll-optin",
+  "lines": [
+   "env.MADEIRA_WINTYPES = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_WINTYPES=1: wintypes.dll -> wintypes-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game imports wintypes.dll (Windows Runtime types), which BCD does not ship for every game; the line gives this game Wine's wintypes.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "err:module:import_dll Library dxva2.dll",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "fort-solis-2026-10-20 (94MSWJ), DRAGON BALL Sparking! ZERO H6XVPV (c0000135 at once)"
+  ],
+  "id": "dxva2-dll-optin",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = dxva2"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: dxva2.dll -> dxva2-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game imports dxva2.dll, which BCD does not ship for every game; the line gives this game Wine's dxva2.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "err:module:import_dll Library XPSPRINT.DLL",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "animal-well NWHG8J (build 565, c0000135 at once)"
+  ],
+  "id": "xpsprint-dll-optin",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = xpsprint"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: xpsprint.dll -> xpsprint-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game imports XpsPrint.dll, which BCD does not ship for every game; the line gives this game Wine's xpsprint.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "failed to create main module",
+     "c0000018"
+    ]
+   }
+  ],
+  "evidence": [
+   "hogwarts-legacy-2026-10-20 (D67PYY)",
+   "3HWREK, XDCPK7, 6E40B4, WNDRGF"
+  ],
+  "id": "exe-window-fixed-base",
+  "lines": [
+   "exe-window-mb = 512"
+  ],
+  "noRetry": true,
+  "priority": 6,
+  "reason": "The game's program must load at a fixed address that BCD's JIT pool partly held; the line keeps 512 MB there for it (the pool may be smaller)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Redistributable (arm64)",
+     "[win-name] #"
+    ]
+   }
+  ],
+  "evidence": [
+   "MKT2TW, BEB3XY (Denshattack, builds 574, 565), 4AW8BN, Q5KWDW (FINAL FANTASY RESONANCE demo, build 573)",
+   "ajan-vcarm64 report 2026-10-20"
+  ],
+  "id": "vcrt-arm64-marker",
+  "lines": [
+   "env.MADEIRA_VCRT_ARM64_KEY = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[vcrt-arm64] madeira-bcd:"
+    ]
+   }
+  ],
+  "priority": 7,
+  "reason": "The game's start-up program asked for Microsoft's ARM64 Visual C++ runtime, which the Windows prefix does not list; the line adds that entry for the session."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "unimplemented function d3dx9_",
+     "D3DXCreateVolumeTextureFromResourceEx"
+    ]
+   }
+  ],
+  "evidence": [
+   "gta-iv-2026-10-19 (2934SV)"
+  ],
+  "fixedIn": 576,
+  "id": "d3dx9-volume-resource-stub",
+  "lines": [],
+  "priority": 1,
+  "reason": "The game called a Direct3D 9 helper Wine had not implemented (D3DXCreateVolumeTextureFromResourceEx)."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[bcd] library launch",
      "avx=0"
     ]
@@ -560,7 +1104,8 @@ enum AutoTuneBuiltInRules {
    }
   ],
   "evidence": [
-   "HANDOFF: Crysis 2 Remastered 540 (c000001d, DISABLEAVX expected), HFW, GoT, Rift Apart 531"
+   "HANDOFF: Crysis 2 Remastered 540 (c000001d, DISABLEAVX expected), HFW, GoT, Rift Apart 531",
+   "not for an invalid opcode: Age of Empires IV 7DXVSK/34WSPP died the same with AVX on"
   ],
   "id": "fex-avx-on",
   "lines": [
@@ -570,6 +1115,12 @@ enum AutoTuneBuiltInRules {
    {
     "has": [
      "\" failed to initialize, aborting"
+    ]
+   },
+   {
+    "has": [
+     "[guest-code] rev=ml333",
+     "): d5 "
     ]
    }
   ],

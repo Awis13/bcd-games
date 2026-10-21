@@ -8,8 +8,8 @@
 //   replay [--chunk N] [--end JSON] [--rules FILE] LOG...
 //
 // For each log: one JSON line with the scan's facts, the report (outcome, stage,
-// matched rules, the game's error boxes) and the line auto-tune would try next
-// (after a baseline session and the one unchanged retry). --chunk feeds the scanner
+// matched rules, the game's error boxes, whether a .NET program found no Wine Mono) and the
+// line auto-tune would try next (after a baseline session and the one unchanged retry). --chunk feeds the scanner
 // N bytes at a time (lines cut across chunks); --end overrides AutoTuneSessionEnd's
 // fields (e.g. {"killed": true}); --rules adds an override file as the app would.
 
@@ -63,8 +63,11 @@ struct AutoTuneReplay {
             let report = AutoTuneEngine.report(end, scanner, rules: rules, signals: signals)
             var state = AutoTuneEngine.advance(AutoTuneState(), report: report, rules: rules, userKeys: [],
                                                fingerprint: "replay", log: nil)
-            state = AutoTuneEngine.advance(state, report: report, rules: rules, userKeys: [],
-                                           fingerprint: "replay", log: nil)
+            // The second start: after the unchanged retry, which a noRetry rule skips.
+            if state.candidateRule == "retry" {
+                state = AutoTuneEngine.advance(state, report: report, rules: rules, userKeys: [],
+                                               fingerprint: "replay", log: nil)
+            }
             let enc = JSONEncoder()
             enc.outputFormatting = [.sortedKeys]
             let facts = (try? JSONSerialization.jsonObject(with: enc.encode(scanner.facts))) ?? [:]
@@ -75,6 +78,7 @@ struct AutoTuneReplay {
                 "stage": report.stage,
                 "matched": report.matched,
                 "dialogs": report.dialogs,
+                "monoMissing": state.monoMissing == true,
                 "status": state.status,
                 "next": state.candidate ?? [],
             ]

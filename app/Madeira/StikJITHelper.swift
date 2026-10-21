@@ -457,7 +457,7 @@ enum StikJITHelper {
         // hole above it ~628MB contiguous. The largest fixed-base image we ship
         // against ends at +117MB; ntdll hands the window to the first fixed map
         // of >=64MB that fits, and reads the size from WINE_IOS_EXE_WINDOW.
-        let exeWinSize: vm_address_t = 0x8000000           // 128MB
+        var exeWinSize: vm_address_t = 0x8000000           // 128MB (exe-window-mb may widen it, below)
         func overlapsExeWindow(_ base: vm_address_t, _ len: vm_address_t) -> Bool {
             return base < exeWinBase + exeWinSize && base + len > exeWinBase
         }
@@ -579,6 +579,27 @@ enum StikJITHelper {
                 LogStore.shared.log(String(format: "ml1135: the placeholder was blocked at image load by a mapping at 0x%lx+%luMB (VM tag %u, prot %u) -- this is what shrinks the JIT pool",
                                            Int(madeira_early_intruder_base), Int(madeira_early_intruder_size >> 20),
                                            madeira_early_intruder_tag, madeira_early_intruder_prot), level: .error)
+            }
+        }
+        // madeira-bcd exe-window-mb (the game's own file): a main program with its relocations stripped
+        // runs at 0x140000000 or not at all, and one larger than the 128MB window ran into the pool:
+        // "failed to create main module ... c0000018" for Hogwarts Legacy (445MB),
+        // Metal Gear Solid V, Stellar Blade's demo and Star Wars Galactic Racer (testers' logs, builds
+        // 565-574). With the line the window grows to that size before the hole census, so the pool is
+        // placed around it (it may be smaller). Without the line nothing changes.
+        if windowHeld, reservePlan == nil,
+           let mb = Int((MadeiraConfig.gameValue("exe-window-mb") ?? "").trimmingCharacters(in: .whitespaces)),
+           mb > Int(exeWinSize >> 20), mb <= 1024 {
+            let want = vm_address_t(mb) << 20
+            var extra: vm_address_t = exeWinBase + exeWinSize
+            let kr = vm_allocate(mach_task_self_, &extra, vm_size_t(want - exeWinSize), 0 /* VM_FLAGS_FIXED */)
+            if kr == KERN_SUCCESS && extra == exeWinBase + exeWinSize {
+                exeWinSize = want
+                setenv("WINE_IOS_EXE_WINDOW", String(format: "%lx:%lx", Int(exeWinBase), Int(exeWinSize)), 1)
+                LogStore.shared.log("[exe-window] executable window widened to [0x140000000,+\(mb)MB) for this game (exe-window-mb)", level: .success)
+            } else {
+                if kr == KERN_SUCCESS { vm_deallocate(mach_task_self_, extra, vm_size_t(want - exeWinSize)) }
+                LogStore.shared.log("[exe-window] could not widen the executable window to \(mb)MB (kr=\(kr)): something holds the range above it; the window stays 128MB", level: .error)
             }
         }
         if reservePlan == nil {   // madeira-bcd pool-reserve: no census or plugs for a pool placed in the reservation

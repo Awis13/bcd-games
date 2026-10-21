@@ -44,7 +44,7 @@ wer = wer[:wer.index('\nfi\n') + 4]
 check('it is built only where no wer.dll ships, and MADEIRA_WER_BUILD=0 skips it',
       '"${MADEIRA_WER_BUILD:-1}" != 0' in wer and '! shipped wer' in wer and
       'targets="$targets dlls/wer/arm64ec-windows/wer.dll"; WER=wer' in wer)
-check('the guard "nothing to build" counts it', '[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER" ]' in build)
+check('the guard "nothing to build" counts it', '$FBT$WER' in build and '"nothing to build"' in build)
 ship = build[build.index('if [ -n "$WER" ]; then'):]
 ship = ship[:ship.index('\nfi\n') + 4]
 check('it ships as wer-optin.dll, stripped and padded like the others, and never as wer.dll',

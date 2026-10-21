@@ -250,7 +250,7 @@ final class SteamOwnedLibrary: ObservableObject {
         }
         SteamDownloadBackground.shared.attach(self)
         signedIn = SteamSignIn.isSignedIn
-        if signedIn { loadCaches() }
+        if signedIn { loadCaches(); restorePartialDownloads() }
         SteamLog.event("[steam-library] start signed-in=\(signedIn ? 1 : 0) cached=\(owned.count)")
         if signedIn { refreshIfStale() }
     }
@@ -967,6 +967,28 @@ final class SteamOwnedLibrary: ObservableObject {
 
     func hasPartialDownload(_ appID: Int) -> Bool {
         DepotDownloader.hasPartialDownload(appID: UInt32(appID), steamApps: Self.steamApps)
+    }
+
+    /// The download list lives in memory, so a first-time install paused (or
+    /// running) when the app was closed looked never started, although its
+    /// chunks and journals were on disk. It comes back paused at its last
+    /// percentage; Resume continues from the journals. Only games without an
+    /// install record: a cancelled update of an installed game keeps its
+    /// journals and must not come back on its own.
+    /// Off with `env.MADEIRA_STEAM_RESTORE_PAUSED = 0` (the list starts empty, as before).
+    private func restorePartialDownloads() {
+        guard SteamSignIn.flag("MADEIRA_STEAM_RESTORE_PAUSED", default: true) else { return }
+        let apps = Self.steamApps
+        var restored = 0
+        for (appID, progress) in DepotDownloader.partialDownloads(steamApps: apps) {
+            let id = Int(appID)
+            guard downloads[id] == nil,
+                  !FileManager.default.fileExists(atPath: apps.appendingPathComponent("appmanifest_\(id).acf").path)
+            else { continue }
+            downloads[id] = Download(state: .paused, progress: progress)
+            restored += 1
+        }
+        if restored > 0 { SteamLog.event("[steam-depot] restored paused downloads count=\(restored)") }
     }
 
     /// Installs or updates a game: queues it and starts when nothing else downloads.

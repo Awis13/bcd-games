@@ -232,7 +232,7 @@ class SteamSession {
     /// ClientLoggedOff, the send-error path, and the 20s timeout can each reach
     /// the continuation; without this the timeout double-resumed and crashed
     /// (CheckedContinuation traps on a second resume). Exactly one resume wins.
-    private final class LogonResumeGuard: @unchecked Sendable {
+    final class LogonResumeGuard: @unchecked Sendable {
         private let lock = NSLock()
         private var done = false
         func claim() -> Bool {
@@ -566,8 +566,12 @@ class SteamSession {
                 do {
                     try await connection.send(data)
                 } catch {
-                    pendingJobs.removeValue(forKey: jobID)
-                    continuation.resume(throwing: error)
+                    // Only if the job is still pending: a disconnect may already have resumed it
+                    // ("tried to resume its continuation more than once, throwing disconnected",
+                    // the app's own crash in testers' logs 4VC630, build 574), as sendMessage does.
+                    if pendingJobs.removeValue(forKey: jobID) != nil {
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
 

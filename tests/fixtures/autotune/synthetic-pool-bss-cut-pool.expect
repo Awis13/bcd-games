@@ -5,7 +5,8 @@
  "end": {},
  "matched": [
   "pool-bss-cut-pool",
-  "x64-image-nocopy"
+  "x64-image-nocopy",
+  "pool-split-exhausted"
  ],
  "next": [
   "pool-bss = 1",

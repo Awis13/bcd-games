@@ -92,7 +92,7 @@ for r in recs['rules']:
 assert list(presets) == ['rdr2-steam', 'rdr2-other', 'gta5e-steam', 'gta5e-other', 'gta5l-steam', 'ghost-of-tsushima', 'god-of-war',
                          'horizon-zero-dawn', 'horizon-forbidden-west', 'ratchet-clank-rift-apart', 'crysis-remastered',
                          'crysis-2-remastered', 'crysis-3-remastered', 'msfs-2024', 'counter-strike-2', 'warcraft-2-bne',
-                         'breakneck', 'standard'], list(presets)
+                         'breakneck', 'spelunky-2', 'albion-online', 'megabonk', 'no-im-not-a-human', 'over-the-hill', 'fort-solis', 'dragon-ball-sparking-zero', 'animal-well', 'hogwarts-legacy', 'metal-gear-solid-v', 'stellar-blade-demo', 'star-wars-galactic-racer', 'denshattack', 'final-fantasy-resonance-demo', 'no-rest-for-the-wicked', 'quaver', 'standard'], list(presets)
 
 catalog_keys = set(re.findall(r'ConfigOption\(key: "([^"]+)"', catalog))
 for ident, p in presets.items():
@@ -126,7 +126,7 @@ for ident, p in presets.items():
         assert 'Madeira' not in line, (ident, line)
 header = block(profiles, '        if lines.isEmpty { lines = [', ']')
 assert 'Madeira' not in header and '# BCD settings for' in header, header
-print('PASS: eighteen lists in order, each starting "# BCD\'s recommended settings for", no key twice, every non-env key in '
+print('PASS: thirty-four lists in order, each starting "# BCD\'s recommended settings for", no key twice, every non-env key in '
       'the settings catalog, no Social Club DLL lines, "Madeira" in no line, title or GameProfile header')
 
 # Red Dead Redemption 2 from Steam: the owner's list of 2026-10-09 (build 463), line for line,
@@ -397,10 +397,17 @@ assert not any(line.startswith(('d3d12-fl-12-1', 'd3d12-sm-6-7')) for p in prese
     'd3d12-fl-12-1 and d3d12-sm-6-7 are MSFS 2024\'s only'
 assert msfs['version'] == 6 and msfs['switches'] == 'avx: true, nvidia: true, wineVCRT: false, display: "fit"', msfs
 # Counter-Strike 2, version 1 (owner, 2026-10-16; not yet run): Direct3D 11 through DXMT like Crysis Remastered, the
-# standard line, every switch off (CS2 needs SSE4.2, which FEX reports, and no AVX).
+# standard line, every switch off (CS2 needs SSE4.2, which FEX reports, and no AVX). Version 2 (owner's runs,
+# 2026-10-20): the JIT pool shrank and filled while cs2.exe loaded; pool-split = 1 started it.
 cs2 = presets['counter-strike-2']
-assert cs2['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0'], cs2['lines']
-assert cs2['version'] == 1 and cs2['switches'] == 'avx: false, nvidia: false, wineVCRT: false, display: "fit"', cs2
+assert cs2['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'pool-split = 1'], cs2['lines']
+assert cs2['version'] == 2 and cs2['switches'] == 'avx: false, nvidia: false, wineVCRT: false, display: "fit"', cs2
+# Spelunky 2 and Albion Online's launcher, version 1 (2026-10-20 logs J2YJF8, BYBFCH, PGKTDD): the same full pool;
+# the standard line plus the split pool, every switch off.
+for ident in ('spelunky-2', 'albion-online'):
+    q = presets[ident]
+    assert q['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'pool-split = 1'], (ident, q['lines'])
+    assert q['version'] == 1 and q['switches'] == 'avx: false, nvidia: false, wineVCRT: false, display: "fit"', q
 # Warcraft II BNE, version 1 (tester's build 559 logs, 2026-10-16): the standard line and plain RWX memory for its
 # self-modifying blitters, every switch off.
 wc2 = presets['warcraft-2-bne']
@@ -413,8 +420,22 @@ assert bn['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_WOW_RWX
 assert bn['version'] == 1 and bn['switches'] == 'avx: false, nvidia: false, wineVCRT: false, display: "fit"', bn
 assert not any(line.startswith('env.MADEIRA_WOW_RWX_PLAIN') for p in presets.values() if p not in (wc2, bn) for line in p['lines']), \
     'plain RWX memory is Warcraft II\'s and Breakneck\'s only'
-print('PASS: RDR2 (Steam) is the owner\'s 463 list plus the 466, 467, 470, 472, 475, 476, 480 and 514 test lines (v10), line for line with its switches (720 lines of this screen), and outside Steam the same without the Dock lines, with the ec-hook reporter off (v1); GTA V Enhanced keeps its tested lines plus the stamped orphan-lock mode (v2) and, from Steam, the VC++ engine block (v3), GoW its tested lines; Horizon Zero Dawn has build 491\'s proven list plus build 494\'s frame-rate switches (v16), GoT the owner\'s build 515 list (v3); Horizon Forbidden West its eleventh try\'s list with the aligned copies on and discarded targets loaded (v4: float3 views get a copy too; v5: MipLevels 0 textures get their full chain); Rift Apart HFW\'s general lines with AVX and NVIDIA on (v1); GTA V Legacy from Steam the owner\'s DirectX 11 lines (v1), without vram-mb and swap-mb and with the 3 GB RAM swap only under 12 GB of RAM (v2); Crysis Remastered the standard line with every switch off (v1); Crysis 3 Remastered with its own vcruntime140.dll refused (v2); MSFS 2024 the standard line with AVX and NVIDIA on (v1), pure-x64 images without a pool copy (v2), feature level 12_1 (v3), shader model 6.7 (v4), the fiber trace (v5), then without it (v6); Counter-Strike 2 the standard line with every switch off (v1); Warcraft II BNE plain RWX memory (v1); Breakneck the same (v1); every other game the standard list (v1)')
+print('PASS: RDR2 (Steam) is the owner\'s 463 list plus the 466, 467, 470, 472, 475, 476, 480 and 514 test lines (v10), line for line with its switches (720 lines of this screen), and outside Steam the same without the Dock lines, with the ec-hook reporter off (v1); GTA V Enhanced keeps its tested lines plus the stamped orphan-lock mode (v2) and, from Steam, the VC++ engine block (v3), GoW its tested lines; Horizon Zero Dawn has build 491\'s proven list plus build 494\'s frame-rate switches (v16), GoT the owner\'s build 515 list (v3); Horizon Forbidden West its eleventh try\'s list with the aligned copies on and discarded targets loaded (v4: float3 views get a copy too; v5: MipLevels 0 textures get their full chain); Rift Apart HFW\'s general lines with AVX and NVIDIA on (v1); GTA V Legacy from Steam the owner\'s DirectX 11 lines (v1), without vram-mb and swap-mb and with the 3 GB RAM swap only under 12 GB of RAM (v2); Crysis Remastered the standard line with every switch off (v1); Crysis 3 Remastered with its own vcruntime140.dll refused (v2); MSFS 2024 the standard line with AVX and NVIDIA on (v1), pure-x64 images without a pool copy (v2), feature level 12_1 (v3), shader model 6.7 (v4), the fiber trace (v5), then without it (v6); Counter-Strike 2 the standard line with every switch off (v1), then the split pool (v2); Spelunky 2 and Albion Online the split pool (v1); Warcraft II BNE plain RWX memory (v1); Breakneck the same (v1); every other game the standard list (v1)')
 
+assert presets['megabonk']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_WINTYPES = 1'] and presets['megabonk']['version'] == 1, presets['megabonk']
+assert presets['no-im-not-a-human']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_WINTYPES = 1'] and presets['no-im-not-a-human']['version'] == 1, presets['no-im-not-a-human']
+assert presets['over-the-hill']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_WINTYPES = 1'] and presets['over-the-hill']['version'] == 1, presets['over-the-hill']
+assert presets['fort-solis']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_OPTIN_DLLS = dxva2'] and presets['fort-solis']['version'] == 1, presets['fort-solis']
+assert presets['dragon-ball-sparking-zero']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_OPTIN_DLLS = dxva2'] and presets['dragon-ball-sparking-zero']['version'] == 1, presets['dragon-ball-sparking-zero']
+assert presets['animal-well']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_OPTIN_DLLS = xpsprint'] and presets['animal-well']['version'] == 1, presets['animal-well']
+assert presets['hogwarts-legacy']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 448'] and presets['hogwarts-legacy']['version'] == 1, presets['hogwarts-legacy']
+assert presets['metal-gear-solid-v']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 176'] and presets['metal-gear-solid-v']['version'] == 1, presets['metal-gear-solid-v']
+assert presets['stellar-blade-demo']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 320'] and presets['stellar-blade-demo']['version'] == 1, presets['stellar-blade-demo']
+assert presets['star-wars-galactic-racer']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 496'] and presets['star-wars-galactic-racer']['version'] == 1, presets['star-wars-galactic-racer']
+assert presets['denshattack']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_VCRT_ARM64_KEY = 1'] and presets['denshattack']['version'] == 1, presets['denshattack']
+assert presets['final-fantasy-resonance-demo']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_VCRT_ARM64_KEY = 1'] and presets['final-fantasy-resonance-demo']['version'] == 1, presets['final-fantasy-resonance-demo']
+assert presets['no-rest-for-the-wicked']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_FEX_BAND_KEEP_MB = 6144'] and presets['no-rest-for-the-wicked']['version'] == 1, presets['no-rest-for-the-wicked']
+assert presets['quaver']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.DOTNET_EnableWriteXorExecute = 0'] and presets['quaver']['version'] == 1, presets['quaver']
 # Recognition: Steam by App ID or steamapps\common folder; everything else by the program's name. Each
 # rule's "match" is what match() of the Swift literals did (until 2026-10-18), rule by rule; the first
 # rule that matches wins, so Enhanced (GTA5_Enhanced.exe beside the program) comes before Legacy.
@@ -447,6 +468,22 @@ MATCH = {
     'counter-strike-2': {'steamAppIDs': [730], 'steamFolders': ['counter-strike global offensive'], 'programs': [{'name': 'cs2.exe'}]},
     'warcraft-2-bne': {'programs': [{'name': 'warcraft ii bne.exe'}]},
     'breakneck': {'steamAppIDs': [432940], 'steamFolders': ['breakneck'], 'programs': [{'name': 'breakneck.exe'}]},
+    'spelunky-2': {'steamAppIDs': [418530], 'steamFolders': ['spelunky 2'], 'programs': [{'name': 'spel2.exe'}]},
+    'albion-online': {'steamAppIDs': [761890], 'steamFolders': ['albion online'], 'programs': [{'name': 'albionlauncher.exe'}]},
+    'megabonk': {'steamAppIDs': [3405340], 'steamFolders': ['megabonk'], 'programs': [{'name': 'megabonk.exe'}]},
+    'no-im-not-a-human': {'steamAppIDs': [3180070], 'steamFolders': ["no, i'm not a human"], 'programs': [{'name': 'noimnotahuman.exe'}]},
+    'over-the-hill': {'steamAppIDs': [2929250], 'steamFolders': ['over the hill'], 'programs': [{'name': 'over the hill.exe'}]},
+    'fort-solis': {'steamAppIDs': [1931730], 'steamFolders': ['fort solis'], 'programs': [{'name': 'fortsolis.exe'}]},
+    'dragon-ball-sparking-zero': {'steamAppIDs': [1790600], 'steamFolders': ['dragon ball sparking! zero'], 'programs': [{'name': 'sparkingzero-win64-shipping.exe'}]},
+    'animal-well': {'steamAppIDs': [813230], 'steamFolders': ['animal well'], 'programs': [{'name': 'animal well.exe'}]},
+    'hogwarts-legacy': {'steamAppIDs': [990080], 'steamFolders': ['hogwarts legacy'], 'programs': [{'name': 'hogwartslegacy.exe'}]},
+    'metal-gear-solid-v': {'steamAppIDs': [287700], 'steamFolders': ['mgs_tpp'], 'programs': [{'name': 'mgsvtpp.exe'}]},
+    'stellar-blade-demo': {'steamAppIDs': [3564860], 'steamFolders': ['stellarbladedemo'], 'programs': [{'name': 'sb-win64-shipping.exe'}]},
+    'star-wars-galactic-racer': {'steamAppIDs': [4078430], 'steamFolders': ['star wars galactic racer'], 'programs': [{'name': 'swgr-win64-shipping.exe'}]},
+    'denshattack': {'steamAppIDs': [2524850], 'steamFolders': ['denshattack'], 'programs': [{'name': 'denshattack_proto.exe'}]},
+    'final-fantasy-resonance-demo': {'steamAppIDs': [4474710], 'steamFolders': ['final fantasy resonance demo'], 'programs': [{'name': 'ffrs.exe'}]},
+    'no-rest-for-the-wicked': {'steamAppIDs': [1371980], 'steamFolders': ['norestforthewicked'], 'programs': [{'name': 'norestforthewicked.exe'}]},
+    'quaver': {'steamAppIDs': [980610], 'steamFolders': ['quaver'], 'programs': [{'name': 'quaver.exe'}]},
 }
 for ident, p in presets.items():
     assert p['match'] == MATCH.get(ident), (ident, p['match'])

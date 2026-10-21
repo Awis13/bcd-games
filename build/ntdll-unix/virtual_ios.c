@@ -2703,6 +2703,53 @@ static int ios_pool_range_execable(size_t off, size_t range_size,
     return 1;
 }
 
+/* ajan-carve32 (2026-10-21): the first page of a tail carve's range that has lost EXEC.
+ *
+ * Dead Space (97E8JF), Star Wars: The Force Unleashed (81A30H, R10XKS) and the other
+ * 32-bit games whose FEX code buffer grew to 128 MB ended in a redelivery storm of
+ * EXECUTE faults inside the pool: the new carve's first page read prot=3 max=3
+ * ("[mach_exc] vm_region: addr=0x13522c000 size=0x4000 prot=0x3 max_prot=0x3"), and a
+ * page that max_prot has lost EXEC never gets it back (mprotect(RX) fails with EACCES).
+ * The head allocator already refuses such ranges (ios_pool_range_execable, [pool-poison]);
+ * the tail carve never asked. Walks [off, off + min(size, limit)) like
+ * ios_pool_range_execable but says WHERE the first non-exec region starts. Returns 1 when
+ * one exists (bad_at is its offset in the range, cur/max its protections), 0 when the
+ * prefix is executable or a region query fails (a failed query never refuses a carve). */
+static int ios_pool_range_first_nonexec( size_t off, size_t size, size_t limit,
+                                         size_t *bad_at, unsigned int *cur_out, unsigned int *max_out )
+{
+    mach_vm_address_t base, a, end;
+
+    if (!ios_jit_rx_base_global || !size) return 0;
+    if (size > limit) size = limit;
+    base = (mach_vm_address_t)(uintptr_t)((char *)ios_jit_rx_base_global + off);
+    end  = base + size;
+
+    for (a = base; a < end; )
+    {
+        mach_vm_address_t q = a;
+        mach_vm_size_t sz = 0;
+        vm_region_basic_info_data_64_t info;
+        mach_msg_type_number_t cnt = VM_REGION_BASIC_INFO_COUNT_64;
+        mach_port_t obj = MACH_PORT_NULL;
+
+        if (mach_vm_region( mach_task_self(), &q, &sz, VM_REGION_BASIC_INFO_64,
+                            (vm_region_info_t)&info, &cnt, &obj ) != KERN_SUCCESS) return 0;
+        if (q >= end) break;
+        if (q > a) { a = q; continue; }      /* gap: skip to the next real region */
+        if (!sz) break;
+        if (!(info.max_protection & VM_PROT_EXECUTE))
+        {
+            if (bad_at) *bad_at = (size_t)(a - base);
+            if (cur_out) *cur_out = (unsigned int)info.protection;
+            if (max_out) *max_out = (unsigned int)info.max_protection;
+            return 1;
+        }
+        a = q + sz;
+    }
+    return 0;
+}
+
 /* madeira-bcd: the parts of a POISONED freed range that are still executable.
  *
  * Every range the dead SocialClubHelper.exe processes freed was dropped as
@@ -7625,6 +7672,7 @@ struct file_view
     unsigned int  ios_flags;     /* IOS_VIEW_* */
 };
 #define IOS_VIEW_QUARANTINED 0x4   /* a dead thread's stack held by the stack quarantine */
+#define IOS_VIEW_WOW_CPU     0x8   /* madeira-bcd [wow-cpu-pool]: the WoW64 CPU module (xtajit.dll) */
 
 /* per-page protection flags */
 #define VPROT_READ       0x01
@@ -7965,6 +8013,62 @@ static const ULONG_PTR ios_spill_cap = 0x7800000000;
  * cover exactly that, leaving [0x7C00000000, 0x8000000000) = 16GB for steering --
  * enough for the ~14GB of 512MB reserves this workload makes. */
 static const ULONG_PTR ios_steer_slot = 0x7C00000000;
+
+/* madeira-bcd [fex-keep] (env.MADEIRA_FEX_BAND_KEEP_MB = N, default unset = off): the steer
+ * valve above shares the FEX arena with the emulator, by design since ml170. Its request
+ * [ios_steer_slot, host_addr_space_limit) lies inside the arena, so fex_arena_covers() serves
+ * it from the arena (the FEX_ONLY rule excludes only requests that are NOT contained in it),
+ * and the valve takes the lowest gap that fits, as the emulator does. A game that reserves
+ * many 511 MB ranges (No Rest for the Wicked, log 0M4SJD, build 574: 24 of them, 12.3 GB of
+ * the 16 GB band; the emulator's own memory was 3.8 GB at the first refusal, [fex-va] L40180,
+ * and 4.0 GB 4500 lines later, [fex-headroom] L44655) leaves no 4 MB-aligned gap for the
+ * emulator: [va-scan] FAILED window=0x7c00000000..
+ * 0x8000000000 size=0x400000, then "[alloc-fail] ml798 FEXAlloc could not allocate", a trap in
+ * libarm64ecfex.dll and exit c000001d.
+ *
+ * With the key set, steered reserves may not take the lowest N MB of the arena: the emulator,
+ * which also places bottom-up, has them to itself, and the valve's first attempt starts N MB
+ * higher. What no longer fits goes to the valve's second range [0x7400000000, ios_spill_cap),
+ * exactly as every reserve already does once the band is full ([steer] #28..#30 in that log).
+ * Only the valve's lower bound moves; nothing else places guest memory in the arena. Unset,
+ * 0, not a number, or an arena that is not the hardware band at ios_steer_slot: the bound is
+ * ios_steer_slot, as before.
+ *
+ * Returns the lower bound of the valve's FEX-band attempt. Read once, once the arena exists. */
+static ULONG_PTR ios_steer_floor( void )
+{
+    static int ready;
+    static ULONG_PTR floor_addr;
+    const char *e;
+    unsigned long mb;
+    ULONG_PTR arena, keep;
+
+    if (__atomic_load_n( &ready, __ATOMIC_ACQUIRE )) return floor_addr;
+    if (!ios_fex_arena_base_unix) return ios_steer_slot;   /* no arena yet: ask again next time */
+    floor_addr = ios_steer_slot;
+    e = getenv( "MADEIRA_FEX_BAND_KEEP_MB" );
+    mb = (e && e[0] >= '1' && e[0] <= '9') ? strtoul( e, NULL, 10 ) : 0;
+    if (mb)
+    {
+        if (ios_fex_arena_base_unix != ios_steer_slot || ios_fex_arena_end_unix <= ios_steer_slot)
+            dprintf( 2, "[fex-keep] madeira-bcd: MADEIRA_FEX_BAND_KEEP_MB=%lu not applied: the arena is "
+                        "[0x%lx,0x%lx), not the band at 0x%lx the steer valve shares\n", mb,
+                     (unsigned long)ios_fex_arena_base_unix, (unsigned long)ios_fex_arena_end_unix,
+                     (unsigned long)ios_steer_slot );
+        else
+        {
+            arena = ios_fex_arena_end_unix - ios_fex_arena_base_unix;
+            keep = mb > (arena >> 20) ? arena : ((ULONG_PTR)mb << 20);
+            floor_addr = ios_steer_slot + keep;
+            dprintf( 2, "[fex-keep] madeira-bcd: steered reserves may not take [0x%lx,0x%lx) -- the first %lu MB "
+                        "of the FEX arena [0x%lx,0x%lx) are the emulator's (MADEIRA_FEX_BAND_KEEP_MB=%lu)\n",
+                     (unsigned long)ios_steer_slot, (unsigned long)floor_addr, (unsigned long)(keep >> 20),
+                     (unsigned long)ios_fex_arena_base_unix, (unsigned long)ios_fex_arena_end_unix, mb );
+        }
+    }
+    __atomic_store_n( &ready, 1, __ATOMIC_RELEASE );
+    return floor_addr;
+}
 
 /* ml173 THREAD-AWARE RECLAMATION of steered reserves (task #35/#36).
  *
@@ -16809,6 +16913,108 @@ static int ios_no_plain_exec( void )
     return cached;
 }
 
+#ifdef WINE_IOS
+/* madeira-bcd [wow-cpu-pool] (2026-10-21, build 576): THE WOW64 CPU MODULE RUNS FROM ITS POOL COPY ONLY.
+ *
+ * THE SYMPTOM. Every 32-bit program died at its start on iOS 18, 16 logs of 16 (builds 573/574; none of the 44 on iOS 27):
+ * BTCpuThreadInit's `Threads.emplace` (FEX Source/Windows/WOW64/Module.cpp, a global std::unordered_map) threw
+ * overflow_error("__next_prime overflow") -- the map was all zero, max_load_factor 0, as if its constructor never ran -- and
+ * the throw itself died on a NULL TEB[0x58] (libwow64fex.dll+0x1b2a48, `__cxa_get_globals`). docs: ajan4-ios18wow.md.
+ *
+ * THE CAUSE. The constructor DID run -- on the other copy of the module. xtajit.dll has two copies here:
+ *   - the pool copy. The first protection request of the section loop in map_image_into_view is the 16 KB host page that
+ *     holds the headers and the start of .text; the later pages still carry the view's default RWX, so the request is a
+ *     plain mprotect(rwx), which the kernel refuses, and mprotect_exec takes the pool path and copies the whole image,
+ *     .data and .bss included, before the entry point has run. wow64.dll resolves BTCpuProcessInit/BTCpuThreadInit and
+ *     calls them through jit_pool_code_ptr (wine/dlls/wow64/syscall.c, XLATE_PTR), so they run in this copy;
+ *   - the PE view. The next request is .text as plain r-x. On a kernel where TXM does not police code (iOS 18; iOS 26 without
+ *     TXM) the "try normal mprotect first" fast path below SUCCEEDS and the view stays executable. The loader then calls the
+ *     entry point and the TLS callbacks at the PE address; on a TXM kernel that fetch faults and signal_arm64_ios.c redirects
+ *     it into the pool copy, here it simply runs in place. DllMainCRTStartup, _CRT_INIT, `__main` and every global
+ *     constructor of the module initialise the PE VIEW's .data/.bss. BTCpu* never reads them.
+ * Proof in the log of every iOS 18 run: `[x18-emul3] #N pc=<xtajit base>+0x10a8 insn=f9400657` = `ldr x23,[x18,#8]` in
+ * _CRT_INIT, executed at the PE address (the pool copy's x18 uses are patched, the view's are not), and no such line in any
+ * iOS 27 log.
+ *
+ * THE FIX. When an exec request over this module's view is granted IN PLACE although a pool copy of the view exists, take
+ * EXEC back and let the request fall through to the pool path, as on a TXM device: the entry point, the TLS callbacks and the
+ * constructors then run in the pool copy, the one BTCpu* uses. Nothing changes where EXEC is not granted (TXM: iOS 26/27), where
+ * the module has no pool copy (it then runs in place only, consistently), and for every other image: the "marked" test is the
+ * view's file name (xtajit.dll, a native ARM64 PE), set once in map_image_into_view. MADEIRA_WOW_CPU_POOL_ONLY=0 restores the
+ * previous behaviour. Other modules that got EXEC in place next to a pool copy are only reported ([exec-split], 16 lines). */
+static int ios_wow_cpu_pool_only_enabled( void )
+{
+    static int cached = -1;
+    if (cached < 0)
+    {
+        /* Default on. 0: the WoW64 CPU module (xtajit.dll) may keep the executable PE view the kernel grants it on iOS 18 and on iOS 26 without TXM, next to its pool copy, as before build 576. Logged as [wow-cpu-pool] and [exec-split]. Read once per session. */
+        const char *v = getenv( "MADEIRA_WOW_CPU_POOL_ONLY" );
+        cached = (v && v[0] == '0' && !v[1]) ? 0 : 1;
+    }
+    return cached;
+}
+
+/* TRUE when the NT name ends in `\<base>` (case-insensitive, ASCII); `base` is lower case. */
+static int ios_nt_name_has_basename( const UNICODE_STRING *name, const char *base )
+{
+    size_t n = name && name->Buffer ? name->Length / sizeof(WCHAR) : 0, bl = strlen( base ), i;
+
+    if (n < bl) return 0;
+    if (n > bl && name->Buffer[n - bl - 1] != '\\' && name->Buffer[n - bl - 1] != '/') return 0;
+    for (i = 0; i < bl; i++)
+    {
+        WCHAR c = name->Buffer[n - bl + i];
+        if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+        if (c != (WCHAR)(unsigned char)base[i]) return 0;
+    }
+    return 1;
+}
+
+/* Called by map_image_into_view before the section protections: marks the view of the WoW64 CPU module. */
+static void ios_wow_cpu_mark_view( struct file_view *view, const UNICODE_STRING *nt_name, const IMAGE_NT_HEADERS *nt )
+{
+    static unsigned marked;
+
+    if (!ios_wow_cpu_pool_only_enabled()) return;
+    if (nt->FileHeader.Machine != IMAGE_FILE_MACHINE_ARM64 || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) return;
+    if (!ios_nt_name_has_basename( nt_name, "xtajit.dll" )) return;
+    view->ios_flags |= IOS_VIEW_WOW_CPU;
+    if (marked++ < 4)
+        dprintf( 2, "[wow-cpu-pool] xtajit.dll view %p+0x%lx marked: if the kernel grants it EXEC in place next to its pool "
+                    "copy, EXEC is taken back so that its entry point and constructors run in the pool copy "
+                    "(MADEIRA_WOW_CPU_POOL_ONLY=0 keeps the old behaviour)\n", view->base, (unsigned long)view->size );
+}
+
+/* mprotect_exec's plain fast path just got EXEC on [base, base+size). Returns 1 when that must be taken back (the view is the
+ * WoW64 CPU module's and its pool copy exists). For any image with a pool copy it reports the combination, 16 lines at most:
+ * such a module runs its entry point in place while its exports are called in the pool copy, two sets of globals. */
+static int ios_exec_in_place_split( const void *base, size_t size, int unix_prot )
+{
+    struct file_view *view;
+    struct ios_jit_mapping *m = NULL;
+    int i, cpu;
+    static unsigned noted, cpu_noted;
+
+    if (ios_in_mach_exc) return 0;              /* ml374: no view lookup from the exception thread */
+    if (!(view = find_view( base, 0 )) || !(view->protect & SEC_IMAGE)) return 0;
+    cpu = (view->ios_flags & IOS_VIEW_WOW_CPU) && ios_wow_cpu_pool_only_enabled();
+    if (!cpu && noted >= 16) return 0;          /* the report is spent; only the CPU module still needs the answer */
+    for (i = 0; i < ios_jit_mapping_count; i++)
+    {
+        if (ios_jit_mappings[i].pe_base != view->base || !ios_jit_mappings[i].jit_base || ios_jit_mappings[i].unmapped) continue;
+        m = &ios_jit_mappings[i];
+        break;
+    }
+    if (!m) return 0;                           /* no pool copy: the module runs in place only, one set of globals */
+    if (cpu ? cpu_noted++ < 4 : noted++ < 16)
+        dprintf( 2, "[exec-split] %s %p+0x%lx prot=%c%c%c: EXEC was granted in place although the pool copy %p exists%s\n",
+                 ios_pe_module_name( view->base, view->size ), base, (unsigned long)size,
+                 (unix_prot & PROT_READ) ? 'r' : '-', (unix_prot & PROT_WRITE) ? 'w' : '-', (unix_prot & PROT_EXEC) ? 'x' : '-',
+                 m->jit_base, cpu ? " -- taken back, the pool copy runs it [wow-cpu-pool]" : " (reported only)" );
+    return cpu;
+}
+#endif /* WINE_IOS */
+
 static inline int mprotect_exec( void *base, size_t size, int unix_prot )
 {
 #ifdef WINE_IOS
@@ -17367,7 +17573,20 @@ static inline int mprotect_exec( void *base, size_t size, int unix_prot )
                                                VM_REGION_BASIC_INFO_64,
                                                (vm_region_info_t)&info,
                                                &info_cnt, &obj_name);
-            if (qkr == KERN_SUCCESS && (info.protection & VM_PROT_EXECUTE))
+            int exec_taken_back = 0;
+            if (qkr == KERN_SUCCESS && (info.protection & VM_PROT_EXECUTE) &&
+                ios_exec_in_place_split( base, size, unix_prot ))
+            {
+                /* madeira-bcd [wow-cpu-pool]: see ios_exec_in_place_split. EXEC on the WoW64 CPU module's PE view,
+                 * with a pool copy beside it, is the split-brain that killed every 32-bit start on iOS 18. Take it back
+                 * and go on to the pool path below, exactly as where the kernel never grants EXEC. */
+                if (!mprotect( base, size, unix_prot & ~PROT_EXEC ))
+                    exec_taken_back = 1;
+                else
+                    dprintf( 2, "[wow-cpu-pool] could not take EXEC back from %p+0x%lx (errno %d): the module keeps its "
+                                "executable PE view\n", base, (unsigned long)size, errno );
+            }
+            if (!exec_taken_back && qkr == KERN_SUCCESS && (info.protection & VM_PROT_EXECUTE))
             {
                 /* ml999: the EXEC check alone is not the whole postcondition.
                  * Astra's rdr67 review: this fast path returns success as soon as
@@ -18330,6 +18549,27 @@ static inline int mprotect_exec( void *base, size_t size, int unix_prot )
 
                     ERR("iOS JIT:   [%d] %.8s RVA=0x%x sz=0x%x chars=0x%x\n",
                         i, section_hdr, sec_rva, sec_vsize, sec_chars);
+
+                    /* ajan-carve32: a section that ends past the image's own SizeOfImage reaches
+                     * into pool memory that belongs to other copies. Dead Space (97E8JF), LEGO
+                     * Batman 2 (BXW23W) and Star Wars: The Force Unleashed (5EAVVG, 81A30H) each
+                     * copy an unnamed 32-bit image of 0x54000-0x8d000 bytes after which 54-256 MB
+                     * of pool pages are non-exec ([pool-rot] 1023 of 1316 sampled .text pages LOST
+                     * EXEC): the span equals the copy's recorded .text size, and no log line names
+                     * the section table. This one does, only when a section overruns the copy. */
+                    {
+                        static int overrun_n;
+                        size_t ov_rva = sec_rva, ov_vsz = sec_vsize;
+                        if (overrun_n < 8 && sec_vsize && (ov_rva > image_size || ov_vsz > image_size - ov_rva))
+                        {
+                            overrun_n++;
+                            dprintf(2, "[pool-section-overrun] %s %.8s rva=0x%x vsize=0x%x chars=0x%x ends past the copy "
+                                       "(SizeOfImage 0x%lx, pool copy %p+0x%lx, section %d of %d) rev=ajan-carve32\n",
+                                    ios_pe_module_name( image_base, image_size ), section_hdr, sec_rva, sec_vsize,
+                                    sec_chars, (unsigned long)image_size, (char *)jit_rx_base + offset,
+                                    (unsigned long)image_alloc, i, (int)num_sections);
+                        }
+                    }
 
                     /* Track executable (.text) section for IAT sync protection */
                     if (sec_chars & 0x20000000)  /* IMAGE_SCN_MEM_EXECUTE */
@@ -23397,6 +23637,10 @@ static NTSTATUS map_image_into_view( struct file_view *view, const UNICODE_STRIN
 
     /* set the image protections */
 
+#ifdef WINE_IOS
+    /* madeira-bcd [wow-cpu-pool]: before the first protection request, see ios_exec_in_place_split. */
+    ios_wow_cpu_mark_view( view, nt_name, nt );
+#endif
     set_vprot( view, ptr, ROUND_SIZE( 0, header_size, align_mask ), VPROT_COMMITTED | VPROT_READ );
 
 #ifdef WINE_IOS
@@ -28826,10 +29070,16 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
                  * described the EMPTY range [ios_spill_cap, 0) and every steer failed with
                  * *ret = 0x0. The upper bound has to be a real address: use the host VA
                  * ceiling, which is_beyond_limit treats as EXCLUSIVE. */
-                NTSTATUS sst = allocate_virtual_memory( ret, size_ptr, type, protect,
-                                                        ios_steer_slot,
-                                                        (ULONG_PTR)host_addr_space_limit,
-                                                        0, 0 );
+                /* madeira-bcd [fex-keep]: ios_steer_slot unless env.MADEIRA_FEX_BAND_KEEP_MB holds the
+                 * lowest part of the FEX arena back for the emulator. A bound at the host ceiling or
+                 * above leaves the band no room for the valve: straight to the second range. */
+                ULONG_PTR steer_lo = ios_steer_floor();
+                NTSTATUS sst = (steer_lo != ios_steer_slot && steer_lo >= (ULONG_PTR)host_addr_space_limit)
+                               ? STATUS_NO_MEMORY
+                               : allocate_virtual_memory( ret, size_ptr, type, protect,
+                                                          steer_lo,
+                                                          (ULONG_PTR)host_addr_space_limit,
+                                                          0, 0 );
                 /* ml171: 16GB is not enough. Surviving longer spawns more threads, so
                  * the reserve count went 27 -> 55 (28160MB) and BOTH the steer slot and
                  * furniture reported va-scan FAILED maxgap=0 before the NULL deref.
@@ -28849,9 +29099,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
                 if (sst && ios_steer_reclaim_dead())
                 {
                     *ret = saved; *size_ptr = want;
-                    sst = allocate_virtual_memory( ret, size_ptr, type, protect,
-                                                   ios_steer_slot,
-                                                   (ULONG_PTR)host_addr_space_limit, 0, 0 );
+                    sst = (steer_lo != ios_steer_slot && steer_lo >= (ULONG_PTR)host_addr_space_limit)
+                          ? STATUS_NO_MEMORY
+                          : allocate_virtual_memory( ret, size_ptr, type, protect,
+                                                     steer_lo,
+                                                     (ULONG_PTR)host_addr_space_limit, 0, 0 );
                     if (sst)
                     {
                         *ret = saved; *size_ptr = want;
@@ -30276,6 +30528,66 @@ retry_code_carve_reuse:
         {
             void *jit_rx = (char *)ios_jit_rx_base_global + pool_tail_off;
             void *jit_rw = (char *)ios_jit_rw_base_global + pool_tail_off;
+
+            /* ajan-carve32 (2026-10-21): REFUSE A CARVE WHOSE FIRST PAGES CANNOT EXECUTE.
+             *
+             * Dead Space (97E8JF, build 574), Star Wars: The Force Unleashed (81A30H, R10XKS,
+             * 5EAVVG) and Garry's Mod: after a 32-bit program's unnamed image copy a run of
+             * pool pages had lost EXEC for good (max_prot 3, "[pool-rot] ... LOST EXEC",
+             * "[pool-poison] HANDED OUT NON-EXEC"), the pool was only 400-560 MB, and the 128 MB
+             * code buffer FEX asked for lay on top of that run. Nothing checked it. FEX wrote its
+             * first block through the RW alias, executed it at base+0x1c, got an exec fault
+             * ([exec-recover] mprotect_rx=-1 errno=13; [fault_rip] ... entryprot=3), and the
+             * guest exception dispatcher compiled into the same dead page faulted again until the
+             * redelivery guard ended the process. Such a buffer can never run a block, so the
+             * request is refused the way an exhausted tail is (ml421): FEX's CodeBuffer ctor
+             * halves the size, which moves the next carve up, away from the run (a 64 MB or
+             * 32 MB buffer lay above it in all three logs). Only the first 2 MB are looked at (the dead pages in the four logs lay at +0..+0x39e3c;
+             * FEX's first blocks go there at once); a dead page deeper in is logged and the carve
+             * kept, as before. A carve whose first 2 MB can execute is granted exactly as it was;
+             * no log line, no change. */
+            {
+                enum { CARVE_EXEC_PREFIX = 0x200000 };   /* 2 MB: the dead pages in all four logs lay within it */
+                size_t bad_at = 0;
+                unsigned int bcur = 0, bmax = 0;
+                /* env.MADEIRA_TAIL_CARVE_EXEC_CHECK = 0 turns the check off (every carve granted, as before). */
+                static int carve_check = -1;
+                if (carve_check < 0)
+                {
+                    const char *e = getenv( "MADEIRA_TAIL_CARVE_EXEC_CHECK" );
+                    carve_check = !(e && e[0] == '0');
+                }
+                if (carve_check &&
+                    ios_pool_range_first_nonexec( pool_tail_off, alloc_size, CARVE_EXEC_PREFIX, &bad_at, &bcur, &bmax ))
+                {
+                    static unsigned nonexec_n;
+                    ios_pool_tail_unreserve( &ios_jit_tail_reserved, reserve_offset + alloc_size, tail_added,
+                                             ios_jit_hole_end > ios_jit_hole_off );
+                    if (nonexec_n++ < 16)
+                        dprintf(2, "[jit-pool] tail carve NOT EXECUTABLE: want=0x%lx at rx=%p: +0x%lx has prot=%x "
+                                   "max=%x (EXEC gone for good) -- REFUSING so FEX halves down, a buffer whose first "
+                                   "blocks fault is fatal (tail_resv=0x%lx head_used=0x%lx/0x%lx) rev=ajan-carve32\n",
+                                (unsigned long)alloc_size, jit_rx, (unsigned long)bad_at, bcur, bmax,
+                                (unsigned long)reserve_offset, (unsigned long)jit_pool_offset,
+                                (unsigned long)ios_jit_pool_size_global);
+                    return STATUS_NO_MEMORY;
+                }
+                if (alloc_size > CARVE_EXEC_PREFIX)
+                {
+                    static unsigned deep_n;
+                    if (deep_n < 8 &&
+                        ios_pool_range_first_nonexec( pool_tail_off + CARVE_EXEC_PREFIX, alloc_size - CARVE_EXEC_PREFIX,
+                                                      alloc_size, &bad_at, &bcur, &bmax ))
+                    {
+                        deep_n++;
+                        dprintf(2, "[jit-pool] tail carve rx=%p size=0x%lx has a non-exec page at +0x%lx (prot=%x max=%x), "
+                                   "beyond the first 16 MB: kept rev=ajan-carve32\n",
+                                jit_rx, (unsigned long)alloc_size,
+                                (unsigned long)(bad_at + CARVE_EXEC_PREFIX), bcur, bmax);
+                    }
+                }
+            }
+
             *ret = jit_rx;
             *size_ptr = alloc_size;
             /* iOS-Madeira: pre-fill the buffer with NOPs (0xd503201f) via the RW

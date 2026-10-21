@@ -328,6 +328,13 @@ enum MadeiraDock {
         "ceg-finished-jobs", "ceg-result", "ceg-disabled", "ceg-unsupported-client",
         "ceg-scm", "ceg-scm-started", "ceg-scm-error", "ceg-service-registered", "ceg-service-install", "ceg-service-stop", "ceg-scm-stopped",
         "game-scm", "game-scm-timeout", "launch-keep-alive",
+        // The host's own account of the launch (madeira-dock src/launch.c): when it published the Steam client
+        // for the game to find, asked Valve's client to start it, saw it run, saw it end, and gave the
+        // registry values back. A Rockstar launcher that says "Steam failed to initialize" while the host
+        // reported a launch without error (20 of 40 sessions, 2026-10-19/20) needs these to be told apart.
+        "launch-install-directory-verified", "launch-install-directory-mismatch",
+        "launch-client-discovery-published", "launch-request-submitted", "launch-game-running",
+        "launch-game-ended", "launch-discovery-restored", "launch-host-result",
         "shutdown-begin", "shutdown-complete", "probe-result"]
     /// The host's report rounds (madeira-dock src/main.c).
     static let reportRounds: Set<String> = ["ml1820", "ml1830", "ml1860", "ml1870", "ml1970", "ml1990", "ml2000", "ml2011", "ml2015", "ml2016"]

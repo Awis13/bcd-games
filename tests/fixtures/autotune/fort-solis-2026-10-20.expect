@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "dxva2-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = dxva2"
+ ],
+ "note": "Fort Solis (Steam, UE5), build 574, iPad16,4 (Send Log 94MSWJ): fortsolis.exe imports dxva2.dll, which BCD does not ship; c0000135 at once. env.MADEIRA_OPTIN_DLLS = dxva2 links Wine's dxva2.dll for the game. Same in DRAGON BALL Sparking! ZERO (H6XVPV)",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

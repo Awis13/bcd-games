@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "exe-window-fixed-base"
+ ],
+ "next": [
+  "exe-window-mb = 512"
+ ],
+ "note": "Hogwarts Legacy (Steam 990080), build 574, iPhone18,1 (Send Log D67PYY): HogwartsLegacy.exe (445 MB, relocations stripped) must load at 0x140000000; the 128 MB window held only part of it and the JIT pool the rest: failed to create main module, c0000018. exe-window-mb = 512 widens the window before the pool is placed",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

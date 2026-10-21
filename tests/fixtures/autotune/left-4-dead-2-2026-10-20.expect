@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "x18-repair-unrecognized-load"
+ ],
+ "next": [],
+ "note": "Left 4 Dead 2 (Steam, 32-bit, through BCD Dock), build 574, iPhone18,2 (11.7 GB; Send Log RTTGKM), 200 s into the game with 6200 presents: iOS had zeroed x18 and the Mach handler's TEB repair did not decode ldrsw x28,[x18,#0x180c] (0xb9980e5c, FEX's WowTebOffset read); the thread died with c0000005. FFXIV TY3K5R shows the same instruction.",
+ "outcome": "crashed",
+ "stage": 5,
+ "status": "known"
+}

@@ -1,0 +1,138 @@
+[03:24:31.989] [INFO] [build] v0.1.574 (574)
+[03:24:31.990] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.2 (Build 24B115) ram=11695MB available=8171MB cores=6
+[03:24:31.990] [INFO] [device] address-map=[0x102808000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[03:24:32.003] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[03:25:32.141] [INFO] [bcd] library launch Dead Space: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[03:25:33.563] [INFO] [dock-launch] image-retire=1
+[03:25:33.563] [INFO] [dock-launch] image-map-guard=1
+[03:25:33.592] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102808000,0x8000000000) 512GB available=8146MB low-power=0 thermal=serious
+[03:25:33.597] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[03:25:33.598] [INFO] [jit-debugger] attached=1 at the pool request
+[03:25:33.599] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 512MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[03:25:34.226] [INFO] RX pool at 0x11f234000
+[phase] wine-start             t+  0.694s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=587 MB (peak 587) internal=587 MB compressed=0 MB external=89 MB reusable=10 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #5 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11E390000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:load_dll [dll-missing] rev=ml336 #42 L"video64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=940 MB (peak 940) internal=939 MB compressed=0 MB external=160 MB reusable=10 MB (cycle=2)
+[footprint] rev=ml358 phys=1045 MB (peak 1045) internal=1044 MB compressed=0 MB external=163 MB reusable=10 MB (cycle=3)
+[footprint] rev=ml358 phys=1056 MB (peak 1056) internal=1054 MB compressed=0 MB external=163 MB reusable=10 MB (cycle=4)
+[footprint] rev=ml358 phys=1046 MB (peak 1056) internal=1044 MB compressed=0 MB external=163 MB reusable=10 MB (cycle=5)
+00a8:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #43 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #44 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1145 MB (peak 1145) internal=1144 MB compressed=0 MB external=169 MB reusable=10 MB (cycle=6)
+D A8 Load module d3d9-emulated.dll (d3d9-emulated.dll-cd2c92331248f561): 7979D80000
+D A8 Load module winemetal.dll (winemetal.dll-5ddc509614bf4796): 7979D60000
+[win-name] #31 hwnd=0x1006a class='' text="Default IME" rev=ml853
+[win-name] #32 hwnd=0x20060 class='' text="Dead Space" rev=ml853
+[win-name] #33 hwnd=0x20060 class='' text="Dead Space" rev=ml853
+[win-name] #42 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[win-name] #43 hwnd=0x20060 class='' text="Dead Space" rev=ml853
+[win-name] #44 hwnd=0x20060 class='' text="Dead Space" rev=ml853
+D A8 Load module wbemprox.dll (wbemprox.dll-327d7b2744e36e64): 7979D20000
+D A8 Load module winspool.drv (winspool.drv-1d97ce048b8fd915): 7979CE0000
+D A8 Load module compstui.dll (compstui.dll-6ca7db67abc97d76): 7979CB0000
+[win-name] #46 hwnd=0x10074 class='' text="DIEmWin" rev=ml853
+D A8 Load module mmdevapi.dll (mmdevapi.dll-57d37935cbc8f0d4): 7979C70000
+[launch-view] dismissed reason=game-window logs=0
+[win-name] #49 hwnd=0x20060 class='' text="Dead Space" rev=ml853
+[win-name] #51 hwnd=0x1006a class='' text="Default IME" rev=ml853
+[footprint] rev=ml358 phys=1628 MB (peak 1652) internal=1495 MB compressed=0 MB external=171 MB reusable=10 MB (cycle=9)
+[footprint] rev=ml358 phys=1619 MB (peak 1652) internal=1486 MB compressed=0 MB external=171 MB reusable=10 MB (cycle=10)
+[footprint] rev=ml358 phys=1617 MB (peak 1652) internal=1485 MB compressed=0 MB external=171 MB reusable=10 MB (cycle=11)
+[ios_audio] ml1230 pacing stream=0x156085f00 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 1877 wakes; device short 0.0 ms in 0 of 998 passes (largest pass 480 frames); ring 0..1440 frames; worst late wake 0.1 ms; clamped 0 samples
+[footprint] rev=ml358 phys=1616 MB (peak 1652) internal=1485 MB compressed=0 MB external=171 MB reusable=10 MB (cycle=12)
+[footprint] rev=ml358 phys=1633 MB (peak 1652) internal=1502 MB compressed=0 MB external=170 MB reusable=10 MB (cycle=13)
+[footprint] rev=ml358 phys=1854 MB (peak 1854) internal=1715 MB compressed=0 MB external=170 MB reusable=10 MB (cycle=14)
+[store-undecoded] #1 rev=ml350 insn=0x10ffffe0 pc=0x13522c01c addr=0x13522c01c rw_addr=0x7015ff801c — alias OK, ADD THIS ENCODING to the case-4 emulator
+[exec-recover] pg=0x13522c000 fault=0x13522c01c mprotect_rx=-1(errno=13) reuse-cancel=0 retry#1 pool-rx
+[exec-recover] pg=0x13522c000 read-touch kr=0 got=16 word0=0x3a3a54494a584546 -> RETRY
+[store-undecoded] #2 rev=ml350 insn=0x10ffffe0 pc=0x13522c5c4 addr=0x13522c5c4 rw_addr=0x7015ff85c4 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[exec-recover] pg=0x13522c000 fault=0x13522c5c4 mprotect_rx=-1(errno=13) reuse-cancel=0 retry#2 pool-rx
+[exec-recover] pg=0x13522c000 read-touch kr=0 got=16 word0=0x3a3a54494a584546 -> RETRY
+[store-undecoded] #3 rev=ml350 insn=0x10ffffe0 pc=0x13522c644 addr=0x13522c644 rw_addr=0x7015ff8644 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[exec-recover] pg=0x13522c000 fault=0x13522c644 mprotect_rx=-1(errno=13) reuse-cancel=0 retry#3 pool-rx
+[exec-recover] pg=0x13522c000 read-touch kr=0 got=16 word0=0x3a3a54494a584546 -> RETRY
+[store-undecoded] #4 rev=ml350 insn=0x10ffffe0 pc=0x13522c01c addr=0x13522c01c rw_addr=0x7015ff801c — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #5 rev=ml350 insn=0x10ffffe0 pc=0x13522c5c4 addr=0x13522c5c4 rw_addr=0x7015ff85c4 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #6 rev=ml350 insn=0x10ffffe0 pc=0x13522c644 addr=0x13522c644 rw_addr=0x7015ff8644 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[exec-recover] pg=0x13522c000 fault=0x13522c644 mprotect_rx=-1(errno=13) reuse-cancel=0 retry#6 pool-rx
+[exec-recover] pg=0x13522c000 read-touch kr=0 got=16 word0=0x3a3a54494a584546 -> RETRY
+[store-undecoded] #7 rev=ml350 insn=0x10ffffe0 pc=0x13522c01c addr=0x13522c01c rw_addr=0x7015ff801c — alias OK, ADD THIS ENCODING to the case-4 emulator
+[exec-recover] pg=0x13522c000 fault=0x13522c01c mprotect_rx=-1(errno=13) reuse-cancel=0 retry#7 pool-rx
+[exec-recover] pg=0x13522c000 read-touch kr=0 got=16 word0=0x3a3a54494a584546 -> RETRY
+[store-undecoded] #8 rev=ml350 insn=0x10ffffe0 pc=0x13522c5c4 addr=0x13522c5c4 rw_addr=0x7015ff85c4 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[exec-recover] pg=0x13522c000 fault=0x13522c5c4 mprotect_rx=-1(errno=13) reuse-cancel=0 retry#8 pool-rx
+[exec-recover] pg=0x13522c000 read-touch kr=0 got=16 word0=0x3a3a54494a584546 -> RETRY
+[av-detail] ml613 #1 p0=EXECUTE p1=0x13522c644 hostpc=0x13522c644 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x0 pc=0x13522c644 addr=0x13522c644 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[av-detail] ml613 #2 p0=EXECUTE p1=0x13522c6c4 hostpc=0x13522c6c4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x0 pc=0x13522c6c4 addr=0x13522c6c4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[av-detail] ml613 #3 p0=EXECUTE p1=0x13522c644 hostpc=0x13522c644 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=3 rip=0x0 pc=0x13522c644 addr=0x13522c644 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[av-detail] ml613 #4 p0=EXECUTE p1=0x13522c01c hostpc=0x13522c01c hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=4 rip=0x0 pc=0x13522c01c addr=0x13522c01c kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+00ac:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c644 (pool+0x15ff8644) lr=0x13e22c1d8 sp=0x14bcff350
+[av-detail] ml613 #5 p0=EXECUTE p1=0x13522c5c4 hostpc=0x13522c5c4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=5 rip=0x0 pc=0x13522c5c4 addr=0x13522c5c4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[av-detail] ml613 #6 p0=EXECUTE p1=0x13522c744 hostpc=0x13522c744 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=6 rip=0x0 pc=0x13522c744 addr=0x13522c744 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+00b8:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c6c4 (pool+0x15ff86c4) lr=0x13e22c1d8 sp=0x14d7ff350
+00a8:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c01c (pool+0x15ff801c) lr=0x13e22c14c sp=0x14b3ff350
+00b0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c5c4 (pool+0x15ff85c4) lr=0x13e22c1d8 sp=0x14c5ff350
+00f0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c744 (pool+0x15ff8744) lr=0x13e22c1d8 sp=0x15bdff350
+00b8:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c7c4 (pool+0x15ff87c4) lr=0x13e22c1d8 sp=0x14d7ff350
+[av-detail] ml613 #20 p0=EXECUTE p1=0x13522c8a4 hostpc=0x13522c8a4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[av-detail] ml613 #21 p0=EXECUTE p1=0x13522c7c4 hostpc=0x13522c7c4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[av-detail] ml613 #22 p0=EXECUTE p1=0x13522c8a4 hostpc=0x13522c8a4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[av-detail] ml613 #23 p0=EXECUTE p1=0x13522c8a4 hostpc=0x13522c8a4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[av-detail] ml613 #24 p0=EXECUTE p1=0x13522c8a4 hostpc=0x13522c8a4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[fault_rip] cnt=45 rip=0x0 pc=0x13522c8a4 addr=0x13522c8a4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[fault_rip] cnt=46 rip=0x0 pc=0x13522c8a4 addr=0x13522c8a4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[fault_rip] cnt=47 rip=0x0 pc=0x13522c8a4 addr=0x13522c8a4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[fault_rip] cnt=48 rip=0x0 pc=0x13522c8a4 addr=0x13522c8a4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[fault_rip] cnt=49 rip=0x0 pc=0x13522c8a4 addr=0x13522c8a4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+[fault_rip] cnt=50 rip=0x0 pc=0x13522c8a4 addr=0x13522c8a4 kr=2(PROTECTION_FAILURE) entryprot=3 nowprot=3 region=0x13522c000+0x4000 rev=ml555
+00b0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c8a4 (pool+0x15ff88a4) lr=0x128eb8448 sp=0x14c5ff350
+00f0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c8a4 (pool+0x15ff88a4) lr=0x128eb8448 sp=0x15bdff350
+00b0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c8a4 (pool+0x15ff88a4) lr=0x128eb8448 sp=0x14c5ff350
+00f0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c8a4 (pool+0x15ff88a4) lr=0x128eb8448 sp=0x15bdff350
+00b0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c8a4 (pool+0x15ff88a4) lr=0x128eb8448 sp=0x14c5ff350
+00f0:err:seh:bus_handler BUS EXEC in JIT .data: pc=0x13522c8a4 (pool+0x15ff88a4) lr=0x128eb8448 sp=0x15bdff350
+[redeliv] 256 identical redeliveries pc=0x13522c7c4 addr=0x13522c7c4 — storm forming rev=ml461
+[redeliv] 256 identical redeliveries pc=0x13522c8a4 addr=0x13522c8a4 — storm forming rev=ml461
+[av-detail] ml613 #4096 p0=EXECUTE p1=0x13522c7c4 hostpc=0x13522c7c4 hinsn=0x10ffffe0 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x13522c000 size=0x8000000 state=live p1_in_carve=1 regs=0 rev=ml613
+[redeliv] 2000 identical redeliveries pc=0x13522c7c4 addr=0x13522c7c4 — unrecoverable host fault misdelivered to guest rev=ml461
+[redeliv] terminating process rev=ml465

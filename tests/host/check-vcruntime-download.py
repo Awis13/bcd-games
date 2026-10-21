@@ -808,11 +808,14 @@ if not swiftc:
     check("Swift compiler available", not args.require_swift)
 else:
     (T / "stubs.swift").write_text(STUBS)
+    # WineMonoInstaller.sha256 (the shared file hash): the installer part of WineMono.swift, as check-wine-mono.py compiles it
+    wm = (APP / "WineMono.swift").read_text()
+    (T / "winemono.swift").write_text(wm[wm.index("import Foundation"):wm.index("// MARK: - Model")])
     (T / "main.swift").write_text(MAIN)
     obj = T / "BCDCab.o"
     b1 = subprocess.run([cc, "-c", "-O2", "-I", str(APP), str(APP / "BCDCab.c"), "-o", str(obj)], capture_output=True, text=True)
     b2 = subprocess.run([swiftc, "-parse-as-library", "-swift-version", "5", "-Onone", "-import-objc-header", str(APP / "BCDCab.h"),
-                         str(APP / "VCRuntimeDownload.swift"), str(T / "stubs.swift"), str(T / "main.swift"), str(obj), "-lz",
+                         str(APP / "VCRuntimeDownload.swift"), str(T / "winemono.swift"), str(T / "stubs.swift"), str(T / "main.swift"), str(obj), "-lz",
                          "-o", str(T / "swiftdrv")], capture_output=True, text=True) if b1.returncode == 0 else b1
     swift_ok = b2.returncode == 0
     check("VCRuntimeDownload.swift builds on the host with BCDCab.c (log and session state stubbed)", swift_ok, b2.stderr)

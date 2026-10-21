@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "locale-en-us-ansi"
+ ],
+ "next": [
+  "env.LC_ALL = en_US.UTF-8"
+ ],
+ "note": "Dying Light, same device and build as dying-light-2026-10-20 (SAHIP5): the process aborted with 0xc0000005 but the host stayed up, so the app's live reading was 'hung at stage 2'; the replay reads the log as crashed. UNPROVEN experiment: env.LC_ALL = en_US.UTF-8",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

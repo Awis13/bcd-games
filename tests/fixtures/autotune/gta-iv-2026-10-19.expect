@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "d3dx9-volume-resource-stub"
+ ],
+ "next": [],
+ "note": "GTA IV (GTAIV.exe), build 574, iPad16,5 (Send Log 2934SV): unimplemented function d3dx9_43.dll.D3DXCreateVolumeTextureFromResourceExW aborted the game; implemented in 576 (known)",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "known"
+}

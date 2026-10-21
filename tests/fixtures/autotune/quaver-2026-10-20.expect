@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "dotnet-wx-off"
+ ],
+ "next": [
+  "env.DOTNET_EnableWriteXorExecute = 0"
+ ],
+ "note": "Quaver (Steam 980610, a self-contained .NET runtime), build 574, iPad16,3 iOS 18.5 (Send Log DKEQ3C): the CLR's write-barrier patcher asserts 0xf0f0f0f0f0f0f0f0 == *(UINT64*)m_pRegionToGenTableImmediate (jitinterfaceamd64.cpp:514) and fails fast, c0000602. The runtime's W^X double mapping (RW view prot=4 at 0x13f650000, executable view prot=40 at 0xf54830000 = a fresh JIT-pool slot, [jit-pool] anon RWX ... NEW) makes the two views differ. env.DOTNET_EnableWriteXorExecute = 0 (build 576) is the runtime's own switch for plain executable memory; not yet tried on a device",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

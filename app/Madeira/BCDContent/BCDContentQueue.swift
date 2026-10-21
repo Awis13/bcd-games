@@ -332,7 +332,7 @@ enum BCDContentLog {
     }
 
     static func reason(_ error: Error) -> String {
-        if let error = error as? BCDContentError { return error.logReason }
+        if let error = error as? BCDLogReasonError { return error.logReason }   // BCDContentError, BCDGOGError, ...
         if let error = error as? URLError { return "url-\(error.code.rawValue)" }
         return String(describing: type(of: error))
     }

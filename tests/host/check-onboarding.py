@@ -54,7 +54,8 @@ setup = (app / 'BCDSetupView.swift').read_text()
 library = (app / 'Library.swift').read_text()
 content = (app / 'ContentView.swift').read_text()
 project = (root / 'app/Madeira.xcodeproj/project.pbxproj').read_text()
-docs = (root / 'docs/LIBRARY.md').read_text()
+docs_path = root / 'docs/LIBRARY.md'
+docs = docs_path.read_text() if docs_path.is_file() else None   # the public export has no docs/
 jit_setup = (app / 'JITSetup.swift').read_text()
 
 rules = onboarding[onboarding.index('// MARK: - Rules'):onboarding.index('// MARK: - Setup model')]
@@ -206,8 +207,11 @@ require('if remember { var played = entry; played.lastPlayed = Date(); save(play
         'begin(remember: false) neither adds nor stamps an entry')
 dock_entry = block(onboarding, 'static func dockSession(')
 require('entry.desktop = true' in dock_entry and 'save(' not in dock_entry, 'the Dock session entry is a desktop session, never saved')
-require('MADEIRA_ONBOARDING' in docs and '## First-run setup' in docs,
-        'docs/LIBRARY.md documents setup and its switch')
+if docs is None:
+    print('SKIP: docs/LIBRARY.md is absent (the public export has no docs/)')
+else:
+    require('MADEIRA_ONBOARDING' in docs and '## First-run setup' in docs,
+            'docs/LIBRARY.md documents setup and its switch')
 
 # ------------------------------------------------------------------ compiled rules
 checks = r'''

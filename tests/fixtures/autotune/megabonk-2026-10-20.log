@@ -1,0 +1,94 @@
+[20:31:29.598] [INFO] [build] v0.1.574 (574)
+[20:31:29.601] [INFO] [device] model=iPhone18,1 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=11722MB available=6117MB cores=6
+[20:31:29.601] [INFO] [device] address-map=[0x104534000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[20:31:29.624] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[20:31:59.284] [INFO] [bcd] library launch Megabonk: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[20:31:59.294] [INFO] [dock-launch] image-retire=1
+[20:31:59.295] [INFO] [dock-launch] image-map-guard=1
+[20:31:59.311] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104534000,0x8000000000) 512GB available=6101MB low-power=0 thermal=nominal
+[20:31:59.317] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[20:31:59.317] [INFO] [jit-debugger] attached=1 at the pool request
+[20:31:59.319] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[20:32:01.135] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  1.917s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=631 MB (peak 631) internal=629 MB compressed=0 MB external=100 MB reusable=7 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11CD70000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=956 MB (peak 956) internal=954 MB compressed=0 MB external=169 MB reusable=7 MB (cycle=2)
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1087 MB (peak 1087) internal=1086 MB compressed=0 MB external=173 MB reusable=7 MB (cycle=3)
+[win-name] #31 hwnd=0x1005e class='' text="Default IME" rev=ml853
+[win-name] #32 hwnd=0x20056 class='' text="WineD3D fake window" rev=ml853
+[footprint] rev=ml358 phys=1114 MB (peak 1114) internal=1113 MB compressed=0 MB external=175 MB reusable=7 MB (cycle=4)
+[footprint] rev=ml358 phys=1114 MB (peak 1114) internal=1113 MB compressed=0 MB external=175 MB reusable=7 MB (cycle=5)
+D A8 Load module GameAssembly.dll (gameassembly.dll-cf1a1063eb6a05c2): 71ECF30000
+D A8 Load module IPHLPAPI.DLL (iphlpapi.dll-af2b7f72e65b7df1): 71ECE90000
+D A8 Load module dnsapi.dll (dnsapi.dll-2edb73fb7e267a8a): 71ECE00000
+D A8 Load module nsi.dll (nsi.dll-4a9d70fb6c86a57d): 71ECD80000
+00a8:err:module:import_dll Library api-ms-win-core-winrt-robuffer-l1-1-0.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Megabonk\\GameAssembly.dll") not found
+D A8 Load module dbghelp.dll (dbghelp.dll-043eb877bc0ae473): 71ECC90000
+D A8 Load module baselib.dll (baselib.dll-422045b75714be01): 71ECC50000
+[win-name] #37 hwnd=0x10064 class='' text="Default IME" rev=ml853
+[win-name] #87 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #88 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #89 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #90 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #91 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #92 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #93 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #94 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #96 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #97 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #99 hwnd=0x1007c class='' text="Failed to load il2cpp" rev=ml853
+[win-name] #103 hwnd=0x10070 class='' text="OK" rev=ml853
+[win-name] #104 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[footprint] rev=ml358 phys=1432 MB (peak 1432) internal=1431 MB compressed=0 MB external=212 MB reusable=7 MB (cycle=6)
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[launch-view] dismissed reason=show-desktop logs=1
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=45 resident=1646MB dbg=DEBUGGED rev=ml525
+[20:32:31.367] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[win-name] #105 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #106 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #107 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[win-name] #108 hwnd=0x2005e class='' text="Fatal error" rev=ml853
+[footprint] rev=ml358 phys=1427 MB (peak 1434) internal=1425 MB compressed=0 MB external=213 MB reusable=7 MB (cycle=17)
+00a8:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x1) syscalls=0 unix_calls=9402
+00a8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x1) syscalls=0 unix_calls=9438
+[footprint] rev=ml358 phys=1435 MB (peak 1435) internal=1434 MB compressed=0 MB external=213 MB reusable=7 MB (cycle=18)
+0050:err:module:load_dll [dll-missing] rev=ml336 #51 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #52 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #53 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #54 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1437 MB (peak 1437) internal=1435 MB compressed=0 MB external=214 MB reusable=7 MB (cycle=19)
+[frontend] graceful close requested
+[footprint] rev=ml358 phys=1437 MB (peak 1437) internal=1435 MB compressed=0 MB external=214 MB reusable=7 MB (cycle=20)
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=9852
+[footprint] rev=ml358 phys=1274 MB (peak 1437) internal=1272 MB compressed=0 MB external=210 MB reusable=7 MB (cycle=21)
+[footprint] rev=ml358 phys=1274 MB (peak 1437) internal=1272 MB compressed=0 MB external=210 MB reusable=7 MB (cycle=22)

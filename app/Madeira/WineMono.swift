@@ -281,20 +281,20 @@ private struct TarReader {
     private var observation: NSKeyValueObservation?
 
     /// Library/Application Support/WineMono; WineProcessBridge.m looks for `wine-mono` in it.
-    static var root: URL {
+    nonisolated static var root: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("WineMono", isDirectory: true)
     }
-    static var runtime: URL { root.appendingPathComponent("wine-mono", isDirectory: true) }
+    nonisolated static var runtime: URL { root.appendingPathComponent("wine-mono", isDirectory: true) }
     /// A development build made after build/wine-mono/fetch.sh carries it (bundle.sh).
-    static var bundled: Bool {
+    nonisolated static var bundled: Bool {
         FileManager.default.fileExists(atPath: Bundle.main.bundleURL.appendingPathComponent("wine-mono/bin/libmono-2.0-x86.dll").path)
     }
-    static var downloaded: Bool {
+    nonisolated static var downloaded: Bool {
         FileManager.default.fileExists(atPath: runtime.appendingPathComponent("bin/libmono-2.0-x86.dll").path)
     }
     /// Either way, .NET Framework programs can start.
-    static var available: Bool { bundled || downloaded }
+    nonisolated static var available: Bool { bundled || downloaded }
 
     var busy: Bool { phase != .idle }
 

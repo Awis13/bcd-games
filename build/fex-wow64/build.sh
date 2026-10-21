@@ -18,5 +18,12 @@ if [ ! -f "$B/CMakeCache.txt" ]; then
         -DBUILD_TESTING=OFF -DBUILD_FEXCONFIG=OFF -DTUNE_ARCH=generic -DTUNE_CPU=none \
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 fi
+# madeira-bcd: wow64-ctor-guard (tools/patch-fex-ios-wow-threads-ctor.py): every 32-bit program on an
+# iOS 18 device died in BTCpuThreadInit because the module's global thread map was an all-zero object
+# (max_load_factor 0, its static initialiser had no effect there). The overlay constructs it when it
+# finds it so and logs [wow64-ctor] lines with the map's state. It is applied to the build copy and
+# the file is restored after; a pin that already carries it is left alone (the overlay is idempotent).
+python3 "$R/tools/patch-fex-ios-wow-threads-ctor.py" "$R/FEX"
+trap 'git -C "$R/FEX" checkout -- Source/Windows/WOW64/Module.cpp' EXIT
 cmake --build "$B" --target wow64fex
 cp "$B/Bin/libwow64fex.dll" "$R/app/Madeira/aarch64-windows/xtajit.dll" && ls -l "$R/app/Madeira/aarch64-windows/xtajit.dll"

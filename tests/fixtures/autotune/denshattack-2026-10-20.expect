@@ -1,0 +1,16 @@
+{
+ "dialogs": [
+  "Error"
+ ],
+ "end": {},
+ "matched": [
+  "vcrt-arm64-marker"
+ ],
+ "next": [
+  "env.MADEIRA_VCRT_ARM64_KEY = 1"
+ ],
+ "note": "Denshattack (Steam 2524850), build 574, iPhone18,1 (Send Log MKT2TW; the same dialog in BEB3XY build 565 and, for FINAL FANTASY RESONANCE's demo, 4AW8BN and Q5KWDW build 573): Unreal's bootstrap program Denshattack_Proto.exe, an x64 exe on an ARM64 machine, asks for Microsoft Visual C++ 2015-2022 Redistributable (arm64) and exits 0x2329. env.MADEIRA_VCRT_ARM64_KEY = 1 writes the volatile Runtimes arm64 marker (build 576); not yet tried on a device",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

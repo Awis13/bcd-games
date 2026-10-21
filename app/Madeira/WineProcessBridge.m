@@ -662,7 +662,7 @@ static void madeira_link_wine_mono(NSFileManager *fm, NSString *prefix, NSString
         /* A link an earlier build with Mono made points into a bundle that is gone. */
         if (lstat(dst.fileSystemRepresentation, &st) == 0 && S_ISLNK(st.st_mode))
             [fm removeItemAtPath:dst error:nil];
-        dprintf(STDERR_FILENO, "[wine-mono] ml1275 neither this build nor a download has Wine Mono\n");
+        dprintf(STDERR_FILENO, "[wine-mono] ml1275 neither this build nor a download has Wine Mono -- a .NET Framework game then exits 0xffffffff with \"Wine Mono is not installed\"; Settings > .NET Framework downloads it\n");
         return;
     }
     if (lstat(dst.fileSystemRepresentation, &st) == 0 && !S_ISLNK(st.st_mode))
@@ -1180,8 +1180,8 @@ static void *wine_process_thread(void *arg) {
          * the failure happens before logging is usable.
          *
          * Mono itself will say. asm+dll masks also surface a missing or mismatched
-         * assembly, which is a common startup failure in a repack and would otherwise look
-         * like an opaque managed exception.
+         * assembly, a common startup failure that would otherwise look like an opaque
+         * managed exception.
          *
          * overwrite=0 so an explicit setting still wins; MONO_ is already in env_ios.c's
          * [iOS env] beacon list, so the next log proves whether these arrived. */
@@ -1324,12 +1324,13 @@ static void *wine_process_thread(void *arg) {
 
         /* iOS-Madeira: a tiny stub steamclient64.dll is shipped in the game
          * directory (built from /tmp/steamclient_stub/stub.c). It exports
-         * just VR_InitInternal (returns NULL) — that's the only function
-         * CODEX64.dll imports from steamclient64. The real steamclient64.dll
-         * (heavily packed, RWX self-modifying, unwind info v5) was
-         * blowing up Wine's loader; the stub lets CODEX bind imports and
-         * proceed without OpenVR support. Note: no WINEDLLOVERRIDES needed
-         * — we just shipped a different file at the same path. */
+         * just VR_InitInternal (returns NULL) — the only function another
+         * module in the game directory imports from steamclient64. The
+         * original steamclient64.dll (packed, RWX self-modifying, unwind
+         * info v5) was blowing up Wine's loader; the stub lets that import
+         * bind and the process proceed without OpenVR support. Note: no
+         * WINEDLLOVERRIDES needed — we just shipped a different file at the
+         * same path. */
 
         LOG("WINEPREFIX=%{public}s", g_prefix_path);
 
@@ -1876,6 +1877,90 @@ static void *wine_process_thread(void *arg) {
                 }
             }
 
+            /* madeira-bcd: env.MADEIRA_WINTYPES = 1 runs wintypes-optin.dll as wintypes.dll, as
+             * MADEIRA_WER above. Unity IL2CPP's GameAssembly.dll imports
+             * api-ms-win-core-winrt-robuffer-l1-1-0.dll, which Wine's apiset maps to wintypes.dll,
+             * and the 64-bit set ships none: Megabonk, No, I'm not a Human and Over the Hill ended
+             * at once with c0000135 (testers' logs, build 574). Chromium (Steam's web helper)
+             * loads wintypes.dll optionally and works without it, so only a game with the line
+             * gets it; without the line a link of ours left by an earlier session is removed. */
+            {
+                const char *wtyOptIn = getenv("MADEIRA_WINTYPES");
+                NSMutableArray *wtyDirs = [NSMutableArray arrayWithObject:
+                    [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"]];
+                if (use_arm64ec) [wtyDirs addObject:sys32Dir];
+                NSString *wtyDll = [[bundlePath stringByAppendingPathComponent:@"arm64ec-windows"]
+                                    stringByAppendingPathComponent:@"wintypes-optin.dll"];
+                if (wtyOptIn && wtyOptIn[0] == '1') {
+                    if ([fm fileExistsAtPath:wtyDll]) {
+                        for (NSString *dir in wtyDirs) {
+                            NSString *dst = [dir stringByAppendingPathComponent:@"wintypes.dll"];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:wtyDll error:nil];
+                        }
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_WINTYPES=1: wintypes.dll -> wintypes-optin.dll (Wine's wintypes.dll for this game; %s)\n",
+                                use_arm64ec ? "system32 + sysx64" : "sysx64 only");
+                    } else {
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_WINTYPES=1 but this build has no wintypes-optin.dll -- the game gets no wintypes.dll\n");
+                    }
+                } else {
+                    for (NSString *dir in @[ [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"], sys32Dir ]) {
+                        NSString *dst = [dir stringByAppendingPathComponent:@"wintypes.dll"];
+                        NSString *to = [fm destinationOfSymbolicLinkAtPath:dst error:nil];
+                        if (to && [to.lastPathComponent isEqualToString:@"wintypes-optin.dll"]) [fm removeItemAtPath:dst error:nil];
+                    }
+                }
+            }
+
+            /* madeira-bcd: env.MADEIRA_OPTIN_DLLS = dxva2,evr (comma or semicolon separated) runs each
+             * listed <name>-optin.dll that this build ships (tools/build-wine-extra-dlls.sh, OPTIN_WANT)
+             * as <name>.dll, as MADEIRA_WER and MADEIRA_WINTYPES above. Fort Solis and DRAGON BALL
+             * Sparking! ZERO import dxva2.dll and ended at once with c0000135 (testers' logs, build
+             * 574). Every other shipped *-optin.dll that is not listed has a link of ours removed, so
+             * only the game that lists one has it. wer and wintypes keep their own switches. */
+            {
+                const char *optList = getenv("MADEIRA_OPTIN_DLLS");
+                NSMutableSet<NSString *> *wanted = [NSMutableSet set];
+                if (optList) {
+                    for (NSString *part in [[NSString stringWithUTF8String:optList]
+                                               componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@",; "]]) {
+                        NSString *n = part.lowercaseString;
+                        if ([n hasSuffix:@".dll"]) n = [n substringToIndex:n.length - 4];
+                        if (n.length) [wanted addObject:n];
+                    }
+                }
+                NSString *ecDir = [bundlePath stringByAppendingPathComponent:@"arm64ec-windows"];
+                NSArray *optDirs = use_arm64ec
+                    ? @[ [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"], sys32Dir ]
+                    : @[ [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"] ];
+                for (NSString *file in [fm contentsOfDirectoryAtPath:ecDir error:nil]) {
+                    if (![file hasSuffix:@"-optin.dll"]) continue;
+                    NSString *name = [file substringToIndex:file.length - 10];
+                    if ([name isEqualToString:@"wer"] || [name isEqualToString:@"wintypes"]) continue;
+                    NSString *src = [ecDir stringByAppendingPathComponent:file];
+                    NSString *dll = [name stringByAppendingString:@".dll"];
+                    if ([wanted containsObject:name]) {
+                        for (NSString *dir in optDirs) {
+                            NSString *dst = [dir stringByAppendingPathComponent:dll];
+                            [fm removeItemAtPath:dst error:nil];
+                            [fm createSymbolicLinkAtPath:dst withDestinationPath:src error:nil];
+                        }
+                        [wanted removeObject:name];
+                        dprintf(STDERR_FILENO, "[WineProc] MADEIRA_OPTIN_DLLS: %s -> %s (Wine's %s for this game)\n",
+                                dll.UTF8String, file.UTF8String, dll.UTF8String);
+                    } else {
+                        for (NSString *dir in @[ [prefix stringByAppendingPathComponent:@"drive_c/windows/sysx64"], sys32Dir ]) {
+                            NSString *dst = [dir stringByAppendingPathComponent:dll];
+                            NSString *to = [fm destinationOfSymbolicLinkAtPath:dst error:nil];
+                            if (to && [to.lastPathComponent isEqualToString:file]) [fm removeItemAtPath:dst error:nil];
+                        }
+                    }
+                }
+                for (NSString *name in wanted)
+                    dprintf(STDERR_FILENO, "[WineProc] MADEIRA_OPTIN_DLLS lists %s, which this build does not ship as %s-optin.dll\n",
+                            name.UTF8String, name.UTF8String);
+            }
+
             /* madeira-bcd: ntdll-sync.dll (tools/patch-wine-ntdll-sync.py, built by
              * tools/build-wine-extra-dlls.sh next to the shipped ntdll.dll) is the
              * ARM64EC ntdll the unix loader maps when env.MADEIRA_NTDLL_SYNC = 1 or
@@ -2285,6 +2370,12 @@ static void *wine_process_thread(void *arg) {
         unsetenv("MADEIRA_NTDLL_SYNC");   /* madeira-bcd: a game's switch is its own */
         unsetenv("MADEIRA_FIBER_TRACE");  /* madeira-bcd: likewise */
         unsetenv("MADEIRA_WER");          /* madeira-bcd: likewise */
+        unsetenv("MADEIRA_WINTYPES");     /* madeira-bcd: likewise */
+        unsetenv("MADEIRA_OPTIN_DLLS");   /* madeira-bcd: likewise */
+        unsetenv("MADEIRA_VCRT_ARM64_KEY"); /* madeira-bcd: likewise (the Runtimes\\arm64 marker is per game) */
+        unsetenv("MADEIRA_TAIL_CARVE_EXEC_CHECK"); /* madeira-bcd: likewise */
+        unsetenv("MADEIRA_LUM_PROBE");      /* madeira-bcd: likewise */
+        unsetenv("MADEIRA_FEX_BAND_KEEP_MB"); /* madeira-bcd: likewise */
         g_madeira_srv_fgetpath = 0;
         /* madeira-bcd: the server's per-launch switches end with the session as well */
         unsetenv("MADEIRA_SRV_ECO_FOLLOW"); unsetenv("MADEIRA_SRV_DIRECT");

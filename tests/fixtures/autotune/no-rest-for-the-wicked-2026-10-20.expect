@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "fex-band-steer-keep",
+  "fex-avx-on"
+ ],
+ "next": [
+  "env.MADEIRA_FEX_BAND_KEEP_MB = 6144"
+ ],
+ "note": "No Rest for the Wicked (NoRestForTheWicked.exe, Steam 1371980), build 574, iPhone18,1 (Send Log 0M4SJD): the game reserved 24 ranges of 511 MB, the steer valve placed 23 of them (11.7 GB) in the emulator's 16 GB range at 0x7c00000000, FEX found no 4 MB-aligned gap (FEXAlloc could not allocate bytes=0x1748), trap in libarm64ecfex.dll, exit c000001d. The session had auto-tune's NOCOPY/AVX/swap lines already. env.MADEIRA_FEX_BAND_KEEP_MB = 6144 (build 576) keeps the lowest 6 GB of the arena for the emulator; not yet tried on a device",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "trying"
+}

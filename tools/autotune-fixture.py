@@ -144,13 +144,15 @@ def main():
     lines = cut(a.log, needles())
     fixture.write_text("\n".join(lines) + "\n")
     full, cutr = replay([a.log, fixture], end)
-    diff = [k for k in KEYS if full[k] != cutr[k]]
+    diff = [k for k in KEYS + ("monoMissing",) if full[k] != cutr[k]]
     if diff:
         fixture.unlink()
         sys.exit("the cut lost something (%s):\n full: %s\n cut:  %s" % (", ".join(diff),
                  {k: full[k] for k in diff}, {k: cutr[k] for k in diff}))
     expect = {"end": end, "note": a.note}
     expect.update({k: cutr[k] for k in KEYS})
+    if cutr["monoMissing"]:
+        expect["monoMissing"] = True   # the game page's Wine Mono hint (only a fixture that shows it says so)
     (OUT / (a.name + ".expect")).write_text(json.dumps(expect, indent=1, sort_keys=True, ensure_ascii=False) + "\n")
     print("%s: %d lines; %s, stage %d, matched %s, next %s" % (fixture.name, len(lines), cutr["outcome"],
           cutr["stage"], cutr["matched"], cutr["next"]))

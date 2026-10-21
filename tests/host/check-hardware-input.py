@@ -846,11 +846,15 @@ check('presentedViewController != nil' in glue and 'fr is UIKeyInput' in glue
 check('GCController' not in source.split('final class PadStickMouse', 1)[0].split('// MARK: - Device glue', 1)[1]
       .replace('GCControllerButtonInput', '').replace('GCControllerDirectionPad', ''),
       'only PadStickMouse may touch controllers; GamepadInput owns them')
-docs = (root / 'docs/KEYBOARD_MOUSE.md').read_text()
-for name in switches + ('MADEIRA_NAV_KEYS_E0', 'sensMouse', 'padRightStickMouse', 'ignoreTouchesWithMouse',
-                        'Ctrl+Alt+P', 'MADEIRA_POINTER_FOLLOW', 'MADEIRA_KEY_REPEAT', 'UIPointerLockState',
-                        'UIRequiresFullScreen'):
-    check(name in docs, f'docs/KEYBOARD_MOUSE.md mentions {name}')
+docs_path = root / 'docs/KEYBOARD_MOUSE.md'
+if docs_path.is_file():
+    docs = docs_path.read_text()
+    for name in switches + ('MADEIRA_NAV_KEYS_E0', 'sensMouse', 'padRightStickMouse', 'ignoreTouchesWithMouse',
+                            'Ctrl+Alt+P', 'MADEIRA_POINTER_FOLLOW', 'MADEIRA_KEY_REPEAT', 'UIPointerLockState',
+                            'UIRequiresFullScreen'):
+        check(name in docs, f'docs/KEYBOARD_MOUSE.md mentions {name}')
+else:
+    print('SKIP: docs/KEYBOARD_MOUSE.md is absent (the public export has no docs/)')
 
 # madeira-bcd 2026-10-18: the absolute route maps like a touch, the drawn cursor scales
 # by the live monitor, the lock is checked with iPadOS, the overlay window lets the

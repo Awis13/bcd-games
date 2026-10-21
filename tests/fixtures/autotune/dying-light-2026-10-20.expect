@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "locale-en-us-ansi"
+ ],
+ "next": [
+  "env.LC_ALL = en_US.UTF-8"
+ ],
+ "note": "Dying Light (Steam 239140), owner's iPhone18,2 on build 575 (SAHIP4; SAHIP5/SAHIP6 and the tester-code copies MXXHZK/8VB504 are the same failure): engine_x64_rwdi.dll NULL lookup at +0x332ee, no frame. UNPROVEN experiment: env.LC_ALL = en_US.UTF-8 (the game loads the Turkish ANSI code page 1254; Rift Apart precedent)",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

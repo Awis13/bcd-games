@@ -1,0 +1,178 @@
+[13:57:32.543] [INFO] [build] v0.1.574 (574)
+[13:57:32.544] [INFO] [device] model=iPhone17,2 idiom=phone os=iOS Version 27.0 (Build 24A5370h) ram=7618MB available=6638MB cores=6
+[13:57:32.544] [INFO] [device] address-map=[0x102804000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:57:32.561] [INFO] [device] gpu="Apple A18 Pro GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[13:57:34.760] [INFO] [bcd] library launch TEVI: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[13:57:58.283] [INFO] [dock-launch] image-retire=1
+[13:57:58.284] [INFO] [dock-launch] image-map-guard=1
+[13:57:58.307] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102804000,0x8000000000) 512GB available=6622MB low-power=0 thermal=fair
+[13:57:58.313] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[13:57:58.313] [INFO] [jit-debugger] attached=1 at the pool request
+[13:57:58.315] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[13:57:59.280] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  1.945s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[footprint] rev=ml358 phys=654 MB (peak 654) internal=653 MB compressed=0 MB external=70 MB reusable=6 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #6 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 11BD60000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x7025000000+0xc000
+[swap] ml1077 backed 0x71b0e50000+0x1010000 (file off 0 MB): 16 MB in 1 extents, peak 16 MB, 0 refused
+[swap] ml1077 backed 0x71b1e60000+0x1010000 (file off 16 MB): 32 MB in 2 extents, peak 32 MB, 0 refused
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1082 MB (peak 1082) internal=1081 MB compressed=0 MB external=142 MB reusable=6 MB (cycle=2)
+[swap] ml1077 stats: 0 MB file-backed now (peak 32), 0 extents, file used 32 of 4096 MB, backs 2 releases 2 unbacks 0 refused 0 | coverage classic: disk 0 MB of 4096 cap, reservations 0, holes 0, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[swap] ml1150 pool: 0 MB in use (peak 0), 0 takes, 2 guarded, 0 MB lost to a full free list
+[footprint] rev=ml358 phys=1118 MB (peak 1118) internal=1117 MB compressed=0 MB external=143 MB reusable=6 MB (cycle=3)
+[footprint] rev=ml358 phys=1123 MB (peak 1123) internal=1121 MB compressed=0 MB external=143 MB reusable=6 MB (cycle=4)
+[footprint] rev=ml358 phys=1113 MB (peak 1123) internal=1111 MB compressed=0 MB external=143 MB reusable=6 MB (cycle=5)
+[alloc-fail] ml814 #2 status=c0000018 hint=0x180000000 size=0x39000 type=0x2000 protect=0x4 tid=00a8 | STAGE=fixed-map err=3 at 0x180000000+0x3c000
+[alloc-fail] ml814 #3 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00a8 | STAGE=none err=3 at 0x73fff60000+0x90000
+[swap] ml1077 backed 0x71dca70000+0x1860000 (file off 32 MB): 24 MB in 1 extents, peak 32 MB, 0 refused
+[cage] holdback handed to the allocator [0x7200004000,0x73ffff0000): the band is exhausted (request 0x20010000) and no V8 cage was asked for; its first page stays a guard
+[swap] ml1077 backed 0x7250000000+0x1000000 (file off 16 MB): 16 MB in 1 extents, peak 32 MB, 0 refused
+[swap] ml1077 backed 0x72f0000000+0x1000000 (file off 0 MB): 32 MB in 2 extents, peak 32 MB, 0 refused
+[footprint] rev=ml358 phys=1391 MB (peak 1391) internal=1389 MB compressed=0 MB external=181 MB reusable=6 MB (cycle=6)
+[swp-emul] ml626 #1 insn=0xf8fa80da size=8 Rs=x26 Rt=x26 addr=0x7340670c08 rw=0x7010df8c08 in=0x7340670de0 old=0x7340670c5b
+[swap] ml1077 backed 0x7350000000+0x1000000 (file off 32 MB): 48 MB in 3 extents, peak 48 MB, 0 refused
+[win-name] #33 hwnd=0x10066 class='' text="Default IME" rev=ml853
+00a8:err:module:load_dll [dll-missing] rev=ml336 #55 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\TEVI\\TEVI_Data\\Managed/mono/aot-cache/amd64/UnityEngine.LocalizationModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #56 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\TEVI\\TEVI_Data\\Managed\\UnityEngine.NVIDIAModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #57 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\TEVI\\TEVI_Data\\Managed/mono/aot-cache/amd64/UnityEngine.NVIDIAModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #58 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\TEVI\\TEVI_Data\\Managed\\UnityEngine.ParticleSystemModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #59 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\TEVI\\TEVI_Data\\Managed/mono/aot-cache/amd64/UnityEngine.ParticleSystemModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00a8:err:module:load_dll [dll-missing] rev=ml336 #60 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\TEVI\\TEVI_Data\\Managed\\UnityEngine.PerformanceReportingModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[alloc-fail] ml814 #4 status=c0000018 hint=0x7340680000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #5 status=c0000018 hint=0x736fca0000 size=0x20000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[win-name] #35 hwnd=0x2005e class='' text="TEVI" rev=ml853
+[alloc-fail] ml814 #6 status=c0000018 hint=0x7399850000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[launch-view] dismissed reason=game-window logs=0
+[alloc-fail] ml814 #7 status=c0000018 hint=0x739e470000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #8 status=c0000018 hint=0x73c47a0000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x73c4800000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #10 status=c0000018 hint=0x73c63a0000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[swap] ml1077 backed 0x7351000000+0x1000000 (file off 92 MB): 108 MB in 8 extents, peak 108 MB, 0 refused
+[swap] ml1077 backed 0x7352000000+0x1000000 (file off 108 MB): 124 MB in 9 extents, peak 124 MB, 0 refused
+[swap] ml1077 backed 0x7353000000+0x1000000 (file off 124 MB): 140 MB in 10 extents, peak 140 MB, 0 refused
+[alloc-fail] ml814 #11 status=c0000018 hint=0x73e6810000 size=0x10000 type=0x3000 protect=0x40 tid=016c | STAGE=none err=0 at 0x0+0x0
+[swap] ml1077 backed 0x7354000000+0x1000000 (file off 140 MB): 156 MB in 11 extents, peak 156 MB, 0 refused
+[swap] ml1077 backed 0x7355000000+0x1000000 (file off 156 MB): 172 MB in 12 extents, peak 172 MB, 0 refused
+[swap] ml1077 backed 0x7356000000+0x1000000 (file off 172 MB): 188 MB in 13 extents, peak 188 MB, 0 refused
+[alloc-fail] ml814 #12 status=c0000018 hint=0x7395140000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+00a8:err:module:import_dll Library bluetoothapis.dll (which is needed by L"C:\\windows\\sysx64\\bthprops.cpl") not found
+00a8:err:module:import_dll Library bluetoothapis.dll (which is needed by L"C:\\windows\\sysx64\\bthprops.cpl") not found
+00a8:err:module:import_dll Library bluetoothapis.dll (which is needed by L"C:\\windows\\system32\\bthprops.cpl") not found
+00a8:err:module:import_dll Library bluetoothapis.dll (which is needed by L"C:\\windows\\sysx64\\bthprops.cpl") not found
+D A8 Load module bthprops.cpl (bthprops.cpl-0a895d2e97aeec62): 73FD830000
+00a8:err:module:import_dll Library bluetoothapis.dll (which is needed by L"C:\\windows\\system32\\bthprops.cpl") not found
+D A8 Load module bthprops.cpl (bthprops.cpl-0a895d2e97aeec62): 73FD760000
+00a8:err:module:import_dll Library bluetoothapis.dll (which is needed by L"C:\\windows\\sysx64\\bthprops.cpl") not found
+D A8 Load module xinput1_4.dll (xinput1_4.dll-a6149d3778eaf389): 73FD6D0000
+D A8 Load module MonoPosixHelper.dll (monoposixhelper.dll-d6435ea1c3185269): 73FD5F0000
+[alloc-fail] ml814 #13 status=c0000018 hint=0x73952b0000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #14 status=c0000018 hint=0x73952e0000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+D A8 Load module steam_api64.dll (steam_api64.dll-38777e108a35d974): 73FD5A0000
+D A8 Load module gameoverlayrenderer64.dll (gameoverlayrenderer64.dll-662268bc678e11f2): 73FD3F0000
+[alloc-fail] ml814 #15 status=c0000018 hint=0x71f56c2000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #16 status=c0000018 hint=0x71f56c3000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #17 status=c0000018 hint=0x71f56c4000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #18 status=c0000018 hint=0x71f56c5000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #19 status=c0000018 hint=0x71f56c6000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #20 status=c0000018 hint=0x71f56c7000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #21 status=c0000018 hint=0x71f56c8000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #22 status=c0000018 hint=0x71f56c9000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #23 status=c0000018 hint=0x71f56ca000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #24 status=c0000018 hint=0x71f56cb000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #25 status=c0000018 hint=0x71f56cc000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #26 status=c0000018 hint=0x71f56cd000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #27 status=c0000018 hint=0x71f56ce000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #28 status=c0000018 hint=0x71f56cf000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #29 status=c0000018 hint=0x73feb29000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #30 status=c0000018 hint=0x73feb2a000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #31 status=c0000018 hint=0x73feb2b000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #32 status=c0000018 hint=0x73feb2c000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #33 status=c0000018 hint=0x73feb2d000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #34 status=c0000018 hint=0x73feb2e000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #35 status=c0000018 hint=0x73feb2f000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #36 status=c0000018 hint=0x73fefa7000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #37 status=c0000018 hint=0x73fefa8000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #38 status=c0000018 hint=0x73fefa9000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #39 status=c0000018 hint=0x73fefaa000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #40 status=c0000018 hint=0x73fefab000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #41 status=c0000018 hint=0x73fefac000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #42 status=c0000018 hint=0x73fefad000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #43 status=c0000018 hint=0x73fefae000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #44 status=c0000018 hint=0x73fefaf000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #45 status=c0000018 hint=0x73fffe1000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #46 status=c0000018 hint=0x73fffe2000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #47 status=c0000018 hint=0x73fffe3000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #48 status=c0000018 hint=0x73fffe4000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #49 status=c0000018 hint=0x73fffe5000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #50 status=c0000018 hint=0x73fffe6000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #51 status=c0000018 hint=0x73fffe7000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #52 status=c0000018 hint=0x73fffe8000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #53 status=c0000018 hint=0x73fffe9000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #54 status=c0000018 hint=0x73fffea000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #55 status=c0000018 hint=0x73fffeb000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #56 status=c0000018 hint=0x73fffec000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #57 status=c0000018 hint=0x73fffed000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #58 status=c0000018 hint=0x73fffee000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #59 status=c0000018 hint=0x73fffef000 size=0x1000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #60 status=c0000018 hint=0x73c2d80000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #61 status=c0000018 hint=0x73c3210000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #62 status=c0000018 hint=0x73c3420000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #63 status=c0000018 hint=0x73c3630000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[alloc-fail] ml814 #64 status=c0000018 hint=0x73c37c0000 size=0x10000 type=0x3000 protect=0x40 tid=00a8 | STAGE=none err=3 at 0x7025000000+0x20000000
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=98 resident=1880MB dbg=DEBUGGED rev=ml525
+[13:58:30.313] [INFO] detach-wait: presents=694 running=1 elapsed=30s
+[footprint] rev=ml358 phys=2100 MB (peak 2123) internal=1510 MB compressed=331 MB external=405 MB reusable=4 MB (cycle=18)
+[footprint] rev=ml358 phys=2103 MB (peak 2123) internal=1513 MB compressed=331 MB external=405 MB reusable=4 MB (cycle=19)
+[footprint] rev=ml358 phys=2132 MB (peak 2132) internal=1469 MB compressed=330 MB external=406 MB reusable=4 MB (cycle=20)
+[footprint] rev=ml358 phys=2104 MB (peak 2132) internal=1468 MB compressed=330 MB external=406 MB reusable=4 MB (cycle=21)
+[footprint] rev=ml358 phys=2122 MB (peak 2132) internal=1513 MB compressed=329 MB external=391 MB reusable=4 MB (cycle=22)
+[footprint] rev=ml358 phys=2577 MB (peak 2577) internal=1614 MB compressed=350 MB external=387 MB reusable=3 MB (cycle=23)
+[store-noalias] #1 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #2 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #3 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #4 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #5 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #6 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #7 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+[store-noalias] #8 rev=ml348 addr=0x100000071da9900 insn=0xd9410108 pc=0x16343922c NO alias and NO region (unmapped) — genuine bad pointer
+018c:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 RIP=0x16343922c RX from -32, 64 of 64 bytes: 20 08 00 54 f5 03 19 aa 3f 03 00 f1 e0 01 00 54 28 03 40 d9 1f 20 03 d5 08 01 40 f8 bf 3d 03 d5 08 01 41 d9 1f 20 03 d5 08 01 42 d9 1f 20 03 d5 00 0d 9e d2 00 53 bb f2 20 0e c0 f2 1f 01 00 eb 
+018c:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 no RW alias for 0x16343922c (not an anon-JIT page)
+01b8:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #3 RIP=0x16343922c RX from -32, 64 of 64 bytes: 20 08 00 54 f5 03 19 aa 3f 03 00 f1 e0 01 00 54 28 03 40 d9 1f 20 03 d5 08 01 40 f8 bf 3d 03 d5 08 01 41 d9 1f 20 03 d5 08 01 42 d9 1f 20 03 d5 00 0d 9e d2 00 53 bb f2 20 0e c0 f2 1f 01 00 eb 
+01b8:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #3 no RW alias for 0x16343922c (not an anon-JIT page)
+01bc:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #2 RIP=0x16343922c RX from -32, 64 of 64 bytes: 20 08 00 54 f5 03 19 aa 3f 03 00 f1 e0 01 00 54 28 03 40 d9 1f 20 03 d5 08 01 40 f8 bf 3d 03 d5 08 01 41 d9 1f 20 03 d5 08 01 42 d9 1f 20 03 d5 00 0d 9e d2 00 53 bb f2 20 0e c0 f2 1f 01 00 eb 
+01bc:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #3 no RW alias for 0x16343922c (not an anon-JIT page)
+0188:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #4 RIP=0x16343922c RX from -32, 64 of 64 bytes: 20 08 00 54 f5 03 19 aa 3f 03 00 f1 e0 01 00 54 28 03 40 d9 1f 20 03 d5 08 01 40 f8 bf 3d 03 d5 08 01 41 d9 1f 20 03 d5 08 01 42 d9 1f 20 03 d5 00 0d 9e d2 00 53 bb f2 20 0e c0 f2 1f 01 00 eb 
+0188:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #4 no RW alias for 0x16343922c (not an anon-JIT page)
+[store-undecoded] #1 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #2 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #3 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #4 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #5 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #6 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #7 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #8 rev=ml350 insn=0x880cfd0b pc=0x151bf4408 addr=0x73c5b52c60 rw_addr=0x7012826c60 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[redeliv] 256 identical redeliveries pc=0x151bf4408 addr=0x73c5b52c60 — storm forming rev=ml461
+[redeliv] 2000 identical redeliveries pc=0x151bf4408 addr=0x73c5b52c60 — unrecoverable host fault misdelivered to guest rev=ml461
+[redeliv] terminating process rev=ml465

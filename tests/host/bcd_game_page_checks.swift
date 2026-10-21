@@ -156,6 +156,46 @@ func check(_ what: String, _ ok: Bool, _ detail: Any = "") {
         blocked.blockers = ["You're not signed in to Steam."]
         p = plan(ready, nil, worst, others: true, blocked)
         check("at most two lines, the engine's reason first", p.notes.count == 2 && p.notes[0].text == "You're not signed in to Steam.", p)
+        var noMemory = system
+        noMemory.increasedMemoryLimit = false
+        p = plan(ready, nil, noMemory)
+        check("no increased memory limit: the memory note, first", p.notes.first?.text.contains("increased memory limit") == true
+              && p.notes.first?.text.contains("extended virtual addressing") == false, p)
+        noMemory.extendedAddressing = false
+        p = plan(ready, nil, noMemory)
+        check("neither limit nor extended addressing: one note names both", p.notes.first?.text.contains("increased memory limit and extended virtual addressing") == true, p)
+        var noVA = system
+        noVA.extendedAddressing = false
+        p = plan(ready, nil, noVA)
+        check("no extended addressing: its own note, GetMoreRam or a paid account",
+              p.notes.first?.text.contains("lacks extended virtual addressing") == true && p.notes.first?.text.contains("GetMoreRam") == true, p)
+        p = plan(big, nil, noVA)
+        check("the missing entitlement does not concern a game that is not installed", p.notes.isEmpty || !p.notes.contains { $0.text.contains("virtual addressing") }, p)
+        // Wine Mono: the last start of this game died for want of it (Panzer Paladin, 2026-10-20), and the device still has none.
+        var needsMono = none
+        needsMono.needsWineMono = true
+        let monoText = "This game needs Wine Mono (.NET). Download it in Settings › .NET Framework."
+        p = plan(ready, nil, nil, needsMono)
+        check("Wine Mono missing after a start that needed it: the page says where to download it, nothing else",
+              p.notes.count == 1 && p.notes[0].text == monoText && p.notes[0].warning && p.notes[0].fix == nil
+              && p.main?.action == .play && p.others.isEmpty, p)
+        check("without that, no note about Wine Mono", !plan(ready).notes.contains { $0.text.contains("Mono") }, plan(ready))
+        p = plan(ready, nil, off, needsMono)
+        check("JIT off comes first, then Wine Mono (two lines at most)",
+              p.notes.count == 2 && p.notes[0].fix?.action == .enableJIT && p.notes[1].text == monoText, p)
+        p = plan(ready, nil, noMemory, others: true, needsMono)
+        check("Wine Mono before the memory note and the rest, two lines at most",
+              p.notes.count == 2 && p.notes[0].text == monoText && p.notes[1].text.contains("increased memory limit"), p)
+        p = plan(ready, nil, worst, others: true, blocked)
+        check("the engine's reason still comes before everything", p.notes.first?.text == "You're not signed in to Steam.", p)
+        var blockedMono = blocked
+        blockedMono.needsWineMono = true
+        p = plan(ready, nil, nil, others: true, blockedMono)
+        check("a Steam blocker comes before Wine Mono", p.notes.count == 2 && p.notes[0].text == "You're not signed in to Steam." && p.notes[1].text == monoText, p)
+        p = plan(big, nil, nil, needsMono)
+        check("nothing about Wine Mono for a game that is not installed", !p.notes.contains { $0.text.contains("Mono") }, p)
+        p = plan(downloading, running, nil, needsMono)
+        check("nothing about Wine Mono while the game downloads", p.notes.isEmpty, p)
         p = plan(ready, nil, system, others: true)
         check("a running download will pause", p.notes.first?.text.contains("Downloads pause") == true, p)
         p = plan(downloading, running, worst, others: true, blocked)

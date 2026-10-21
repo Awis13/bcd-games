@@ -339,6 +339,9 @@ struct BCDGameDetails: Equatable {
     var storePage: URL? = nil
     /// What the store says the game may need that BCD does not install for it (GOG's runtimes).
     var storeNote: String? = nil
+    /// The game's last start failed because a .NET program found no Wine Mono, and this device
+    /// still has none: the page says where to download it.
+    var needsWineMono = false
 
     /// Check and repair files for this game: what the backend offers, and never for a GOG game
     /// (its file check comes with a later version of BCD, as its updates do).
@@ -800,11 +803,22 @@ struct BCDGamePagePlan: Equatable {
             } else if system.jit == .waiting {
                 notes.append(Note(text: "Turning on JIT…", warning: false))
             }
+            // The last start died for want of Wine Mono: the cause is known, so it comes before the guesses below.
+            if details.needsWineMono {
+                notes.append(Note(text: "This game needs Wine Mono (.NET). Download it in Settings › .NET Framework.", warning: true))
+            }
+            // Before the Cloud note: only two notes show, and on an install without the increased memory
+            // limit most failures come from it (2026-10-20: 54 of 257 logs, none of the large games played).
+            // Without extended virtual addressing the address map is about 63 GB, too small for large games
+            // (2026-10-20: logs DCWTGJ, R138Z4, KDY8E6, DVXWGA, 4GQK0Y crashed in the game, then the app).
+            if let limit = system.memoryLimitBytes, !system.increasedMemoryLimit {
+                let both = system.extendedAddressing ? "" : " and extended virtual addressing"
+                notes.append(Note(text: "iOS gives BCD only \(BCDFormat.bytes(limit)) here: this install lacks the increased memory limit\(both), so large games close early. Add \(system.extendedAddressing ? "it" : "them") with GetMoreRam, or sign BCD with a paid developer account.", warning: true))
+            } else if system.memoryLimitBytes != nil, !system.extendedAddressing {
+                notes.append(Note(text: "This install lacks extended virtual addressing, which large games need. Add it with GetMoreRam, or sign BCD with a paid developer account.", warning: true))
+            }
             if case .differ(let count)? = details.cloud {
                 notes.append(Note(text: "Steam Cloud and this device disagree on \(BCDGameText.saves(count)). Pick the copies to keep in Options.", warning: true))
-            }
-            if let limit = system.memoryLimitBytes, !system.increasedMemoryLimit {
-                notes.append(Note(text: "iOS gives BCD \(BCDFormat.bytes(limit)) here, without the increased memory limit. Large games can run out.", warning: true))
             }
             if let note = details.storeNote { notes.append(Note(text: note, warning: false)) }
             if otherDownloads {

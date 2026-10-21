@@ -50,6 +50,12 @@ assert(callbacks.fields["session-callback-ids"] == (1...16).map { String(100 + $
 assert(callbacks.fields["session-callback-id"] == nil)
 let entitled = parse("[steam-host] ml1830 session-requested-app-entitled=1\n[steam-host] ml1830 session-subscription-count=12\n")
 assert(entitled.fields["session-requested-app-entitled"] == "1" && entitled.fields["session-subscription-count"] == "12")
+// The host's own account of the launch reaches the log (a Rockstar launcher that finds no Steam, 2026-10-20).
+let hostLaunch = parse("[steam-host] ml1830 launch-install-directory-verified=1\n[steam-host] ml1830 launch-client-discovery-published=1\n[steam-host] ml1830 launch-request-submitted=1\n[steam-host] ml1830 launch-game-running=1\n[steam-host] ml1830 launch-game-ended=1\n[steam-host] ml1830 launch-discovery-restored=1\n[steam-host] ml1830 launch-host-result=0\n")
+for key in ["launch-install-directory-verified", "launch-client-discovery-published", "launch-request-submitted", "launch-game-running", "launch-game-ended", "launch-discovery-restored"] {
+    assert(hostLaunch.fields[key] == "1")
+}
+assert(hostLaunch.fields["launch-host-result"] == "0" && hostLaunch.failure == nil)
 assert(parse("[steam-host] ml1830 session-authenticated-online=1\n[steam-host] ml1830 probe-result=34\n").failure!.contains("license check for this game timed out"))
 assert(parse("[steam-host] ml1830 probe-result=34\n").failure!.contains("sign-in didn't complete"))
 // Offline start (ml2016): Valve's client decides; each refusal has its own words.

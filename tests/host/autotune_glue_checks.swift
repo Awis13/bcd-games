@@ -163,6 +163,16 @@ struct AutoTuneGlueChecks {
         expect(settle(until: { !FileManager.default.fileExists(atPath: AutoTune.markerURL!.path) }),
                "the marker is gone after the analysis")
         expect(AutoTuneOffers.shared.offer?.state.candidate == [], "the offer says what the next start runs")
+        if var mono = AutoTuneOffers.shared.offer {
+            // Wine's "Wine Mono is not installed" (Panzer Paladin): the alert says what to do first.
+            mono.report.monoMissing = true
+            expect(mono.message.contains("This game needs Wine Mono (.NET). Download it in Settings \u{203A} .NET Framework"),
+                   "a session that died for want of Wine Mono: the alert says to download it")
+            mono.report.monoMissing = nil
+            expect(!mono.message.contains("Wine Mono"), "any other session: no Wine Mono sentence")
+        } else {
+            expect(false, "an offer to check the Wine Mono sentence on")
+        }
         AutoTuneOffers.shared.offer = nil
 
         // The retry: the same crash -> the first rule.

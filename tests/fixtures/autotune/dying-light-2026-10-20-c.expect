@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "locale-en-us-ansi"
+ ],
+ "next": [
+  "env.LC_ALL = en_US.UTF-8"
+ ],
+ "note": "Dying Light, same device and build (SAHIP6, tester code 8VB504): the earliest of the three. UNPROVEN experiment: env.LC_ALL = en_US.UTF-8",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

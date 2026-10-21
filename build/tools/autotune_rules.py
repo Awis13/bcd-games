@@ -29,6 +29,8 @@ Fields (AutoTuneRule in app/Madeira/AutoTuneCore.swift):
   ramMinMB / ramMaxMB   the device's RAM from "[device] model=... ram=NMB"
   minStage / maxStage   how far the session got: 1 Wine started, 2 the game's
             modules loaded, 3 first frame, 4 presenting for 20 s, 5 played on
+  noRetry   the failure comes back the same on every start: when such a rule matches,
+            the unchanged retry is skipped and its line is tried at once
   upgrade   may replace a line auto-tune kept earlier with the same key (never one
             the user sets); without it a rule only adds keys not yet in the layer
   reason    one sentence the app shows with the attempt
@@ -116,6 +118,112 @@ RULES = [
                      "HANDOFF 2026-10-16: Warcraft III, build 559; tools/patch-dxmt-layer-format.py (560)"],
     },
     {
+        "id": "excl-logical-rwx-page",
+        "lines": [],
+        "fixedIn": 575,
+        "priority": 1,
+        # ntdll's LDAXR W11,[X8]; AND W11,W11,W10; STLXR W12,W11,[X8] on a word in the RWX memory
+        # of a Unity/Mono runtime: the page is physically RX, the STLXR faults, and ml1284's
+        # emulation refused a pair with an AND (it recovered the loaded value only through ADD/SUB
+        # immediates). The fault came back 256 times and the redelivery guard ended the app.
+        # build/ntdll-unix/signal_arm64_ios.c (build 575) applies AND/ORR/EOR/BIC/ORN/EON of another
+        # register to the memory's current value, atomically. No config line changes it.
+        # The pair is named by its bytes ([guest-bytes]) or, when that line is not printed for it, by
+        # the store emulator's own line for the STLXR (Cult of the Lamb Q2MJ7N on 565, TEVI J75807 on
+        # 574: the same ntdll+0x28408, the same storm).
+        "all": [s("identical redeliveries")],
+        "any": [s("[guest-bytes]", "6b 01 0a 0a 0b fd 0c 88"), s("[store-undecoded]", "insn=0x880cfd0b")],
+        "reason": "A locked bit-clear in memory BCD keeps writable only through an alias was not "
+                  "emulated, and the same fault came back until BCD ended the game.",
+        "evidence": ["graveyard-keeper-2-2026-10-19-19-06-53", "tevi-2026-10-19 (J75807)",
+                     "Cult of the Lamb Q2MJ7N, Mafia II DE 8KJGTX, Caves of Qud PZYMXY",
+                     "tests/host/check-excl-rmw.py (build 575)"],
+    },
+    {
+        "id": "tail-carve-lost-exec",
+        "lines": [],
+        "fixedIn": 576,
+        "priority": 1,
+        # Dead Space (97E8JF), Star Wars: The Force Unleashed (81A30H, R10XKS, 5EAVVG), build 574,
+        # 2026-10-20: a 32-bit program's unnamed image copy was followed by a run of pool pages that
+        # had lost EXEC for good (max_prot 3: "[pool-rot] ... LOST EXEC", "[pool-poison] HANDED OUT
+        # NON-EXEC"); the pool was 400-560 MB, and the 128 MB code buffer FEX asked for lay on that
+        # run. Its first block faulted at carve+0x1c ([exec-recover] mprotect_rx=-1 errno=13,
+        # [fault_rip] entryprot=3, [av-detail] p0=EXECUTE p1_in_carve=1) and the exception dispatcher,
+        # compiled into the same page, faulted again until the redelivery guard ended the process.
+        # build/ntdll-unix/virtual_ios.c (build 576) refuses a tail carve whose first 16 MB cannot
+        # execute, so FEX halves the buffer and the next carve lies above the dead run
+        # (tests/host/check-tail-carve-exec.py). No config line changes it; pool-split = 1 would only
+        # help by luck of where the run lies.
+        "all": [s("[exec-recover] pg=", "mprotect_rx=-1", "pool-rx"),
+                s("[av-detail] ml613", "p0=EXECUTE", "p1_in_carve=1"),
+                s("[fault_rip]", "PROTECTION_FAILURE", "entryprot=3 nowprot=3"),
+                s("BUS EXEC in JIT .data")],
+        "reason": "Part of the JIT pool had lost the right to run code, and the 128 MB buffer the emulator "
+                  "asked for was placed on it; from this build on BCD refuses such a buffer and the "
+                  "emulator takes a smaller one.",
+        "evidence": ["dead-space-2026-10-20 (97E8JF)", "star-wars-the-force-unleashed 81A30H, R10XKS, 5EAVVG",
+                     "tests/host/check-tail-carve-exec.py (build 576)"],
+    },
+    {
+        "id": "x18-repair-unrecognized-load",
+        "lines": [],
+        "fixedIn": 576,
+        "priority": 1,
+        # iOS zeroes x18 when it preempts a thread; the Mach handler repairs a TEB access that faulted
+        # on the small offset by doing the load itself (signal_arm64_ios.c, "[x18-emul3]"). It did not
+        # decode the sign-extending loads, so `ldrsw x28, [x18, #0x180c]` (0xb9980e5c; FEX's read of the
+        # 64-bit TEB's WowTebOffset in the WOW64 entry code) was declined and the thread died:
+        # Left 4 Dead 2 (RTTGKM, 200 s into the game), FFXIV's WebView2 setup process (TY3K5R), build 574,
+        # 2026-10-20. LDRSW/LDRSB/LDRSH with an unsigned offset are decoded from build 576
+        # (tests/host/check-x18-signed-load.py). No config line changes it. The signal is the handler's own
+        # line for a TEB access it could not repair; it is printed whatever the diagnostic switches.
+        "all": [s("[x18-emul3] UNRECOGNIZED insn=")],
+        "any": UNHANDLED,
+        "reason": "iOS cleared a register the emulator relies on, and BCD could not repair the access that "
+                  "followed; from this build on it can.",
+        "evidence": ["left-4-dead-2-2026-10-20 (RTTGKM)", "FFXIV TY3K5R (same instruction, same offset)",
+                     "tests/host/check-x18-signed-load.py (build 576)"],
+    },
+    {
+        "id": "wow64-thread-map-uninitialised",
+        "lines": [],
+        "fixedIn": 576,
+        "priority": 1,
+        # Every 32-bit program of the intake from an iOS 18 device (63 GB address map), 16 logs of 16, builds 573 and 574
+        # (pes2013 x6, Stick Fight, Dead Space x2, Terraria, Duck Game QDH12X, Yume Nikki, Half-Life 2 TCKWZY, You Have 10
+        # Seconds, speed.exe; none of the 44 on iOS 27): the first thread died in BTCpuThreadInit (libwow64fex.dll) on a
+        # NULL read of TEB[0x58] (`ldr x8,[x9,x8,lsl #3]` in __cxa_get_globals) while throwing
+        # std::overflow_error("__next_prime overflow") out of `Threads.emplace`, the module's global unordered_map, which
+        # was still all zero (max_load_factor 0).
+        # CAUSE (ajan4-ios18wow): the map's constructor DID run, on the other copy of the module. Where the kernel does
+        # not police code (iOS 18; iOS 26 without TXM) the plain mprotect(r-x) in mprotect_exec succeeded on xtajit.dll's
+        # PE view, so the loader's call to the entry point ran in place (log: [x18-emul3] pc = module base + 0x10a8, in
+        # _CRT_INIT): DllMainCRTStartup, `__main` and every global constructor initialised the PE view's .data/.bss, while
+        # wow64.dll called BTCpuProcessInit/BTCpuThreadInit in the module's POOL copy (made before the entry ran) with its
+        # zeroed .bss. From build 576 build/ntdll-unix/virtual_ios.c takes EXEC back from that view when the pool copy
+        # exists ([wow-cpu-pool], env.MADEIRA_WOW_CPU_POOL_ONLY = 0 restores the old behaviour; tests/host/check-wow-cpu-pool.py),
+        # so the entry point and the constructors run in the pool copy as on iOS 27. The xtajit.dll built by CI also
+        # carries a safety net (tools/patch-fex-ios-wow-threads-ctor.py, applied by tools/build-xtajit-wow64.sh): it
+        # constructs the map if it still finds it zero and logs "[wow64-ctor]" lines with the map's state. No config line
+        # changes any of it.
+        # Signals: the Mach handler's line for the crashing PC inside the module, the x86 TLS line (the pointer that is
+        # not there), and the start-up line that only a device without TXM prints (iOS 27 prints "not here"). All three
+        # are in the 16 logs and in no other log of the intake (3MSXHS, iOS 27, crashes in the same module for another
+        # reason and has no "allowed" line). A log of build 576 or later that still matches is a case for the report.
+        "all": [s("[mach_exc] pc PE: libwow64fex.dll+"), s("[x86_seg]", "TEB[0x58]=0x0"),
+                s("[jit-nodebug] debugger-less JIT pool: allowed")],
+        "reason": "BCD ran the 32-bit emulator's start-up code from a different copy of the module than the one "
+                  "it then used, so every 32-bit program stopped before its first instruction; from this build "
+                  "on both use the same copy.",
+        "evidence": ["half-life-2-2026-10-20 (TCKWZY, iPad16,3, iOS 18.5)",
+                     "Duck Game QDH12X (iPhone13,1, iOS 18.6): [x18-emul3] #1 pc=0x3ffac10a8 = libwow64fex base 0x3ffac0000 + _CRT_INIT+0xa8",
+                     "pes2013 4GQK0Y, 853B78, 7Y599P, B39EXN, KF01JG, TYAKAG; Dead Space DVXWGA, E05X42; Stick Fight KDY8E6; "
+                     "Terraria 9VGQVC; Yume Nikki E69NBH; You Have 10 Seconds TTHVRF; speed.exe BFRJ1Z; S67X5G",
+                     "docs/research/ios18-2026-10-18/runtime.md section 3.4 (PE images may execute in place on iOS 18)",
+                     "tests/host/check-wow-cpu-pool.py, tests/host/check-fex-wow-threads-ctor.py (build 576)"],
+    },
+    {
         "id": "jit-pool-unanswered-exit",
         "lines": [],
         "fixedIn": 572,
@@ -188,6 +296,38 @@ RULES = [
                      "docs/research/ios18-2026-10-18/gameplay.md section 1.2 (mad_kernels: iOS 26.2, AIR 2.8)"],
     },
     {
+        "id": "x64-image-smc-nocopy",
+        "lines": ["env.MADEIRA_X64_IMAGE_NOCOPY = 1"],
+        "priority": 14,
+        # Mad Max (6DB55D, KK9H24, VZKCF3, build 569, one iPhone17,2): the 64-bit MadMax.exe writes into its own
+        # 66 MB RWX section with locked read-modify-writes (`lock xadd [rcx], eax` at 0x143291fe2 on 0x143291ff0,
+        # then an xchg: ldaddal / swpal on the host). FEX had armed the page (PAGE_EXECUTE_READ), the store
+        # faulted ([store-noalias] ... prot=1 max=3), FEX's untrap (PAGE_EXECUTE_READWRITE) went through
+        # mprotect_exec, which on the default path keeps EXEC out of the backing and, with a pool copy in
+        # charge, never gives the page back its write ([wr-strip] ... wine_want=5 host_prot=1 (not a strip),
+        # vprot 0x25 at every fault). Every pass through the loop cost two faults and a recompile, and the
+        # redelivery guard ended the process at 2000 identical deliveries (L12625 "256 identical", L17944).
+        # It is the symptom virtual_ios.c's ml1030 note describes for 32-bit images ("wine_want=5 host_prot=1",
+        # "the emulator untraps with another PAGE_EXECUTE_READWRITE that lands in the same dead end"), whose
+        # 64-bit counterpart is MADEIRA_X64_IMAGE_NOCOPY: a pure x64 image gets no pool copy, EXEC is dropped
+        # from its requests, so the emulator's trap is a read-only page and its untrap a writable one. The
+        # switch is already in the recommended lists of GTA V, RDR2, HFW, Rift Apart and MSFS 2024.
+        # MADEIRA_WOW_RWX_PLAIN (which the older rule below adds to this symptom) is for 32-bit windows (its
+        # own log line says so) and did nothing for Mad Max in the three logs. Not proven on a Mad Max run:
+        # it is an attempt, the one the code points to. "none": the image already runs without a copy.
+        "all": [s("[store-noalias]", "prot=1 max=3"),
+                s("[wr-strip-declined]", "SEC_IMAGE"),
+                s("[redeliv]", "identical redeliveries")],
+        "none": [s("[x64-image]", "mapped without a pool copy")],
+        "reason": "The game rewrites its own code and the emulator's write permission never reached the "
+                  "program's memory, so one store faulted until BCD ended the game; the line lets the "
+                  "program's image take writes the way the emulator's trap expects.",
+        "evidence": ["mad-max-2026-10-20 (VZKCF3, KK9H24, 6DB55D)",
+                     "virtual_ios.c ml1030 / ios_x64_image_nocopy_enabled (the same symptom for 32-bit images)",
+                     "Dark Souls II, one iPhone, 2026-10-19: with the line (DN5QSB, E6G3RQ) 379 s of play after the same "
+                     "256-delivery warning; without it (72R0CG, P9C7DG) the session ended 34 s in"],
+    },
+    {
         "id": "wow-rwx-plain-smc",
         "lines": ["env.MADEIRA_WOW_RWX_PLAIN = 1"],
         "priority": 15,
@@ -240,6 +380,74 @@ RULES = [
                      "HANDOFF 2026-10-15 (late, 2-4): Rift Apart ran with it on 550"],
     },
     {
+        "id": "fex-band-steer-keep",
+        "lines": ["env.MADEIRA_FEX_BAND_KEEP_MB = 6144"],
+        "priority": 20,
+        "outcomes": ["crashed"],
+        # No Rest for the Wicked (0M4SJD, build 574): the game reserved 24 ranges of 511 MB, which BCD's steer
+        # valve places in the emulator's own 16 GB range at 0x7c00000000 once the game's range is tight
+        # ([steer] #3 ... "above ceiling 0x7c.." x8, 11.7 GB of the band by the 23rd). The emulator held 3.8 GB
+        # at the first refused steer and 4.0 GB 4500 lines later; its 4 MB-aligned request then found no gap
+        # ([va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x400000 ... gaps-exhausted), FEX stopped on
+        # purpose ("[alloc-fail] ml798 FEXAlloc could not allocate ... band=0x7c00000000..0x7fffffffff"), a trap
+        # in libarm64ecfex.dll, exit c000001d. The line (build 576) keeps the lowest 6 GB of the arena for the
+        # emulator; steered reserves that no longer fit go to [0x7400000000, 0x7800000000), as every one
+        # already did after the band was full ([steer] #28..#30). "none": the session already ran with the
+        # key ([fex-keep] line) and the arena still filled; no second attempt follows. The band named in the
+        # [alloc-fail] line must be the hardware one at 0x7c00000000: with env.MADEIRA_SC_PA_POOLS the arena
+        # starts higher (GTA V Enhanced, 0x7d00000000) and the key does not apply there.
+        "all": [s("[alloc-fail] ml798 FEXAlloc could not allocate", "band=0x7c00000000..0x7fffffffff"),
+                s("[steer] #", "above ceiling 0x7c", count=3)],
+        "none": [s("[fex-keep] madeira-bcd:")],
+        "reason": "The game's own reservations filled the memory range BCD keeps for the emulator, and the "
+                  "emulator ran out of room and stopped; the line keeps the lowest 6 GB of that range for the "
+                  "emulator, and the game's reservations that no longer fit go elsewhere.",
+        "evidence": ["no-rest-for-the-wicked-2026-10-20 (0M4SJD, build 574)",
+                     "tests/host/check-fex-band-keep.py (build 576)"],
+    },
+    {
+        "id": "dotnet-wx-off",
+        "lines": ["env.DOTNET_EnableWriteXorExecute = 0"],
+        "priority": 10,
+        "outcomes": ["crashed"],
+        "noRetry": True,
+        # Quaver (DKEQ3C, build 574; a self-contained .NET runtime: hostfxr, hostpolicy, coreclr.dll): the CLR
+        # asserts "0xf0f0f0f0f0f0f0f0 == *(UINT64*)m_pRegionToGenTableImmediate" (jitinterfaceamd64.cpp:514, the
+        # write-barrier patcher) and fails fast, c0000602. .NET 7+ keeps its code in a W^X "double mapping": one
+        # section mapped twice, a PAGE_READWRITE view it writes through (log: NtMapViewOfSection handle=2C
+        # base=0x13f650000, map-notify prot=4) and a PAGE_EXECUTE_READWRITE view it runs from (base=0xf54830000,
+        # prot=40). BCD turns the executable view into a fresh JIT-pool slot ("[jit-pool] anon RWX 0xf54830000
+        # ... NEW"), so what the CLR copies through the writable view never shows in the executable one and the
+        # barrier's template reads back as zeroes. DOTNET_EnableWriteXorExecute=0 is the runtime's own switch for
+        # plain executable memory (VirtualAlloc, which BCD serves the way it serves Wine Mono's JIT). "none":
+        # the session already ran with the line ([madeira-env] game ...) and the assert still came.
+        "all": [s("CLR: Assert failure", "m_pRegionToGenTableImmediate")],
+        "none": [s("[madeira-env] game DOTNET_EnableWriteXorExecute=0")],
+        "reason": "The game's .NET runtime keeps its code in two views of one memory section, and BCD cannot "
+                  "keep the two views the same; the line makes the runtime use plain executable memory.",
+        "evidence": ["quaver-2026-10-20 (DKEQ3C, build 574)"],
+    },
+    {
+        "id": "d3d12-pipeline-library-fatal",
+        "lines": ["d3d12-pipeline-library = 1"],
+        "priority": 12,
+        # Returnal (Unreal; CWKVD7, build 574, iPhone18,2): the RHI makes its pipeline library at start,
+        # `pDevice1->CreatePipelineLibrary(nullptr, 0, ...)`, and the runtime's generated stub answers
+        # E_NOTIMPL ("[madeira-d3d12] unimplemented: ID3D12Device10::CreatePipelineLibrary", L16518); the
+        # engine's LowLevelFatalError names the call (L16524, also the error box) and the game exits 3.
+        # GTA V Enhanced and RDR2 make the same call and carry on with the failure, so the key is a
+        # switch: d3d12-pipeline-library = 1 makes a library that keeps nothing (madeira_d3d12.c, build
+        # 576; tests/host/check-d3d12-pipeline-library.py). Not proven on a Returnal run. The fatal
+        # message is the discriminator: the stub line alone is in the logs of games that play on.
+        "all": [s("[madeira-d3d12] unimplemented: ID3D12Device10::CreatePipelineLibrary"),
+                s("LowLevelFatalError", "CreatePipelineLibrary")],
+        "none": [s("[madeira-d3d12] d3d12-pipeline-library = 1")],
+        "reason": "The game's engine insists that Direct3D 12 can make a pipeline library and stops when "
+                  "the call fails; the line makes BCD answer it with a library that keeps nothing.",
+        "evidence": ["returnal-2026-10-20 (CWKVD7, build 574)",
+                     "tests/host/check-d3d12-pipeline-library.py (build 576)"],
+    },
+    {
         "id": "locale-en-us",
         "lines": ["env.LC_ALL = en_US.UTF-8"],
         "priority": 12,
@@ -252,6 +460,32 @@ RULES = [
                   "page; the line gives Wine an English locale for this game.",
         "evidence": ["rift-apart-2026-10-16-10-43-45", "rift-apart-2026-10-16-10-45-10", "rift-apart-2026-10-15-22-49-00",
                      "owner 2026-10-16: with LC_ALL added the game opened"],
+    },
+    {
+        "id": "locale-en-us-ansi",
+        "lines": ["env.LC_ALL = en_US.UTF-8"],
+        "priority": 12,
+        "noRetry": True,
+        # AN EXPERIMENT, not a proven fix (ajan3-dyinglight, 2026-10-21). Dying Light (Steam 239140),
+        # the owner's iPhone18,2, build 575, logs SAHIP4/5/6 (three identical runs; MXXHZK and 8VB504
+        # are the same sessions): engine_x64_rwdi.dll takes a NULL from a named lookup on a singleton
+        # (+0x332ee, `call [rax+0x330]` then `mov eax,[rax+0x4c]`), 2 s after the display enumeration
+        # ("[Video] > Monitor(0)") and before any renderer DLL loads; no frame is ever presented.
+        # What points at the locale: the game itself asks for the Turkish ANSI code page (id=1254,
+        # in groups of six, four times; Wine's own start-up loads 1252/437), and in 96 logs of that
+        # phone only Dying Light (5 logs) and one Counter-Strike 2 log load it. Ratchet & Clank: Rift
+        # Apart on the same phone asked for the Turkish OEM page (857), threw, and ran with LC_ALL
+        # (rule locale-en-us above). Against it: Turkish players run Dying Light on Windows. The line
+        # is the cheapest test; auto-tune keeps it only if the next session gets further.
+        # Bound to the game's window title so no other 1254 loader (Counter-Strike 2 has a different
+        # failure) is touched by this evidence.
+        "all": [s("[nls-getptr] type=11 id=1254"), s("[win-name] #", 'text="Dying Light"')],
+        "any": UNHANDLED,
+        "reason": "The game asked for the phone's Turkish code page and ended at start-up; Rift Apart did "
+                  "the same and ran with an English locale, so this attempt gives Wine one for this game.",
+        "evidence": ["dying-light-owner-2026-10-20 (SAHIP4, SAHIP5, SAHIP6; MXXHZK, 8VB504)",
+                     "rift-apart-2026-10-16-10-43-45 (same phone, same kind of event, LC_ALL fixed it)",
+                     "UNPROVEN: the first session with the line decides"],
     },
     {
         "id": "alias-release-arena-reuse",
@@ -283,9 +517,48 @@ RULES = [
         "evidence": ["riftapart-2026-10-15-22-07-15", "HANDOFF 2026-10-15 (evening): Rift Apart 549"],
     },
     {
+        "id": "readback-probe-freed-buffer",
+        "lines": ["env.MADEIRA_LUM_PROBE = 0"],
+        "priority": 5,
+        "noRetry": True,
+        # Batman: Arkham Asylum (1Q05G8, RKHMA6), Brutal Legend (82BAXZ), Dishonored (0RA62D, 5B06QT),
+        # build 574, 2026-10-19/20: the [rb-tex] readback probe read the previous readback buffer's memory
+        # after the game had freed it (BUS->AV at MTLBlitCommandEncoder_encodeCommands+3260, c0000005).
+        # Build 575 reads it safely (tools/patch-winemetal-probe-safe-read.py); on 574 the line turns the
+        # probe off, which changes only log lines. Many readbacks logged: games with one or two (NFS Most
+        # Wanted, Warcraft III) end elsewhere.
+        # A read (rw=0) that ended the game, not a fault the guest kept retrying (Star Wars: The Force
+        # Unleashed, 5EAVVG: a write and a redelivery storm, with as many readbacks logged).
+        "all": [s("BUS->AV: unreadable target", "rw=0"), s("[rb-tex] madeira-bcd new readback", count=8)],
+        "none": [s("identical redeliveries")],
+        "reason": "A logging probe read GPU readback memory the game had already freed; turning the "
+                  "probe off avoids it (build 575 reads it safely).",
+        "evidence": ["batman-arkham-asylum-2026-10-19 (1Q05G8)", "brutal-legend 82BAXZ, dishonored 0RA62D/5B06QT",
+                     "tests/host/check-probe-safe-read.py"],
+    },
+    {
+        "id": "pool-split-exhausted",
+        "lines": ["pool-split = 1"],
+        "priority": 11,
+        "noRetry": True,
+        # Counter-Strike 2 (owner's iPhone18,2, build 574, 2026-10-20; logs d38e1274, 981cb2fc, b657f2e4):
+        # no free hole fits the 896 MB pool (ml1036), the pool shrinks to 544-592 MB, and cs2.exe's DLLs
+        # fill it ([jit-pool] EXHAUSTED -> STATUS_NO_MEMORY, "The system ran out of memory while loading
+        # the game"). x64-image-nocopy did not get it further; pool-split = 1, added by hand, started it
+        # (the pool takes two runs, about 880 MB). Also Albion Online's launcher and Spelunky 2
+        # (2026-10-20 logs BYBFCH, PGKTDD, J2YJF8). Only a game that already failed this way gets it.
+        # After x64-image-nocopy (priority 10), which fixed Spider-Man: Miles Morales: that path stays as it was.
+        "all": [s("[jit-pool] EXHAUSTED")],
+        "reason": "The JIT pool was smaller than usual and filled up while the game loaded; a split "
+                  "pool is about 880 MB.",
+        "evidence": ["counter-strike-2-owner-2026-10-20 (pool-split by hand started it)",
+                     "albion-launcher BYBFCH/PGKTDD, spelunky-2 J2YJF8 (2026-10-20)"],
+    },
+    {
         "id": "x64-image-nocopy",
         "lines": ["env.MADEIRA_X64_IMAGE_NOCOPY = 1"],
         "priority": 10,
+        "noRetry": True,
         "all": [s("[jit-pool] EXHAUSTED (image")],
         "reason": "The JIT pool ran out while DLLs were copied into it; pure x64 DLLs can run without "
                   "a copy.",
@@ -329,15 +602,100 @@ RULES = [
         "evidence": ["hello-neighbor-2026-10-19-13-22-30 (Hello Neighbor Pre-Alpha, Steam 1092700, 0xc0000135 at once)"],
     },
     {
+        "id": "wintypes-dll-optin",
+        "lines": ["env.MADEIRA_WINTYPES = 1"],
+        "priority": 10,
+        "noRetry": True,
+        "any": [s("err:module:import_dll Library api-ms-win-core-winrt-robuffer-l1-1-0.dll", "not found"),
+                s("err:module:import_dll Library wintypes.dll", "not found")],
+        "all": [s("err:module:import_dll Library", "not found")],
+        "none": [s("MADEIRA_WINTYPES=1: wintypes.dll -> wintypes-optin.dll")],
+        "reason": "The game imports wintypes.dll (Windows Runtime types), which BCD does not ship for every "
+                  "game; the line gives this game Wine's wintypes.dll.",
+        "evidence": ["megabonk-2026-10-20 (J7VAJV), No, I'm not a Human TZB1JX, Over the Hill HXQQN1 (c0000135 at once)"],
+    },
+    {
+        "id": "dxva2-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = dxva2"],
+        "priority": 10,
+        "noRetry": True,
+        "all": [s("err:module:import_dll Library dxva2.dll", "not found")],
+        "none": [s("MADEIRA_OPTIN_DLLS: dxva2.dll -> dxva2-optin.dll")],
+        "reason": "The game imports dxva2.dll, which BCD does not ship for every game; the line gives this "
+                  "game Wine's dxva2.dll.",
+        "evidence": ["fort-solis-2026-10-20 (94MSWJ), DRAGON BALL Sparking! ZERO H6XVPV (c0000135 at once)"],
+    },
+    {
+        "id": "xpsprint-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = xpsprint"],
+        "priority": 10,
+        "noRetry": True,
+        "all": [s("err:module:import_dll Library XPSPRINT.DLL", "not found")],
+        "none": [s("MADEIRA_OPTIN_DLLS: xpsprint.dll -> xpsprint-optin.dll")],
+        "reason": "The game imports XpsPrint.dll, which BCD does not ship for every game; the line gives this "
+                  "game Wine's xpsprint.dll.",
+        "evidence": ["animal-well NWHG8J (build 565, c0000135 at once)"],
+    },
+    {
+        "id": "exe-window-fixed-base",
+        "lines": ["exe-window-mb = 512"],
+        "priority": 6,
+        "noRetry": True,
+        # A main program with its relocations stripped, larger than the 128 MB window at 0x140000000,
+        # ran into the JIT pool (Hogwarts Legacy D67PYY, Star Wars Galactic Racer 3HWREK/XDCPK7, Metal
+        # Gear Solid V 6E40B4, Stellar Blade's demo WNDRGF; 2026-10-17..20).
+        "all": [s("failed to create main module", "c0000018")],
+        "reason": "The game's program must load at a fixed address that BCD's JIT pool partly held; the "
+                  "line keeps 512 MB there for it (the pool may be smaller).",
+        "evidence": ["hogwarts-legacy-2026-10-20 (D67PYY)", "3HWREK, XDCPK7, 6E40B4, WNDRGF"],
+    },
+    {
+        "id": "vcrt-arm64-marker",
+        "lines": ["env.MADEIRA_VCRT_ARM64_KEY = 1"],
+        "priority": 7,
+        "noRetry": True,
+        # An Unreal Engine bootstrap program (Denshattack_Proto.exe; FINAL FANTASY RESONANCE demo's FFRS.exe)
+        # is an x64 exe that sees an ARM64 machine, checks for Microsoft's ARM64 Visual C++ redistributable
+        # (the prefix has the x64 and x86 markers only) and shows "The following component(s) are required to
+        # run this program: Microsoft Visual C++ 2015-2022 Redistributable (arm64)", exit 0x2329. The line
+        # writes the volatile Runtimes\arm64 marker at session start (build 576). Whether the marker alone
+        # satisfies the check is not proven: the bootstrap's registry reads are not in the logs. "none": the
+        # session already printed the key's own [vcrt-arm64] line, so the line ran and did not help; no second
+        # attempt follows.
+        "all": [s("Redistributable (arm64)", "[win-name] #")],
+        "none": [s("[vcrt-arm64] madeira-bcd:")],
+        "reason": "The game's start-up program asked for Microsoft's ARM64 Visual C++ runtime, which the "
+                  "Windows prefix does not list; the line adds that entry for the session.",
+        "evidence": ["MKT2TW, BEB3XY (Denshattack, builds 574, 565), 4AW8BN, Q5KWDW (FINAL FANTASY RESONANCE demo, "
+                     "build 573)", "ajan-vcarm64 report 2026-10-20"],
+    },
+    {
+        "id": "d3dx9-volume-resource-stub",
+        "lines": [],
+        "fixedIn": 576,
+        "priority": 1,
+        # GTA IV (2934SV, build 574): Wine's d3dx9 had D3DXCreateVolumeTextureFromResourceExW as a stub
+        # and the first call aborted the game. tools/patch-wine-d3dx9-volume-resource.py (576: build 575's
+        # i386 farm came from the cache without it, see the farm's cache key).
+        "all": [s("unimplemented function d3dx9_", "D3DXCreateVolumeTextureFromResourceEx")],
+        "reason": "The game called a Direct3D 9 helper Wine had not implemented "
+                  "(D3DXCreateVolumeTextureFromResourceEx).",
+        "evidence": ["gta-iv-2026-10-19 (2934SV)"],
+    },
+    {
         "id": "fex-avx-on",
         "lines": ["env.MADEIRA_FEX_AVX = 1"],
         "priority": 25,
         "all": [s("[bcd] library launch", "avx=0")],
         "any": [s("[exc] ml811 code=c000001d"), s("Unhandled exception code c000001d")],
-        "none": [s("\" failed to initialize, aborting")],
+        # 0xD5 is not an x86-64 opcode whatever AVX says (FEX: "Invalid instruction in entry block"):
+        # Age of Empires IV calls RelicCardinal.exe+0x3de24f0 whose first bytes are d5 dc ca a3 bc and
+        # died the same with AVX on (7DXVSK, 34WSPP: [fex-avx] AVX and AVX2 reported and emulated).
+        "none": [s("\" failed to initialize, aborting"), s("[guest-code] rev=ml333", "): d5 ")],
         "reason": "The game ran an instruction FEX does not decode with AVX off (c000001d); the line "
                   "turns AVX on. FEX reads it itself, so it works in BCD Dock sessions too.",
-        "evidence": ["HANDOFF: Crysis 2 Remastered 540 (c000001d, DISABLEAVX expected), HFW, GoT, Rift Apart 531"],
+        "evidence": ["HANDOFF: Crysis 2 Remastered 540 (c000001d, DISABLEAVX expected), HFW, GoT, Rift Apart 531",
+                     "not for an invalid opcode: Age of Empires IV 7DXVSK/34WSPP died the same with AVX on"],
     },
     {
         "id": "thread-stack-spill",
