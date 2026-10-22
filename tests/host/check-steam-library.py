@@ -733,6 +733,13 @@ func packageBuffer(apps: [UInt32], depots: [UInt32]) -> Data {
     require(playtime[4242]?.played == "1.5 hrs played" && playtime[5002]?.played == "30 min played" && SteamPlaytime(minutes: 1200, lastPlayed: 0).played == "20 hrs played",
             "playtime text")
     require(playtime[5001]?.played == nil && playtime[5001]?.lastPlayedText() != nil, "a game only last played has no playtime text")
+    // "Last played" comes from numbers (no ICU date formatter): a day word for today and yesterday, the date with its year before.
+    let nowDate = Date(timeIntervalSince1970: 1_700_000_000)
+    require(SteamPlaytime(minutes: 0, lastPlayed: 1_700_000_000).lastPlayedText(now: nowDate) == "Last played Today", "last played today")
+    require(SteamPlaytime(minutes: 0, lastPlayed: 1_700_000_000 - 86_400).lastPlayedText(now: nowDate) == "Last played Yesterday", "last played yesterday")
+    require(playtime[5001]?.lastPlayedText(now: nowDate)?.hasPrefix("Last played ") == true && playtime[5001]?.lastPlayedText(now: nowDate)?.hasSuffix(" Sep 2020") == true,
+            "last played a long time ago names the date")
+    require(SteamPlaytime(minutes: 5, lastPlayed: 0).lastPlayedText() == nil, "never played has no last-played text")
     do { _ = try SteamPlaytime.parse(Data([0x12, 0x7f, 0x01])); require(false, "a truncated playtime record is rejected") }
     catch { require(error is SteamError, "a truncated playtime record is rejected") }
 
@@ -999,6 +1006,9 @@ func packageBuffer(apps: [UInt32], depots: [UInt32]) -> Data {
 owned_source = sources['SteamOwnedLibrary.swift']
 owned_game = owned_source[owned_source.index('struct SteamOwnedGame:'):owned_source.index('// MARK: - Playtime')]
 playtime_source = owned_source[owned_source.index('// MARK: - Playtime'):owned_source.index('// MARK: - Model')]
+# "Last played" and the cloud-backup folder name use BCD's date helpers (BCDStore.swift, Foundation only; no ICU date formatter).
+store_source = (app / 'BCDStore.swift').read_text()
+dates_source = ('import Foundation\n\nenum BCDFormat {\n' + store_source[store_source.index('    // dates-begin'):store_source.index('    // dates-end')] + '}\n')
 reason = block(owned_source, 'static func reason(_ error: Error) -> String')
 dock_head = dock[dock.index('enum DockPerformancePolicy {'):dock.index('enum MadeiraDock {')]
 dock_body = (dock[dock.index('enum MadeiraDock {'):dock.index('    @MainActor private static var lastReport =')] +
@@ -1047,6 +1057,7 @@ try:
         'final class NWPathMonitor { struct Path { enum Status { case satisfied, unsatisfied, requiresConnection }; '
         'var status = Status.satisfied }; var currentPath = Path(); func start(queue: DispatchQueue) {} }\n#endif\n') + dock_head + dock_body)
     (work / 'owned.swift').write_text('import Foundation\n' + owned_game + playtime_source)
+    (work / 'dates.swift').write_text(dates_source)
     (work / 'downloader.swift').write_text(downloader_host)
     production = [steam / 'Proto/SteamProtoMessages.swift', steam / 'Core/SteamError.swift', steam / 'Core/SteamProtocol.swift',
                   steam / 'Core/SteamMessageCodec.swift', steam / 'Core/SteamCMSession.swift',
@@ -1058,7 +1069,7 @@ try:
                             '-I', str(shim / 'CommonCrypto'), '-I', str(shim / 'Compression'), '-I', str(shim / 'zlib'),
                             '-import-objc-header', str(work / 'decoders.h'),
                             str(work / 'stubs.swift'), str(work / 'checks.swift'), str(work / 'dock.swift'), str(work / 'owned.swift'),
-                            str(work / 'downloader.swift')] + [str(x) for x in production] + objects +
+                            str(work / 'dates.swift'), str(work / 'downloader.swift')] + [str(x) for x in production] + objects +
                            ['-Xlinker', '-lcrypto', '-Xlinker', '-llzma', '-Xlinker', '-lz'], capture_output=True, text=True)
     require(build.returncode == 0, 'the production Steam library, download and decoder code compile on the host')
     if build.returncode:

@@ -10194,10 +10194,32 @@ int ios_wow_session_armed(void)
     return __atomic_load_n( &ios_wow_armed, __ATOMIC_ACQUIRE );
 }
 
+/* madeira-bcd: win32u's GDI handle table (wine dlls/win32u/gdiobj.c). win32u_wow_session is TRUE
+ * once the table is section-backed; ios_win32u_session_peb (build/win32u-unix/class_ios.c) is set
+ * after gdi_init(), so by then the table's kind is decided. Weak: absent = not known here. */
+extern int win32u_wow_session __attribute__((weak));   /* BOOL in win32u (an int) */
+extern void *ios_win32u_session_peb __attribute__((weak));
+
 void ios_wow_session_arm(void)
 {
     if (!__atomic_exchange_n( &ios_wow_armed, 1, __ATOMIC_ACQ_REL ))
+    {
         dprintf( 2, "[wow-window] session armed: a 32-bit process is expected\n" );
+        /* madeira-bcd: armed only after win32u made a private table (a session that began 64-bit
+         * without MADEIRA_GDI_SHARED_SECTION=1, gdi_shared_use_section): a 32-bit program's gdi32
+         * truncates the table's host address and faults on its first GDI handle
+         * (Battle.net-Setup.exe from the Desktop, build 579). A log line only; nothing changes. */
+        if (&ios_win32u_session_peb && &win32u_wow_session &&
+            __atomic_load_n( &ios_win32u_session_peb, __ATOMIC_ACQUIRE ) && !win32u_wow_session)
+        {
+            const char *env = getenv( "MADEIRA_GDI_SHARED_SECTION" );
+
+            dprintf( 2, "[gdi-shared] 32-bit program in a session whose GDI table is private host memory "
+                     "(MADEIRA_GDI_SHARED_SECTION=%s): its gdi32 cannot reach the table and faults on its "
+                     "first GDI handle; env.MADEIRA_GDI_SHARED_SECTION = 1 gives the session a table it can map\n",
+                     env && env[0] ? env : "unset" );
+        }
+    }
 }
 
 /* PLACEHOLDERS.  A placeholder is a 4 GB-aligned slot reserved PROT_NONE ahead
@@ -11872,6 +11894,12 @@ extern const void *dwrite_unix_call_funcs[];
  * STATUS_NOT_IMPLEMENTED. */
 extern const void *winegstreamer_unix_call_funcs[];
 
+/* MADEIRA 2026-10-22: winedmo's unix side (winedmo_unixlib_ios.c): the FFmpeg demuxer behind Wine's
+ * ASF media source (mfasfsrcsnk.dll).  Only an opt-in game loads winedmo.dll at all (nothing shipped
+ * imports it; mfasfsrcsnk-optin.dll does, for env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk, ...), so
+ * binding it by name changes nothing for any other game.  64-bit callers only. */
+extern const void *winedmo_unix_call_funcs[];
+
 /* win32u's unix init, statically linked via libwin32u_unix.a. Renamed
  * from __wine_unix_lib_init in build/win32u-unix/build.sh so future
  * statically-linked unix libs can keep their own init without colliding.
@@ -12194,6 +12222,11 @@ static NTSTATUS load_builtin_unixlib( void *module, BOOL wow, const void **funcs
                           : "winegstreamer (wma + wg_parser, libav*; 64-bit opted in)";
             funcs64 = (const void *)winegstreamer_unix_call_funcs;
             funcs_wow64 = (const void *)winegstreamer_unix_call_wow64_funcs;
+        } else if (match && strstr(match, "winedmo") && !wow) {
+            /* MADEIRA 2026-10-22: no wow64 table exists (an i386 winedmo.dll is not built), so a
+             * 32-bit caller falls through to the generic branch, which refuses it loudly. */
+            libname = "winedmo (asf demuxer, libav*)";
+            funcs64 = (const void *)winedmo_unix_call_funcs;
         } else if (match && strstr(match, "nsi.dll")) {
             libname = "nsi (rev=ml472)";
             funcs64 = (const void *)nsi_unix_call_funcs;
@@ -30262,12 +30295,18 @@ static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirt
          * overwritten), the status, and the last raw Mach result.
          *
          * Uncapped for the first 64 failures, then every 64th: a single failure
-         * is the interesting one, and a storm should not hide it. */
+         * is the interesting one, and a storm should not hide it.
+         *
+         * build 580: past the 65536th failure only the powers of two (131072, 262144, ...).
+         * Spelunky 2's FMOD retried one hinted reservation forever (DB0SA6, 8AGKA2, RC82CH:
+         * 21 to 225 million failures, 3.5 million of these lines, a 524 MB log that Send Log
+         * cannot carry). Up to 65536 failures nothing changes, line for line: the rule
+         * free-delay-off (the rules file in build/tools) counts these lines (200 of them are ~8,700 failures). */
         if (st != STATUS_SUCCESS)
         {
             static unsigned long af_n;
             unsigned long n = ++af_n;
-            if (n <= 64 || (n % 64) == 0)
+            if (n <= 64 || (n <= 65536 && (n % 64) == 0) || (n > 65536 && (n & (n - 1)) == 0))
                 dprintf( 2, "[alloc-fail] ml814 #%lu status=%08x hint=%p size=0x%llx type=0x%x "
                             "protect=0x%x tid=%04x | STAGE=%s err=%d at 0x%llx+0x%llx\n",
                          n, (unsigned)st, jumbo_hint, (unsigned long long)jumbo_size,
@@ -34534,6 +34573,29 @@ static BOOL ios_path_in_windows( const WCHAR *path, USHORT len )
     return FALSE;
 }
 
+/* madeira-bcd [app-dll-shadow] (build 580): whether the file whose name starts at name_off lies DIRECTLY in a
+ * \windows\system32\ folder (not in sysx64 or syswow64, not in a folder below system32). GTA IV Complete
+ * (13RSJQ, 79ZMR7; Steam through the Dock; one prefix, two iPhones, build 579) had Microsoft's x64
+ * vcruntime140.dll in C:\windows\system32 (the Rockstar setup bundles the redistributable), where the
+ * switch could not act: the \windows\ exemption above covers system32 as a whole. RGM16D's prefix has
+ * none there, the loader takes Wine's sysx64 copy and the game starts. */
+static BOOL ios_path_in_system32( const WCHAR *path, USHORT name_off )
+{
+    static const char dir[] = "\\windows\\system32\\";
+    const USHORT n = sizeof(dir) - 1;
+    USHORT j;
+
+    if (name_off < n) return FALSE;
+    for (j = 0; j < n; j++)
+    {
+        WCHAR c = path[name_off - n + j];
+        if (c == '/') c = '\\';
+        if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+        if (c != (WCHAR)dir[j]) return FALSE;
+    }
+    return TRUE;
+}
+
 static BOOL ios_ucrt_shadow_refused( HANDLE handle, const struct pe_image_info *pi )
 {
     extern int ios_is_arm64ec_cur(void);
@@ -34547,7 +34609,7 @@ static BOOL ios_ucrt_shadow_refused( HANDLE handle, const struct pe_image_info *
     UNICODE_STRING nt_name;
     ANSI_STRING exp_name;
     const WCHAR *name;
-    USHORT len, i;
+    USHORT len, i, name_off;
     BOOL ret = FALSE;
 
     if (pi->machine != IMAGE_FILE_MACHINE_AMD64 || pi->is_hybrid || pi->wine_builtin) return FALSE;
@@ -34565,6 +34627,7 @@ static BOOL ios_ucrt_shadow_refused( HANDLE handle, const struct pe_image_info *
     name = nt_name.Buffer;
     for (i = 0; i < len; i++)
         if (nt_name.Buffer[i] == '\\' || nt_name.Buffer[i] == '/') name = nt_name.Buffer + i + 1;
+    name_off = name ? (USHORT)(name - nt_name.Buffer) : 0;
     if (name) len -= name - nt_name.Buffer;
     if (!opt && name && len == sizeof(ucrt) - 1)
     {
@@ -34585,13 +34648,16 @@ static BOOL ios_ucrt_shadow_refused( HANDLE handle, const struct pe_image_info *
         }
     }
     if (!ret && shadow && name && len && ios_app_dll_listed( shadow, name, len )
-        && !ios_path_in_windows( nt_name.Buffer, nt_name.Length / sizeof(WCHAR) ))
+        && (!ios_path_in_windows( nt_name.Buffer, nt_name.Length / sizeof(WCHAR) )
+            || ios_path_in_system32( nt_name.Buffer, name_off )))
     {
         ret = TRUE;
         if (shadow_logged++ < 16)
-            dprintf( 2, "[app-dll-shadow] %s: plain x64 DLL in the program's own folder, named by "
+            dprintf( 2, "[app-dll-shadow] %s: plain x64 DLL %s, named by "
                         "MADEIRA_APP_DLL_SHADOW -- reported as not loadable so the loader binds the "
-                        "system's\n", debugstr_us(&nt_name) );
+                        "system's\n", debugstr_us(&nt_name),
+                        ios_path_in_windows( nt_name.Buffer, nt_name.Length / sizeof(WCHAR) )
+                        ? "in the prefix's system32 (build 580)" : "in the program's own folder" );
     }
     free( info );
     return ret;

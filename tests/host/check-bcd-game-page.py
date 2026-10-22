@@ -38,6 +38,7 @@ The Swift parts need xcrun swiftc; --require-swift makes their absence a failure
 leaves the preview build out (a quick run while working on the page; CI builds it).
 """
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -278,6 +279,32 @@ for f, text in ((PAGE, page), (LIVE, live), (SAMPLE, sample)):
     shown = [s for s in literals if "madeira" in s.lower() and not s.startswith("env.MADEIRA_")]
     check(f"{f.name}: no \"Madeira\" in its text", not shown, shown)
 
+# ---- dates ----------------------------------------------------------------------------------------------
+# Every date text is made from numbers (BCDFormat in BCDStore.swift). An ICU date formatter, built while the interface draws,
+# killed BCD itself in three tester logs (udat_open in BCDGamePageLive.day: KDY8E6, A7V9T2, DFSTWB); the first fix covered one
+# helper only. No file of the app may build one: not the screens, not the engine's file names and log stamps.
+ICU_DATE = re.compile(r"DateFormatter\(|\.formatted\(date:|\.formatted\(\)|ISO8601DateFormatter|RelativeDateTimeFormatter|DateIntervalFormatter"
+                      r"|DateComponentsFormatter|NSDateFormatter|CFDateFormatter|\.dateFormat\b|\.dateStyle\b|\.timeStyle\b|Date\.FormatStyle"
+                      r"|\.formatted\(\.(dateTime|iso8601|relative)|Text\([^\n]*style: *\.(date|time|relative|timer|offset)\b")
+icu_hits = []
+for f in sorted((R / "app").rglob("*.swift")):
+    if "/licenses/" in f.as_posix():
+        continue
+    for number, line in enumerate(code(f.read_text()).split("\n"), 1):
+        if ICU_DATE.search(line):
+            icu_hits.append(f"{f.relative_to(R)}:{number}: {line.strip()[:100]}")
+check("no file of the app builds an ICU date formatter (DateFormatter, Date.formatted, ISO8601DateFormatter ...)", not icu_hits, icu_hits[:8])
+rules_text = (R / "build/tools/autotune_rules.py").read_text()
+icu_rule = rules_text[rules_text.index('"id": "bcd-date-formatter-crash"'):]
+icu_rule = icu_rule[:icu_rule.index("\n    },\n")]
+check("auto-tune knows a log that shows BCD itself dying in udat_open (bcd-date-formatter-crash: no lines, fixedIn 580; tests/fixtures/autotune)",
+      '"lines": []' in icu_rule and '"fixedIn": 580' in icu_rule and "udat_open" in icu_rule
+      and (R / "tests/fixtures/autotune/synthetic-bcd-date-formatter-crash.expect").exists())
+store_text = (APP / "BCDStore.swift").read_text()
+check("BCDStore.swift keeps the date helpers between the markers the Steam and Dock reset host checks cut out",
+      store_text.count("    // dates-begin") == 1 and store_text.count("    // dates-end") == 1
+      and store_text.index("    // dates-begin") < store_text.index("static func fullDate") < store_text.index("    // dates-end"))
+
 # ---- the page's rules, compiled and run -------------------------------------------------------------
 TEST = (Path(__file__).resolve().parent / "bcd_game_page_checks.swift").read_text()
 
@@ -302,6 +329,11 @@ else:
                                capture_output=True, text=True, timeout=120)
             print("\n".join("     " + line for line in r.stdout.strip().split("\n")))
             check("the page's rules hold (states, questions, actions)", r.returncode == 0, r.stderr[-2000:])
+            # The date helpers again in zones with other offsets and clock changes (the first run used this Mac's).
+            for zone in ("Asia/Kolkata", "Asia/Kathmandu", "America/Los_Angeles", "Pacific/Auckland", "Australia/Lord_Howe", "Pacific/Kiritimati", "Pacific/Pago_Pago"):
+                r = subprocess.run([str(t / "rules"), "-datesOnly"], capture_output=True, text=True, timeout=120,
+                                   env=dict(os.environ, TZ=zone))
+                check(f"the date helpers give Foundation's text in {zone}", r.returncode == 0, (r.stdout + r.stderr)[-1500:])
 
     # The preview build: every BCD screen file but the engine-bound ones, with the sample data.
     if args.no_preview:

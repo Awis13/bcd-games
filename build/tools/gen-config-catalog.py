@@ -52,6 +52,17 @@ OVERLAY = {
                         "data live; does not recycle executable ranges or change GPU capabilities. Restart the "
                         "session after changing it.",
                 "sources": ["madeira-d3d12/src/pe/madeira_d3d12.c"]},
+    "env.MADEIRA_GDI_SHARED_SECTION": {"category": "Windows, display & input",
+                "title": "GDI table 32-bit programs can reach", "kind": "text", "default": "",
+                "note": "Empty: the GDI handle table is a section every 32-bit program can map in its own memory "
+                        "window when the session is armed for 32-bit code as it starts (a 32-bit game), and always "
+                        "in BCD Dock and in the library's Desktop (build 580). 1 forces it: for a 64-bit launcher "
+                        "or a game started in a Wine desktop that later starts a 32-bit program, whose gdi32 "
+                        "otherwise faults on its first GDI handle (logged as [gdi-shared] 32-bit program in a "
+                        "session whose GDI table is private). 0 keeps the private table, in the Dock and the "
+                        "Desktop too. Read once, when the session's first program starts.",
+                "sources": ["wine/dlls/win32u/gdiobj.c", "app/Madeira/ContentView.swift",
+                            "build/ntdll-unix/virtual_ios.c"]},
     "env.LC_ALL": {"category": "Wine core (ntdll)", "title": "Wine's locale for this game",
                 "kind": "text", "default": "",
                 "note": "Empty: Wine takes the user locale from the phone's language (Turkish phone: tr-TR, code pages "
@@ -973,10 +984,20 @@ OVERLAY = {
                         "\"Device error at frame N\" a [fault-enc] line names the faulted, affected and unknown encoders. "
                         "For D3D9/10/11 games that hang or fault the GPU (GTA V Legacy at Story Mode, build 546). A "
                         "diagnostic with some GPU cost; off (default): unchanged. Set it in the game's own file."},
+    "env.MADEIRA_WG_64BIT": {"category": "Media", "title": "BCD's media decoders for a 64-bit game",
+                "kind": "bool", "default": "0",
+                "sources": ["build/ntdll-unix/virtual_ios.c", "build/ntdll-unix/winegstreamer_unixlib_ios.c",
+                            "build/ntdll-unix/winegstreamer_wmv_ios.c", "build/ntdll-unix/winedmo_unixlib_ios.c"],
+                "note": "Default off. 1: winegstreamer.dll in this (64-bit) game runs on BCD's own unix side, which "
+                        "decodes WMA and, with the DLLs of env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk,wmvdecod,wmadmod, "
+                        "Windows Media Video (wmv1, wmv2, wmv3, VC-1) from an ASF file: Resident Evil 2's cutscenes, "
+                        "which ended the game at its first one (build 579). 32-bit games have it already; without "
+                        "the line a 64-bit game keeps the stub table (every media call answers STATUS_NOT_SUPPORTED). "
+                        "Set it in the game's own file; read at session start. Logged as [wmv] and [winedmo] lines."},
     "env.MADEIRA_OPTIN_DLLS": {"category": "Wine libraries", "title": "Give the game more of Wine's DLLs",
                 "kind": "text", "default": "",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh",
-                            "tools/patch-wine-setupapi-devinst-lock.py"],
+                            "tools/patch-wine-setupapi-devinst-lock.py", "tools/patch-wine-mfasfsrcsnk-winedmo.py"],
                 "note": "A comma-separated list (dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore, setupapi): each named DLL, which BCD ships as "
                         "<name>-optin.dll and never for every game, runs as <name>.dll for this game. For a program that "
                         "imports one and exits at once with c0000135 (\"Library dxva2.dll ... not found\"; Fort Solis, "
@@ -984,9 +1005,12 @@ OVERLAY = {
                         "setupapi is the one name BCD already ships for every game: setupapi-optin.dll is the same DLL "
                         "with a lock round its list of device nodes, for a game whose controller library and main thread "
                         "list devices at the same moment (Dying Light crashed in setupapi.dll on build 576); without the "
-                        "line the shipped setupapi.dll runs. An earlier session's links are removed when a name is gone. "
-                        "Set it in the game's own file; read at session start. Auto-tune adds dxva2, xpsprint and "
-                        "setupapi after their failures."},
+                        "line the shipped setupapi.dll runs. mfasfsrcsnk, wmvdecod and wmadmod are Wine's ASF byte stream handler "
+                        "and the WMV and WMA decoders behind it, for a program that plays Windows Media Video through "
+                        "Media Foundation (Resident Evil 2's cutscenes: c0000135 for mfasfsrcsnk.dll); they need "
+                        "env.MADEIRA_WG_64BIT = 1 as well, which gives a 64-bit game BCD's decoders. An earlier session's links are removed when a name is gone. "
+                        "Set it in the game's own file; read at session start. Auto-tune adds dxva2, xpsprint, "
+                        "setupapi and (with env.MADEIRA_WG_64BIT = 1) mfasfsrcsnk,wmvdecod,wmadmod after their failures."},
     "env.MADEIRA_WINTYPES": {"category": "Wine libraries", "title": "Give the game Wine's wintypes.dll",
                 "kind": "bool", "default": "0",
                 "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-wine-extra-dlls.sh"],

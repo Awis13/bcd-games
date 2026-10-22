@@ -420,7 +420,7 @@ struct RecommendationsPolicy {
     /// that reads it; a downloaded line that uses it carries that build as its minBuild.
     static let allowedEnvNames: Set<String> = [
         "DOTNET_EnableWriteXorExecute", "DOTNET_GCRegionRange",
-        "DXMT_SMALL_RINGS", "DXMT_WSI_MODE_TABLE", "DXMT_WSI_MONITOR_IDENTITY", "FEX_VECTORTSOENABLED", "LC_ALL",
+        "DXMT_SMALL_RINGS", "DXMT_WSI_MODE_TABLE", "DXMT_WSI_MONITOR_IDENTITY", "FEX_VECTORTSOENABLED", "FEX_X87REDUCEDPRECISION", "LC_ALL",
         "MADEIRA_ALIAS_RELEASE", "MADEIRA_APP_DLL_SHADOW", "MADEIRA_BAND_CENSUS", "MADEIRA_CAGE_RELEASE",
         "MADEIRA_CHILD_ARGS", "MADEIRA_D3D11_SRC", "MADEIRA_DEVICE_STATS", "MADEIRA_DOCK_GAME_SCM",
         "MADEIRA_DOCK_KEEP_ALIVE", "MADEIRA_DXGI_BUDGET_EVENTS", "MADEIRA_DXGI_SRC", "MADEIRA_EC_HOOK_TRACE",
@@ -432,8 +432,10 @@ struct RecommendationsPolicy {
         "MADEIRA_PIN_GRAPHICS_DLLS", "MADEIRA_POOL_HEAD_RESERVE_MB", "MADEIRA_POOL_LOW_IMAGES",
         "MADEIRA_POOL_RECYCLE_IMAGES", "MADEIRA_PRELOAD_DLLS", "MADEIRA_RDR2_VA_HOLD", "MADEIRA_SC_PA_POOLS",
         "MADEIRA_SMALL_STACK_EXES", "MADEIRA_SPAWN_BLOCK", "MADEIRA_SRV_FGETPATH", "MADEIRA_SWAP_MIN_KB",
-        "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TINY_WINDOW_FIX", "MADEIRA_TOUCH_MOUSE",
-        "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_VCRT_ARM64_KEY", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WOW_MIN_FREE_GB",
+        "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TINY_WINDOW_FIX", "MADEIRA_TLS_CLEAR_OWN_PROCESS",
+        "MADEIRA_TOUCH_MOUSE",
+        "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_VCRT_ARM64_KEY", "MADEIRA_VDCFG_PATH", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WG_64BIT",
+        "MADEIRA_WOW_MIN_FREE_GB",
         "MADEIRA_WOW_RWX_PLAIN",
         "MADEIRA_X64_GRAPHICS_ENTRY", "MADEIRA_X64_IMAGE_NOCOPY", "MADEIRA_X64_MACHINE", "SteamDeck", "WINEDEBUG",
         "WINEDLLOVERRIDES",
@@ -461,14 +463,27 @@ struct RecommendationsPolicy {
             switch name {
             case "MADEIRA_OPTIN_DLLS":
                 // Only DLLs BCD ships as <name>-optin.dll (tools/build-wine-extra-dlls.sh: OPTIN_WANT, and setupapi,
-                // the shipped setupapi.dll with a lock round its device node table).
+                // the shipped setupapi.dll with a lock round its device node table). mfasfsrcsnk, wmvdecod and
+                // wmadmod: Wine's ASF byte stream handler and the WMV and WMA decoder MFTs (Resident Evil 2).
                 let names = value.lowercased().split(whereSeparator: { ",; ".contains($0) })
-                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint", "sfc", "sfc_os", "tbs", "twinapi.appcore", "setupapi"].contains($0) }) else {
-                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore or setupapi")
+                guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint", "sfc", "sfc_os", "tbs", "twinapi.appcore", "setupapi"].contains($0)
+                        || ["mfasfsrcsnk", "wmvdecod", "wmadmod"].contains($0) }) else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore or setupapi, or mfasfsrcsnk, wmvdecod, wmadmod")
                 }
             case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX":
                 guard value == "0" || value == "1" else {
                     throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
+                }
+            case "FEX_X87REDUCEDPRECISION", "MADEIRA_TLS_CLEAR_OWN_PROCESS", "MADEIRA_VDCFG_PATH":
+                // Three engine switches that are 0 or 1 (build 580 reads these names from a list: Batman: Arkham City GOTY's exact
+                // x87 math and per-program TlsFree, Trails in the Sky 1st Chapter's display path).
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
+                }
+            case "MADEIRA_WG_64BIT":
+                // BCD's own media decoders for a 64-bit game (Resident Evil 2 and 7); only 0 or 1.
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_WG_64BIT is 0 or 1")
                 }
             case "DOTNET_EnableWriteXorExecute":
                 // The .NET runtime's own switch; only turning it off is ever listed.

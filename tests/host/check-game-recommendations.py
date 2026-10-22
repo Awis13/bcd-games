@@ -92,7 +92,7 @@ for r in recs['rules']:
 assert list(presets) == ['rdr2-steam', 'rdr2-other', 'gta5e-steam', 'gta5e-other', 'gta5l-steam', 'ghost-of-tsushima', 'god-of-war',
                          'horizon-zero-dawn', 'horizon-forbidden-west', 'ratchet-clank-rift-apart', 'crysis-remastered',
                          'crysis-2-remastered', 'crysis-3-remastered', 'msfs-2024', 'counter-strike-2', 'warcraft-2-bne',
-                         'breakneck', 'spelunky-2', 'albion-online', 'megabonk', 'no-im-not-a-human', 'over-the-hill', 'fort-solis', 'dragon-ball-sparking-zero', 'animal-well', 'hogwarts-legacy', 'metal-gear-solid-v', 'stellar-blade-demo', 'star-wars-galactic-racer', 'denshattack', 'final-fantasy-resonance-demo', 'no-rest-for-the-wicked', 'quaver', 'dying-light', 'beamng-drive', 'monster-hunter-stories-3-trial', 'pwaat', 'lego-party', '1000xresist', 'american-truck-simulator', 'marvels-spider-man-miles-morales', 'diablo-ii-resurrected', 'clair-obscur-expedition-33', 'gta4-steam', 'gtasa-de-steam', 'unrailed-2-back-on-track', 'standard'], list(presets)
+                         'breakneck', 'spelunky-2', 'albion-online', 'megabonk', 'no-im-not-a-human', 'over-the-hill', 'fort-solis', 'dragon-ball-sparking-zero', 'animal-well', 'hogwarts-legacy', 'metal-gear-solid-v', 'stellar-blade-demo', 'star-wars-galactic-racer', 'denshattack', 'final-fantasy-resonance-demo', 'no-rest-for-the-wicked', 'quaver', 'dying-light', 'beamng-drive', 'monster-hunter-stories-3-trial', 'pwaat', 'lego-party', '1000xresist', 'american-truck-simulator', 'marvels-spider-man-miles-morales', 'diablo-ii-resurrected', 'clair-obscur-expedition-33', 'gta4-steam', 'gtasa-de-steam', 'unrailed-2-back-on-track', 'resident-evil-2', 'resident-evil-7', 'blazblue-entropy-effect', 'dark-souls-iii', 'marvels-spider-man-remastered', 'raidou-remastered', 'yakuza-like-a-dragon', 'batman-arkham-city-goty', 'metal-gear-solid-peace-walker', 'lonely-mountains-snow-riders', 'trails-in-the-sky-1st-chapter', 'subnautica-2', 'rdr1-steam', 'standard'], list(presets)
 
 catalog_keys = set(re.findall(r'ConfigOption\(key: "([^"]+)"', catalog))
 for ident, p in presets.items():
@@ -452,7 +452,7 @@ assert presets['animal-well']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 
 assert presets['hogwarts-legacy']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 448'] and presets['hogwarts-legacy']['version'] == 1, presets['hogwarts-legacy']
 assert presets['metal-gear-solid-v']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 176'] and presets['metal-gear-solid-v']['version'] == 1, presets['metal-gear-solid-v']
 assert presets['stellar-blade-demo']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 320', 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'] and presets['stellar-blade-demo']['version'] == 2, presets['stellar-blade-demo']
-assert presets['star-wars-galactic-racer']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 496'] and presets['star-wars-galactic-racer']['version'] == 1, presets['star-wars-galactic-racer']
+assert presets['star-wars-galactic-racer']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'exe-window-mb = 496', 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'] and presets['star-wars-galactic-racer']['version'] == 2, presets['star-wars-galactic-racer']
 assert presets['denshattack']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_VCRT_ARM64_KEY = 1'] and presets['denshattack']['version'] == 1, presets['denshattack']
 assert presets['final-fantasy-resonance-demo']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_VCRT_ARM64_KEY = 1', 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'] and presets['final-fantasy-resonance-demo']['version'] == 2, presets['final-fantasy-resonance-demo']
 assert presets['clair-obscur-expedition-33']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'] and presets['clair-obscur-expedition-33']['version'] == 1 and presets['clair-obscur-expedition-33']['switches'] == '', presets['clair-obscur-expedition-33']
@@ -474,6 +474,47 @@ assert _scm in next(r for r in recs['rules'] if r['id'] == 'gta4-steam')['config
 # Build 579 (2026-10-21): Unrailed! 2 (Send Log CR8H6H): a .NET 7+ garbage collector reserves 256 GB; DOTNET_GCRegionRange = 16 GB (hex), build 579 on.
 assert presets['unrailed-2-back-on-track']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.DOTNET_GCRegionRange = 400000000'] and presets['unrailed-2-back-on-track']['version'] == 1 and presets['unrailed-2-back-on-track']['switches'] == '', presets['unrailed-2-back-on-track']
 assert {'line': 'env.DOTNET_GCRegionRange = 400000000', 'minBuild': 579} in next(r for r in recs['rules'] if r['id'] == 'unrailed-2-back-on-track')['config']
+# Resident Evil 2, version 1 (2026-10-22; build 579 log re2-ipadm4-579: the ASF byte stream handler's DLL is missing and the game reads NULL after
+# its first cutscene): BCD's 64-bit media decoders and the three opt-in DLLs, for build 580 and later; nothing else (docs/MEDIA.md, ASF and WMV).
+assert presets['resident-evil-2']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_WG_64BIT = 1', 'env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk,wmvdecod,wmadmod'] and presets['resident-evil-2']['version'] == 1 and presets['resident-evil-2']['switches'] == '', presets['resident-evil-2']
+_re2 = next(r for r in recs['rules'] if r['id'] == 'resident-evil-2')
+assert {'line': 'env.MADEIRA_WG_64BIT = 1', 'minBuild': 580} in _re2['config'] and {'line': 'env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk,wmvdecod,wmadmod', 'minBuild': 580} in _re2['config'], _re2['config']
+# Resident Evil 7 biohazard: the same failure chain (log 5MXS1S, build 576), the same two lines; only these two games list them
+assert presets['resident-evil-7']['lines'][2:] == presets['resident-evil-2']['lines'][2:] and presets['resident-evil-7']['version'] == 1, presets['resident-evil-7']
+assert [r['id'] for r in recs['rules'] if any(n in json.dumps(r['config']) for n in ('mfasfsrcsnk', 'wmvdecod', 'wmadmod', 'MADEIRA_WG_64BIT'))] == ['resident-evil-2', 'resident-evil-7']
+# Build 580 list (2026-10-22, the tur580 log wave; docs/DURUM.md section 2): lists for games that fail today, each line from a log. Every
+# line that names a key a download may set only from build 580 (FEX_X87REDUCEDPRECISION, MADEIRA_TLS_CLEAR_OWN_PROCESS, MADEIRA_VDCFG_PATH:
+# build 579's policy does not know them and would reject the whole download) carries minBuild 580.
+_std = 'env.MADEIRA_EC_HOOK_TRACE = 0'
+_nocopy = 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'
+for _id in ('blazblue-entropy-effect', 'dark-souls-iii', 'marvels-spider-man-remastered', 'raidou-remastered'):
+    assert presets[_id]['lines'][2:] == [_std, _nocopy] and presets[_id]['version'] == 1 and presets[_id]['switches'] == '', presets[_id]
+    assert {'line': _nocopy, 'minBuild': 576} in next(r for r in recs['rules'] if r['id'] == _id)['config'], _id
+assert presets['yakuza-like-a-dragon']['lines'][2:] == [_std, 'exe-window-mb = 416', _nocopy] and presets['yakuza-like-a-dragon']['version'] == 1, presets['yakuza-like-a-dragon']
+assert presets['batman-arkham-city-goty']['lines'][2:] == [_std, 'env.FEX_X87REDUCEDPRECISION = 0', 'env.MADEIRA_TLS_CLEAR_OWN_PROCESS = 1'] and presets['batman-arkham-city-goty']['version'] == 1, presets['batman-arkham-city-goty']
+_bat = next(r for r in recs['rules'] if r['id'] == 'batman-arkham-city-goty')
+assert {'line': 'env.FEX_X87REDUCEDPRECISION = 0', 'minBuild': 580} in _bat['config'] and {'line': 'env.MADEIRA_TLS_CLEAR_OWN_PROCESS = 1', 'minBuild': 580} in _bat['config'], _bat['config']
+for _id in ('metal-gear-solid-peace-walker', 'lonely-mountains-snow-riders'):
+    assert presets[_id]['lines'][2:] == [_std, 'env.MADEIRA_WINTYPES = 1'] and presets[_id]['version'] == 1, presets[_id]
+assert presets['trails-in-the-sky-1st-chapter']['lines'][2:] == [_std, 'env.MADEIRA_VDCFG_PATH = 1'] and presets['trails-in-the-sky-1st-chapter']['version'] == 1, presets['trails-in-the-sky-1st-chapter']
+assert {'line': 'env.MADEIRA_VDCFG_PATH = 1', 'minBuild': 580} in next(r for r in recs['rules'] if r['id'] == 'trails-in-the-sky-1st-chapter')['config']
+assert presets['subnautica-2']['lines'][2:] == [_std, _nocopy] and presets['subnautica-2']['version'] == 1, presets['subnautica-2']
+assert presets['rdr1-steam']['lines'][2:] == [_std, 'env.MADEIRA_DOCK_GAME_SCM = 1', 'env.MADEIRA_SPAWN_BLOCK = RockstarErrorHandler', _nocopy] and presets['rdr1-steam']['version'] == 1, presets['rdr1-steam']
+assert all(isinstance(l, dict) and l.get('minBuild') == 576 for l in next(r for r in recs['rules'] if r['id'] == 'rdr1-steam')['config'][3:])
+assert not any('FEX_AVX' in l for l in presets['rdr1-steam']['lines']), 'RDR1 leaves out gta4-steam\'s AVX pin (no c000001d in its log)'
+# The three fixed-base / pool games that already had a list keep their old lines and gain the new one at the end.
+for _id, _lines in (('star-wars-galactic-racer', [_nocopy]), ('beamng-drive', [_nocopy]), ('no-rest-for-the-wicked', ['env.MADEIRA_WINTYPES = 1'])):
+    assert presets[_id]['lines'][-len(_lines):] == _lines, _id
+# the names a list line may use only from build 580 are in the policy, with a 0-or-1 check
+for _name in ('FEX_X87REDUCEDPRECISION', 'MADEIRA_TLS_CLEAR_OWN_PROCESS', 'MADEIRA_VDCFG_PATH'):
+    _policy_src = (app / 'GameRecommendationsList.swift').read_text()
+    assert '"%s"' % _name in _policy_src and 'case "FEX_X87REDUCEDPRECISION", "MADEIRA_TLS_CLEAR_OWN_PROCESS", "MADEIRA_VDCFG_PATH":' in _policy_src, _name
+    assert any(isinstance(l, dict) and l['line'].startswith('env.%s ' % _name) and l.get('minBuild') == 580 for r in recs['rules'] for l in r['config']), _name
+# a new rule's notes quote the log lines they come from
+for _id in ['blazblue-entropy-effect', 'dark-souls-iii', 'marvels-spider-man-remastered', 'raidou-remastered', 'yakuza-like-a-dragon', 'batman-arkham-city-goty',
+            'metal-gear-solid-peace-walker', 'lonely-mountains-snow-riders', 'trails-in-the-sky-1st-chapter', 'subnautica-2', 'rdr1-steam']:
+    _notes = ' '.join(next(r for r in recs['rules'] if r['id'] == _id)['notes'])
+    assert re.search(r'\bL[0-9]{3,6}\b', _notes), _id
 # Build 579 (2026-10-21): the NOCOPY line of the three games whose images got no JIT-pool copy (Send Logs YBX2WT, AVFMGC, EJDV7Z, YBF7CN)
 # goes to builds from 576 on, which know the key (it is older, but the line is new to these games' lists).
 for _id in ('stellar-blade-demo', 'final-fantasy-resonance-demo', 'clair-obscur-expedition-33'):
@@ -481,10 +522,10 @@ for _id in ('stellar-blade-demo', 'final-fantasy-resonance-demo', 'clair-obscur-
     assert {'line': 'env.MADEIRA_X64_IMAGE_NOCOPY = 1', 'minBuild': 576} in _rule['config'], _id
 # Stellar Blade Demo and FINAL FANTASY RESONANCE DEMO carry no pool-split: no region of a split pool takes their 314 / 474 MiB exe.
 assert not any('pool-split' in l for _id in ('stellar-blade-demo', 'final-fantasy-resonance-demo', 'clair-obscur-expedition-33') for l in presets[_id]['lines'])
-assert presets['no-rest-for-the-wicked']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_FEX_BAND_KEEP_MB = 6144', 'dxmt = d3d11.mipClampBC=1'] and presets['no-rest-for-the-wicked']['version'] == 2, presets['no-rest-for-the-wicked']
+assert presets['no-rest-for-the-wicked']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_FEX_BAND_KEEP_MB = 6144', 'dxmt = d3d11.mipClampBC=1', 'env.MADEIRA_WINTYPES = 1'] and presets['no-rest-for-the-wicked']['version'] == 3, presets['no-rest-for-the-wicked']
 assert presets['quaver']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.DOTNET_EnableWriteXorExecute = 0'] and presets['quaver']['version'] == 1, presets['quaver']
 assert presets['dying-light']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_OPTIN_DLLS = setupapi'] and presets['dying-light']['version'] == 1, presets['dying-light']
-assert presets['beamng-drive']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_X64_MACHINE = 1'] and presets['beamng-drive']['version'] == 1, presets['beamng-drive']
+assert presets['beamng-drive']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_X64_MACHINE = 1', 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'] and presets['beamng-drive']['version'] == 2, presets['beamng-drive']
 assert presets['diablo-ii-resurrected']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_OPTIN_DLLS = sfc,sfc_os,tbs'] and presets['diablo-ii-resurrected']['version'] == 1 and presets['diablo-ii-resurrected']['switches'] == '', presets['diablo-ii-resurrected']
 assert presets['american-truck-simulator']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_TINY_WINDOW_FIX = 1'] and presets['american-truck-simulator']['version'] == 1 and presets['american-truck-simulator']['switches'] == '', presets['american-truck-simulator']
 assert presets['monster-hunter-stories-3-trial']['lines'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.MADEIRA_X64_IMAGE_NOCOPY = 1'] and presets['monster-hunter-stories-3-trial']['version'] == 1, presets['monster-hunter-stories-3-trial']
@@ -563,6 +604,19 @@ MATCH = {
     'gta4-steam': {'steamAppIDs': [12210], 'steamFolders': ['grand theft auto iv'], 'programs': [{'name': 'playgtaiv.exe', 'steam': True}, {'name': 'gtaiv.exe', 'steam': True}]},
     'gtasa-de-steam': {'steamAppIDs': [1547000], 'steamFolders': ['gta san andreas - the definitive edition'], 'programs': [{'name': 'playgtasanandreas.exe', 'steam': True}]},
     'unrailed-2-back-on-track': {'steamAppIDs': [2211170], 'steamFolders': ['unrailed! 2 back on track']},
+    'resident-evil-2': {'steamAppIDs': [883710], 'steamFolders': ['resident evil 2  biohazard re2'], 'programs': [{'name': 're2.exe'}]},
+    'resident-evil-7': {'steamAppIDs': [418370], 'steamFolders': ['resident evil 7 biohazard'], 'programs': [{'name': 're7.exe'}]},
+    'blazblue-entropy-effect': {'steamAppIDs': [2273430], 'steamFolders': ['blazblueentropyeffect'], 'programs': [{'name': 'blazblueentropyeffect.exe', 'steam': True}]},
+    'dark-souls-iii': {'steamAppIDs': [374320], 'steamFolders': ['dark souls iii'], 'programs': [{'name': 'darksoulsiii.exe', 'steam': True}]},
+    'marvels-spider-man-remastered': {'steamAppIDs': [1817070], 'steamFolders': ["marvel's spider-man remastered"], 'programs': [{'name': 'spider-man.exe', 'steam': True}]},
+    'raidou-remastered': {'steamAppIDs': [2288350], 'steamFolders': ['raidou tmotsa'], 'programs': [{'name': 'raidou tmotsa.exe', 'steam': True}]},
+    'yakuza-like-a-dragon': {'steamAppIDs': [1235140], 'steamFolders': ['yakuza like a dragon'], 'programs': [{'name': 'yakuzalikeadragon.exe', 'steam': True}]},
+    'batman-arkham-city-goty': {'steamAppIDs': [200260], 'steamFolders': ['batman arkham city goty'], 'programs': [{'name': 'batmanac.exe', 'steam': True}]},
+    'metal-gear-solid-peace-walker': {'steamAppIDs': [2492660], 'steamFolders': ['mgs_pw']},
+    'lonely-mountains-snow-riders': {'steamAppIDs': [2545360], 'steamFolders': ['lmsr'], 'programs': [{'name': 'lmsr_windows64_steam.exe', 'steam': True}]},
+    'trails-in-the-sky-1st-chapter': {'steamAppIDs': [3375780], 'steamFolders': ['trails in the sky 1st chapter'], 'programs': [{'name': 'sora_1st.exe', 'steam': True}]},
+    'subnautica-2': {'steamAppIDs': [1962700], 'steamFolders': ['subnautica2'], 'programs': [{'name': 'subnautica2-win64-shipping.exe', 'steam': True}]},
+    'rdr1-steam': {'steamAppIDs': [2668510], 'steamFolders': ['red dead redemption'], 'programs': [{'name': 'playrdr.exe', 'steam': True}]},
 }
 for ident, p in presets.items():
     assert p['match'] == MATCH.get(ident), (ident, p['match'])
@@ -790,7 +844,7 @@ check(id(steam + #"\Ghost of Tsushima DIRECTOR'S CUT"#) == "ghost-of-tsushima", 
 check(id(steam + #"\GodOfWar"#) == "god-of-war" && id("D:\\SteamLibrary\\steamapps\\common\\God of War") == "god-of-war",
       "GoW by its Steam folder")
 check(id(steam + #"\Horizon Zero Dawn"#) == "horizon-zero-dawn", "Horizon Zero Dawn by its Steam folder")
-check(id(steam + #"\Horizon Zero Dawn Remastered"#) == "none", "the remaster's Steam folder is another game")
+check(id(steam + #"\Horizon Zero Dawn Remastered"#, 2561580) != "horizon-zero-dawn", "the remaster is not the original: the original's lines never reach it")
 check(id(steam + #"\Ghost"#, 1, files: [steam + #"\Ghost\GhostOfTsushima.exe"#]) == "none", "a library Steam game is its App ID or folder name")
 check(id(#"C:\God of War\GoW.exe"#) == "god-of-war", "GoW by its program")
 check(id(steam + #"\God of War"#, 1593500) == "god-of-war", "GoW from Steam")
@@ -830,7 +884,32 @@ let milesm = steam + #"\Marvel's Spider-Man Miles Morales"#
 check(id(milesm, 1817190) == "marvels-spider-man-miles-morales", "Miles Morales by its App ID")
 check(id(milesm) == "marvels-spider-man-miles-morales", "Miles Morales by its Steam folder")
 check(id(milesm + #"\MilesMorales.exe"#) == "marvels-spider-man-miles-morales", "its program inside Steam")
-check(id(steam + #"\Marvel's Spider-Man Remastered"#, 1817070) == "none", "Spider-Man Remastered is another game")
+check(id(steam + #"\Marvel's Spider-Man Remastered"#, 1817070) == "marvels-spider-man-remastered", "Spider-Man Remastered has its own list (build 580), not Miles Morales'")
+// Build 580's lists (tur580): each by App ID, by Steam folder and by its program inside Steam; the same program outside Steam is nobody's
+// (no copy gets a list), and the original of a remaster keeps its own.
+let list580: [(String, Int, String, String?)] = [
+    ("BlazblueEntropyEffect", 2273430, "blazblue-entropy-effect", "BlazblueEntropyEffect.exe"),
+    ("DARK SOULS III", 374320, "dark-souls-iii", #"Game\DarkSoulsIII.exe"#),
+    ("Marvel's Spider-Man Remastered", 1817070, "marvels-spider-man-remastered", "Spider-Man.exe"),
+    ("Raidou TMOTSA", 2288350, "raidou-remastered", "Raidou TMOTSA.exe"),
+    ("Yakuza Like a Dragon", 1235140, "yakuza-like-a-dragon", #"runtime\media\YakuzaLikeADragon.exe"#),
+    ("Batman Arkham City GOTY", 200260, "batman-arkham-city-goty", #"Binaries\Win32\BatmanAC.exe"#),
+    ("MGS_PW", 2492660, "metal-gear-solid-peace-walker", nil),
+    ("LMSR", 2545360, "lonely-mountains-snow-riders", "LMSR_Windows64_Steam.exe"),
+    ("Trails in the Sky 1st Chapter", 3375780, "trails-in-the-sky-1st-chapter", "sora_1st.exe"),
+    ("Subnautica2", 1962700, "subnautica-2", #"Subnautica2\Binaries\Win64\Subnautica2-Win64-Shipping.exe"#),
+    ("Red Dead Redemption", 2668510, "rdr1-steam", "PlayRDR.exe"),
+]
+for (folder, app, rule, exe) in list580 {
+    check(id(steam + "\\" + folder, app) == rule, "\(rule) by its App ID")
+    check(id(steam + "\\" + folder) == rule, "\(rule) by its Steam folder")
+    if let exe {
+        check(id(steam + "\\" + folder + "\\" + exe) == rule, "\(rule): its program inside Steam")
+        check(id(#"D:\Games\Copy\"# + (exe.split(separator: "\\").last.map(String.init) ?? exe)) == "none", "\(rule): the same program outside Steam gets no list")
+    }
+}
+check(id(steam + #"\Red Dead Redemption 2"#, 1174180) == "rdr2-steam" && id(steam + #"\Red Dead Redemption 2"#) == "rdr2-steam", "RDR1's list does not take RDR2's folder or App ID")
+check(id(steam + #"\MGS_PW\launcher\launcher.exe"#) == "none", "a program called launcher.exe inside Steam is nobody's (the rule has no program name)")
 let gta4s = steam + #"\Grand Theft Auto IV"#
 check(id(gta4s, 12210) == "gta4-steam", "GTA IV: The Complete Edition by its App ID")
 check(id(gta4s) == "gta4-steam", "GTA IV: The Complete Edition by its Steam folder")
@@ -845,6 +924,11 @@ let unrailed2 = steam + #"\Unrailed! 2 Back on Track"#
 check(id(unrailed2, 2211170) == "unrailed-2-back-on-track" && id(unrailed2) == "unrailed-2-back-on-track", "Unrailed! 2 by its App ID and its Steam folder")
 check(id(unrailed2 + #"\data_UnrailedGodot_windows_x86_64\Bootstrap.exe"#) == "none" && id(#"C:\Games\Foo\Bootstrap.exe"#) == "none",
       "Bootstrap.exe is too generic a name to be matched on its own")
+let re2 = steam + #"\RESIDENT EVIL 2  BIOHAZARD RE2"#
+check(id(re2, 883710) == "resident-evil-2" && id(re2) == "resident-evil-2", "Resident Evil 2 by its App ID and its Steam folder (two spaces in the folder's name)")
+check(id(re2 + #"\re2.exe"#) == "resident-evil-2" && id(#"C:\Games\RE2\re2.exe"#) == "resident-evil-2", "its program, wherever it is")
+let re7 = steam + #"\RESIDENT EVIL 7 biohazard"#
+check(id(re7, 418370) == "resident-evil-7" && id(re7) == "resident-evil-7" && id(re7 + #"\re7.exe"#) == "resident-evil-7", "Resident Evil 7 by its App ID, its Steam folder and its program")
 let exp33 = steam + #"\Expedition 33"#
 check(id(exp33, 1903340) == "clair-obscur-expedition-33", "Clair Obscur: Expedition 33 by its App ID")
 check(id(exp33) == "clair-obscur-expedition-33", "Clair Obscur: Expedition 33 by its Steam folder")

@@ -118,6 +118,12 @@ jobs:
       - name: Check the memory limit notice
         run: python3 tests/host/check-memory-rights-notice.py
 
+      # The GDI handle table a 32-bit program can map: the Dock and the library's Desktop ask for the
+      # section-backed table, games keep the default, bcd.cfg can turn it off, and ntdll says when a
+      # 32-bit program meets a private table (ContentView.swift, build/ntdll-unix/virtual_ios.c).
+      - name: Check the section-backed GDI table
+        run: python3 tests/host/check-dock-gdi-section.py
+
       # BCD's in-game layer (BCDSession.swift and its views, BCDSessionLive.swift): the starting
       # screen, menu button, overlay, in-game menu and key bar in BCD's look, the classic engine
       # calls behind every function, nothing alive while closed, the preview build.
@@ -677,6 +683,15 @@ jobs:
       - name: Patch wine CPU-error diagnostics
         run: python3 tools/patch-wine-cpu-error-diag.py wine
 
+      # madeira-bcd (build 580): the [steam-api] report for 64-bit processes. A 64-bit process handles OutputDebugString
+      # inside the PE ntdll (a committed binary), so NtRaiseException never saw steam_api's "no running Steam" message there;
+      # unixcall_wine_dbg_write (debug.c) now calls thread_ios.c's ios_steam_api_dbg_hook after it has written a log line.
+      # Logging only; the line that triggers it is the PE ntdll's own "[exc] ml812 OutputDebugStringA" line.
+      - name: Patch wine with the 64-bit [steam-api] hook
+        run: |
+          python3 tests/host/check-steam-api-diag.py
+          python3 tools/patch-ntdll-unix-dbg-write-hook.py wine/dlls/ntdll/unix/debug.c
+
       - name: Patch wine with fault-safe waiter diagnostics
         run: python3 tools/patch-wine-waiter-read.py wine/dlls/ntdll/unix/sync.c
 
@@ -741,7 +756,7 @@ jobs:
           echo "defined external symbols in libntdll_unix.a: $(wc -l < defined-syms.txt | tr -d ' ')"
           MISSING=""
           for s in bcrypt_unix_call_funcs secur32_unix_call_funcs crypt32_unix_call_funcs \
-                   ws2_32_unix_call_funcs dwrite_unix_call_funcs; do
+                   ws2_32_unix_call_funcs dwrite_unix_call_funcs winedmo_unix_call_funcs; do
             if grep -qx "_$s" defined-syms.txt; then
               echo "  OK   $s (defined)"
             else
@@ -749,7 +764,7 @@ jobs:
             fi
           done
           echo "-- object sizes (an empty object means its #ifdef guard was off) --"
-          for o in ws2_32_unixlib bcrypt_unixlib secur32_unixlib crypt32_unixlib dwrite_unixlib; do
+          for o in ws2_32_unixlib bcrypt_unixlib secur32_unixlib crypt32_unixlib dwrite_unixlib winedmo_unixlib; do
             if [ -f "$OBJ/$o.o" ]; then
               printf '  %-18s %8s bytes, %s external defs\n' "$o" \
                 "$(wc -c < "$OBJ/$o.o" | tr -d ' ')" \
@@ -770,6 +785,14 @@ jobs:
             done
             exit 1
           fi
+
+      # madeira-bcd: Windows Media Video through Media Foundation's ASF source (Resident Evil 2 and 7: c0000135 for
+      # mfasfsrcsnk.dll, then a NULL read). The keyed wiring (FFmpeg, the 64-bit table only, winedmo for 64-bit callers,
+      # the opt-in DLLs and the mfasfsrcsnk patch), then the unix sides on the host: pixel conversions, the WMV transform
+      # through the unix call entries, the winedmo demuxer with the PE callbacks emulated. Builds a host FFmpeg from the
+      # tracked tarball (a few minutes, cached in ~/.cache/madeira-host-ffmpeg).
+      - name: Check ASF and WMV
+        run: python3 tests/host/check-wmv-asf.py
 
       # Windows thread priorities must not demote USER_INTERACTIVE guest
       # threads onto the efficiency cores (Crysis's main thread ran there).
@@ -1769,6 +1792,16 @@ jobs:
       - name: Check app-local DLL shadow
         run: python3 tests/host/check-app-dll-shadow.py
 
+      # madeira-bcd (build 580), engine fixes from the 580 log wave: CAS/CASAL on an anonymous RWX alias (Jetboard Joust), a
+      # 32-byte STP Q across a 16 KB page (NFS Underground 2), a zero-size D3D12 texture (Spider-Man Remastered), the
+      # [alloc-fail] log past 65536 failures (Spelunky 2).
+      - name: Check the build 580 engine fixes
+        run: |
+          python3 tests/host/check-anon-cas.py
+          python3 tests/host/check-stp-straddle.py
+          python3 tests/host/check-d3d12-zero-extent.py
+          python3 tests/host/check-alloc-fail-throttle.py
+
       # madeira-bcd: env.MADEIRA_JUMBO_HALF (off by default) gives a failed 8 GB probe
       # reservation its 4 GB arena (Ratchet & Clank: Rift Apart).
       - name: Check jumbo half
@@ -2256,6 +2289,16 @@ jobs:
           else
             echo "::warning::setupapi-optin.dll missing: env.MADEIRA_OPTIN_DLLS = setupapi does nothing in this IPA"
           fi
+          # And the ASF source of env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk,wmvdecod,wmadmod (Resident Evil 2/7): never ship the
+          # handler without the winedmo patch (an unpatched one hands the game to the generic handler, which cannot read ASF).
+          if [ -f app/Madeira/arm64ec-windows/mfasfsrcsnk-optin.dll ]; then
+            python3 tools/patch-wine-mfasfsrcsnk-winedmo.py --verify app/Madeira/arm64ec-windows/mfasfsrcsnk-optin.dll
+          else
+            echo "::warning::mfasfsrcsnk-optin.dll missing: env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk does nothing in this IPA"
+          fi
+          for d in winedmo.dll wmvdecod-optin.dll wmadmod-optin.dll; do
+            [ -f "app/Madeira/arm64ec-windows/$d" ] || echo "::warning::$d missing: Resident Evil 2's cutscenes still end the game in this IPA"
+          done
           # And its ntdll-sync.dll, which the unix loader maps by default: never
           # ship one whose SRW and critical-section exports are not the x64 bodies
           # or whose exports are not the shipped ntdll.dll's plus madeira_sync_x64_off.

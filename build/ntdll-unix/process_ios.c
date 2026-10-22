@@ -475,11 +475,33 @@ static int ios_child_slot_gone( int i, double now )
     return ios_child_slots[i].exited && now - ios_child_slots[i].exited_at >= IOS_CHILD_EXIT_SETTLE;
 }
 
+/* build 580 (Crash Bandicoot N. Sane Trilogy 3CH670, build 579): the bare substring "crash" made
+ * CrashBandicootNSaneTrilogy.exe a "crash reporter", so BCD Dock's game-end watch (DockGameEnd.swift), 578's
+ * program-end watch and the launcher-stub wait never saw the game, and the session stayed "running" 211 s after
+ * the game died. "handler", "report" and "helper" still match as substrings, as before (every real helper in the
+ * 1421 intake logs has one of them: crashpad_handler, UnityCrashHandler32/64, crs-handler, RockstarErrorHandler,
+ * steamerrorreporter(64), SocialClubHelper, RockstarSteamHelper, CrashReportClient). "crash" alone now counts only when
+ * a helper word follows it (crashpad, crash_service, crash-sender, crashdump, crashrpt ...) or when it is the whole
+ * name (crash.exe, foo_crash.exe): never as the beginning of a game's name (crashbandicoot..., crashlands,
+ * crashteamracing..., crashday). The names are lower case, as ios_child_slot_take stores them. */
 static int ios_child_is_helper( const char *name )
 {
-    static const char *const parts[] = { "crash", "crs-handler", "handler", "report", "helper" };
+    static const char *const parts[] = { "crs-handler", "handler", "report", "helper" };
+    static const char *const after_crash[] = { "pad", "rpt", "send", "dump", "log", "monitor", "service", "submit",
+                                               "upload", "client", "server", "collect", "watch", "guard", "daemon",
+                                               "catch", "notif", "telemetry", "analy", "diag", "trace", "detect",
+                                               "util", "tool", "info", "manage", "process" };
+    const char *p;
     unsigned i;
     for (i = 0; i < ARRAY_SIZE(parts); i++) if (strstr( name, parts[i] )) return 1;
+    for (p = name; (p = strstr( p, "crash" )); p += 5)
+    {
+        const char *q = p + 5;
+        if (*q == '.' || !*q) { if (p == name || p[-1] == '_' || p[-1] == '-' || p[-1] == ' ') return 1; continue; }
+        if (*q == '_' || *q == '-' || *q == ' ') q++;
+        for (i = 0; i < ARRAY_SIZE(after_crash); i++)
+            if (!strncmp( q, after_crash[i], strlen( after_crash[i] ))) return 1;
+    }
     return 0;
 }
 

@@ -182,7 +182,7 @@ struct BCDCloudConflict: Identifiable, Equatable {
 
     /// "Steam Cloud: 18 Oct 2026 at 14:05 · 2 MB · newer", and the same for this device.
     var lines: (cloud: String, device: String) {
-        func when(_ date: Date?) -> String { date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "date unknown" }
+        func when(_ date: Date?) -> String { date.map { BCDFormat.dateTime($0) } ?? "date unknown" }
         let cloudNewer = deviceDate != nil && (cloudDate ?? .distantPast) > (deviceDate ?? .distantPast)
         let deviceNewer = deviceDate != nil && (deviceDate ?? .distantPast) > (cloudDate ?? .distantPast)
         let cloud = "Steam Cloud: \(when(cloudDate)) · \(BCDFormat.bytes(cloudBytes))" + (cloudNewer ? " · newer" : "")
@@ -264,7 +264,7 @@ struct BCDGameRecommendation: Equatable {
     /// "List 3 of 18 Oct 2026, built into this version of BCD. Checked online 2 h ago."
     var source: String {
         var line = version.map { "List \($0)" } ?? "The list"
-        if let made { line += " of " + made.formatted(date: .abbreviated, time: .omitted) }
+        if let made { line += " of " + BCDFormat.fullDate(made) }
         line += downloaded ? ", downloaded." : ", built into this version of BCD."
         if let checked { line += " Checked online \(BCDFormat.ago(checked))." }
         return line

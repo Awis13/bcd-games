@@ -76,10 +76,87 @@ func check(_ what: String, _ ok: Bool, _ detail: Any = "") {
     if !ok { failures += 1 }
 }
 
+/// Dates are made from numbers (BCDFormat, the "dates" part of BCDStore.swift): the same text Foundation gives in the
+/// device's time zone, for 4000 moments. The host test may use DateFormatter; the app may not. The zone is the process's
+/// (check-bcd-game-page.py runs this with TZ set to several zones, "-datesOnly" for the dates alone).
+func dateChecks() {
+    let zone = TimeZone.current
+    if let wanted = ProcessInfo.processInfo.environment["TZ"] {
+        check("dates: the process runs in the zone the test asked for (\(wanted))", zone.identifier == wanted, zone.identifier)
+    }
+    func foundation(_ pattern: String, _ date: Date, utc: Bool = false) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = utc ? TimeZone(identifier: "UTC")! : zone
+        f.dateFormat = pattern
+        return f.string(from: date)
+    }
+    var mismatches: [String] = []
+    var seed: UInt64 = 0x9E37_79B9_7F4A_7C15
+    let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    for i in 0..<4000 {
+        seed = seed &* 6364136223846793005 &+ 1442695040888963407
+        // From 1970 to 2100; every seventh moment is a whole second plus a fixed fraction.
+        let seconds = i % 7 == 0 ? (Double(seed >> 33) / Double(1 << 31) * 4_100_000_000).rounded(.down) + 0.987
+                                 : Double(seed >> 33) / Double(1 << 31) * 4_100_000_000
+        let date = Date(timeIntervalSince1970: seconds)
+        let monthName = months[Int(foundation("M", date))! - 1]
+        let day = "\(Int(foundation("d", date))!) \(monthName) \(foundation("yyyy", date))"
+        let wants: [(String, String, String)] = [
+            ("fullDate", BCDFormat.fullDate(date), day),
+            ("dateTime", BCDFormat.dateTime(date), day + " at " + foundation("HH:mm", date)),
+            ("reportTime", BCDFormat.reportTime(date), foundation("yyyy-MM-dd HH:mm", date)),
+            ("fileStamp", BCDFormat.fileStamp(date), foundation("yyyy-MM-dd_HH-mm-ss", date)),
+            ("fileStamp minutes", BCDFormat.fileStamp(date, seconds: false), foundation("yyyy-MM-dd_HH-mm", date)),
+            ("compactStamp", BCDFormat.compactStamp(date), foundation("yyyyMMdd-HHmmss", date)),
+            ("utcFolderStamp", BCDFormat.utcFolderStamp(date), foundation("yyyy-MM-dd'T'HH-mm-ss'Z'", date, utc: true)),
+            ("logClock", BCDFormat.logClock(date), foundation("HH:mm:ss.SSS", date)),
+        ]
+        for (name, got, want) in wants where got != want { mismatches.append("\(name) \(seconds): \(got) != \(want)") }
+        if mismatches.count > 5 { break }
+    }
+    check("dates in \(zone.identifier): the helpers give Foundation's text for 4000 moments", mismatches.isEmpty, mismatches.prefix(5))
+    // The clock changes of the zone: each hour around the two changes of 2026, and the days at the year's edges.
+    var edge: [String] = []
+    var moment = 1_767_225_600.0 - 40 * 86_400   // 2025-12-31 minus 40 days
+    while moment < 1_767_225_600.0 + 400 * 86_400 {
+        let date = Date(timeIntervalSince1970: moment)
+        if BCDFormat.fileStamp(date) != foundation("yyyy-MM-dd_HH-mm-ss", date) { edge.append("\(moment): \(BCDFormat.fileStamp(date))") }
+        moment += 1_800
+    }
+    check("dates in \(zone.identifier): every half hour of 15 months, including the clock changes", edge.isEmpty, edge.prefix(5))
+    let nowDate = Date(timeIntervalSince1970: 1_790_000_000)
+    check("dates in \(zone.identifier): shortDate drops this year only",
+          BCDFormat.shortDate(nowDate, now: nowDate).split(separator: " ").count == 2
+          && BCDFormat.shortDate(Date(timeIntervalSince1970: 1_600_000_000), now: nowDate).hasSuffix(" 2020"))
+    // "2026-10-18" is that day (at noon) in the zone; shapes that are not a real day are nil.
+    check("dates in \(zone.identifier): day(\"2026-10-18\") is that day at noon", BCDFormat.day("2026-10-18").map { foundation("yyyy-MM-dd HH:mm", $0) } == "2026-10-18 12:00")
+    check("dates in \(zone.identifier): day() takes leap days and nothing else",
+          BCDFormat.day("2028-02-29") != nil && BCDFormat.day("2026-02-29") == nil && BCDFormat.day("2100-02-29") == nil
+          && BCDFormat.day("2000-02-29") != nil && BCDFormat.day("2026-13-01") == nil && BCDFormat.day("2026-00-10") == nil
+          && BCDFormat.day("2026-04-31") == nil && BCDFormat.day("") == nil && BCDFormat.day("2026-10-18T10:00") == nil
+          && BCDFormat.day("26-10-2018") == nil && BCDFormat.day("2026/10/18") == nil && BCDFormat.day("2026-1-018") == nil
+          && BCDFormat.day("0000-01-01") == nil)
+    // "Last played": today, yesterday, a date.
+    check("dates in \(zone.identifier): dayWord says Today, Yesterday and the date",
+          BCDFormat.dayWord(nowDate, now: nowDate) == "Today" && BCDFormat.dayWord(nowDate.addingTimeInterval(-86_400), now: nowDate) == "Yesterday"
+          && BCDFormat.dayWord(nowDate.addingTimeInterval(-3 * 86_400), now: nowDate) == BCDFormat.fullDate(nowDate.addingTimeInterval(-3 * 86_400)))
+    check("dates: dates that are no moment (infinite, NaN, distant) do not trap",
+          BCDFormat.fullDate(Date(timeIntervalSinceReferenceDate: .infinity)) == "1 Jan 1970"
+          && BCDFormat.logClock(Date(timeIntervalSinceReferenceDate: .nan)) == "00:00:00.000"
+          && !BCDFormat.dateTime(.distantPast).isEmpty && !BCDFormat.dateTime(.distantFuture).isEmpty)
+}
+
 @MainActor func settle() async { for _ in 0..<20 { try? await Task.sleep(nanoseconds: 50_000_000) } }
 
 @main struct Main {
     @MainActor static func main() async {
+        if CommandLine.arguments.contains("-datesOnly") {
+            dateChecks()
+            print(failures == 0 ? "dates: all passed" : "dates: \(failures) failed")
+            exit(failures == 0 ? 0 : 1)
+        }
         var system = BCDSystemStatus()
         system.jit = .on
         system.memoryLimitBytes = 6_000_000_000
@@ -489,6 +566,7 @@ func check(_ what: String, _ ok: Bool, _ detail: Any = "") {
         gone.open(store)
         gone.request(.play)
         check("a game no longer in the library: nothing runs", gone.game == nil && !recorder.calls.contains("play nothing"))
+        dateChecks()
         print(failures == 0 ? "page rules: all passed" : "page rules: \(failures) failed")
         exit(failures == 0 ? 0 : 1)
     }

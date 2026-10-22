@@ -1630,6 +1630,36 @@ done:
  * (see ios_wow_null_diag.h). Failure path only, capped. Uses the helpers of ios_av_args_diag.h. */
 #include "ios_wow_null_diag.h"
 
+/* build 580 (NFS Underground 2 7F9ZRF): a 32-byte STP Q that crosses a 16 KB page boundary is stored page by page
+ * (see ios_store_split.h). The two callbacks below are the production lookups; the host test compiles the header
+ * against fake ones. Only the anonymous-alias branch of the Q-pair emulation uses them. */
+#include "ios_store_split.h"
+extern uintptr_t ios_jit_anon_alias_lookup(uintptr_t fault_addr);
+
+/* A part is aliased when the alias run that holds its first byte also holds its last; otherwise the guest address
+ * itself is offered as a direct part, and ios_store_split_direct_write decides whether it is writable. */
+static uintptr_t ios_store_split_resolve_anon( void *ctx, uintptr_t guest, unsigned len, int *direct )
+{
+    uintptr_t rw = ios_jit_anon_alias_lookup( guest );
+    (void)ctx;
+    if (rw)
+    {
+        if (ios_jit_anon_alias_lookup( guest + len - 1 ) != rw + len - 1) return 0;
+        *direct = 0;
+        return rw;
+    }
+    *direct = 1;
+    return guest;
+}
+
+/* mach_vm_write reports a page that cannot be written instead of faulting (this runs on the Mach exception
+ * thread) and checks the whole range before it writes any of it. */
+static int ios_store_split_direct_write( void *ctx, uintptr_t guest, const void *src, unsigned len )
+{
+    (void)ctx;
+    return mach_vm_write( mach_task_self(), (mach_vm_address_t)guest, (vm_offset_t)(uintptr_t)src, len ) == KERN_SUCCESS;
+}
+
 /* ajan2-tani (2026-10-21): FAILURE-PATH DIAGNOSTICS for guest control flow that dies in the JIT.
  *
  * Log only: every read goes through mach_vm_read_overwrite, nothing is written, and each
@@ -3961,7 +3991,9 @@ static void *ios_mach_exception_thread( void *arg )
                         uintptr_t rw_end = in_jit ? ((in_low && !ios_jit_low_contains( (uintptr_t)fault_addr + 31 ))
                                                      ? 0 : (uintptr_t)(rw + ((fault_addr + 31) - rx)))
                                                   : (uintptr_t)ios_jit_anon_alias_lookup( fault_addr + 31 );
-                        if (!rw_end || rw_end != (uintptr_t)rw_addr + 31)
+                        const int stp_whole = rw_end && rw_end == (uintptr_t)rw_addr + 31;
+                        int stp_split = 0;
+                        if (!stp_whole)
                         {
                             static int stp_span_n;
                             if (stp_span_n < 4)
@@ -3970,16 +4002,56 @@ static void *ios_mach_exception_thread( void *arg )
                                     "(insn=0x%08x addr=0x%llx rw=0x%llx rw_end=0x%llx)\n",
                                     ++stp_span_n, insn, (unsigned long long)fault_addr,
                                     (unsigned long long)rw_addr, (unsigned long long)rw_end);
+                            /* build 580 (NFS Underground 2 7F9ZRF): the refusal above never completed the store, so
+                             * it faulted again 2000 times until the redelivery guard ended the process. Only for an
+                             * anonymous alias (not the JIT pool), and only the refused case: take the store page by
+                             * page (ios_store_split.h). A part in a page with an alias goes through that alias; a
+                             * part in a page without one is written only if the page is writable (mach_vm_write
+                             * checks, and nothing at all is written when it is not), so a page that cannot be
+                             * written is refused as before. */
+                            if (!in_jit)
+                            {
+                                ios_store_part sp[2];
+                                uint8_t sbytes[32];
+                                int sn;
+                                memcpy(sbytes, &neon_state.__v[rt], 16);
+                                memcpy(sbytes + 16, &neon_state.__v[rt2], 16);
+                                sn = ios_store_split_plan( (uintptr_t)fault_addr, 32, ios_store_split_resolve_anon, NULL, sp );
+                                if (sn && ios_store_split_commit( sp, sn, sbytes, ios_store_split_direct_write, NULL ))
+                                {
+                                    static int stp_split_n;
+                                    stp_split = 1;
+                                    if (stp_split_n < 8)
+                                        dprintf(STDERR_FILENO,
+                                            "[stp-split] build580 #%d insn=0x%08x addr=0x%llx parts=%d "
+                                            "(%u@%s + %u@%s) - the 32B store crossed a 16 KB page, stored page by page\n",
+                                            ++stp_split_n, insn, (unsigned long long)fault_addr, sn,
+                                            sp[0].len, sp[0].direct ? "direct" : "alias",
+                                            sn > 1 ? sp[1].len : 0u, sn > 1 ? (sp[1].direct ? "direct" : "alias") : "-");
+                                }
+                                else
+                                {
+                                    static int stp_split_fail_n;
+                                    if (stp_split_fail_n < 4)
+                                        dprintf(STDERR_FILENO,
+                                            "[stp-split] build580 #%d insn=0x%08x addr=0x%llx REFUSED: %s\n",
+                                            ++stp_split_fail_n, insn, (unsigned long long)fault_addr,
+                                            sn ? "the page without an alias is not writable" : "a part has no usable alias");
+                                }
+                            }
                         }
-                        else
+                        if (stp_whole || stp_split)
                         {
                             uint64_t base_old = (mode == 3) ? (uint64_t)fault_addr - (uint64_t)off
                                                             : (uint64_t)fault_addr;
                             uint64_t base_new = base_old;
                             int wb = (mode == 1 || mode == 3);
 
-                            memcpy((void *)rw_addr, &neon_state.__v[rt], 16);
-                            memcpy((void *)(rw_addr + 16), &neon_state.__v[rt2], 16);
+                            if (!stp_split)
+                            {
+                                memcpy((void *)rw_addr, &neon_state.__v[rt], 16);
+                                memcpy((void *)(rw_addr + 16), &neon_state.__v[rt2], 16);
+                            }
 
                             if (wb)
                             {
@@ -4704,6 +4776,35 @@ static void *ios_mach_exception_thread( void *arg )
                             if (cas_mach_logs++ < 16)
                                 dprintf(STDERR_FILENO,
                                         "[mach-cas] insn=%08x pc=%llx addr=%llx rw=%llx width=%u\n",
+                                        insn, (unsigned long long)fault_pc,
+                                        (unsigned long long)fault_addr,
+                                        (unsigned long long)rw_addr, cas_width);
+                        }
+                    }
+                    /* build 580 (Jetboard Joust 5QQ3XX/5WG4FG/N4F8JR, CoreCLR with RWX code pages):
+                     * CASAL X8,X0,[X27] (0xc8e8ff60) is FEX's translation of the x86 `lock cmpxchg`
+                     * the runtime uses to patch its own code in an RWX allocation. The page's alias
+                     * resolved (rw_addr) but no case above decoded a CAS for the anonymous alias
+                     * (the SWP comment above deliberately left the family out until it appeared), so
+                     * the process fell into [store-undecoded] and died with the unhandled fault. The
+                     * same genuinely atomic emulation as the pool case, reached ONLY here: an
+                     * anon-alias store that nothing above emulated, i.e. one that ended in
+                     * [store-undecoded] before. Full width, naturally aligned, and the last byte
+                     * must lie in the same alias run as the first, so the atomic cannot touch
+                     * memory the lookup did not vouch for. */
+                    if (!emulated && !in_jit &&
+                        (insn & 0xbfa07c00u) == 0x88a07c00u)
+                    {
+                        unsigned cas_width = (insn & 0x40000000u) ? 8 : 4;
+                        if (!((uintptr_t)fault_addr & (cas_width - 1)) &&
+                            ios_jit_anon_alias_lookup( fault_addr + cas_width - 1 ) == rw_addr + cas_width - 1 &&
+                            ios_mach_emulate_cas(insn, rw_addr, state.__x))
+                        {
+                            static unsigned cas_anon_logs;
+                            emulated = 1;
+                            if (cas_anon_logs++ < 16)
+                                dprintf(STDERR_FILENO,
+                                        "[anon-cas] build580 insn=%08x pc=%llx addr=%llx rw=%llx width=%u\n",
                                         insn, (unsigned long long)fault_pc,
                                         (unsigned long long)fault_addr,
                                         (unsigned long long)rw_addr, cas_width);

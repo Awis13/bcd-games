@@ -569,16 +569,24 @@ enum AutoTuneBuiltInRules {
      "[wr-strip-declined]",
      "SEC_IMAGE"
     ]
-   },
+   }
+  ],
+  "any": [
    {
     "has": [
      "[redeliv]",
      "identical redeliveries"
     ]
+   },
+   {
+    "has": [
+     "[mach_exc] UNHANDLED #200"
+    ]
    }
   ],
   "evidence": [
    "mad-max-2026-10-20 (VZKCF3, KK9H24, 6DB55D)",
+   "dark-souls-iii-2026-10-21 (A3V7SV, build 579: the same storm, no redelivery line yet)",
    "virtual_ios.c ml1030 / ios_x64_image_nocopy_enabled (the same symptom for 32-bit images)",
    "Dark Souls II, one iPhone, 2026-10-19: with the line (DN5QSB, E6G3RQ) 379 s of play after the same 256-delivery warning; without it (72R0CG, P9C7DG) the session ended 34 s in"
   ],
@@ -994,7 +1002,8 @@ enum AutoTuneBuiltInRules {
   ],
   "evidence": [
    "unrailed-2-2026-10-21 (CR8H6H, build 576)",
-   "learn.microsoft.com/dotnet/core/runtime-config/garbage-collector (Region range)"
+   "learn.microsoft.com/dotnet/core/runtime-config/garbage-collector (Region range)",
+   "fortune-mill-2026-10-22 (NMDFT1: the 454 GB map of an install without memory rights has no such gap; no match)"
   ],
   "id": "dotnet-gc-region-range",
   "lines": [
@@ -1005,6 +1014,13 @@ enum AutoTuneBuiltInRules {
    {
     "has": [
      "[madeira-env] game DOTNET_GCRegionRange="
+    ]
+   },
+   {
+    "has": [
+     "[device] address-map=",
+     " 454GB",
+     "increased-memory=0"
     ]
    }
   ],
@@ -1590,6 +1606,34 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[gdi-shared] 32-bit program in a session whose GDI table is private host memory"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-setup-2026-10-21 (synthetic: the build 579 Desktop session of Battle.net-Setup.exe with build 580's signal line added where the session was armed)",
+   "owner's next session (explorer.exe 21:01:40, the line in the Desktop's Game config): the setup window opened"
+  ],
+  "id": "gdi-table-32bit-child",
+  "lines": [
+   "env.MADEIRA_GDI_SHARED_SECTION = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[gdi-shared] session table",
+     "section-backed"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "A 32-bit program this game started could not reach Windows' GDI table, which the session made for 64-bit programs only; the line makes it a table 32-bit programs can map."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[WineProc] Target exe: C:\\windows\\system32\\cmd.exe (bundle=arm64ec-windows)"
     ]
    },
@@ -1696,6 +1740,36 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "err:module:load_dll [dll-missing]",
+     "mfasfsrcsnk.dll",
+     "status=c0000135"
+    ]
+   }
+  ],
+  "evidence": [
+   "re2-ipadm4-579 (Resident Evil 2, Discord, build 579)",
+   "5MXS1S (Resident Evil 7, build 576, the same chain)"
+  ],
+  "id": "asf-wmv-media-source",
+  "lines": [
+   "env.MADEIRA_WG_64BIT = 1",
+   "env.MADEIRA_OPTIN_DLLS = mfasfsrcsnk,wmvdecod,wmadmod"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: mfasfsrcsnk.dll -> mfasfsrcsnk-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The game plays a Windows Media Video cutscene through Media Foundation and BCD ships no ASF source; the lines give this game Wine's ASF source and WMV and WMA decoders, and BCD's media decoders for a 64-bit game."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "err:module:import_dll Library XPSPRINT.DLL",
      "not found"
     ]
@@ -1773,8 +1847,11 @@ enum AutoTuneBuiltInRules {
   "evidence": [
    "hogwarts-legacy-2026-10-20 (D67PYY)",
    "3HWREK, XDCPK7, 6E40B4, WNDRGF",
-   "saints-row-the-third-directx-helper-2026-10-21 (T3P8HK: the DirectX installer's helper is not the game; no match)"
+   "saints-row-the-third-directx-helper-2026-10-21 (T3P8HK: the DirectX installer's helper is not the game; no match)",
+   "persona-4-golden-2026-10-21 (QK7BQP: an 888 MiB program no window holds; no match)",
+   "yakuza-like-a-dragon-2026-10-21 (F4V6BQ: a 397 MiB program keeps the rule)"
   ],
+  "exeMaxMB": 511,
   "id": "exe-window-fixed-base",
   "lines": [
    "exe-window-mb = 512"
@@ -1873,7 +1950,8 @@ enum AutoTuneBuiltInRules {
   "evidence": [
    "HANDOFF: Crysis 2 Remastered 540 (c000001d, DISABLEAVX expected), HFW, GoT, Rift Apart 531",
    "not for an invalid opcode: Age of Empires IV 7DXVSK/34WSPP died the same with AVX on",
-   "not for the Rockstar Games Launcher's games: GBY65K, Y5MEB6, A50T0Q (AVX on: service connection fails) against 8JXT6Q, DGNRT5 (AVX off: connects, GTA5.exe plays); gta-v-legacy-2026-10-20 (DR83Z9)"
+   "not for the Rockstar Games Launcher's games: GBY65K, Y5MEB6, A50T0Q (AVX on: service connection fails) against 8JXT6Q, DGNRT5 (AVX off: connects, GTA5.exe plays); gta-v-legacy-2026-10-20 (DR83Z9)",
+   "not after a store the emulator could not do (Jetboard Joust N4F8JR, 5QQ3XX: AVX on, the same end) or a host SIGILL on a data word (Portal Q3SG8T); the proven case, The Last of Us Part I JP833A (build 576), keeps the rule"
   ],
   "id": "fex-avx-on",
   "lines": [
@@ -1917,6 +1995,17 @@ enum AutoTuneBuiltInRules {
     "has": [
      "[phase] spawn:",
      "Rockstar Games\\\\Launcher\\\\Launcher.exe"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]"
+    ]
+   },
+   {
+    "has": [
+     "[mach_exc] insn_stream PC-12..PC+8:",
+     "[0000"
     ]
    }
   ],
@@ -2228,6 +2317,230 @@ enum AutoTuneBuiltInRules {
   "priority": 14,
   "reason": "A 32-bit game could not get the address space it needs on this install, and BCD stayed on 'running' for minutes; from this build on the session ends at once and says so (the lack of address space is the cause, and it is the install's).",
   "session": "library"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[store-undecoded]",
+     "ADD THIS ENCODING"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0xc8a"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0xc8b"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0xc8e"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0xc8f"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0x88a"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0x88b"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0x88e"
+    ]
+   },
+   {
+    "has": [
+     "[store-undecoded]",
+     "insn=0x88f"
+    ]
+   }
+  ],
+  "evidence": [
+   "jetboard-joust-2026-10-21 (N4F8JR; 5QQ3XX, 5WG4FG)",
+   "tests/host/check-anon-cas.py (build 580)"
+  ],
+  "fixedIn": 580,
+  "id": "anon-alias-cas",
+  "lines": [],
+  "priority": 1,
+  "reason": "The game patches its own code in memory BCD keeps writable only through an alias, with an atomic compare-and-swap BCD did not emulate, and the program ended on the failed write."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[stp-emul] ml629",
+     "REFUSING: 32B span leaves the alias",
+     "addr=0x7"
+    ]
+   },
+   {
+    "has": [
+     "identical redeliveries"
+    ]
+   }
+  ],
+  "evidence": [
+   "need-for-speed-underground-2-2026-10-21 (7F9ZRF)",
+   "tests/host/check-stp-straddle.py (build 580)"
+  ],
+  "fixedIn": 580,
+  "id": "stp-q-page-straddle",
+  "lines": [],
+  "priority": 1,
+  "reason": "A 32-byte store into the game's own code buffer crossed a memory page boundary, BCD refused to complete it and the same write was repeated until BCD ended the game."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[dock-report] launch-game-ended=1"
+    ]
+   },
+   {
+    "has": [
+     "[Wine ntdll/server] process_exit_wrapper(-10737",
+     "closing child"
+    ]
+   },
+   {
+    "has": [
+     "[phase] spawn:",
+     "\\\\Crash"
+    ]
+   }
+  ],
+  "evidence": [
+   "crash-bandicoot-nsane-trilogy-2026-10-22 (3CH670, build 579)",
+   "tests/host/check-dock-game-end.py (build 580)"
+  ],
+  "fixedIn": 580,
+  "id": "dock-game-named-crash-session-open",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[dock-game-end]"
+    ]
+   },
+   {
+    "has": [
+     "[frontend] returned to library"
+    ]
+   }
+  ],
+  "priority": 12,
+  "reason": "The game's name starts with 'Crash', so BCD took it for a crash reporter and kept the session open after the game had died; from this build on BCD tells them apart.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "MTLTextureDescriptor has width of zero"
+    ]
+   }
+  ],
+  "api": "d3d12",
+  "evidence": [
+   "spider-man-remastered-2026-10-21 (T3EXJB)",
+   "Miles Morales X1TNT2",
+   "tests/host/check-d3d12-zero-extent.py (build 580)"
+  ],
+  "fixedIn": 580,
+  "id": "d3d12-zero-extent-texture",
+  "lines": [],
+  "priority": 1,
+  "reason": "The game asked for a texture with no size and Metal ended the program; from this build on BCD answers that request with an error, as Windows does."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[dock-report] probe-result="
+    ]
+   }
+  ],
+  "evidence": [
+   "spec-ops-the-line-dock-launch-failed-2026-10-21 (NEXHHM, build 579)",
+   "2FRXXM (build 579), Risen 2 9DBDZ6 (build 579)",
+   "tests/host/check-dock-game-end.py (build 580)"
+  ],
+  "fixedIn": 580,
+  "id": "dock-launch-failed-session-open",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[dock-report] probe-result=0"
+    ]
+   },
+   {
+    "has": [
+     "[dock-report] launch-game-running=1"
+    ]
+   },
+   {
+    "has": [
+     "[dock-game-end]"
+    ]
+   },
+   {
+    "has": [
+     "[frontend] returned to library"
+    ]
+   }
+  ],
+  "priority": 15,
+  "reason": "The Dock host reported that the game's launch failed and the game never ran, but BCD kept the session open on its desktop; from this build on BCD ends the session after 20 seconds and shows the reason (the cause, for a game with Steam's per-account copy protection, is Steam's own and is not changed by this).",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[native-bt]",
+     "udat_open"
+    ]
+   },
+   {
+    "has": [
+     "[native-bt]",
+     "Madeira`$s7Madeira"
+    ]
+   }
+  ],
+  "evidence": [
+   "synthetic-bcd-date-formatter-crash (the backtraces of A7V9T2 and DFSTWB, builds 576)",
+   "tests/host/check-bcd-game-page.py (build 580)"
+  ],
+  "fixedIn": 580,
+  "id": "bcd-date-formatter-crash",
+  "lines": [],
+  "priority": 2,
+  "reason": "BCD's own screen closed the app while it was making a date for display; this is in BCD, not in the game, and no setting changes it."
  },
  {
   "all": [

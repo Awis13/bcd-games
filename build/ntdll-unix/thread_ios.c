@@ -2081,6 +2081,11 @@ NTSTATUS send_debug_event( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_c
  * and nothing changes for any other debug string. (A PE kernelbase patch could not carry this: the shipped
  * kernelbase.dll is a committed binary the workflow does not rebuild.) */
 /* steam-api-diag-test:begin (tests/host/check-steam-api-diag.py compiles this region) */
+/* build 580: the report is also produced for a 64-bit (ARM64EC) process (ios_steam_api_dbg_hook below), from inside the log
+ * funnel itself. There the lines go straight to stderr: an ERR_ from there would be appended to the line that is still
+ * being written. ios_sd_raw selects that; the 32-bit path (NtRaiseException) keeps its ERR_ lines. */
+static _Thread_local int ios_sd_raw;
+#define SD_ERR( ... ) do { if (ios_sd_raw) dprintf( 2, __VA_ARGS__ ); else ERR_(seh)( __VA_ARGS__ ); } while (0)
 static NTSTATUS ios_sd_key( const char *path, ACCESS_MASK wow, HANDLE *key )
 {
     WCHAR wide[128];
@@ -2110,7 +2115,7 @@ static NTSTATUS ios_sd_value( const char *path, ACCESS_MASK wow, const char *vna
 
     if (status)
     {
-        ERR_(seh)( "[steam-api]   %s: key not opened, status %#x\n", label, (unsigned int)status );
+        SD_ERR( "[steam-api]   %s: key not opened, status %#x\n", label, (unsigned int)status );
         return status;
     }
     for (i = 0; vname[i] && i < 63; i++) wide[i] = (unsigned char)vname[i];
@@ -2121,14 +2126,14 @@ static NTSTATUS ios_sd_value( const char *path, ACCESS_MASK wow, const char *vna
     status = NtQueryValueKey( key, &name, KeyValuePartialInformation, &buf, sizeof(buf), &len );
     NtClose( key );
     if (status)
-        ERR_(seh)( "[steam-api]   %s: no value, status %#x\n", label, (unsigned int)status );
+        SD_ERR( "[steam-api]   %s: no value, status %#x\n", label, (unsigned int)status );
     else if (buf.info.Type == REG_DWORD && buf.info.DataLength == sizeof(ULONG))
     {
         ULONG v;
         memcpy( &v, buf.info.Data, sizeof(v) );
         if (dword) *dword = v;
-        if (hide) ERR_(seh)( "[steam-api]   %s: DWORD, %s\n", label, v ? "not zero" : "zero" );
-        else ERR_(seh)( "[steam-api]   %s: DWORD %u\n", label, (unsigned int)v );
+        if (hide) SD_ERR( "[steam-api]   %s: DWORD, %s\n", label, v ? "not zero" : "zero" );
+        else SD_ERR( "[steam-api]   %s: DWORD %u\n", label, (unsigned int)v );
     }
     else if (buf.info.Type == REG_SZ || buf.info.Type == REG_EXPAND_SZ)
     {
@@ -2138,10 +2143,10 @@ static NTSTATUS ios_sd_value( const char *path, ACCESS_MASK wow, const char *vna
         n = min( buf.info.DataLength / sizeof(WCHAR), (ULONG)(sizeof(text) - 1) );
         for (i = 0; i < n && w[i]; i++) text[i] = (w[i] >= 32 && w[i] < 127) ? (char)w[i] : '?';
         text[i] = 0;
-        ERR_(seh)( "[steam-api]   %s: %s \"%s\"\n", label, buf.info.Type == REG_SZ ? "SZ" : "EXPAND_SZ", text );
+        SD_ERR( "[steam-api]   %s: %s \"%s\"\n", label, buf.info.Type == REG_SZ ? "SZ" : "EXPAND_SZ", text );
     }
     else
-        ERR_(seh)( "[steam-api]   %s: type %u, %u bytes\n", label, (unsigned int)buf.info.Type,
+        SD_ERR( "[steam-api]   %s: type %u, %u bytes\n", label, (unsigned int)buf.info.Type,
                    (unsigned int)buf.info.DataLength );
     return status;
 }
@@ -2164,10 +2169,10 @@ static void ios_sd_object( const char *name )
     if (status) status = NtOpenEvent( &h, SYNCHRONIZE, &attr );
     if (!status)
     {
-        ERR_(seh)( "[steam-api]   %s: opens\n", name );
+        SD_ERR( "[steam-api]   %s: opens\n", name );
         NtClose( h );
     }
-    else ERR_(seh)( "[steam-api]   %s: not opened, status %#x\n", name, (unsigned int)status );
+    else SD_ERR( "[steam-api]   %s: not opened, status %#x\n", name, (unsigned int)status );
 }
 
 static void ios_steam_api_diag( void )
@@ -2179,7 +2184,7 @@ static void ios_steam_api_diag( void )
     ULONG pid = 0;
 
     if (InterlockedIncrement( &told ) > 2) return;
-    ERR_(seh)( "[steam-api] steam_api found no running Steam; process %04x sees:\n",
+    SD_ERR( "[steam-api] steam_api found no running Steam; process %04x sees:\n",
                (unsigned int)HandleToULong( NtCurrentTeb()->ClientId.UniqueProcess ) );
     ios_sd_value( active, 0, "pid", "HKCU ActiveProcess pid", 0, &pid );
     ios_sd_value( active, 0, "ActiveUser", "HKCU ActiveProcess ActiveUser", 1, NULL );
@@ -2200,7 +2205,7 @@ static void ios_steam_api_diag( void )
         id.UniqueThread = 0;
         status = NtOpenProcess( &process, PROCESS_QUERY_LIMITED_INFORMATION, &attr, &id );
         if (status)
-            ERR_(seh)( "[steam-api]   OpenProcess(%u): status %#x\n", (unsigned int)pid, (unsigned int)status );
+            SD_ERR( "[steam-api]   OpenProcess(%u): status %#x\n", (unsigned int)pid, (unsigned int)status );
         else
         {
             PROCESS_BASIC_INFORMATION pbi;
@@ -2208,10 +2213,10 @@ static void ios_steam_api_diag( void )
             memset( &pbi, 0, sizeof(pbi) );
             status = NtQueryInformationProcess( process, ProcessBasicInformation, &pbi, sizeof(pbi), NULL );
             if (status)
-                ERR_(seh)( "[steam-api]   OpenProcess(%u): opens, query status %#x\n", (unsigned int)pid,
+                SD_ERR( "[steam-api]   OpenProcess(%u): opens, query status %#x\n", (unsigned int)pid,
                            (unsigned int)status );
             else
-                ERR_(seh)( "[steam-api]   OpenProcess(%u): opens, exit status %u (259 = still running)\n",
+                SD_ERR( "[steam-api]   OpenProcess(%u): opens, exit status %u (259 = still running)\n",
                            (unsigned int)pid, (unsigned int)pbi.ExitStatus );
             NtClose( process );
         }
@@ -2235,6 +2240,42 @@ static int ios_steam_api_message( const EXCEPTION_RECORD *rec )
     text[len - 1] = 0;
     return text[0] == '[' && text[1] == 'S' && text[2] == '_' &&
            strstr( text, "SteamAPI_IsSteamRunning() did not locate a running instance" ) != NULL;
+}
+
+/* build 580: [steam-api] for 64-bit processes (Rockstar Games Launcher; RGM16D, 0YZKW6 and 20 of the 40 Rockstar sessions of the 577
+ * wave, none of which ever printed it).
+ *
+ * In a 64-bit (ARM64EC) process OutputDebugString is raised and handled inside the PE ntdll (RtlRaiseException ->
+ * call_seh_handlers: kernelbase's own __EXCEPT takes it), so NtRaiseException above never sees it; only the 32-bit path did
+ * (Katana ZERO DVTCGN/X7YKSJ). The PE ntdll does print the text itself, "[exc] ml812   OutputDebugStringA: ..." from
+ * ios_exc_dump_str, through __wine_dbg_write -> unixcall_wine_dbg_write (debug.c). The shipped ntdll.dll is a committed binary
+ * the workflow does not rebuild, so this watches that line instead: tools/patch-ntdll-unix-dbg-write-hook.py makes
+ * unixcall_wine_dbg_write call this AFTER it has written the line. It reads nothing but the bytes it is handed, answers at once
+ * for every line that is not that one (a length check, a 26-byte compare, then a search), and for that one runs the report
+ * above, raw to stderr, at most twice per session (the same counter as the 32-bit path). Nothing is written and nothing
+ * changes for any other line. */
+static int ios_sd_has( const char *hay, size_t hay_len, const char *needle, size_t needle_len )
+{
+    size_t i;
+    if (needle_len > hay_len) return 0;
+    for (i = 0; i + needle_len <= hay_len; i++)
+        if (hay[i] == needle[0] && !memcmp( hay + i, needle, needle_len )) return 1;
+    return 0;
+}
+
+void ios_steam_api_dbg_hook( const char *str, unsigned int len )
+{
+    static const char tag[] = ":err:seh:ios_exc_dump_str ";
+    static const char text[] = "SteamAPI_IsSteamRunning() did not locate a running instance";
+    const char *colon;
+
+    if (len < 100 || len > 400 || ios_sd_raw) return;
+    colon = memchr( str, ':', 9 );     /* "tid:" ahead of the class */
+    if (!colon || (size_t)(colon - str) + sizeof(tag) - 1 > len || memcmp( colon, tag, sizeof(tag) - 1 )) return;
+    if (!ios_sd_has( colon, len - (size_t)(colon - str), text, sizeof(text) - 1 )) return;
+    ios_sd_raw = 1;
+    ios_steam_api_diag();
+    ios_sd_raw = 0;
 }
 /* steam-api-diag-test:end */
 

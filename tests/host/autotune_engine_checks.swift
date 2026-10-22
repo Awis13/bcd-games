@@ -495,6 +495,170 @@ struct AutoTuneEngineChecks {
         gcState = AutoTuneEngine.advance(gcState, report: gcOne, rules: rules, userKeys: [], fingerprint: "gc", log: nil)
         expect(gcState.status == "stuck", "and when the line did not help, nothing else is tried for it (\(gcState.status))")
 
+        // 21. Round 580, the tur580 logs. Each guard only narrows when a rule fires, how a session that is no game's is scored, or
+        // which attempts are spent again; the first half of every pair is the case it must still catch.
+        do {
+            let sigs = AutoTuneEngine.signals(rules)
+            func scan(_ text: String, chunk: Int = 1 << 20) -> AutoTuneLogScanner {
+                let sc = AutoTuneLogScanner(signals: sigs)
+                let bytes = Data(text.utf8)
+                var i = 0
+                while i < bytes.count { sc.feed(bytes.subdata(in: i..<min(i + chunk, bytes.count))); i += chunk }
+                sc.finish()
+                return sc
+            }
+            func session(_ text: String, end: AutoTuneSessionEnd = AutoTuneSessionEnd(sawProcess: true, seconds: 30)) -> AutoTuneReport {
+                AutoTuneEngine.report(end, scan(text), rules: rules, signals: sigs)
+            }
+            let head = "[build] v0.1.579 (579)\n[phase] wine-start             t+  0.639s rev=ml526\n"
+                + "D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000\n"
+            func exitLine(_ code: String) -> String {
+                "0024:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=\(code)) syscalls=0 unix_calls=4158\n"
+            }
+            let nocopyId = "x64-image-nocopy", smc = "x64-image-smc-nocopy", exeRule = "exe-window-fixed-base"
+
+            // exe-window-fixed-base: a program of 512 MiB or more is more than the 512 MB window of its line (Persona 4 Golden, 888 MiB).
+            func mapImage(_ size: String, base: String = "0x140000000", charact: String = "0x23") -> String {
+                "ml985: map_image_view size=\(size) base=\(base) info_base=\(base) map_addr=0 flags=0 charact=\(charact) limits=0x10000..0x73fffeffff\n"
+            }
+            let mainFail = "wine: failed to create main module for L\"C:\\\\Program Files (x86)\\\\Steam\\\\steamapps\\\\common\\\\Game\\\\Game.exe\", status c0000018\n"
+            expect(rules.first { $0.id == exeRule }?.exeMaxMB == 511, "the window rule carries the 511 MiB bar")
+            let big = session(head + mapImage("0x378b2000") + mainFail + exitLine("0xc0000018"))
+            expect(big.fixedExeMB == 888 && !big.matched.contains(exeRule), "an 888 MiB program: no window to try (\(big.matched), \(big.fixedExeMB ?? -1) MiB)")
+            expect(session(head + mapImage("0x18c91000") + mainFail + exitLine("0xc0000018")).matched.contains(exeRule),
+                   "a 397 MiB program (Yakuza: Like a Dragon) keeps the rule")
+            expect(session(head + mapImage("0x1fffffff") + mainFail + exitLine("0xc0000018")).matched.contains(exeRule)
+                   && !session(head + mapImage("0x20000000") + mainFail + exitLine("0xc0000018")).matched.contains(exeRule),
+                   "511 MiB (rounded down) passes the bar, 512 MiB does not")
+            expect(session(head + mapImage("0x378b2000", base: "0x7133520000") + mainFail + exitLine("0xc0000018")).matched.contains(exeRule)
+                   && session(head + mapImage("0x378b2000", charact: "0x22") + mainFail + exitLine("0xc0000018")).matched.contains(exeRule),
+                   "a big image that is not the fixed-base main program (another base, relocations kept) does not count")
+            for chunk in [1, 7, 4096] {
+                expect(scan(mapImage("0x378b2000") + mapImage("0x18c91000"), chunk: chunk).facts.fixedExeMB == 888,
+                       "the scanner reads the program size across \(chunk)-byte chunks, the largest wins")
+            }
+
+            // dotnet-gc-region-range: not on the 454 GB map of an install without the memory entitlements, which has no gap for any range.
+            let gcFail = "00ac:err:eventlog:ReportEventW L\"Message: GC heap initialization failed with error 0x8007000E\\n\"\n"
+            let map512 = "[device] address-map=[0x102aa0000,0x8000000000) 512GB increased-memory=1 extended-va=1\n"
+            let map454 = "[device] address-map=[0x100b5c000,0x7180000000) 454GB increased-memory=0 extended-va=0\n"
+            expect(session(head + map512 + gcFail + exitLine("0xe0434352")).matched == ["dotnet-gc-region-range"],
+                   "a 512 GB map keeps the GC rule")
+            expect(session(head + map454 + gcFail + exitLine("0xe0434352")).matched.isEmpty,
+                   "the 454 GB map of an install without memory rights: no try (largest gap 513 MB, Fortune Mill)")
+
+            // x64-image-smc-nocopy: the Mach handler's 200th unhandled fault is enough where the redelivery guard's line never came.
+            let storeNoalias = "[store-noalias] #1 rev=ml348 addr=0x140010122 insn=0x19000028 pc=0x16baa957c NO pool/anon alias | region 0x140010000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)\n"
+            let stripDeclined = "ml998: [wr-strip-declined]   view 0x140000000+0x56f4000 protect=0x180002d { SEC_IMAGE WRITECOPY  } page_off=0x10000\n"
+            let unhandled5 = "[mach_exc] UNHANDLED #5 pc=0x16baa957c addr=0x140010122 x18=0x71fff00000 type=1 lr=0x16bff8354 sp=0x71f4d40000 x16=0x14185997d x17=0x14185997d\n"
+            let unhandled200 = "[mach_exc] UNHANDLED #200 pc=0x16baa957c addr=0x140010122 x18=0x71fff00000 type=1 lr=0x16bff8354 sp=0x71f4d40000 x16=0x14185997d x17=0x14185997d\n"
+            expect(!session(head + storeNoalias + stripDeclined + unhandled5 + exitLine("0xc0000005")).matched.contains(smc),
+                   "an exec-downgraded image page and a handful of unhandled faults: recovered noise, no match")
+            expect(session(head + storeNoalias + stripDeclined + unhandled5 + unhandled200 + exitLine("0xc0000005")).matched.contains(smc),
+                   "the 200th unhandled fault (DARK SOULS III) matches")
+            expect(session(head + storeNoalias + stripDeclined + "[redeliv] 256 identical redeliveries of the same fault\n" + exitLine("0xc0000005")).matched.contains(smc),
+                   "and so does the redelivery guard's line, as before")
+            expect(!session(head + storeNoalias + unhandled200 + exitLine("0xc0000005")).matched.contains(smc)
+                   && !session(head + stripDeclined + unhandled200 + exitLine("0xc0000005")).matched.contains(smc),
+                   "the fault and the declined strip are both needed")
+            expect(!session(head + "[x64-image] L\"Game.exe\" 0x140000000+0x56f4000 mapped without a pool copy (pure x64)\n" + storeNoalias + stripDeclined + unhandled200 + exitLine("0xc0000005")).matched.contains(smc),
+                   "an image that already runs without a copy does not match")
+
+            // fex-avx-on: after a store the emulator could not do, or on a UDF data word, c000001d is no AVX instruction; FEX's HLT is.
+            let avxHead = head + "[bcd] library launch Game: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off\n"
+            let c1d = "0024:err:seh:call_seh_handlers [exc] ml811 code=c000001d addr=0000000152190110 flags=0 nparams=0 tid=0024 hit=1\n"
+            func insnStream(_ word: String) -> String { "[mach_exc] insn_stream PC-12..PC+8: f946a108 d63f0100 00000000 [\(word)] 7100027f 9a9f0100 f9400ffe\n" }
+            expect(session(avxHead + insnStream("d4400000") + c1d + exitLine("0xc000001d")).matched.contains("fex-avx-on"),
+                   "FEX's HLT before the c000001d (The Last of Us Part I): AVX on, as before")
+            expect(!session(avxHead + insnStream("00000036") + c1d + exitLine("0xc000001d")).matched.contains("fex-avx-on"),
+                   "a UDF data word (Portal): not AVX")
+            expect(!session(avxHead + "[store-undecoded] #1 rev=ml350 insn=0xc8e8ff60 pc=0x16d2d21d4 addr=0x7193ab4510 rw_addr=0x700cb6c510 \u{2014} alias OK, ADD THIS ENCODING to the case-4 emulator\n"
+                            + c1d + exitLine("0xc000001d")).matched.contains("fex-avx-on"),
+                   "a store the emulator could not do (Jetboard Joust): not AVX")
+
+            // Scanner and verdicts. A Wine process that ended with code 0 ends the crash evidence; faults after it are teardown (Shade).
+            let presenting = "Game is presenting (#1\nEarly detach: game presenting and settled\n"
+            let cleanExit = "[WineProc] Wine exited with code 0 (caught by longjmp)\n"
+            let lateFault = "E 34 NoExec instruction in entry block: 157B3AD\nwine: Unhandled exception code c0000005\n"
+                + exitLine("0xc0000005") + "[exit-report] status=0xc0000005\n"
+            let shade = scan(head + presenting + cleanExit + lateFault)
+            expect(shade.facts.cleanMainExit && shade.facts.unhandled == 0 && shade.facts.errorExits == 0 && shade.facts.exitStatus == nil,
+                   "faults, error exits and the exit report after a clean exit of the Wine process count for nothing")
+            let shadeEnd = AutoTuneSessionEnd(sawProcess: true, crashStatus: 0xC0000005, seconds: 78)
+            expect(session(head + presenting + cleanExit + lateFault, end: shadeEnd).outcome == "ran",
+                   "and neither does the app's crash status of such a run: it ran (Shade, 75 s of play)")
+            expect(session(head + presenting + "wine: Unhandled exception code c0000005\n" + cleanExit, end: shadeEnd).outcome == "crashed",
+                   "a fault BEFORE the clean exit is still a crash")
+            expect(!scan(head + "[WineProc] Wine exited with code 1 (caught by longjmp)\n" + lateFault).facts.cleanMainExit
+                   && !scan(head + "[WineProc] Wine exited with code 01 (caught by longjmp)\n").facts.cleanMainExit
+                   && !scan(head + "[WineProc] Wine exited with code -1073741819 (caught by longjmp)\n").facts.cleanMainExit,
+                   "only code 0 is a clean exit")
+            for chunk in [1, 7, 4096] {
+                expect(scan(head + cleanExit + lateFault, chunk: chunk).facts.cleanMainExit, "the clean exit is read across \(chunk)-byte chunks")
+            }
+
+            // The user left: the last focus line says the keyboard went elsewhere because the app went inactive or the pointer left.
+            let away = "[hwinput] keyboard focus: elsewhere (app inactive)\n"
+            let back = "[hwinput] keyboard focus: program (app active)\n"
+            let pointer = "[hwinput] keyboard focus: elsewhere (pointer left the game view)\n"
+            expect(scan(away).facts.focusLeft && scan(away + back).facts.focusLeft == false && scan(away + back + pointer).facts.focusLeft
+                   && !scan("[hwinput] keyboard focus: elsewhere (poll)\n").facts.focusLeft,
+                   "the scanner follows the last keyboard focus line; only 'app inactive' and 'pointer left the game view' are the user leaving")
+            expect(session(head + away).outcome == "inconclusive",
+                   "an early end with no crash, no quit and no rule, the user away: inconclusive, not a failure (Final Fantasy Tactics, 19 s)")
+            expect(session(head + away, end: AutoTuneSessionEnd(sawProcess: true, quitRequested: true, seconds: 20)).outcome == "exited-early",
+                   "a user who quit before the game was up keeps the old verdict")
+            expect(session(head + away + "[dock-launch] app 12210\n[svc] Unable to open SC manager! (1722)\n").outcome == "exited-early",
+                   "a session that shows a known failure keeps its verdict whoever left")
+            expect(session(head + "wine: Unhandled exception code c0000005\n" + away).outcome == "crashed", "and a crash before the user left is a crash")
+
+            // A Dock session whose frame counter stayed at 0 and in which nothing printed a frame: neither the clock nor the launch cover
+            // coming down to the desktop is a played game (Call of Duty HQ, 331 s). The stage keeps rising with them (rules and fixtures
+            // read it); the verdict does not.
+            let waiting = "detach-wait: presents=0 running=1 elapsed=330s\n[freeze] alive t+331s beats\n"
+            let desktop = "[launch-view] dismissed reason=show-desktop logs=0\n"
+            let noFrames = scan(head + waiting + desktop)
+            expect(noFrames.facts.noFrames && noFrames.facts.stage == 5 && !noFrames.facts.frameSeen,
+                   "331 s of presents=0 and the cover to the desktop: stage \(noFrames.facts.stage), but no frame was seen")
+            // Round 580 (lead): the outcome does NOT use noFrames (a game drawing without the Dock's counter, OpenGL or GDI,
+            // would read as not run and get lines); only the round 577 rule stands: no frame AND under stage 3.
+            expect(session(head + waiting + desktop).outcome == "ran", "stage 5 by the clock still counts as run (\(session(head + waiting + desktop).outcome))")
+            expect(session(head + "detach-wait: presents=620 running=1 elapsed=30s\n" + desktop).outcome == "ran"
+                   && scan(head + "detach-wait: presents=620 running=1 elapsed=30s\n").facts.frameSeen,
+                   "with frames counted, nothing changes")
+
+            // better(): the pool failure gone and the modules loaded beats a start that could not load, whatever stage and clock say.
+            var baseline = report("crashed", stage: 3, seconds: 60, matched: [nocopyId])
+            baseline.jitImageFailMB = 384
+            let loaded = report("crashed", stage: 2, seconds: 21, matched: [])
+            expect(AutoTuneEngine.better(loaded, than: baseline, tried: nocopyId), "RAIDOU Remastered: the start that loaded counts as further")
+            expect(!AutoTuneEngine.better(loaded, than: baseline), "the line must be named (the unchanged retry does not get this)")
+            expect(!AutoTuneEngine.better(report("crashed", stage: 2, seconds: 21, matched: [nocopyId]), than: baseline, tried: nocopyId),
+                   "the rule's own failure still in the log: no")
+            var stillFailing = report("crashed", stage: 2, seconds: 21, matched: [])
+            stillFailing.jitImageFailMB = 120
+            expect(!AutoTuneEngine.better(stillFailing, than: baseline, tried: nocopyId), "another image refused: no")
+            expect(!AutoTuneEngine.better(report("crashed", stage: 1, seconds: 21, matched: []), than: baseline, tried: nocopyId),
+                   "a start whose modules never loaded: no")
+            var noPool = baseline
+            noPool.jitImageFailMB = nil
+            expect(!AutoTuneEngine.better(loaded, than: noPool, tried: nocopyId), "a baseline that was not a pool failure: no")
+            var raidou = AutoTuneEngine.advance(AutoTuneState(), report: baseline, rules: rules, userKeys: [], fingerprint: "r", log: nil)
+            expect(raidou.candidateRule == nocopyId, "RAIDOU: the baseline's pool failure brings the NOCOPY line (\(raidou.candidateRule ?? "-"))")
+            raidou = AutoTuneEngine.advance(raidou, report: loaded, rules: rules, userKeys: [], fingerprint: "r", log: nil)
+            expect(raidou.kept == ["env.MADEIRA_X64_IMAGE_NOCOPY = 1"] && raidou.attempts.last?.kept == true,
+                   "and the line is kept after the run that loaded, not reverted (\(raidou.kept))")
+
+            // A rule that adds the very lines of a rule already tried is not a new try (NOCOPY belongs to three rules).
+            var tried = AutoTuneEngine.advance(AutoTuneState(), report: baseline, rules: rules, userKeys: [], fingerprint: "t", log: nil)
+            tried = AutoTuneEngine.advance(tried, report: report("crashed", stage: 3, seconds: 31, matched: [nocopyId, smc]), rules: rules, userKeys: [], fingerprint: "t", log: nil)
+            expect(tried.attempts.last?.kept == false && tried.candidate == nil && tried.status == "stuck",
+                   "NOCOPY tried and reverted: the rule with the same line is not tried after it (\(tried.status), \(tried.candidateRule ?? "-"))")
+            var smcFirst = AutoTuneEngine.advance(AutoTuneState(), report: report("crashed", stage: 3, matched: [smc]), rules: rules, userKeys: [], fingerprint: "t2", log: nil)
+            smcFirst = AutoTuneEngine.advance(smcFirst, report: report("crashed", stage: 3, matched: [smc]), rules: rules, userKeys: [], fingerprint: "t2", log: nil)
+            expect(smcFirst.candidateRule == smc && smcFirst.candidate == ["env.MADEIRA_X64_IMAGE_NOCOPY = 1"], "but on its own, after the unchanged retry, it is tried")
+        }
+
         // 15. State survives JSON (the app saves it between sessions).
         if let d = try? JSONEncoder().encode(s), let back = try? JSONDecoder().decode(AutoTuneState.self, from: d) {
             expect(back == s, "the state round-trips through JSON")

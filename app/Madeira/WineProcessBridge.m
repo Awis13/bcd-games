@@ -2517,6 +2517,7 @@ static void wine_session_end(void)
     unsetenv("MADEIRA_X64_MACHINE");  /* madeira-bcd: likewise (BeamNG.drive's launcher) */
     unsetenv("MADEIRA_TINY_WINDOW_FIX"); /* madeira-bcd: likewise (American Truck Simulator's tiny window) */
     unsetenv("MADEIRA_OPTIN_DLLS");   /* madeira-bcd: likewise */
+    unsetenv("MADEIRA_WG_64BIT");     /* madeira-bcd: likewise (Resident Evil 2's decoders; a later game keeps the stub table) */
     unsetenv("MADEIRA_VCRT_ARM64_KEY"); /* madeira-bcd: likewise (the Runtimes\\arm64 marker is per game) */
     unsetenv("MADEIRA_TAIL_CARVE_EXEC_CHECK"); /* madeira-bcd: likewise */
     unsetenv("MADEIRA_POOL_CLAMP_SECTIONS"); /* madeira-bcd: likewise */

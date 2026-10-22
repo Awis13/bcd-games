@@ -69,9 +69,9 @@ struct SteamPlaytime: Codable, Equatable, Sendable {
         return hours < 10 ? String(format: "%.1f hrs played", hours) : "\(Int(hours.rounded())) hrs played"
     }
 
-    func lastPlayedText(formatter: DateFormatter = SteamPlaytime.dayFormatter) -> String? {
+    func lastPlayedText(now: Date = Date()) -> String? {
         guard lastPlayed > 0 else { return nil }
-        return "Last played " + formatter.string(from: Date(timeIntervalSince1970: TimeInterval(lastPlayed)))
+        return "Last played " + BCDFormat.dayWord(Date(timeIntervalSince1970: TimeInterval(lastPlayed)), now: now)
     }
 
     /// "12.5 hrs played · Last played Yesterday"
@@ -79,12 +79,6 @@ struct SteamPlaytime: Codable, Equatable, Sendable {
         let parts = [played, lastPlayedText()].compactMap { $0 }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
-
-    static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium; formatter.timeStyle = .none; formatter.doesRelativeDateFormatting = true
-        return formatter
-    }()
 
     /// CPlayer_GetOwnedGames_Response: games = 2 { appid = 1, playtime_forever = 4, rtime_last_played = 11 }.
     static func parse(_ data: Data) throws -> [Int: SteamPlaytime] {
@@ -413,7 +407,7 @@ final class SteamOwnedLibrary: ObservableObject {
         let name = SteamGamesModel.shared.games.first { $0.id == appID }?.name ?? ""
         let safe = String(name.map { "/\\:*?\"<>|".contains($0) ? "-" : $0 }.prefix(80))
             .trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".")))
-        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+        let stamp = BCDFormat.utcFolderStamp(Date())
         return cloudBackupsFolder.appendingPathComponent(safe.isEmpty ? "\(appID)" : "\(safe) (\(appID))", isDirectory: true)
             .appendingPathComponent(stamp, isDirectory: true)
     }

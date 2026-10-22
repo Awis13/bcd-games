@@ -191,12 +191,7 @@ import UniformTypeIdentifiers
     }
 
     /// "2026-10-18" as a date.
-    private static func day(_ text: String) -> Date? {
-        let format = DateFormatter()
-        format.locale = Locale(identifier: "en_US_POSIX")
-        format.dateFormat = "yyyy-MM-dd"
-        return format.date(from: text)
-    }
+    private static func day(_ text: String) -> Date? { BCDFormat.day(text) }
 
     // MARK: Display
 
@@ -499,7 +494,7 @@ import UniformTypeIdentifiers
                 switch DockOffline.mark(appID, preparedOnline: custom) {
                 case .ready(let saved):
                     state = "Ready: Steam can sign in without a connection"
-                    why = "Steam signed in online on this device on \(saved.formatted(date: .abbreviated, time: .omitted)), so it can sign this account in offline. With no internet, BCD asks Steam to start the game offline, and Steam checks its saved sign-in and licenses each time. The saved sign-in runs out after a while: start a game online now and then. Games that need their own servers still need them."
+                    why = "Steam signed in online on this device on \(BCDFormat.fullDate(saved)), so it can sign this account in offline. With no internet, BCD asks Steam to start the game offline, and Steam checks its saved sign-in and licenses each time. The saved sign-in runs out after a while: start a game online now and then. Games that need their own servers still need them."
                 case .needsFirstStart:
                     state = "Needs one online start of this game"
                     why = "Steam can sign in offline, but this game sets up its program for your account on its first start, and that needs a connection. Start it once online."
@@ -949,9 +944,6 @@ import UniformTypeIdentifiers
         guard let entry = entry(for: game) else { return nil }
         let path = entry.windowsPath
         guard let state = AutoTune.enabled ? AutoTune.state(path) : nil else { return nil }
-        let time = DateFormatter()
-        time.locale = Locale(identifier: "en_US_POSIX")
-        time.dateFormat = "yyyy-MM-dd HH:mm"
         var out = ["BCD auto-tune report: \(entry.title)", "status: \(state.status)"]
         if state.status == "known" { out.append("known crash: \(state.known ?? "-") (\(state.knownReason ?? "-"))") }
         if !state.kept.isEmpty { out.append("kept lines:"); out += state.kept.map { "  " + $0 } }
@@ -962,7 +954,7 @@ import UniformTypeIdentifiers
         out.append("starts:")
         for step in state.attempts {
             let kept = step.kept.map { $0 ? "kept" : "taken back" } ?? "-"
-            out.append("  \(time.string(from: step.date)) \(step.rule ?? "first run") [\(step.lines.joined(separator: "; "))] -> "
+            out.append("  \(BCDFormat.reportTime(step.date)) \(step.rule ?? "first run") [\(step.lines.joined(separator: "; "))] -> "
                        + "\(step.outcome), stage \(step.stage), \(Int(step.seconds)) s, \(step.presents) frames, \(kept) \(step.log ?? "")")
         }
         if let evidence = state.best?.evidence, !evidence.isEmpty { out.append("signature lines:"); out += evidence.map { "  " + $0 } }

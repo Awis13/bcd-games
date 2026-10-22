@@ -211,7 +211,7 @@ known = set(re.findall(r'ConfigOption\(key: "([^"]+)"', catalog)) | set(cat.OVER
 NOT_FROM_LAYER = {"metalfx-upscale", "fps-limit", "env.MADEIRA_PAD_MODE", "pool", "wx", "usd-time", "d3d9", "metal-validation"}
 LINE = re.compile(r"^([A-Za-z0-9._-]+) = (\S.*)$")
 FIELDS = {"id", "lines", "priority", "all", "any", "none", "outcomes", "session", "api", "ramMinMB", "ramMaxMB",
-          "minStage", "maxStage", "imageMaxMB", "upgrade", "noRetry", "reason", "evidence", "fixedIn"}
+          "minStage", "maxStage", "imageMaxMB", "exeMaxMB", "upgrade", "noRetry", "reason", "evidence", "fixedIn"}
 ids = [r["id"] for r in rules]
 check("rule ids are unique", len(ids) == len(set(ids)))
 for r in rules:
