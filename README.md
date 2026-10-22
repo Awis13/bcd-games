@@ -95,10 +95,36 @@ through BCD Dock:
 - Horizon Zero Dawn and Horizon Forbidden West
 - Red Dead Redemption 2, including the Rockstar Launcher
 - GTA V, Legacy and Enhanced
+- Grand Theft Auto IV: The Complete Edition
+- Counter-Strike 2
 - Crysis Remastered, Crysis 2 Remastered and Crysis 3 Remastered
 
 Also running: Warcraft II: Battle.net Edition. Work in progress: Ratchet & Clank: Rift Apart
 (around 20 FPS, with visual glitches).
+
+### Seen running in testers' logs and reports
+
+These games reached gameplay and were played for several minutes without a crash in the logs
+testers sent with Send Log, or were reported running on the BCD Discord with the device and
+frame rate. None of them was played from start to finish, and results depend on the device,
+the iOS version and the settings.
+
+- Celeste
+- Cleared Hot
+- Dark Souls II: Scholar of the First Sin
+- Dead Space (2008)
+- DELTARUNE
+- Doom 3
+- Fallout: New Vegas
+- Far Cry 3
+- Final Fantasy VII Remake Intergrade (M5 iPad Pro: low settings, 900p, 30 FPS)
+- Kingdom Hearts III (M5 iPad Pro: highest settings, mostly 60 FPS)
+- Marie's Room
+- METAL GEAR SOLID: Peace Walker - Master Collection Version
+- Metro 2033 Redux (iPhone 17 Pro: 60 FPS with tessellation off)
+- Moonlighter
+- Timberborn
+- Tomb Raider (2013)
 
 How well a game runs varies a lot; many games do not start yet.
 
