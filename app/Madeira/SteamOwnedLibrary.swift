@@ -1027,6 +1027,7 @@ final class SteamOwnedLibrary: ObservableObject {
         // BCD DLC (owner, 2026-10-22: "DLC cevabını hatırlamasın, her seferinde sorsun"): a cancelled first install keeps no
         // DLC answer; the next Install asks again.
         dlc.choices.forget(appID)
+        ExternalDrive.shared.release(appID)
         let apps = Self.steamApps
         Task { @MainActor in
             await running?.value
@@ -1053,6 +1054,7 @@ final class SteamOwnedLibrary: ObservableObject {
         DockInstallers.setRunsNext(game.id, true, prefix: MadeiraDock.prefix)
         // BCD DLC (owner, 2026-10-22): an uninstalled game keeps no DLC answer; a reinstall asks again.
         dlc.choices.forget(game.id)
+        ExternalDrive.shared.release(game.id)
         let apps = Self.steamApps, id = game.id, folder = game.installDir
         Task.detached(priority: .utility) {
             SteamInstallFiles.delete(appID: id, folderName: folder, steamApps: apps)
@@ -1080,6 +1082,11 @@ final class SteamOwnedLibrary: ObservableObject {
                 throw SteamError.appInfoNotFound(UInt32(appID))
             }
             try FileManager.default.createDirectory(at: SteamInstallPaths.common(drive: Self.drive), withIntermediateDirectories: true)
+            // madeira-bcd (2026-10-23): a game the external drive holds downloads there, through its link in `common`
+            // (the downloader's own folder name for it).
+            try ExternalDrive.shared.prepare(appID: appID,
+                                                folder: SteamInstallFiles.safeFolderName(info.installDir.isEmpty ? "app_\(appID)" : info.installDir),
+                                                common: SteamInstallPaths.common(drive: Self.drive))
             // madeira-bcd (2026-10-22): env.MADEIRA_STEAM_CHUNK_SHA1 = 1 refuses a chunk whose SHA-1 differs from the manifest's;
             // off (the default), such a chunk is only logged (ChunkDigestCheck in DepotDownloader.swift).
             ChunkDigestCheck.shared.enforce = SteamSignIn.flag("MADEIRA_STEAM_CHUNK_SHA1", default: false)

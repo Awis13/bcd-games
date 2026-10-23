@@ -96,6 +96,7 @@ import os
             NotificationCenter.default.publisher(for: .GCControllerDidConnect).map { _ in () }.eraseToAnyPublisher(),
             NotificationCenter.default.publisher(for: .GCControllerDidDisconnect).map { _ in () }.eraseToAnyPublisher(),
             NotificationCenter.default.publisher(for: .GCControllerDidBecomeCurrent).map { _ in () }.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: ExternalDrive.changed).map { _ in () }.eraseToAnyPublisher(),
         ]
         Publishers.MergeMany(device)
             .receive(on: DispatchQueue.main)
@@ -285,6 +286,7 @@ import os
             state = .notInstalled
         }
         var game = BCDGame(id: BCDLiveID.steam(item.id), title: item.name, store: .steam, state: state, size: size)
+        if ExternalDrive.shared.holds(item.id) { game.place = .externalDrive }
         let playtime = account.playtime[item.id]
         let steamPlayed = playtime.flatMap { $0.lastPlayed > 0 ? Date(timeIntervalSince1970: TimeInterval($0.lastPlayed)) : nil }
         game.lastPlayed = [entry?.lastPlayed, steamPlayed].compactMap { $0 }.max()
@@ -452,7 +454,8 @@ import os
         storageAsked = Date()
         system.freeDeviceBytes = space.free
         system.totalDeviceBytes = space.total
-        system.freeExternalBytes = nil   // the engine has no external drive yet (docs/HARICI-SSD.md)
+        // madeira-bcd (2026-10-23): asking also opens the drive's folder when it was plugged in since.
+        system.freeExternalBytes = ExternalDrive.shared.freeBytes
         if store.system != system { store.system = system }
     }
 
@@ -514,6 +517,11 @@ import os
 
     func play(_ game: BCDGame) {
         guard !starting, LibraryModel.shared.current == nil else { return }
+        // madeira-bcd (2026-10-23): a game on the external drive starts only with the drive plugged in.
+        if case .steam(let appID)? = BCDLiveID.parse(game.id), let blocker = ExternalDrive.shared.startBlocker(appID: appID) {
+            settled { LibraryModel.shared.error = blocker }
+            return
+        }
         starting = true
         settled { [weak self] in
             self?.starting = false
@@ -577,8 +585,19 @@ import os
         if epic(.install, game.id, place: place) { return }
         // A game from Files is added, not installed.
         guard case .steam(let appID)? = BCDLiveID.parse(game.id) else { return }
-        if place == .externalDrive { LogStore.shared.log("[bcd-ui] no external drive in this build: app=\(appID) goes to the device") }
+        if place == .externalDrive, !claimExternalDrive(appID) { return }
         download(appID)
+    }
+
+    /// madeira-bcd (2026-10-23): Install › External drive: the download goes to the drive's folder
+    /// (ExternalDrive.swift). False, with the reason shown, when the drive is not plugged in.
+    private func claimExternalDrive(_ appID: Int) -> Bool {
+        guard ExternalDrive.shared.open() else {
+            settled { LibraryModel.shared.error = ExternalDriveError.notConnected.message }
+            return false
+        }
+        ExternalDrive.shared.claim(appID)
+        return true
     }
 
     func update(_ game: BCDGame) {

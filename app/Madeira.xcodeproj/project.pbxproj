@@ -34,6 +34,7 @@
 		A1000B16 /* BCDLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000B16 /* BCDLibraryView.swift */; };
 		A1000B17 /* BCDDownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000B17 /* BCDDownloadsView.swift */; };
 		A1000B18 /* BCDLiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000B18 /* BCDLiveStore.swift */; };
+		A1000ED1 /* ExternalDrive.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000ED1 /* ExternalDrive.swift */; };
 		A1000B19 /* BCDLiveFrontEnd.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000B19 /* BCDLiveFrontEnd.swift */; };
 		A1000BE0 /* BCDControllerHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000BE0 /* BCDControllerHub.swift */; };
 		A1000BE1 /* BCDControllerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000BE1 /* BCDControllerScreen.swift */; };
@@ -333,6 +334,7 @@
 		A2000B16 /* BCDLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLibraryView.swift; sourceTree = "<group>"; };
 		A2000B17 /* BCDDownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDDownloadsView.swift; sourceTree = "<group>"; };
 		A2000B18 /* BCDLiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLiveStore.swift; sourceTree = "<group>"; };
+		A2000ED1 /* ExternalDrive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalDrive.swift; sourceTree = "<group>"; };
 		A2000B19 /* BCDLiveFrontEnd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLiveFrontEnd.swift; sourceTree = "<group>"; };
 		A2000BE0 /* BCDControllerHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDControllerHub.swift; sourceTree = "<group>"; };
 		A2000BE1 /* BCDControllerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDControllerScreen.swift; sourceTree = "<group>"; };
@@ -682,6 +684,7 @@
 				A2000B16 /* BCDLibraryView.swift */,
 				A2000B17 /* BCDDownloadsView.swift */,
 				A2000B18 /* BCDLiveStore.swift */,
+				A2000ED1 /* ExternalDrive.swift */,
 				A2000B19 /* BCDLiveFrontEnd.swift */,
 				A2000BE0 /* BCDControllerHub.swift */,
 				A2000BE1 /* BCDControllerScreen.swift */,
@@ -1161,6 +1164,7 @@
 				A1000B16 /* BCDLibraryView.swift in Sources */,
 				A1000B17 /* BCDDownloadsView.swift in Sources */,
 				A1000B18 /* BCDLiveStore.swift in Sources */,
+				A1000ED1 /* ExternalDrive.swift in Sources */,
 				A1000B19 /* BCDLiveFrontEnd.swift in Sources */,
 				A1000BE0 /* BCDControllerHub.swift in Sources */,
 				A1000BE1 /* BCDControllerScreen.swift in Sources */,

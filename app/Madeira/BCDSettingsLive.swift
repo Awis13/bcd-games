@@ -543,6 +543,18 @@ struct BCDTouchEditorHost: View {
             self?.addGamesMessage = added == 0 ? "No new games found." : "\(added) game\(added == 1 ? "" : "s") added to your library."
         }
     }
+    // madeira-bcd (2026-10-23): the external drive's folder (ExternalDrive.swift).
+    var externalDriveName: String? { ExternalDrive.shared.isChosen ? ExternalDrive.shared.folderName ?? "External drive" : nil }
+
+    func chooseExternalDrive(_ url: URL) throws {
+        try ExternalDrive.shared.choose(url)
+        objectWillChange.send()
+    }
+
+    func forgetExternalDrive() {
+        ExternalDrive.shared.forget()
+        objectWillChange.send()
+    }
 }
 
 // MARK: - .NET Framework

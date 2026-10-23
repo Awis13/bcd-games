@@ -575,6 +575,11 @@ struct BCDStorageItem: Identifiable, Hashable {
     var addingGames: Bool { get }
     var addGamesMessage: String? { get }
     func addEveryGame()
+    /// madeira-bcd (2026-10-23): the folder on a USB drive Steam games can install to; nil when none is chosen.
+    var externalDriveName: String? { get }
+    /// Keeps a folder from the folder picker; throws with the reason in BCD's words.
+    func chooseExternalDrive(_ url: URL) throws
+    func forgetExternalDrive()
 }
 
 struct BCDStorageSettings<Backend: BCDStorageBackend>: View {
@@ -584,10 +589,12 @@ struct BCDStorageSettings<Backend: BCDStorageBackend>: View {
     @Environment(\.bcdLayout) private var layout
     @State private var backup: BCDShareItems?
     @State private var choosingBackup = false
+    @State private var choosingDrive = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             room
+            externalDrive
             BCDSettingsGroup(title: "Games", footer: games.isEmpty ? nil : "Largest first.") {
                 if games.isEmpty {
                     BCDSettingsInfoRow(title: "No games installed yet", value: "")
@@ -623,6 +630,30 @@ struct BCDStorageSettings<Backend: BCDStorageBackend>: View {
             model.ask(BCDSettingsConfirm(title: "Restore the saves in \(url.lastPathComponent)?",
                                          message: "Every file in C:\\users with the same name is replaced.",
                                          choices: [.init(title: "Restore", destructive: true) { backend.restoreSaves(from: url) }]))
+        }
+    }
+
+    /// madeira-bcd (2026-10-23): the folder on a USB drive that Steam games can install to.
+    private var externalDrive: some View {
+        let name = backend.externalDriveName
+        let free = store.system.freeExternalBytes
+        let note = name == nil ? "Pick a folder on a USB drive (exFAT or APFS). Then a game's Install › External drive downloads it there."
+            : free.map { "\(name ?? "") · \(BCDFormat.bytes($0)) free" } ?? "\(name ?? ""): connect the drive to install or play its games."
+        return BCDSettingsGroup(title: "External drive",
+                                footer: "Games on the drive play only while it is connected. Their saves stay on this device.") {
+            BCDSettingsActionRow(id: BCDSettingsID.control(.storage, "external-drive"),
+                                 title: name == nil ? "Choose a folder on the drive" : "Choose another folder",
+                                 note: note, symbol: "externaldrive") { choosingDrive = true }
+            if name != nil {
+                BCDSettingsActionRow(id: BCDSettingsID.control(.storage, "external-drive-forget"), title: "Forget the drive",
+                                     symbol: "xmark.circle", destructive: true) { backend.forgetExternalDrive() }
+            }
+        }
+        .fileImporter(isPresented: $choosingDrive, allowedContentTypes: [.folder]) { result in
+            guard case .success(let url) = result else { return }
+            do { try backend.chooseExternalDrive(url) } catch {
+                model.ask(BCDSettingsConfirm(title: "BCD couldn't use this folder", message: error.localizedDescription, choices: []))
+            }
         }
     }
 

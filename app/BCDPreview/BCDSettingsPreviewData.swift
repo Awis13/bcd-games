@@ -216,6 +216,9 @@ extension BCDSettingsBackends {
     func discardBackup(_ url: URL) {}
     func restoreSaves(from url: URL) { savesMessage = "412 files put back." }
     func addEveryGame() { addGamesMessage = "2 games added to your library." }
+    @Published private(set) var externalDriveName: String? = "BCD Games"
+    func chooseExternalDrive(_ url: URL) throws { externalDriveName = url.lastPathComponent }
+    func forgetExternalDrive() { externalDriveName = nil }
 }
 
 @MainActor final class BCDPreviewDeveloper: BCDDeveloperBackend {

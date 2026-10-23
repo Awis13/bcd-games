@@ -51,9 +51,13 @@ enum SteamInstallFiles {
     nonisolated static func delete(appID: Int, folderName: String, steamApps: URL) {
         let fm = FileManager.default
         let common = steamApps.appendingPathComponent("common", isDirectory: true).resolvingSymlinksInPath().standardizedFileURL
-        let folder = common.appendingPathComponent(safeFolderName(folderName)).resolvingSymlinksInPath().standardizedFileURL
-        if folder.path.hasPrefix(common.path + "/"), folder.deletingLastPathComponent().path == common.path {
-            try? fm.removeItem(at: folder)
+        // madeira-bcd (2026-10-23): a game on the external drive is a link here; its folder there goes with it.
+        let link = steamApps.appendingPathComponent("common", isDirectory: true).appendingPathComponent(safeFolderName(folderName))
+        if !removeLinkedFolder(link) {
+            let folder = common.appendingPathComponent(safeFolderName(folderName)).resolvingSymlinksInPath().standardizedFileURL
+            if folder.path.hasPrefix(common.path + "/"), folder.deletingLastPathComponent().path == common.path {
+                try? fm.removeItem(at: folder)
+            }
         }
         let recordURL = steamApps.appendingPathComponent("appmanifest_\(appID).acf")
         if let state = record(appID: appID, steamApps: steamApps) {
@@ -74,6 +78,21 @@ enum SteamInstallFiles {
         }
         try? fm.removeItem(at: recordURL)
         try? fm.removeItem(at: steamApps.appendingPathComponent("downloading/\(appID)", isDirectory: true))
+    }
+
+    /// When `link` is a symbolic link (a game on the external drive, ExternalDrive.swift): removes
+    /// the game folder it points to (only a `…/steamapps/common/<name>` folder), then the link.
+    /// False when `link` is no link.
+    nonisolated static func removeLinkedFolder(_ link: URL) -> Bool {
+        let fm = FileManager.default
+        guard let target = try? fm.destinationOfSymbolicLink(atPath: link.path) else { return false }
+        let folder = URL(fileURLWithPath: target, isDirectory: true).standardizedFileURL
+        let common = folder.deletingLastPathComponent()
+        if common.lastPathComponent == "common", common.deletingLastPathComponent().lastPathComponent == "steamapps" {
+            try? fm.removeItem(at: folder)
+        }
+        try? fm.removeItem(at: link)
+        return true
     }
 
     /// Validates a manifest path and folds directory spelling to the first
