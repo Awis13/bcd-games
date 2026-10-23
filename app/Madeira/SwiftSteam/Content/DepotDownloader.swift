@@ -193,8 +193,13 @@ final class DepotDownloader {
 
         let remaining = prepared.remainingUncompressed
         if remaining > 0 {
-            let values = try? installURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-            let available = UInt64(max(0, values?.volumeAvailableCapacityForImportantUsage ?? Int64.max))
+            // madeira-bcd (2026-10-23): a game on the external drive is a link in `common`; the room that counts is
+            // the drive's, behind the link. An external volume may report no "important usage" room: plain room then.
+            let values = try? installURL.resolvingSymlinksInPath()
+                .resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
+            let important = values?.volumeAvailableCapacityForImportantUsage ?? 0
+            let plain = Int64(values?.volumeAvailableCapacity ?? 0)
+            let available = UInt64(max(0, important > 0 ? important : plain > 0 ? plain : Int64.max))
             if available < remaining { throw SteamError.insufficientDiskSpace(needed: remaining, available: available) }
         }
 
