@@ -1508,6 +1508,20 @@ jobs:
       # (Apple's agreement, app/Madeira/d3d12/NOTICE.txt); build/madeira-d3d12/deps.sh
       # checks both against their pinned hashes. A missing or mismatched converter
       # would build the stub that draws nothing in any D3D12 game, so fail instead.
+      # Awis13 fork: the iOS converter library is not in the public repository (Apple's agreement). Take the copy
+      # that ships inside the matching public BCD release and pin the build to its hash; it is never committed here.
+      - name: Fetch the iOS Metal Shader Converter library from the public release (fork only)
+        if: github.repository == 'Awis13/bcd-games'
+        shell: bash
+        run: |
+          mkdir -p app/Madeira/d3d12
+          curl -fsSL -o "$RUNNER_TEMP/bcd.ipa" https://github.com/thebcd69/bcd-games/releases/download/v0.1.592/BCD.ipa
+          unzip -p "$RUNNER_TEMP/bcd.ipa" Payload/Madeira.app/d3d12/libmetalirconverter.dylib > app/Madeira/d3d12/libmetalirconverter.dylib
+          SHA=$(shasum -a 256 app/Madeira/d3d12/libmetalirconverter.dylib | cut -d' ' -f1)
+          [ "$SHA" = "4865c8ec999833d8df0df69b8a52eb819adf452b0b12df7651c409425d311e3b" ] || { echo "::error::unexpected converter library $SHA"; exit 1; }
+          sed -i '' "s/local ios_lib_sha=\"[0-9a-f]*\"/local ios_lib_sha=\"$SHA\"/" build/madeira-d3d12/deps.sh
+          grep -n "ios_lib_sha=" build/madeira-d3d12/deps.sh
+
       - name: Locate Metal Shader Converter headers
         shell: bash
         run: |
@@ -3130,6 +3144,19 @@ jobs:
           else
             echo "::notice::all six macdrv symbols are exported"
           fi
+
+      # Awis13 fork: the engine's static libraries, so a change to BCD's own code relinks on the Mac in minutes.
+      - uses: actions/upload-artifact@v4
+        if: github.repository == 'Awis13/bcd-games'
+        with:
+          name: bcd-engine-libs
+          path: |
+            app/*.a
+            app/Madeira/*.a
+            FEX/build-ios
+            !FEX/build-ios/**/*.o
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Package Madeira and Madeira2 unsigned IPAs
         run: python3 tools/ota-variants.py package build-out/Madeira.xcarchive/Products/Applications/Madeira.app build-out ${{ steps.bn.outputs.n }}
