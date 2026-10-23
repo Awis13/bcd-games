@@ -1309,6 +1309,9 @@ struct ContentView: View {
 
     /// The rest of Play, with JIT on: checks the entry's launch profile and starts it.
     private func startLibraryEntry(_ entry: LibraryEntry) {
+        // madeira-bcd (2026-10-22): an Epic game BCD installed starts signed in: its one-time code is fetched first and this start runs
+        // again with it (BCDEpicStart.swift). Any other entry, and Epic off (env.BCD_EPIC = 0), go straight on.
+        guard !BCDEpic.enabled || BCDEpic.shared.preLaunch(entry, retry: { startLibraryEntry(entry) }) else { return }
         do { if entry.desktop != true { _ = try LibraryModel.executable(entry.launchRelativePath) }; try entry.validate() }
         catch {
             library.error = error.localizedDescription
@@ -1321,6 +1324,7 @@ struct ContentView: View {
             library.error = "The program path or its launch arguments are longer than BCD allows."; return
         }
         entry.configureLaunch()
+        if BCDEpic.enabled { BCDEpic.shared.applyLaunch(entry) }   // madeira-bcd (2026-10-22): an Epic game's signed-in start goes through BCD Host (BCDEpicStart.swift)
         // madeira-bcd: the game's own options (LibraryBCD.swift); this run's
         // log is named below, by upstream's rule (the program a launch starts).
         BCDLaunch.applyLibrary(entry, sessionLog: false)
@@ -1442,6 +1446,7 @@ struct ContentView: View {
         // contention that blocks the main thread RunLoop, triggering iOS hang detection
         ws_log_quiet = 1
 
+        let epicSession = profile.map { BCDEpic.shared.owns(entryID: $0.id) } ?? false   // madeira-bcd (2026-10-22): read here, on the main thread (BCDEpic is main-actor); used for the msiexec line below
         DispatchQueue.global(qos: .userInitiated).async {
             // A library entry's launch profile (executable, arguments, x87
             // precision, frame limit).
@@ -1566,6 +1571,17 @@ struct ContentView: View {
                 setenv("MADEIRA_DOCK_SESSION", "1", 1)
             } else {
                 unsetenv("MADEIRA_DOCK_SESSION")
+            }
+            // madeira-bcd (2026-10-22): an Epic game's session gets msiexec in the 64-bit system32 (WineProcessBridge.m):
+            // Paradox's launcher stub (Cities: Skylines on Epic, dowser.exe) installs its launcher by running "msiexec"
+            // from PATH, and only the 32-bit msiexec is bundled ("executable file not found in %PATH%", build 585).
+            // Every other launch clears it and is unchanged; env.MADEIRA_MSIEXEC_SYSTEM32 = 1 in a game's config or
+            // bcd.cfg (exported later) asks for it in any session, = 0 refuses it for an Epic game.
+            if epicSession {
+                setenv("MADEIRA_MSIEXEC_SYSTEM32", "1", 1)
+                logStore.log("[msiexec64] Epic game: msiexec in system32 for this session")
+            } else {
+                unsetenv("MADEIRA_MSIEXEC_SYSTEM32")
             }
             // A Dock session runs Valve's client headless, with no Chromium, so
             // nothing claims the 8 GB V8 cage holdback (virtual_ios.c). Let ntdll

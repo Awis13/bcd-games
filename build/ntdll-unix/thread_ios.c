@@ -2238,8 +2238,11 @@ static int ios_steam_api_message( const EXCEPTION_RECORD *rec )
     if (NtReadVirtualMemory( NtCurrentProcess(), (const void *)rec->ExceptionInformation[1], text, len, &got ) || got != len)
         return 0;
     text[len - 1] = 0;
-    return text[0] == '[' && text[1] == 'S' && text[2] == '_' &&
-           strstr( text, "SteamAPI_IsSteamRunning() did not locate a running instance" ) != NULL;
+    if (text[0] != '[' || text[1] != 'S' || text[2] != '_') return 0;
+    if (strstr( text, "SteamAPI_IsSteamRunning() did not locate a running instance" )) return 1;
+    /* build 591: the older wording of the legacy SteamStub games ("[S_API FAIL] SteamAPI_Init() failed; unable to locate a running
+     * instance of Steam, or a local steamclient.dll."; GTA: Vice City D938HM and V85VDT in the Dock). */
+    return !strncmp( text, "[S_API FAIL]", 12 ) && strstr( text, "unable to locate a running instance of Steam" ) != NULL;
 }
 
 /* build 580: [steam-api] for 64-bit processes (Rockstar Games Launcher; RGM16D, 0YZKW6 and 20 of the 40 Rockstar sessions of the 577
@@ -2267,17 +2270,106 @@ void ios_steam_api_dbg_hook( const char *str, unsigned int len )
 {
     static const char tag[] = ":err:seh:ios_exc_dump_str ";
     static const char text[] = "SteamAPI_IsSteamRunning() did not locate a running instance";
+    static const char old_fail[] = "[S_API FAIL]";   /* build 591: the older wording, with... */
+    static const char old_text[] = "unable to locate a running instance of Steam";   /* ...this text */
     const char *colon;
 
     if (len < 100 || len > 400 || ios_sd_raw) return;
     colon = memchr( str, ':', 9 );     /* "tid:" ahead of the class */
     if (!colon || (size_t)(colon - str) + sizeof(tag) - 1 > len || memcmp( colon, tag, sizeof(tag) - 1 )) return;
-    if (!ios_sd_has( colon, len - (size_t)(colon - str), text, sizeof(text) - 1 )) return;
+    if (!ios_sd_has( colon, len - (size_t)(colon - str), text, sizeof(text) - 1 ) &&
+        !(ios_sd_has( colon, len - (size_t)(colon - str), old_fail, sizeof(old_fail) - 1 ) &&
+          ios_sd_has( colon, len - (size_t)(colon - str), old_text, sizeof(old_text) - 1 ))) return;
     ios_sd_raw = 1;
     ios_steam_api_diag();
     ios_sd_raw = 0;
 }
 /* steam-api-diag-test:end */
+
+/* madeira-bcd (build 591): [cxx-type], log only -- the type name of a C++ exception (code 0xE06D7363) as it is thrown.
+ *
+ * Sekiro (ZGH9MT, licensed, Dock; A7V9T2 on build 576 is the same site) dies 24 s after the launch: two lookups of the Japanese code
+ * page (nls 932), a C++ throw whose four handler frames decline, then __fastfail(7) at sekiro.exe+0x23a6cc4. The PE ntdll's line names
+ * the code and the parameters but not WHAT was thrown, so nobody can say which catch should have taken it. The record's third parameter
+ * is the _ThrowInfo; its CatchableTypeArray lists the thrown type first, then the types it converts to (base classes), each with a
+ * type_info whose name is the decorated type (".?AVruntime_error@std@@"). Layouts:
+ *   64-bit (4 parameters: magic, object, ThrowInfo, image base): ThrowInfo { attributes, pmfnUnwind, pForwardCompat, pCatchableTypeArray }
+ *     as 32-bit RVAs from the image base; CatchableTypeArray { nCatchableTypes, RVA[] }; CatchableType { properties, pType RVA, ... };
+ *     type_info { vtable (8), runtime data (8), name[] } = name at +16.
+ *   32-bit (3 parameters: magic, object, ThrowInfo): the same with 32-bit pointers; name at +8. A WoW process's pointers are guest addresses.
+ * Every read is NtReadVirtualMemory on this process, which reports an unreadable address instead of faulting. It reports at most 12 throws
+ * (two lines each), each ThrowInfo once; nothing is written and the record is left as the fix-up above made it. */
+static int ios_cxx_read( ULONG_PTR addr, void *buf, SIZE_T len, int guest32 )
+{
+    SIZE_T got = 0;
+
+    if (guest32) addr = (ULONG_PTR)ios_wow_host_ptr( (ULONG)addr );
+    if (addr < 0x10000) return 0;
+    return !NtReadVirtualMemory( NtCurrentProcess(), (const void *)addr, buf, len, &got ) && got == len;
+}
+
+static void ios_cxx_type_name( ULONG_PTR type_info, int is64, int guest32, char *out, size_t outsz )
+{
+    char raw[72];
+    size_t i;
+
+    out[0] = '?'; out[1] = 0;
+    memset( raw, 0, sizeof(raw) );
+    if (!ios_cxx_read( type_info + (is64 ? 16 : 8), raw, sizeof(raw) - 1, guest32 )) return;
+    for (i = 0; i < sizeof(raw) - 1 && raw[i] && i < outsz - 1; i++)
+        out[i] = (raw[i] >= 0x20 && raw[i] < 0x7f) ? raw[i] : '?';
+    out[i] = 0;
+    if (!i) { out[0] = '?'; out[1] = 0; }
+}
+
+static void ios_cxx_throw_diag( const EXCEPTION_RECORD *rec )
+{
+    static LONG lines;
+    static ULONG_PTR seen[12];
+    static int nseen;
+    int is64 = rec->NumberParameters >= 4, guest32 = !is64 && ios_wow_base() != 0, i;
+    ULONG_PTR throw_info = rec->ExceptionInformation[2], base = is64 ? rec->ExceptionInformation[3] : 0;
+    ULONG attrs = 0, count = 0, ti[4], refs[8], ct[7];
+    char first[72] = "? (ThrowInfo or its type list not readable)", list[240];
+    size_t len = 0;
+
+    if (!throw_info) return;
+    for (i = 0; i < nseen; i++) if (seen[i] == throw_info) return;
+    if (nseen >= 12 || InterlockedIncrement( &lines ) > 12) return;
+    seen[nseen++] = throw_info;
+
+    list[0] = 0;
+    if (ios_cxx_read( throw_info, ti, sizeof(ti), guest32 ))   /* { attributes, pmfnUnwind, pForwardCompat, pCatchableTypeArray } */
+    {
+        ULONG_PTR cta = is64 ? base + ti[3] : (ULONG_PTR)ti[3];
+
+        attrs = ti[0];
+        if (ti[3] && ios_cxx_read( cta, &count, 4, guest32 ))
+        {
+            ULONG k, want = count > 8 ? 8 : count;
+
+            if (want && ios_cxx_read( cta + 4, refs, want * 4, guest32 ))
+                for (k = 0; k < want; k++)
+                {
+                    ULONG_PTR ctp = is64 ? base + refs[k] : (ULONG_PTR)refs[k], type;
+                    char name[72];
+
+                    if (!refs[k] || !ios_cxx_read( ctp, ct, sizeof(ct), guest32 )) continue;   /* { properties, pType, PMD x3, size, copy } */
+                    type = is64 ? base + ct[1] : (ULONG_PTR)ct[1];
+                    ios_cxx_type_name( type, is64, guest32, name, sizeof(name) );
+                    if (!k) strcpy( first, name );
+                    else if (len < sizeof(list) - 80) len += snprintf( list + len, sizeof(list) - len, " %s", name );
+                }
+        }
+    }
+    ERR_(seh)( "[cxx-type] build591 %d-bit throw at %p: thrown %s; also catchable as:%s (%u catchable type(s), ThrowInfo %p attributes %#x, "
+               "object %p, magic %#lx)\n",
+               is64 ? 64 : 32, rec->ExceptionAddress, first, list[0] ? list : " nothing", (unsigned)count, (void *)throw_info,
+               (unsigned)attrs, (void *)rec->ExceptionInformation[1], (unsigned long)rec->ExceptionInformation[0] );
+    ERR_(seh)( "[cxx-type]   exception parameters (%u): p0=%#lx p1=%#lx p2=%#lx p3=%#lx\n", (unsigned)rec->NumberParameters,
+               (unsigned long)rec->ExceptionInformation[0], (unsigned long)rec->ExceptionInformation[1],
+               (unsigned long)rec->ExceptionInformation[2], (unsigned long)(rec->NumberParameters > 3 ? rec->ExceptionInformation[3] : 0) );
+}
 
 #endif
 
@@ -2335,6 +2427,9 @@ NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL 
             ERR_(seh)( "[cxx-throw] ok ThrowInfo %p base %p (addr %p)\n",
                        (void *)info, (void *)base, rec->ExceptionAddress );
     }
+    /* madeira-bcd (build 591): [cxx-type], after the ThrowInfo above has been put right (log only) */
+    if (rec && rec->ExceptionCode == 0xE06D7363 && (rec->NumberParameters == 4 || rec->NumberParameters == 3))
+        ios_cxx_throw_diag( rec );
     /* madeira-bcd: Chromium's out-of-memory exit (SocialClubHelper.exe died of
      * it on the first launch of build 442, on four threads at once). The PE
      * [exc] line names the code only; PartitionAlloc passes { size of the

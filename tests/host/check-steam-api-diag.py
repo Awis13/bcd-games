@@ -213,6 +213,14 @@ int main(int argc, char **argv)
         printf(" short=%d", ios_steam_api_message(&rec));
         rec.ExceptionInformation[0] = 201;
         printf(" long=%d\n", ios_steam_api_message(&rec));
+        /* build 591: the older wording of the legacy SteamStub games (GTA: Vice City D938HM / V85VDT; 74Z00F's 64-bit variant) */
+        printf("old32=%d old64=%d pipe=%d running_failed=%d old_without_fail=%d old_wide=%d\n",
+               message("[S_API FAIL] SteamAPI_Init() failed; unable to locate a running instance of Steam, or a local steamclient.dll.\n", DBG_PRINTEXCEPTION_C, 2),
+               message("[S_API FAIL] SteamAPI_Init() failed; unable to locate a running instance of Steam, or a local steamclient64.dll..", DBG_PRINTEXCEPTION_C, 2),
+               message("[S_API FAIL] SteamAPI_Init() failed; create pipe failed. And a few more words so that the string is long enough to pass.", DBG_PRINTEXCEPTION_C, 2),
+               message("[S_API FAIL] SteamAPI_Init() failed; SteamAPI_IsSteamRunning() failed.. And a few more words so that the string is long.", DBG_PRINTEXCEPTION_C, 2),
+               message("[S_API] SteamAPI_Init() failed; unable to locate a running instance of Steam, or a local steamclient.dll.\n", DBG_PRINTEXCEPTION_C, 2),
+               message("[S_API FAIL] SteamAPI_Init() failed; unable to locate a running instance of Steam, or a local steamclient.dll.\n", 0x4001000a, 2));
         return 0;
     }
     if (argc > 1 && !strcmp(argv[1], "hook"))
@@ -223,6 +231,9 @@ int main(int argc, char **argv)
         static const char other_text[] = "00d8:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: \"src\\public\\tier1\\interface.h (271) : Assertion Failed: Failed to load SDL3.dll and a little more text.\"\n";
         static const char loaded_line[] = "00d8:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: \"[S_API] SteamAPI_Init(): Loaded 'C:\\Program Files (x86)\\Steam\\steamclient64.dll' OK..\"\n";
         static const char steam32[] = "00d4:err:seh:ios_sd_value [steam-api] steam_api found no running Steam; process 00d4 sees:\n";
+        static const char old_line[] = "0044:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: \"[S_API FAIL] SteamAPI_Init() failed; unable to locate a running instance of Steam, or a local steamclient64.dll..\"\n";
+        static const char pipe_line[] = "008c:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: \"[S_API FAIL] SteamAPI_Init() failed; create pipe failed. and a few more words of padding\"\n";
+        static const char fail_only[] = "0044:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: \"[S_API FAIL] SteamAPI_Init() failed; SteamAPI_IsSteamRunning() failed.. and a few more words\"\n";
         char longline[600];
         dup2(1, 2);                                          /* raw reports go to stderr: read them from stdout */
         scenario_full = 1;
@@ -230,6 +241,8 @@ int main(int argc, char **argv)
         ios_steam_api_dbg_hook(other_text, (unsigned)strlen(other_text));
         ios_steam_api_dbg_hook(loaded_line, (unsigned)strlen(loaded_line));
         ios_steam_api_dbg_hook(steam32, (unsigned)strlen(steam32));
+        ios_steam_api_dbg_hook(pipe_line, (unsigned)strlen(pipe_line));       /* [S_API FAIL] but another cause */
+        ios_steam_api_dbg_hook(fail_only, (unsigned)strlen(fail_only));
         ios_steam_api_dbg_hook("short\n", 6);
         ios_steam_api_dbg_hook(line, 99);                    /* cut before the text: too short or no text */
         memset(longline, 'x', sizeof longline); memcpy(longline, line, strlen(line));
@@ -238,6 +251,17 @@ int main(int argc, char **argv)
         ios_steam_api_dbg_hook(line, (unsigned)strlen(line));      /* report 1 */
         ios_steam_api_dbg_hook(line, (unsigned)strlen(line));      /* report 2 */
         ios_steam_api_dbg_hook(line, (unsigned)strlen(line));      /* nothing: two per session */
+        fflush(stdout); printf("--- end\n");
+        return 0;
+    }
+    if (argc > 1 && !strcmp(argv[1], "hook-old"))
+    {
+        static const char old_line[] = "0044:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringA: \"[S_API FAIL] SteamAPI_Init() failed; unable to locate a running instance of Steam, or a local steamclient64.dll..\"\n";
+        dup2(1, 2);
+        scenario_full = 1;
+        ios_steam_api_dbg_hook(old_line, (unsigned)strlen(old_line));
+        ios_steam_api_dbg_hook(old_line, (unsigned)strlen(old_line));
+        ios_steam_api_dbg_hook(old_line, (unsigned)strlen(old_line));     /* nothing: two per session */
         fflush(stdout); printf("--- end\n");
         return 0;
     }
@@ -274,6 +298,12 @@ with tempfile.TemporaryDirectory() as t:
         check("the test accepts steam_api's text and nothing else: " + m.strip(),
               m.splitlines()[0] == "steam=1 loaded=0 other=0 code=0 params=0" and
               m.splitlines()[1] == "null=0 bad_pointer=0 short=0 long=0")
+        check("the older wording ([S_API FAIL] ... unable to locate a running instance of Steam) is accepted for the 32-bit and 64-bit "
+              "steamclient names, and nothing near it is: " + m.splitlines()[2],
+              m.splitlines()[2] == "old32=1 old64=1 pipe=0 running_failed=0 old_without_fail=0 old_wide=0")
+        out = run("hook-old")
+        check("the PE ntdll's line with the older wording makes two raw reports, not three",
+              out.split("--- end")[0].count("[steam-api] steam_api found no running Steam; process 00d4 sees:") == 2)
         out = run("full")
         lines = [l for l in out.splitlines() if l.startswith("[steam-api]")]
         check("two reports, not three", sum(1 for l in lines if "found no running Steam" in l) == 2)

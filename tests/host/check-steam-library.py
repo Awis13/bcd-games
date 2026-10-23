@@ -199,6 +199,10 @@ require(sources['SteamInstall.swift'].count(f'"{relative_root}/steamapps"') == 1
 downloader = sources['SwiftSteam/Content/DepotDownloader.swift']
 require('SteamLog.event("[steam-depot] install begin' in downloader and 'depot-key refused' in downloader, 'the download logs App IDs and depot IDs')
 require(not re.search(r'LibraryFlags|MADEIRA_STEAM_[A-Z_]+', downloader), 'the downloader has no switches of its own')
+require('ChunkDigestCheck.shared.enforce = SteamSignIn.flag("MADEIRA_STEAM_CHUNK_SHA1", default: false)' in sources['SteamOwnedLibrary.swift'],
+        "the chunk SHA-1 refusal is the library's switch, off by default (a mismatch is only logged)")
+require('downloader.directoryFallback = SteamSignIn.flag("MADEIRA_STEAM_CDN_FALLBACK", default: true)' in sources['SteamOwnedLibrary.swift'],
+        "the content-host fallback is the library's switch, on by default (it only acts when no Valve HTTPS server is usable)")
 dock = (app / 'MadeiraDock.swift').read_text()
 require('static func validate(_ game: DockGame' in dock and 'game.installed' in dock, "Dock's validation reads the install record (StateFlags)")
 
@@ -885,6 +889,40 @@ func packageBuffer(apps: [UInt32], depots: [UInt32]) -> Data {
             DepotDownloader.serverEligibility(["allowed_app_ids": [5]], appID: 1) == .other &&
             DepotDownloader.serverEligibility(["allowed_app_ids": [1], "https_support": "mandatory"], appID: 1) == .usable &&
             DepotDownloader.serverEligibility([:], appID: 1) == .usable, "content server eligibility")
+    require(ChunkDigestCheck.sha1(Data("abc".utf8)) == hexData("a9993e364706816aba3e25717850c26c9cd0d89d"),
+            "a chunk digest is its content's SHA-1")
+    do {
+        let check = ChunkDigestCheck(), named = ChunkDigestCheck.sha1(Data("abc".utf8))
+        check.begin()
+        require(check.accept(Data("abc".utf8), sha: named, depot: 1, host: "h") && check.accept(Data("abd".utf8), sha: named, depot: 1, host: "h"),
+                "by default a chunk whose SHA-1 differs from the manifest's is still written (only logged), as downloads always did")
+        check.enforce = true
+        require(!check.accept(Data("abd".utf8), sha: named, depot: 1, host: "h") && check.accept(Data("abc".utf8), sha: named, depot: 1, host: "h"),
+                "with the switch on, a chunk whose SHA-1 differs is refused and a matching one written")
+        require(check.accept(Data("abd".utf8), sha: Data(), depot: 1, host: "h"), "a manifest entry without a digest is not judged")
+        require(check.summary() == "chunk-sha checked=4 mismatched=2 enforced", "the install's last line counts the checks")
+    }
+    do {
+        let plain: Set<String> = ["xz.pphimalayanrt.com", "dl.steam.clngaa.com", "st.dl.eccdnx.com"]
+        let usual: [[String: Any]] = [["host": "cache1-fra1.steamcontent.com", "https_support": "mandatory"],
+                                      ["host": "edgenext.cdn.steampipe.steamcontent.com", "https_support": "unavailable"],
+                                      ["host": "lancache.steamcontent.com"]]
+        let a = DepotDownloader.selectContentHosts(usual, appID: 1, plainHTTP: plain.union(["edgenext.cdn.steampipe.steamcontent.com"]), fallback: true)
+        require(a.hosts == ["https://cache1-fra1.steamcontent.com"] && a.line == "[steam-cdn] offered=3 usable=1 skipped-no-https=1 skipped-other=1",
+                "with a Valve HTTPS server the content hosts and their line are what they were (no fallback)")
+        let region: [[String: Any]] = [["host": "xz.pphimalayanrt.com", "https_support": "unavailable"],
+                                       ["host": "secure.example-cdn.cn", "https_support": "optional"],
+                                       ["host": "new.example-cdn.cn", "https_support": "unavailable"]]
+        let b = DepotDownloader.selectContentHosts(region, appID: 1, plainHTTP: plain, fallback: true)
+        require(b.hosts == ["https://secure.example-cdn.cn", "http://xz.pphimalayanrt.com"],
+                "no Valve HTTPS server: the directory's HTTPS hosts first, then only the plain-HTTP hosts Info.plist allows")
+        require(DepotDownloader.selectContentHosts(region, appID: 1, plainHTTP: plain, fallback: false).hosts.isEmpty,
+                "with the fallback switch off nothing but the last-resort host is used, as before")
+        let check = ChunkDigestCheck(), named = ChunkDigestCheck.sha1(Data("abc".utf8))
+        check.begin()
+        require(!check.accept(Data("abd".utf8), sha: named, depot: 1, host: "http://xz.pphimalayanrt.com"),
+                "a plain-HTTP chunk whose SHA-1 differs is always refused")
+    }
     let health = ContentHostHealth()
     for _ in 0..<3 { health.recordFailure("https://bad", reason: "x") }
     require(health.order(["https://bad", "https://good"], seed: 0).first == "https://good", "a server that keeps failing moves to the back of the rotation")
@@ -1063,7 +1101,8 @@ try:
                   steam / 'Core/SteamMessageCodec.swift', steam / 'Core/SteamCMSession.swift',
                   steam / 'Content/ContentDecryptor.swift', steam / 'Content/DepotManifest.swift',
                   steam / 'Library/SteamAppInfo.swift', steam / 'Library/SteamLibraryFetcher.swift',
-                  steam / 'Install/AppManifestWriter.swift', app / 'SteamInstall.swift', app / 'SteamKeyValues.swift']
+                  steam / 'Install/AppManifestWriter.swift', app / 'SteamInstall.swift', app / 'SteamKeyValues.swift',
+                  app / 'BCDSteamDLC/BCDSteamDLC.swift', app / 'BCDSteamDLC/BCDSteamDLCDownload.swift']   # the downloader's DLC steps (Foundation only)
     exe = work / 'check'
     build = subprocess.run([SWIFTC, '-parse-as-library', '-swift-version', '5', '-sanitize=address', '-g', '-o', str(exe),
                             '-I', str(shim / 'CommonCrypto'), '-I', str(shim / 'Compression'), '-I', str(shim / 'zlib'),

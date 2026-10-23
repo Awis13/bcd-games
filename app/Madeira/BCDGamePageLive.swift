@@ -60,6 +60,8 @@ import UniformTypeIdentifiers
                 guard BCDGOG.enabled, let id = BCDGOG.shared.installs[product]?.entryID else { return nil }
                 return library.entries.first { $0.id == id }
             }
+            // An installed Epic game is the library entry its install made (BCDLiveStoreEpic).
+            if let id = BCDLiveStore.shared.epicEntryID(game.id) { return library.entries.first { $0.id == id } }
             guard game.store == .local else { return nil }
             return library.entries.first { $0.desktop != true && $0.steamAppID == nil && $0.title == game.title }
         }
@@ -96,6 +98,11 @@ import UniformTypeIdentifiers
         if let id, steam.downloads[id] != nil, SteamGamesModel.shared.games.contains(where: { $0.id == id && $0.installed }) {
             d.updating = true
         }
+        dlcOffer(game, into: &d)   // BCD's DLC support (BCDSteamDLC/BCDGamePageLiveDLC.swift): the question before a first install
+        // An Epic game BCD cannot install says why, and one that may not start says so, before Install.
+        let advice = BCDLiveStore.shared.epicInstallAdvice(game.id)
+        d.installBlocker = advice.blocker
+        d.installWarning = advice.warning
         guard game.state.isInstalled, let entry = entry(for: game) else { return d }
         let desktop = entry.desktop == true
         let path = entry.windowsPath
@@ -105,14 +112,15 @@ import UniformTypeIdentifiers
         if d.lastPlayed == nil { d.lastPlayed = entry.lastPlayed }
         d.blockers = blockers(entry, appID: id)
         // GOG's runtimes the game's build names that BCD does not install yet.
-        d.storeNote = BCDLiveStore.shared.gogNote(game.id)
+        d.storeNote = BCDLiveStore.shared.gogNote(game.id) ?? BCDLiveStore.shared.epicNote(game.id)
         // The sections only while Options is open: nothing is built for what is not on screen.
         if settings {
             d.groups = [display(entry, profile), direct3D(entry, profile), compatibility(entry), controls(entry, profile)]
             if let binds = binds(entry) { d.groups.append(binds) }
             if let launch = launch(entry) { d.groups.append(launch) }
             if let id { d.groups.append(steamGroup(entry, id)) }
-            if !desktop { d.groups.append(libraryGroup(entry, gog: game.store == .gog)) }
+            if let dlc = dlcGroup(game) { d.groups.append(dlc) }
+            if !desktop { d.groups.append(libraryGroup(entry, gog: game.store == .gog || game.store == .epic)) }
         }
         if let id {
             let installed = SteamGamesModel.shared.games.first { $0.id == id }
@@ -122,8 +130,8 @@ import UniformTypeIdentifiers
             if SteamOwnedLibrary.cloudEnabled { cloud(id, into: &d) }
             d.canRepair = SteamOwnedLibrary.enabled && managed && !downloading && steam.signedIn
             if managed && !downloading { d.removal = .uninstall(frees: entry.folderBytes ?? game.size) }
-        } else if game.store == .gog {
-            // Uninstall deletes a GOG game's files through the store (BCDLiveStoreGOG).
+        } else if game.store == .gog || game.store == .epic {
+            // Uninstall deletes a GOG or Epic game's files through the store (BCDLiveStoreGOG, BCDLiveStoreEpic).
             d.removal = .uninstall(frees: entry.folderBytes ?? game.size)
         } else if !desktop {
             d.removal = .removeFromLibrary
@@ -549,7 +557,7 @@ import UniformTypeIdentifiers
 
     // MARK: Library
 
-    /// `gog`: a GOG game's name and pictures are GOG's, so it has no Name or Find on Steam row.
+    /// `gog`: a GOG or Epic game's name and pictures are the store's, so it has no Name or Find on Steam row.
     private func libraryGroup(_ entry: LibraryEntry, gog: Bool) -> BCDGameSettingGroup {
         let steamGame = entry.steamAppID != nil
         var settings: [BCDGameSetting] = []
@@ -647,8 +655,8 @@ import UniformTypeIdentifiers
         case "stuck": status = "No known fix fits the last failure (tried: \(state.triedSummary)). " + Self.reportAdvice
         case "gave-up": status = "Stopped after \(tuned.most) attempts. " + Self.reportAdvice
         case "known":
-            status = "A crash in BCD itself, not a setting: \(state.knownReason ?? state.known ?? "a known problem")."
-            if let fixed = state.knownFixedIn {
+            status = "\(state.knownLead): \(state.knownReason ?? state.known ?? "a known problem")."
+            if state.knownNoFix != true, let fixed = state.knownFixedIn {
                 if let ran = state.knownBuild, ran >= fixed {
                     status += " Build \(fixed) was to fix it, yet build \(ran) still crashed: share the report."
                 } else {
@@ -677,6 +685,8 @@ import UniformTypeIdentifiers
     /// once, the install records and BCD Dock's per-game state are read again, a Steam game not
     /// yet compared with Steam Cloud in this run is, and "The game's own program" finds its program.
     func opened(_ game: BCDGame) {
+        dlcOpened(game)
+        BCDLiveStore.shared.epicOpened(game.id)
         guard game.state.isInstalled else { return }
         if var entry = entry(for: game) {
             var changed = moveOldFields(&entry)
@@ -746,6 +756,7 @@ import UniformTypeIdentifiers
     }
 
     func set(_ setting: String, to value: String, for game: BCDGame) {
+        if dlcSet(setting, to: value, for: game) { return }
         let on = value == "1"
         switch setting {
         case "resolution": change(game) { $0.resolution = value }
@@ -1105,6 +1116,8 @@ import UniformTypeIdentifiers
             dock.$status.dropFirst().map { _ in () }.eraseToAnyPublisher(),
             lists.$version.dropFirst().map { _ in () }.eraseToAnyPublisher(),
             lists.$lastChecked.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            dlcChanges,
+            BCDLiveStore.shared.epicDetailChanges,
         ]
         Publishers.MergeMany(changes)
             .debounce(for: .milliseconds(250), scheduler: RunLoop.main)

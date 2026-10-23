@@ -74,6 +74,7 @@
 #include "ddk/ntddk.h"
 #include "unix_private.h"
 #include "ios_wow.h"
+#include "../bcd_epic_mask.h"   /* Modified by BCD (2026-10-22): Epic's sign-in arguments are masked in the command line printed below */
 #include "wine/condrv.h"
 #include "wine/server.h"
 #include "wine/debug.h"
@@ -1653,8 +1654,23 @@ NTSTATUS WINAPI NtCreateUserProcess( HANDLE *process_handle_ptr, HANDLE *thread_
     TRACE( "%s image %s cmdline %s parent %p machine %x\n", debugstr_us( &path ),
            debugstr_us( &params->ImagePathName ), debugstr_us( &params->CommandLine ), parent, machine );
 #ifdef WINE_IOS
-    ERR("NtCreateUserProcess: image=%s cmdline=%s\n",
-        debugstr_us( &params->ImagePathName ), debugstr_us( &params->CommandLine ));
+    {
+        /* Modified by BCD (2026-10-22, Epic Games milestone 2): a game started signed in has Epic's one-time sign-in code, the account's ID
+         * and its name on its command line; they print as "*" (build/bcd_epic_mask.h). Any other command line prints as it always did. */
+        UNICODE_STRING shown = params->CommandLine;
+        WCHAR *masked = malloc( shown.Length + sizeof(WCHAR) );   /* a masked text is never longer */
+        long masked_len = masked ? bcd_epic_mask_w( (const unsigned short *)shown.Buffer, shown.Length / sizeof(WCHAR), (unsigned short *)masked ) : -1;
+
+        if (masked_len >= 0)
+        {
+            shown.Buffer = masked;
+            shown.Length = (USHORT)(masked_len * sizeof(WCHAR));
+            shown.MaximumLength = shown.Length + sizeof(WCHAR);
+        }
+        ERR("NtCreateUserProcess: image=%s cmdline=%s\n",
+            debugstr_us( &params->ImagePathName ), debugstr_us( &shown ));
+        free( masked );
+    }
 
     /* TEMP HACK (Steam S3 2026-07-10, task #29): refuse to spawn Steam's
      * minidump reporter. The reporter child hits the deep guest-exception-

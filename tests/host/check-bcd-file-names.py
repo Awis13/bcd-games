@@ -211,7 +211,7 @@ NEW = [
     ("app/Madeira/DockInstallers.swift", 'static let scriptName = "bcd-dock-installers.cmd"', 1),
     ("app/Madeira/DockInstallers.swift", 'static let resultName = "bcd-dock-installers.result"', 1),
     ("app/Madeira/DockInstallers.swift", 'directory.appendingPathComponent("bcd-game-installs.cfg")', 1),
-    ("app/Madeira/DockInstallers.swift", 'registry.appendingPathExtension("bcd-bak")', 2),   # 578: the CEG service key's backup too
+    ("app/Madeira/DockInstallers.swift", 'registry.appendingPathExtension("bcd-bak")', 3),   # 578: the CEG service key's backup too; 591: the install-script registry values
     ("app/Madeira/SavesAndShortcuts.swift", 'appendingPathComponent("BCD-saves-\\(BCDFormat.fileStamp(Date(), seconds: false)).zip")', 1),
     ("app/Madeira/GameLibrary.swift", 'static let backupSuffix = ".bcd-orig"', 1),
     ("build/ntdll-unix/virtual_ios.c", 'const char *f = "/bcd-retire-trace.txt";', 1),

@@ -142,7 +142,12 @@ fi
 # decoder MFT and wmadmod the WMA decoder MFT the reader finds in the registry; both decoders run on BCD's winegstreamer
 # unix side, which a 64-bit game gets with env.MADEIRA_WG_64BIT = 1 (build/ntdll-unix/winegstreamer_wmv_ios.c).
 # The ByteStreamHandlers entries for .wmv and .asf and the CLSIDs are already in the prefix template. MADEIRA_OPTIN_BUILD=0 skips them.
-OPTIN_WANT="dxva2 evr xpsprint sfc sfc_os tbs twinapi.appcore mfasfsrcsnk wmvdecod wmadmod"
+# oledlg, fwpuclnt and sensapi (2026-10-23, testers' logs of build 580): Digimon Story Cyber Sleuth's exe imports oledlg.dll
+# (PGET5A), FINAL FANTASY XV's ffxv_s.exe imports fwpuclnt.dll (DM9SAF), Borderlands 3's Vivox SDK (vivoxsdk.dll) imports
+# SensApi.dll (VFM84T); each ended at once with c0000135 (Borderlands 3 with UE4's delay-load exception). The 32-bit set has
+# all three; the 64-bit one had none. oledlg imports ole32, comdlg32, user32 and advapi32, all shipped; fwpuclnt and sensapi
+# import nothing beyond the kernel. A program that loads one of them optionally today keeps running without it, hence opt-in.
+OPTIN_WANT="dxva2 evr xpsprint sfc sfc_os tbs twinapi.appcore mfasfsrcsnk wmvdecod wmadmod oledlg fwpuclnt sensapi"
 OPT=""
 if [ "${MADEIRA_OPTIN_BUILD:-1}" != 0 ]; then
     for d in $OPTIN_WANT; do

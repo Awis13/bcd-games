@@ -659,6 +659,194 @@ struct AutoTuneEngineChecks {
             expect(smcFirst.candidateRule == smc && smcFirst.candidate == ["env.MADEIRA_X64_IMAGE_NOCOPY = 1"], "but on its own, after the unchanged retry, it is tried")
         }
 
+        // 22. Round 591, the tur591 logs. Each change only narrows when a rule fires, widens a rule to the second case of a failure it already
+        // answers, or changes how a session that was playing is scored; the first half of every pair is the case that must stay as it was.
+        do {
+            let sigs = AutoTuneEngine.signals(rules)
+            func scan(_ text: String, chunk: Int = 1 << 20) -> AutoTuneLogScanner {
+                let sc = AutoTuneLogScanner(signals: sigs)
+                let bytes = Data(text.utf8)
+                var i = 0
+                while i < bytes.count { sc.feed(bytes.subdata(in: i..<min(i + chunk, bytes.count))); i += chunk }
+                sc.finish()
+                return sc
+            }
+            func session(_ text: String, end: AutoTuneSessionEnd = AutoTuneSessionEnd(sawProcess: true, seconds: 30)) -> AutoTuneReport {
+                AutoTuneEngine.report(end, scan(text), rules: rules, signals: sigs)
+            }
+            let head = "[build] v0.1.580 (580)\n[phase] wine-start             t+  0.639s rev=ml526\n"
+                + "D 24 Load module Game.exe (game.exe-0123456789abcdef): 140000000\n"
+            func exitLine(_ code: String) -> String {
+                "0024:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=\(code)) syscalls=0 unix_calls=4158\n"
+            }
+
+            // (a) A game that was playing, closed by the user, then the app killed before it came back: it played.
+            var qk = AutoTuneLogFacts(); qk.stage = 5; qk.quitRequested = true; qk.presentsCounted = true; qk.presentsLogged = 8296
+            let killedEnd = AutoTuneSessionEnd(killed: true)
+            expect(AutoTuneEngine.outcome(killedEnd, qk) == "quit", "a quit after 8,296 frames, then the kill: quit (Cult of the Lamb T0K6FH)")
+            expect(AutoTuneEngine.outcome(AutoTuneSessionEnd(killed: true, userSaid: "froze"), qk) == "hung", "...unless the user said it froze")
+            var qf = qk; qf.freezeGaps = 2
+            var qg = qk; qg.gpuErrors = 1
+            var q3 = qk; q3.stage = 3
+            var qn = qk; qn.presentsCounted = nil
+            var qz = qk; qz.presentsLogged = 0
+            var qc = qk; qc.crashEvidenceAtQuit = 1
+            expect([qf, qg, q3, qn, qz, qc].allSatisfy { AutoTuneEngine.outcome(killedEnd, $0) == "hung" },
+                   "a freeze, a GPU error, a stage under 4, no frame counter, no frame, or a crash before the quit: hung, as before")
+            var qr = qk; qr.returnedToLibrary = true
+            expect(AutoTuneEngine.outcome(killedEnd, qr) == "inconclusive", "the app that came back to the library is not the case: as before")
+            var nq = qk; nq.quitRequested = false
+            expect(AutoTuneEngine.outcome(killedEnd, nq) == "inconclusive", "no quit line: as before")
+
+            // (b) The recommended list's lines in the game's file: a rule marked as an upgrade may replace them after a memory kill, with a larger number.
+            let kill12 = report("killed", stage: 4, seconds: 120, matched: ["swap-12gb-memory-kill"])
+            var l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: kill12, rules: rules, userKeys: [], fingerprint: "l1", log: nil,
+                                           listValues: ["swap-mb": "3072", "vram-mb": "4096"])
+            expect(l.candidate == ["swap-mb = 6144", "swap-mode = 2", "swap-min-mb = 1"] && l.candidateRule == "swap-12gb-memory-kill",
+                   "GTA V Enhanced: the list's swap-mb = 3072 is raised to 6144 after a memory kill (\(l.candidate ?? []))")
+            expect(rules.first { $0.id == "swap-12gb-memory-kill" }?.listUpgrade == true && rules.first { $0.id == "swap-12gb-memory-dialog" }?.listUpgrade != true,
+                   "only the memory-kill rules carry the mark")
+            l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: kill12, rules: rules, userKeys: [], fingerprint: "l2", log: nil,
+                                       listValues: ["swap-mb": "8192", "swap-mode": "2", "swap-min-mb": "1"])
+            expect(l.status == "stuck" && l.candidate == nil, "a list with more swap than the tier's step (RDR2's 8192) is never lowered")
+            l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: kill12, rules: rules, userKeys: [], fingerprint: "l3", log: nil,
+                                       listValues: ["swap-mb": "6144", "swap-mode": "2", "swap-min-mb": "1"])
+            expect(l.status == "stuck" && l.candidate == nil, "a list that already has every line: nothing new to try")
+            l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: kill12, rules: rules, userKeys: [], fingerprint: "l4", log: nil,
+                                       listValues: ["swap-mb": "6144"])
+            expect(l.candidate == ["swap-mb = 6144", "swap-mode = 2", "swap-min-mb = 1"], "the same number in the list: the other two lines are new")
+            l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: kill12, rules: rules, userKeys: ["swap-mb"], fingerprint: "l5", log: nil,
+                                       listValues: ["swap-mb": "3072"])
+            expect(l.status == "stuck", "the user's own swap-mb still keeps the rule out")
+            l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: report("crashed", stage: 4, matched: ["swap-12gb-memory-dialog"]), rules: rules,
+                                       userKeys: [], fingerprint: "l6", log: nil, listValues: ["swap-mb": "3072"])
+            expect(l.status == "stuck", "a crash with the memory dialog (not a kill) leaves the list's swap-mb alone")
+            l = AutoTuneEngine.advance(AutoTuneState(retried: true), report: report("crashed", stage: 2, matched: ["x64-image-nocopy"]), rules: rules,
+                                       userKeys: [], fingerprint: "l7", log: nil, listValues: ["env.MADEIRA_X64_IMAGE_NOCOPY": "1"])
+            expect(l.status == "stuck", "any other rule still treats the list's keys as the user's")
+
+            // (c) A failure no setting changes: the retry is not spent, and the advice does not promise a build.
+            let ceg = "dock-ceg-result-55", mina = "metal-texture-double-release"
+            var c = AutoTuneEngine.advance(AutoTuneState(), report: report("exited-early", stage: 2, matched: [ceg], dock: true), rules: rules,
+                                           userKeys: [], fingerprint: "c1", log: nil)
+            expect(c.status == "known" && c.known == ceg && c.knownNoFix == true && c.knownFixedIn == nil && c.candidate == nil && !c.retried && c.tried.isEmpty,
+                   "CEG result 55: known at once, no retry")
+            expect(c.knownLead == "No setting changes this" && c.knownAdvice.hasPrefix("No setting changes this: ")
+                   && !c.knownAdvice.contains("Fixed in build") && !c.knownAdvice.contains("update BCD") && !c.knownAdvice.contains("A crash in BCD"),
+                   "its advice names no build and no crash of BCD's (\(c.knownAdvice))")
+            c = AutoTuneEngine.advance(AutoTuneState(), report: report("killed", stage: 3, matched: [mina, "swap-8gb-memory-kill"]), rules: rules,
+                                       userKeys: [], fingerprint: "c2", log: nil)
+            expect(c.status == "known" && c.known == mina && c.candidate == nil, "Mina the Hollower: the open release bug wins over the swap rule")
+            expect(rules.first { $0.id == ceg }?.session == "dock" && rules.first { $0.id == ceg }?.lines == [] && rules.first { $0.id == mina }?.priority == 2,
+                   "the CEG rule is a Dock rule; the release rule runs before every swap rule")
+            let oldKnown = AutoTuneEngine.advance(AutoTuneState(), report: report("crashed", stage: 2, matched: ["metal-layer-format"]), rules: rules,
+                                                  userKeys: [], fingerprint: "c3", log: nil)
+            expect(oldKnown.knownNoFix == nil && oldKnown.knownLead == "A crash in BCD itself, not a setting" && oldKnown.knownAdvice.contains("Fixed in build 560"),
+                   "a fixedIn rule keeps its words")
+            if let d = try? JSONEncoder().encode(c), let back = try? JSONDecoder().decode(AutoTuneState.self, from: d) {
+                expect(back == c && back.knownNoFix == true, "a noFix state round-trips through JSON")
+            } else { expect(false, "the noFix state encodes") }
+            let cegLines = "[dock-launch] app 42700\n[dock-report] ceg-job-result=55\n[dock-report] ceg-result=55\n[dock-report] launch-host-result=49\n[dock-report] probe-result=49\n"
+            expect(!session(head + cegLines + exitLine("0xc0000135")).matched.contains(ceg),
+                   "a build 579 log of the same failure (the session never ended itself) keeps the fixedIn rule's words")
+            expect(session(head + cegLines + "[dock-game-end] the host reported the launch failed (code 49) and no game process runs\n" + exitLine("0xc0000135")).matched.contains(ceg),
+                   "from build 580, which ends the session, the CEG rule matches")
+            expect(!session(head + cegLines.replacingOccurrences(of: "ceg-result=55", with: "ceg-result=0") + "[dock-game-end] x\n" + exitLine("0xc0000135")).matched.contains(ceg),
+                   "another CEG result is not this rule")
+            let overrideOff = AutoTuneRules.load(builtIn: AutoTuneBuiltInRules.json, override: nil)
+            expect(overrideOff.contains { $0.id == ceg } && overrideOff.contains { $0.id == mina }, "noFix rules with no lines stay in the table")
+
+            // (d) A fixed-base program of 512 to 703 MiB: the window is its size plus 17 MiB, up to a multiple of 16.
+            var withExe = report("crashed", stage: 2)
+            for (mb, window) in [(575, 592), (379, 400), (396, 416), (512, 544), (703, 720), (640, 672)] {
+                withExe.fixedExeMB = mb
+                expect(AutoTuneEngine.resolve(["exe-window-mb = {exeWindowMB}"], report: withExe) == ["exe-window-mb = \(window)"],
+                       "\(mb) MiB gets a \(window) MB window, the image and 16 MiB or more")
+            }
+            withExe.fixedExeMB = nil
+            expect(AutoTuneEngine.resolve(["exe-window-mb = {exeWindowMB}"], report: withExe) == ["exe-window-mb = {exeWindowMB}"], "without a size the line stays as it is")
+            expect(AutoTuneEngine.resolve(["swap-mb = 3072"], report: withExe) == ["swap-mb = 3072"], "a plain line is not touched")
+            func mapImage(_ size: String) -> String {
+                "ml985: map_image_view size=\(size) base=0x140000000 info_base=0x140000000 map_addr=0 flags=0 charact=0x23 limits=0x10000..0x73fffeffff\n"
+            }
+            let mainFail = "wine: failed to create main module for L\"C:\\\\Program Files (x86)\\\\Steam\\\\steamapps\\\\common\\\\Game\\\\Game.exe\", status c0000018\n"
+            let big = "exe-window-fixed-base-large", small = "exe-window-fixed-base"
+            func exeSession(_ size: String) -> AutoTuneReport { session(head + mapImage(size) + mainFail + exitLine("0xc0000018")) }
+            let re9 = exeSession("0x23f12000")
+            expect(re9.matched.contains(big) && !re9.matched.contains(small), "Resident Evil Requiem (575 MiB): the large rule, not the 512 MB one (\(re9.matched))")
+            expect(exeSession("0x1fffffff").matched.contains(small) && !exeSession("0x1fffffff").matched.contains(big), "511 MiB: the 512 MB rule as before")
+            expect(exeSession("0x20000000").matched.contains(big) && !exeSession("0x20000000").matched.contains(small), "512 MiB: the large rule from the first MiB")
+            expect(exeSession("0x2bfffff0").matched.contains(big) && !exeSession("0x2c000000").matched.contains(big), "703 MiB passes, 704 MiB does not")
+            expect(!exeSession("0x378b2000").matched.contains(big), "Persona 4 Golden's 888 MiB: no window to try")
+            let t = AutoTuneEngine.advance(AutoTuneState(), report: re9, rules: rules, userKeys: [], fingerprint: "e1", log: nil)
+            expect(t.candidate == ["exe-window-mb = 592"] && !t.retried && t.candidateRule == big, "the first try is exe-window-mb = 592, at once (\(t.candidate ?? []))")
+            let noSize = session(head + mainFail + exitLine("0xc0000018")).matched
+            expect(noSize.contains(small) && !noSize.contains(big), "a log with no program size: the 512 MB rule as before, never the large one (\(noSize))")
+
+            // (e) A kill far below the memory limit is not a memory kill; one at the limit still is.
+            let limitLine = "ml992: os_proc_available_memory=7082 MB + phys_footprint=1109 MB = 8192 MB\n"
+            func memorySession(_ footprint: Int, _ said: String? = "closed-by-itself") -> AutoTuneReport {
+                session(head + "[device] model=iPhone18,1 idiom=phone os=iOS ram=11695MB available=8155MB cores=6\n" + limitLine
+                        + "[swap] ml1077 backed 512 MB\n[footprint] rev=ml358 phys=\(footprint) MB (peak \(footprint)) internal=1 MB\n",
+                        end: AutoTuneSessionEnd(sawProcess: true, seconds: 30, killed: true, userSaid: said))
+            }
+            let low = memorySession(2018)
+            expect(low.outcome == "killed" && low.memoryPct == 24 && !low.matched.contains("swap-12gb-memory-kill") && !low.matched.contains("swap-12gb-more"),
+                   "a closed-by-itself kill at 2 GB of 8 GB: no swap rule (\(low.matched), \(low.memoryPct ?? -1) %)")
+            let atLimit = memorySession(8100)
+            expect(atLimit.outcome == "killed" && atLimit.matched.contains("swap-12gb-memory-kill") && atLimit.matched.contains("swap-12gb-more"),
+                   "a kill at 8,100 of 8,192 MB: both swap rules, as before (\(atLimit.matched))")
+            expect(memorySession(4096).matched.contains("swap-12gb-memory-kill"), "half of the limit is the bar: still a memory kill")
+            expect(!memorySession(4000).matched.contains("swap-12gb-memory-kill"), "under half of it is not")
+            expect(rules.filter { $0.id.hasPrefix("swap-") && $0.id.hasSuffix("-kill") || $0.id.hasSuffix("-more") }.allSatisfy { $0.memoryMinPct == 50 },
+                   "the kill and more rules of all three tiers carry the bar")
+            expect(session(head + "[footprint] rev=ml358 phys=300 MB (peak 300) internal=1 MB\n[swap] ml1077 backed 512 MB\n",
+                           end: AutoTuneSessionEnd(sawProcess: true, seconds: 30, killed: true, userSaid: "closed-by-itself")).memoryPct == nil,
+                   "a footprint line with no limit anywhere: no percentage, the rule passes")
+
+            // (f) wow-rwx-plain-smc without the [store-noalias] line.
+            let rwx = "wow-rwx-plain-smc"
+            let unsetLine = "[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there\n"
+            let handled = "D 24 Handled self-modifying code: pc: 16B038E5C fault: 710455C01C\n"
+            let redeliv = "[redeliv] 256 identical redeliveries pc=0x16b038e5c addr=0x710455c01c — storm forming rev=ml461\n"
+            let storeLine = "[store-noalias] #1 rev=ml348 addr=0x140010122 insn=0x19000028 pc=0x16baa957c NO pool/anon alias | region 0x140010000+0x4000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)\n"
+            expect(session(head + unsetLine + String(repeating: handled, count: 256) + redeliv + exitLine("0xc0000005")).matched.contains(rwx),
+                   "256 handled SMC faults and the guard's line: the plain-RWX line (Pro Evolution Soccer 2013)")
+            expect(!session(head + unsetLine + String(repeating: handled, count: 255) + redeliv + exitLine("0xc0000005")).matched.contains(rwx),
+                   "255 are not enough")
+            expect(!session(head + unsetLine + String(repeating: handled, count: 300) + exitLine("0xc0000005")).matched.contains(rwx),
+                   "without the redelivery guard's line it is not this loop")
+            expect(!session(head + String(repeating: handled, count: 300) + redeliv + exitLine("0xc0000005")).matched.contains(rwx),
+                   "with the switch already set (no unset line) it is not offered again")
+            expect(session(head + unsetLine + storeLine + redeliv + exitLine("0xc0000005")).matched.contains(rwx),
+                   "and the old signature (the store line and the guard) still matches")
+
+            // (g) The Dock host's result 47 (the nested Steam bootstrapper): the died-game and orphan-lock rules stay out.
+            let died = "[dock-report] launch-game-ended=1\n[Wine ntdll/server] process_exit_wrapper(-1073741819): closing child fd_socket=248\n"
+            let orphan = "[lock-reap] SRW 0x7c770e0098 dead_teb=0x7200300000 released exclusive (word 00010001 -> 00000000) rev=ml446\n"
+                + "0140:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x71f3dfa824\n"
+            let dockHead = head + "[dock-launch] app 12110\n"
+            let plainDied = session(dockHead + died + orphan + exitLine("0xc0000005"))
+            expect(plainDied.matched.contains("dock-game-died-session-open") && plainDied.matched.contains("lock-orphan-stamped"),
+                   "a Dock game that died with an orphan lock: both rules, as before (\(plainDied.matched))")
+            let v47 = session(dockHead + died + orphan + "[dock-report] launch-host-result=47\n" + exitLine("0xc0000005"))
+            expect(!v47.matched.contains("dock-game-died-session-open") && !v47.matched.contains("lock-orphan-stamped"),
+                   "the same with the host's result 47 (GTA: Vice City): neither (\(v47.matched))")
+
+            // (h) The nested rule order: a Rockstar Launcher without Social Club's pools before the pool rules.
+            let scLine = "[sc-cef] SocialClubHelper.exe asks for PartitionAlloc's glued 32 GB pools at a 32 GB boundary; without env.MADEIRA_SC_PA_POOLS=1 there is none to give (FEX's arena covers 0x7c00000000) -- its chrome_elf.dll will fail as before\n"
+            let map512 = "[device] address-map=[0x1045cc000,0x8000000000) 512GB increased-memory=1 extended-va=0\n"
+            let map454 = "[device] address-map=[0x100530000,0x7180000000) 454GB increased-memory=0 extended-va=0\n"
+            let pools = session(head + map512 + scLine + exitLine("0xc0000005")).matched
+            expect(pools.contains("sc-pa-pools-missing"), "a 512 GB map: Social Club's pools (\(pools))")
+            expect(!session(head + map454 + scLine + exitLine("0xc0000005")).matched.contains("sc-pa-pools-missing")
+                   && !session(head + map512 + scLine + "[madeira-env] game MADEIRA_SC_PA_POOLS=2\n" + exitLine("0xc0000005")).matched.contains("sc-pa-pools-missing"),
+                   "not on a 454 GB map, and not with the switch already in force")
+            let sc = AutoTuneEngine.advance(AutoTuneState(), report: report("crashed", stage: 5, matched: ["sc-pa-pools-missing", "x64-image-nocopy", "pool-split-exhausted"]),
+                                            rules: rules, userKeys: [], fingerprint: "s1", log: nil)
+            expect(sc.candidateRule == "sc-pa-pools-missing" && sc.candidate == ["env.MADEIRA_SC_PA_POOLS = 2"], "...tried before the pool rules")
+        }
+
         // 15. State survives JSON (the app saves it between sessions).
         if let d = try? JSONEncoder().encode(s), let back = try? JSONDecoder().decode(AutoTuneState.self, from: d) {
             expect(back == s, "the state round-trips through JSON")

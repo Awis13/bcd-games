@@ -14481,6 +14481,30 @@ static void register_view( struct file_view *view )
  *
  * Create a view. virtual_mutex must be held by caller.
  */
+/* madeira-bcd (build 591): Fallout 4 (C5Y6PW, build 580) died here, 89 s in, while FEX started a thread and asked for 16 MB:
+ * "Assertion failed: (view->protect & VPROT_SYSTEM), function create_view, ... line 14499", exit 0x80000101. A new view overlapped a
+ * view that is NOT a system view (one Wine itself maps and unmaps); the assert ended the whole process. The overlap is now refused
+ * with STATUS_CONFLICTING_ADDRESSES, which every caller already handles (map_view unmaps what it mapped, free_pages and
+ * virtual_create_builtin_view pass the status on), and this line says which two views and who made the old one. The first four
+ * times, then every 256th. */
+static void ios_create_view_conflict( const struct file_view *old, void *base, size_t size, unsigned int vprot )
+{
+    static int n;
+    int c = __sync_add_and_fetch( &n, 1 );
+
+    if (c > 4 && (c & 255)) return;
+    dprintf( 2, "[create-view] build591 #%d REFUSED (was an assert that ended the process): new view %p+0x%lx protect=0x%x overlaps "
+                "view %p+0x%lx protect=0x%x, which is not a system view; asked by tid %04x, guest rip 0x%llx (context 0x%llx)\n",
+             c, base, (unsigned long)size, vprot, old->base, (unsigned long)old->size, old->protect,
+             NtCurrentTeb() ? (unsigned int)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread : 0,
+             (unsigned long long)ios_guest_rip_now(), (unsigned long long)ios_guest_ctx_rip() );
+    if (c <= 2)
+    {
+        ios_vh_dump( old->base );                    /* who created and removed views at the old view's base (1 MB and up) */
+        ios_vhs_dump( old->base, 0x1000, 4 );        /* and the small ones */
+    }
+}
+
 static NTSTATUS create_view( struct file_view **view_ret, void *base, size_t size, unsigned int vprot )
 {
     struct file_view *view;
@@ -14496,7 +14520,12 @@ static NTSTATUS create_view( struct file_view **view_ret, void *base, size_t siz
     {
         TRACE( "overlapping view %p-%p for %p-%p\n",
                view->base, (char *)view->base + view->size, base, (char *)base + size );
-        assert( view->protect & VPROT_SYSTEM );
+        if (!(view->protect & VPROT_SYSTEM))
+        {
+            /* madeira-bcd (build 591): this was an assert that the overlapped view is a system view */
+            ios_create_view_conflict( view, base, size, vprot );
+            return STATUS_CONFLICTING_ADDRESSES;
+        }
         delete_view( view );
     }
 
@@ -25217,6 +25246,98 @@ ULONG_PTR get_system_affinity_mask(void)
     return ((ULONG_PTR)1 << num_cpus) - 1;
 }
 
+/* madeira-bcd (build 591): env.MADEIRA_USER_VA_GB = n, off by default: tell a 64-bit process that its user address space ends at n GiB.
+ *
+ * FINAL FANTASY TACTICS - The Ivalice Chronicles (DR8613, 7QVF78) asks for one 256 GiB + 64 MiB MEM_RESERVE | PAGE_NOACCESS at start
+ * and quits with exit code 0 when it fails ("[mmap-place] NO GAP FITS size=0x4004010000 ... largest gap 32768 MB", c0000017). BCD
+ * tells every process HighestUserAddress = 0x7fffffffff (ml990: the 512 GB this device maps), so GlobalMemoryStatusEx says
+ * ullTotalVirtual = 524,287 MB, and the game plausibly sizes its arena from that. Only the REPORT changes, as for Social Club's
+ * layout 2 (ios_sc2_reported_highest): user_space_limit and every placement keep the real limit (the guest's own memory lives at
+ * 0x70.. and above; a real cap there would end every game). GetSystemInfo's lpMaximumApplicationAddress, GlobalMemoryStatusEx's
+ * ullTotalVirtual and NtQuerySystemInformation(SystemBasicInformation) all read HighestUserAddress from virtual_get_system_info.
+ *
+ * Never raises the figure; n is held to 4..4096 GiB. Not for a 32-bit process (its guest limit is another number), and not for
+ * the Steam client or a browser engine of the session (steam.exe, steamwebhelper.exe, other "...helper" / CEF / Chromium programs
+ * and the Dock host), which would be told the same figure: Chromium's V8 sandbox CHECKs it against its 1 TB cage. One line per
+ * process when it applies. */
+static ULONG_PTR ios_user_va_cap_bytes(void)
+{
+    static ULONG_PTR cap = ~(ULONG_PTR)0;   /* resolved once; 0 = off */
+    const char *e;
+    char *end = NULL;
+    unsigned long n;
+
+    if (cap != ~(ULONG_PTR)0) return cap;
+    cap = 0;
+    e = getenv( "MADEIRA_USER_VA_GB" );   /* env.MADEIRA_USER_VA_GB = n (GiB) */
+    if (!e || !e[0]) return cap;
+    n = strtoul( e, &end, 10 );
+    if (end == e || *end)
+    {
+        dprintf( 2, "[user-va] MADEIRA_USER_VA_GB=\"%s\" is not a number of GiB: ignored\n", e );
+        return cap;
+    }
+    if (!n) return cap;   /* 0 = off, as for the other switches */
+    if (n < 4 || n > 4096)
+    {
+        dprintf( 2, "[user-va] MADEIRA_USER_VA_GB=%lu is outside 4..4096 GiB: held to %u\n", n, n < 4 ? 4u : 4096u );
+        n = n < 4 ? 4 : 4096;
+    }
+    cap = (ULONG_PTR)n << 30;
+    return cap;
+}
+
+/* 1 when the calling process's program is one the cap must not touch (see above): its file name starts with "steam", contains
+ * "helper", "webview", "cef", "chrome" or "epic", or is the Dock host. */
+static int ios_user_va_skip_image( const WCHAR *path, size_t len )
+{
+    char name[64];
+    size_t base = 0, k, n;
+    static const char *const part[] = { "helper", "webview", "cef", "chrome", "epic", "dockhost" };
+
+    if (!path) return 0;
+    for (k = 0; k < len; k++) if (path[k] == '\\' || path[k] == '/') base = k + 1;
+    n = len - base;
+    if (n > sizeof(name) - 1) n = sizeof(name) - 1;
+    for (k = 0; k < n; k++)
+    {
+        WCHAR c = path[base + k];
+        name[k] = c < 0x80 ? (char)((c >= 'A' && c <= 'Z') ? c + 32 : c) : '?';
+    }
+    name[n] = 0;
+    if (!strncmp( name, "steam", 5 )) return 1;
+    for (k = 0; k < sizeof(part) / sizeof(part[0]); k++) if (strstr( name, part[k] )) return 1;
+    return 0;
+}
+
+static void ios_user_va_cap_report( SYSTEM_BASIC_INFORMATION *info )
+{
+    static void *said[4];
+    static int nsaid;
+    ULONG_PTR cap = ios_user_va_cap_bytes();
+    void *me;
+    PEB *p;
+    RTL_USER_PROCESS_PARAMETERS *pp;
+    int i;
+
+    if (!cap || (ULONG_PTR)info->HighestUserAddress < cap) return;   /* off, or never raises: below the cap already */
+    me = ios_jit_current_peb();
+    p = me;
+    pp = p ? p->ProcessParameters : NULL;
+    if (pp && pp->ImagePathName.Buffer && ios_user_va_skip_image( pp->ImagePathName.Buffer, pp->ImagePathName.Length / sizeof(WCHAR) ))
+        return;
+    for (i = 0; i < nsaid && i < 4; i++) if (said[i] == me) goto told;
+    if (nsaid < 4)
+    {
+        said[nsaid++] = me;
+        dprintf( 2, "[user-va] MADEIRA_USER_VA_GB: peb=%p is told HighestUserAddress=%p (ullTotalVirtual %lu MB) instead of %p; "
+                    "placement keeps the real limit\n",
+                 me, (void *)(cap - 1), (unsigned long)(cap >> 20), info->HighestUserAddress );
+    }
+told:
+    info->HighestUserAddress = (void *)(cap - 1);
+}
+
 /***********************************************************************
  *           virtual_get_system_info
  */
@@ -25384,6 +25505,9 @@ void virtual_get_system_info( SYSTEM_BASIC_INFORMATION *info, BOOL wow64 )
     info->NumberOfProcessors      = peb->NumberOfProcessors;
     if (wow64) info->HighestUserAddress = (char *)get_wow_user_space_limit() - 1;
     else info->HighestUserAddress = (char *)user_space_limit - 1;
+
+    /* madeira-bcd (build 591): env.MADEIRA_USER_VA_GB -- see ios_user_va_cap_bytes */
+    if (!wow64) ios_user_va_cap_report( info );
 
     /* madeira-bcd: Social Club layout 2 -- see ios_sc2_reported_highest */
     if (!wow64 && ios_sc_layout_mode == 2 && ios_sc_cef_enabled())

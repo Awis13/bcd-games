@@ -16,7 +16,8 @@ it expects in the fixture's .expect file), in the same commit.
 Fields (AutoTuneRule in app/Madeira/AutoTuneCore.swift):
   id        stable name; an override in Documents/autotune-rules.json with the
             same id replaces it, "lines": [] there disables it
-  lines     "key = value" each, added together by one attempt
+  lines     "key = value" each, added together by one attempt ("{exeWindowMB}" in a value: the window the main program needs, see
+            AutoTuneEngine.resolve)
   priority  lower first, among the rules one failed session matches
   all       signals that must all be in the log; a signal is {"has": [strings
             that must all be on one line], "count": at least that many lines}
@@ -31,6 +32,10 @@ Fields (AutoTuneRule in app/Madeira/AutoTuneCore.swift):
                (a log with no such line passes)
   exeMaxMB     the main program (relocations stripped, at 0x140000000: "ml985: map_image_view size=0x...") was at most this
                many MiB (a log with no such line passes)
+  exeMinMB     the same program was at least this many MiB (the log has to have such a line)
+  memoryMinPct the last footprint line was at least this percent of the memory limit (a log with no footprint line or limit passes)
+  listUpgrade  after a `killed` verdict the lines may replace the recommended list's own lines in the game's file, with a larger number
+               (a line equal to the list's is already in force; a user's key is never replaced)
   minStage / maxStage   how far the session got: 1 Wine started, 2 the game's
             modules loaded, 3 first frame, 4 presenting for 20 s, 5 played on
   noRetry   the failure comes back the same on every start: when such a rule matches,
@@ -39,6 +44,8 @@ Fields (AutoTuneRule in app/Madeira/AutoTuneCore.swift):
             the user sets); without it a rule only adds keys not yet in the layer
   reason    one sentence the app shows with the attempt
   evidence  where the rule comes from (fixtures, HANDOFF, OYUN-AYARLARI)
+  noFix     a failure no setting changes and no build is known to fix (Valve's client refusing the game, an open bug of BCD's): like fixedIn,
+            no lines, and auto-tune stops at once ("known") without promising a build; `reason` says what it is
   fixedIn   a crash only a change in Madeira fixes: the build that fixed it. Such a
             rule has no lines ("lines": []); when it is the best match auto-tune
             stops ("known") and tells the user to update, or to send the report when
@@ -85,7 +92,11 @@ def swap_rules():
     for name, lo, hi, first, second, ev in SWAP_TIERS:
         ram = {k: v for k, v in (("ramMinMB", lo), ("ramMaxMB", hi)) if v is not None}
         base = ["swap-mb = %d" % first, "swap-mode = 2", "swap-min-mb = 1"]
-        out.append(dict(id="swap-%s-memory-kill" % name, lines=base, priority=50,
+        # Round 591: a kill whose last footprint was far below the limit is not iOS closing the game for memory (Albino Lullaby 41D565: 2 GB
+        # of 8 GB, a crash in mf.dll; the app died, the tester said "closed by itself", and the 12 GB swap file was tried). memoryMinPct 50
+        # leaves the real kills alone (they end within a few percent of the limit). listUpgrade: GTA V Enhanced's list has swap-mb = 3072 in
+        # the game's file, which kept the 12 GB tier's 6144 out as a "user key" (A24ES3); after this verdict the larger number may replace it.
+        out.append(dict(id="swap-%s-memory-kill" % name, lines=base, priority=50, memoryMinPct=50, listUpgrade=True,
                         all=[s("[footprint] rev=ml358 phys=")], outcomes=["killed"],
                         reason="iOS closed the game at its memory limit; a %d MB swap file moves large "
                                "allocations out of RAM on this device." % first,
@@ -95,7 +106,7 @@ def swap_rules():
                         reason="The game said it ran out of memory; a %d MB swap file moves large allocations "
                                "out of RAM on this device." % first,
                         evidence=[ev], **ram))
-        out.append(dict(id="swap-%s-more" % name, lines=["swap-mb = %d" % second], priority=55, upgrade=True,
+        out.append(dict(id="swap-%s-more" % name, lines=["swap-mb = %d" % second], priority=55, upgrade=True, memoryMinPct=50,
                         all=[s("[swap] ml1077 backed")], outcomes=["killed"],
                         reason="The game was closed for memory again with the swap file in use; the line "
                                "raises it to %d MB." % second,
@@ -533,14 +544,20 @@ RULES = [
         # in the JIT pool nor plain, so the page stays read-only after FEX's untrap ([store-noalias]
         # ... exec-downgraded page that never got dual-mapped) and the same store faults until
         # the redelivery guard ends the app. As plain memory it behaves as on Windows (ml1279).
+        # Round 591 (Pro Evolution Soccer 2013, DAN35T): the same loop without the [store-noalias] line: FEX "handled" the same
+        # self-modifying-code fault 2,000 times ("Handled self-modifying code: pc: 16B038E5C fault: 710455C01C") and the redelivery guard
+        # ended the process. So the loop is named either by that store line or by 256 or more handled-SMC lines; "identical redeliveries"
+        # is in all (both [redeliv] lines that carry it were the old "any").
         "all": [s("[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset)"),
-                s("[store-noalias]", "prot=1 max=3", "exec-downgraded page that never got dual-mapped")],
-        "any": [s("[redeliv] 256 identical redeliveries"), s("[redeliv] 2000 identical redeliveries")],
+                s("[redeliv]", "identical redeliveries")],
+        "any": [s("[store-noalias]", "prot=1 max=3", "exec-downgraded page that never got dual-mapped"),
+                s("Handled self-modifying code: pc:", count=256)],
         "reason": "The game rewrites its own code and BCD left that memory read-only after the "
                   "emulator released it, so one store faulted forever; the line makes the game's "
                   "executable memory plain read/write, as on Windows.",
         "evidence": ["warcraft-2-bne-2026-10-16-23-27-45",
-                     "HANDOFF 2026-10-17: Warcraft II BNE, build 559 (tester, iPad16,5)"],
+                     "HANDOFF 2026-10-17: Warcraft II BNE, build 559 (tester, iPad16,5)",
+                     "pro-evolution-soccer-2013-smc-loop-2026-10-22 (DAN35T, build 580: no [store-noalias] line)"],
     },
     {
         "id": "wow-rwx-plain-unaligned-atomic",
@@ -1245,6 +1262,24 @@ RULES = [
                      "build 573)", "ajan-vcarm64 report 2026-10-20"],
     },
     {
+        "id": "vcrt-arm64-marker-current",
+        "lines": ["env.MADEIRA_VCRT_ARM64_KEY = 14.44.35211.0"],
+        "priority": 8,
+        "noRetry": True,
+        # bcd-games issue #13 (Dead as Disco, 2026-10-23): up to build 590 the line above wrote 14.42.34433.0, and a
+        # newer Unreal bootstrap (Pagoda.exe) refused it; with 14.44.35211.0 it started the game. From build 592 the
+        # line above writes 14.44.35211.0 (or the session runtime's newer version), so a game meeting the dialog for the
+        # first time is served by it. This rule is for a game whose search already tried that line on an older build
+        # and gave up: auto-tune never tries a rule twice, so the same signature gets a second rule with a different line.
+        # "none" as above: a session that wrote the marker and still showed the dialog gets no further attempt.
+        "all": [s("Redistributable (arm64)", "[win-name] #")],
+        "none": [s("[vcrt-arm64] madeira-bcd:")],
+        "reason": "The game's start-up program asked for Microsoft's ARM64 Visual C++ runtime; an earlier BCD wrote an "
+                  "older version of that entry, which newer games refuse. The line writes the current version.",
+        "evidence": ["bcd-games issue #13 (Dead as Disco, Steam 3404260, build 580: 14.42.34433.0 refused, 14.44.35211.0 passed)",
+                     "denshattack-2026-10-20 (MKT2TW; the first rule comes first)"],
+    },
+    {
         "id": "d3dx9-volume-resource-stub",
         "lines": [],
         "fixedIn": 576,
@@ -1328,9 +1363,13 @@ RULES = [
         "priority": 30,
         "all": [s("[lock-reap] SRW", "released exclusive")],
         "any": [s("is not owned exclusive!")] + UNHANDLED,
+        # Round 591: not in a Dock session whose host result was 47 (the nested Steam bootstrapper of GTA: Vice City, D938HM): the reaped
+        # lock was a dying child's of that bootstrapper.
+        "none": [s("[dock-report] launch-host-result=47")],
         "reason": "A lock held by a thread that died was released the old way and another thread "
                   "tripped over it; the line releases such locks safely.",
-        "evidence": ["HANDOFF: Horizon Zero Dawn 479-480, GTA V 510"],
+        "evidence": ["HANDOFF: Horizon Zero Dawn 479-480, GTA V 510",
+                     "vice-city-dock-steam-bootstrapper-2026-10-22 (D938HM, build 580: the nested bootstrapper's children; no match)"],
     },
     {
         "id": "d3d12-fl-12-1",
@@ -1443,10 +1482,14 @@ RULES = [
         # quit with Windows error ...". The signals are the engine's own and the host's report lines, printed whatever
         # the diagnostic switches: a process that ended with an NTSTATUS error (-10737... in decimal: 0xC00000xx-0xC00004xx)
         # and the host's own "game ended". "none": the new path ran (or the session ended some other way).
+        # Round 591: not when the host's result is 47 (another Steam process took the registration): a legacy SteamStub game (GTA: Vice City,
+        # D938HM and V85VDT) starts "steam.exe -applaunch" from the Dock, Valve's bootstrapper updates itself in the Dock install, and the
+        # processes that died with c0000005 were the bootstrapper's children, not the game; "known" there sent the tester to a build that
+        # fixed a different crash.
         "session": "dock",
         "priority": 13,
         "all": [s("[dock-report] launch-game-ended=1"), s("[Wine ntdll/server] process_exit_wrapper(-10737", "closing child")],
-        "none": [s("[dock-game-end]"), s("[frontend] returned to library")],
+        "none": [s("[dock-game-end]"), s("[frontend] returned to library"), s("[dock-report] launch-host-result=47")],
         "reason": "The game's process crashed and Valve's client and the Dock host finished, but BCD kept the session "
                   "open on its dead desktop; from this build on BCD ends the session, says which Windows error the "
                   "game closed with, and auto-tune goes on from there.",
@@ -1587,6 +1630,329 @@ RULES = [
                   "setting changes it.",
         "evidence": ["synthetic-bcd-date-formatter-crash (the backtraces of A7V9T2 and DFSTWB, builds 576)",
                      "tests/host/check-bcd-game-page.py (build 580)"],
+    },
+    # ajan10/wine (build 591)
+    {
+        "id": "oledlg-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = oledlg"],
+        "priority": 10,
+        "noRetry": True,
+        # Digimon Story Cyber Sleuth: Complete Edition (Steam 1042550, PGET5A, build 580): "Library oledlg.dll (which is needed by
+        # ...\\Digimon Story CS.exe) not found" and "[dll-missing] #1 oledlg.dll status=c0000135", the program ended at once.
+        # BCD's 64-bit set had no oledlg.dll (the 32-bit set has it). Build 591 ships Wine's as oledlg-optin.dll
+        # (tools/build-wine-extra-dlls.sh, OPTIN_WANT); its imports (ole32, comdlg32, user32, advapi32) all ship. Other imports of the
+        # exe may be missing too: the loader stops at the first. The importing module spells the name as it likes, so the
+        # signal lists the usual spellings (a signal matches case-sensitively).
+        "all": [s("err:module:import_dll Library", "not found")],
+        "any": [s("err:module:import_dll Library " + n + e, "not found") for n in ("oledlg", "OLEDLG", "Oledlg") for e in (".dll", ".DLL")],
+        "none": [s("MADEIRA_OPTIN_DLLS: oledlg.dll -> oledlg-optin.dll")],
+        "reason": "The game imports oledlg.dll, which BCD does not ship for every game; the line gives this game Wine's oledlg.dll.",
+        "evidence": ["digimon-story-cyber-sleuth-2026-10-22 (PGET5A, build 580, c0000135 at once)"],
+    },
+    {
+        "id": "fwpuclnt-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = fwpuclnt"],
+        "priority": 10,
+        "noRetry": True,
+        # FINAL FANTASY XV WINDOWS EDITION PLAYABLE DEMO (Steam 671210, DM9SAF and its second Send Log CDC7AK, build 580): "Library
+        # fwpuclnt.dll (which is needed by ...\\ffxv_s.exe) not found", c0000135 after 0 s. Windows' Filtering Platform client library
+        # is not in the 64-bit set (the 32-bit set has it). Build 591 ships Wine's as fwpuclnt-optin.dll; most of its exports are
+        # stubs, so what the game does with them is not known.
+        "all": [s("err:module:import_dll Library", "not found")],
+        "any": [s("err:module:import_dll Library " + n + e, "not found") for n in ("fwpuclnt", "FWPUCLNT", "Fwpuclnt") for e in (".dll", ".DLL")],
+        "none": [s("MADEIRA_OPTIN_DLLS: fwpuclnt.dll -> fwpuclnt-optin.dll")],
+        "reason": "The game imports fwpuclnt.dll, which BCD does not ship for every game; the line gives this game Wine's fwpuclnt.dll.",
+        "evidence": ["ffxv-demo-2026-10-22 (DM9SAF, CDC7AK, build 580, c0000135 at once)"],
+    },
+    {
+        "id": "sensapi-dll-optin",
+        "lines": ["env.MADEIRA_OPTIN_DLLS = sensapi"],
+        "priority": 10,
+        "noRetry": True,
+        # Borderlands 3 (Steam 397540, VFM84T, build 580): vivoxsdk.dll (the voice library under Engine\\Binaries\\ThirdParty\\Vivox)
+        # imports SensApi.dll ("Library SensApi.dll (which is needed by ...\\vivoxsdk.dll) not found", "[dll-missing] #4 SensApi.dll
+        # status=c0000135"); the failed load raised UE4's delay-load exception (c06d007e), nothing caught it and the game closed. Build 591
+        # ships Wine's sensapi.dll (IsNetworkAlive and two more, always "connected") as sensapi-optin.dll. Whether anything else stops the game
+        # afterwards is not known.
+        "all": [s("err:module:import_dll Library", "not found")],
+        "any": [s("err:module:import_dll Library " + n + e, "not found") for n in ("SensApi", "sensapi", "SENSAPI", "Sensapi") for e in (".dll", ".DLL")],
+        "none": [s("MADEIRA_OPTIN_DLLS: sensapi.dll -> sensapi-optin.dll")],
+        "reason": "A library of the game imports SensApi.dll, which BCD does not ship for every game; the line gives this game Wine's sensapi.dll.",
+        "evidence": ["borderlands-3-2026-10-22 (VFM84T, build 580, vivoxsdk.dll)"],
+    },
+    {
+        "id": "nettle-cbc-unaligned-abort",
+        "lines": [],
+        "fixedIn": 591,
+        "priority": 1,
+        # A Plague Tale: Innocence (GOG copy started from the library, 3S5DV8 on build 580; 7ZGYFT on 576): after BCryptCreateHash and
+        # BCryptGenerateSymmetricKey a thread asked GnuTLS for an AES-CBC step with a length that is not a multiple of the block size,
+        # and nettle's assert ended the whole app ("Assertion failed: (!(length % block_size)), function nettle_cbc_decrypt, file
+        # cbc.c, line 72"; BCD's abort handler then raised 80000101 and the process died with a junk status). Build 591: Wine's bcrypt
+        # unix side (dlls/bcrypt/gnutls.c) refuses such a length with STATUS_INVALID_BUFFER_SIZE, the status Windows gives, before it
+        # calls GnuTLS, and logs "[bcrypt-guard]" with the key and the lengths. What the game does with the error is not known. No
+        # config line changes it.
+        "all": [s("Assertion failed: (!(length % block_size))", "nettle_cbc_")],
+        "reason": "A library of the game asked the encryption code for a step with a length it cannot take, and the program that does the "
+                  "work ended the whole app; from this build on BCD answers such a request with an error, as Windows does.",
+        "evidence": ["plague-tale-innocence-2026-10-22 (3S5DV8, build 580)", "7ZGYFT (build 576, the same assert)",
+                     "tests/host/check-bcrypt-cbc-guard.py (build 591)"],
+    },
+    {
+        "id": "nls-extra-codepage",
+        "lines": ["env.MADEIRA_NLS_EXTRA = 1"],
+        "priority": 60,
+        "session": "library",
+        "outcomes": ["crashed", "exited-early"],
+        # Sword and Fairy 3 (PAL3.exe, 32-bit, a local copy; 6FW5J5, build 580): the game asks for the Simplified-Chinese ANSI code page
+        # four times ("[nls-getptr] type=11 id=936"), BCD's nls folder has no c_936.nls (only c_1252, c_437, c_20127, c_28591), so
+        # GetCPInfo / MultiByteToWideChar(936) fail, and a few lines later the game's own code reads address 0 and the process ends
+        # (0.8 s). Build 591 ships Wine's c_932, c_936, c_949, c_950, c_874 and c_1250 ... c_1258 in nls/extra and env.MADEIRA_NLS_EXTRA = 1
+        # makes them visible (build/ntdll-unix/env_ios.c). Only a failed session of a direct start (library) that asked for one of
+        # the Asian pages: Steam's own client asks for 932 in every Dock session and runs without it (a Dock session is left out, since
+        # the client would see the tables too), and games on a Turkish or Russian phone ask for 1254 or 1251 and run without them, so
+        # neither starts an attempt. "none": the tables were already in use.
+        "all": [s("[nls-getptr] type=11")],
+        "any": [s("[nls-getptr] type=11 id=%d " % cp) for cp in (932, 936, 949, 950, 874)],
+        "none": [s("[nls-extra]")],
+        "reason": "The game asked for a Windows code page whose table BCD does not load for every game and ended right after; the line "
+                  "gives this game Wine's tables for the Japanese, Chinese, Korean and Thai code pages.",
+        "evidence": ["sword-and-fairy-3-2026-10-22 (6FW5J5, build 580)", "UNPROVEN: the first session with the line decides"],
+    },
+    # ajan10/app
+    {
+        "id": "mfc-missing-dock",
+        "lines": ["env.MADEIRA_MFC_DOCK = 1"],
+        "priority": 18,
+        "noRetry": True,
+        "outcomes": ["crashed", "exited-early"],
+        "session": "dock",
+        # Horizon Zero Dawn (TH3BJ8, Steam 1151640) and Age of Empires II HD (B2NWDX, GYYAAC, MXMRJ3; 221380), builds 580, started through
+        # BCD Dock: the game's process stopped within a second with c0000135 ("import_dll Library mfc140.dll / mfc140u.dll (which is needed
+        # by ...exe) not found", then "loader_init Importing dlls for ...exe failed"). A Dock session runs the aarch64 explorer.exe, so the
+        # VC++ overlay that links Microsoft's MFC into system32 never ran for it (WineProcessBridge.m: use_arm64ec is NO), and the x64
+        # game's ntdll searches system32 (aarch64 farm) and then C:\windows\sysx64, which holds Wine's builtins and no MFC. The line links
+        # the two MFC DLLs from the VC++ runtime folder into sysx64 (madeira_mfc_dock); the same game started directly (ARM64EC) has them.
+        # "none": the line already ran and linked them, so the import fails for another reason. The failed process-start line keeps
+        # a plug-in's quiet import failure (Moonlighter's Razer DLL) from matching: that game runs.
+        "all": [s("import_dll Library mfc140", "(which is needed by"), s("loader_init Importing dlls for", "failed, status c0000135"),
+                s("[madeira-dock] starting the host")],
+        "none": [s("MADEIRA_MFC_DOCK=1:", "linked into sysx64")],
+        "reason": "The game needs Microsoft's MFC library, and the session BCD Dock starts it in does not have it where the game looks; "
+                  "the line links MFC there from the downloaded Visual C++ runtime (Settings).",
+        "evidence": ["horizon-zero-dawn-mfc-dock-2026-10-22 (TH3BJ8, build 580)", "age-of-empires-ii-hd-mfc-dock-2026-10-22 (B2NWDX; GYYAAC, MXMRJ3)",
+                     "tests/host/check-mfc-dock.py (build 591)"],
+    },
+    {
+        "id": "install-script-registry-missing",
+        "lines": ["env.MADEIRA_DOCK_SCRIPT_REGISTRY = 1"],
+        "priority": 20,
+        "noRetry": True,
+        "session": "dock",
+        # Fallout: New Vegas (GA6QN2, Steam 22380, build 580, through BCD Dock): FalloutNVLauncher.exe runs and shows "Fallout: New Vegas does
+        # not appear to be installed and the installer could not be found. Try exploring to your DVD-ROM drive and selecting setup.exe to
+        # install the game." (the box's text is logged as [msgbox-origin], an error-channel line every session prints). That is the
+        # launcher's own registry check: Bethesda's games read HKLM\Software\(Wow6432Node\)Bethesda Softworks\<game>\Installed Path, which the
+        # "Registry" section of the game's install script (installscript.vdf) has Valve's Windows client write. A Dock start runs Valve's client
+        # in the host and never the script, and BCD's install-script feature runs only its "Run Process" entries. The line makes the app write
+        # the script's missing registry values before the start (DockScriptRegistry). "none": the line is on already ([dock-script-registry]
+        # is printed whenever it is), so the box has another cause.
+        "all": [s("[msgbox-origin] box", "does not appear to be installed and the installer could not be found")],
+        "none": [s("[dock-script-registry] app=")],
+        "reason": "The game's launcher looks in the registry for the install folder that Steam's install script writes on Windows, and BCD "
+                  "Dock never wrote it; the line has BCD write the script's missing registry values before the start.",
+        "evidence": ["fallout-new-vegas-install-script-registry-2026-10-22 (GA6QN2, build 580)", "tests/host/check-dock-script-registry.py (build 591)"],
+    },
+    # ajan10/motor (build 591): engine switches (keyed, off by default) and one code fix
+    {
+        "id": "fault-guard-rate-redeliv",
+        "lines": ["env.MADEIRA_FAULT_GUARD_RATE = 1"],
+        "priority": 30,
+        # Unity Mono games whose null-check traps are managed exceptions (SpiderHeck ZHVF9Y, ROUNDS A1CX12 on build 580): one host pc faults and
+        # is delivered to the game's handler again and again while the game keeps drawing (44 a second at 92 fps, 460 a second at 56 fps), and
+        # ml461's guard ends the process at 2000 identical deliveries in a row. With the line a run only counts as a storm when it is dense
+        # (2000 within half a second) or the presenter stands still. The signals are the guard's own lines (printed whatever the diagnostic
+        # switches) and the Mono runtime's module: the storms of Unity Mono games that really are storms (Cult of the Lamb QSYCSY, TEVI J75807,
+        # Graveyard Keeper 2: an unemulated STLXR in the runtime's RWX page) print "[excl-store]" and have their own rule; every other storm
+        # (Dead Space, NFS Underground 2, Warcraft II BNE) is not Mono. "minStage 3": the game had drawn a frame. "none": the line is already
+        # on and the guard still ended a real storm (build 591 prints "[redeliv] MADEIRA_FAULT_GUARD_RATE ..." then). Red Dead Redemption 2
+        # (2SR5VJ, Arxan self-checks at 27 a second, 7 fps) reaches the same kill without Mono: that game gets the line from its list.
+        "all": [s("Load module mono-2.0"), s("[redeliv] 2000 identical redeliveries"), s("[redeliv] terminating process")],
+        "none": [s("[excl-store]"), s("[redeliv] MADEIRA_FAULT_GUARD_RATE")],
+        "minStage": 3,
+        "reason": "BCD ended the game because one fault kept coming back, but the game was still drawing frames: it handles that "
+                  "fault itself (a managed null check). The line makes BCD end a game only for a fast, real storm.",
+        "evidence": ["spiderheck-2026-10-22 (ZHVF9Y)", "rounds-2026-10-22 (A1CX12)", "2SR5VJ (RDR2, log only)",
+                     "tests/host/check-fault-guard-rate.py (build 591)"],
+    },
+    {
+        "id": "fault-guard-rate-segv",
+        "lines": ["env.MADEIRA_FAULT_GUARD_RATE = 1"],
+        "priority": 30,
+        # PlateUp! (21DKZW, build 580, iPad13,8): Mono's null-check traps from several threads at one pc (Mach declines them, x18 == 0) reach the
+        # BSD path's guard, which counts the repeats over ALL threads, skips the instruction and sets x0 = 0xDEAD0001; seconds later the game
+        # read that value as a pointer ("[av-detail] ... p1=0xdead0011") and died with c0000005. With the line the repeats are counted per
+        # thread and only a run of five within 5 ms counts.
+        "all": [s("SEGV LOOP FATAL", "forcing thread exit"), s("[av-detail]", "p1=0xdead00")],
+        "none": [s("[segv-loop] MADEIRA_FAULT_GUARD_RATE")],
+        "minStage": 2,
+        "reason": "BCD took a game's own null checks for a fault loop, skipped the instruction and handed the game a made-up value, "
+                  "which it then used as a pointer. The line counts the repeats per thread and only when they are fast.",
+        "evidence": ["plateup-2026-10-22 (21DKZW)", "tests/host/check-fault-guard-rate.py (build 591)"],
+    },
+    {
+        "id": "user-va-cap-reserve-256gb",
+        "lines": ["env.MADEIRA_USER_VA_GB = 32"],
+        "priority": 30,
+        # FINAL FANTASY TACTICS - The Ivalice Chronicles (DR8613 on build 580, 7QVF78 on 579, two testers): the game asks for one NOACCESS
+        # reservation of 256 GiB + 64 MiB at start ("[jumbo] kernel-pick reserve failed (0xc0000017) for size=0x4003ffffff"), gets
+        # c0000017 (BCD's largest hole is 32 GiB) and calls ExitProcess(0) a few seconds in. BCD tells every process its user address
+        # space is 512 GB (ullTotalVirtual 524,287 MB), which the game plausibly sizes the arena from. The line tells a 64-bit game 32 GiB
+        # (only the report changes). Not proven that the game then asks for less. The signals: a failed jumbo NOACCESS reserve and the
+        # process's own exit with code 0, in a session that stopped before the first frame.
+        "all": [s("[jumbo] kernel-pick reserve failed (0xc0000017)"), s("[nt-fail]", "NtAllocateVirtualMemory status=c0000017", "type=0x2000 prot=0x1"),
+                s("NtTerminateProcess(handle=0x0, exit_code=0x0)")],
+        "none": [s("[user-va] MADEIRA_USER_VA_GB:")],
+        "outcomes": ["exited-early"],
+        "maxStage": 2,
+        "reason": "The game asked for hundreds of gigabytes of address space, which this device cannot give, and quit. The line "
+                  "tells it the device has 32 GB of address space; the request may then be smaller.",
+        "evidence": ["final-fantasy-tactics-2026-10-22 (DR8613; 7QVF78 on build 579)", "tests/host/check-user-va-gb.py (build 591)"],
+    },
+    {
+        "id": "create-view-assert",
+        "lines": [],
+        "fixedIn": 591,
+        "priority": 1,
+        # Fallout 4 (C5Y6PW, build 580): 89 s in, while FEX started a thread and asked for 16 MB, create_view found an overlapping view that
+        # is not a system view and its assert ended the process ("Assertion failed: (view->protect & VPROT_SYSTEM), function create_view, file
+        # virtual_ios.c", exit 0x80000101). Build 591 refuses the allocation with STATUS_CONFLICTING_ADDRESSES and logs "[create-view]"
+        # with both views. No config line changes it.
+        "all": [s("Assertion failed: (view->protect & VPROT_SYSTEM), function create_view")],
+        "reason": "BCD's own memory manager stopped on an internal check when the game's memory use overlapped a mapping it did "
+                  "not expect; from this build on it refuses that one allocation instead of ending the game.",
+        "evidence": ["fallout-4-create-view-2026-10-23 (C5Y6PW)", "tests/host/check-create-view-conflict.py (build 591)"],
+    },
+    {
+        "id": "anon-cas-flush",
+        "lines": ["env.MADEIRA_ANON_CAS_FLUSH = 1"],
+        "priority": 30,
+        # Jetboard Joust (MonoGame on CoreCLR; GHVYNG, T9CQD7, RTSYP6, CTR7BV on build 580): the CLR patches code it has already run with
+        # `lock cmpxchg`; build 580 emulates that CAS in the Mach handler, FEX never learns that the page changed, and ~190 lines later the
+        # main thread calls one routine 11-12 million times a second (the [spin] report: "x64->EC ... go to kernelbase.dll+0x6c248") and
+        # never presents. On build 579 the same CAS reached FEX, which dropped the page's translation and did the CAS itself. The line hands
+        # the CAS to FEX again. Signals: an emulated CAS on an anonymous alias, and the spin report's call count in the millions.
+        "all": [s("[anon-cas] build580 insn="), s("[spin] ml1140", "look 1: x64->EC")],
+        "none": [s("[anon-cas] build591 MADEIRA_ANON_CAS_FLUSH")],
+        "outcomes": ["hung"],
+        "reason": "The game patches its own code and BCD completed that write without telling the emulator, which kept running "
+                  "the old code in a loop. The line passes that write through the emulator, which refreshes its copy.",
+        "evidence": ["jetboard-joust-livelock-2026-10-22 (GHVYNG; T9CQD7, RTSYP6, CTR7BV)", "tests/host/check-anon-cas-flush.py (build 591)"],
+    },
+    # ---- ajan10/lists (tur591, build 591) ----
+    {
+        "id": "exe-window-fixed-base-large",
+        "lines": ["exe-window-mb = {exeWindowMB}"],
+        "priority": 6,
+        "noRetry": True,
+        "exeMinMB": 512,
+        "exeMaxMB": 703,
+        # The programs exe-window-fixed-base's 512 MB window cannot hold: Resident Evil Requiem's re9.exe is 575.07 MiB (YQRQ86, build 579:
+        # the try of exe-window-mb = 512 failed unchanged; P0GY6V, build 580: the rule stays away from 512 MiB and more, and the search ended
+        # "stuck"). The window is the image plus 17 MiB up to a multiple of 16 ("{exeWindowMB}": 575 -> 592, the list's number; 379 -> 400;
+        # AutoTuneEngine.resolve), at most 720 MiB for an image of 703: the free run above 0x140000000 ends at the main thread's stack,
+        # 751-758 MiB in the RE Requiem logs, 721 in Life is Strange 2's, 720 in Persona 4 Golden's; no window is larger. Images of 704 MiB and
+        # more get nothing (no window holds them with room to spare). The same "none" as exe-window-fixed-base: not for a second instance of a
+        # program whose first got the window, and not for a one-time installer's helper in %TEMP%.
+        "all": [s("failed to create main module", "c0000018")],
+        "none": [s("[exe-window]", "gets the window"),
+                 s("failed to create main module", "\\\\Temp\\\\"),
+                 s("failed to create main module", "infinst.exe")],
+        "reason": "The game's program (512 MiB or more) must load at a fixed address that BCD's JIT pool partly held, and a 512 MB window is "
+                  "too small for it; the line keeps a window of the program's size plus about 17 MiB there (the pool may be smaller).",
+        "evidence": ["resident-evil-requiem-2026-10-22 (P0GY6V, build 580: a 575 MiB program; YQRQ86 tried 512 on build 579)",
+                     "persona-4-golden-2026-10-21 (QK7BQP: 888 MiB, no window holds it; no match)",
+                     "tests/host/autotune_engine_checks.swift (window sizes)"],
+    },
+    {
+        "id": "dock-ceg-result-55",
+        "lines": [],
+        "noFix": True,
+        "session": "dock",
+        "priority": 5,
+        # Call of Duty: Black Ops (YFWA6Z, build 580, Madeira Dock): Valve's client could not prepare the executable that Steam builds per account
+        # (CEG): "[dock-report] ceg-service-registered=1", "ceg-server-result=22", "ceg-job-result=55", "ceg-result=55", "launch-host-result=49", and
+        # the client's own service_log.txt ends "Failed to create Service pipe (GLE 2)". The game never ran; build 580 ends the session and says
+        # so, but auto-tune answered with the unchanged retry ("tried retry: reverted"), a start for a failure no setting changes
+        # (tur577 ajan6-ceg.md: 55 is not fixed).
+        # Only from build 580, which ends such a session itself ("[dock-game-end]" or the return to the library): a 579 log of the same failure
+        # keeps dock-launch-failed-session-open's "fixed in 580: update BCD" (Spec Ops: The Line 2FRXXM, NEXHHM; Risen 2 9DBDZ6).
+        "all": [s("[dock-report] ceg-result=55")],
+        "any": [s("[dock-game-end]"), s("[frontend] returned to library")],
+        "reason": "Valve's copy protection (CEG) could not prepare this game's program: the Steam client in BCD Dock reported result 55 and the "
+                  "game never ran. It is not a game setting, and starting again gives the same result.",
+        "evidence": ["call-of-duty-black-ops-ceg-55-2026-10-22 (YFWA6Z, build 580)", "DG6N4E (same failure on a second device)"],
+    },
+    {
+        "id": "metal-texture-double-release",
+        "lines": [],
+        "noFix": True,
+        "priority": 2,
+        # Mina the Hollower (639V00, AZM8XT, build 580): an iOS thread dies in libobjc's objc_release under Metal's completion queue
+        # (IOGPUMetalCommandBufferStorageReset), "[mach-deliver] ... NATIVE-THREAD DECLINE pc=... (libobjc.A.dylib`objc_release_x8)", and the log
+        # names the object ("x0=... was FREED by our NSObject_release: class AGXG16PFamilyTexture, 50 releases ago"): BCD's winemetal released a
+        # texture the GPU's completion callback released again. No game exit code, the app is gone, and auto-tune scored the run "killed" and
+        # offered swap files (footprint 2-3.4 GB, far from the limit; three starts spent, 639V00 L29). The cause is open (motor: record who
+        # frees what, guard a release that would go below zero); the rule keeps the swap lines away meanwhile.
+        "all": [s("NATIVE-THREAD DECLINE", "objc_release")],
+        "reason": "An iOS thread released a Metal object that was already freed, and the app ended; this is an open bug in BCD, not a setting "
+                  "(a swap file does not help: the game used about 3 GB of the memory it may have).",
+        "evidence": ["mina-the-hollower-metal-release-2026-10-22 (639V00, build 580)", "AZM8XT (same game, same phone: three starts spent on swap)"],
+    },
+    {
+        "id": "mf-null-video-off",
+        "lines": ["env.MADEIRA_WG_VIDEO = 0"],
+        "priority": 20,
+        "outcomes": ["crashed"],
+        # Albino Lullaby (SF3P8T, 41D565, build 580, Madeira Dock): the 32-bit game plays its intro MP4 through Media Foundation, and a thread
+        # writes the NULL page inside Wine's mf.dll (guest eip 0x771a89e0..771a8ac3 = mf.dll+0x18ac3, deterministic in both logs):
+        # "wine: Unhandled page fault on write access to 00000000 at address 771A8AC3", "[wow-null32] ... (mf.dll+0x26159)". MADEIRA_WG_VIDEO = 0
+        # limits the media parser to MP3 and WAV, so the movie is refused instead of played. An attempt, not a fix: no device has tried it.
+        "all": [s("Unhandled page fault on write access to 00000000"), s("[wow-null32]", "(mf.dll+0x")],
+        "none": [s("[madeira-env] game MADEIRA_WG_VIDEO=0")],
+        "reason": "The game crashed in Media Foundation (mf.dll) while playing a video; the line stops BCD's media parser from decoding MP4 video "
+                  "so the game's movie is refused instead of played.",
+        "evidence": ["albino-lullaby-mf-null-2026-10-22 (SF3P8T, build 580)", "41D565 (second session, same address)"],
+    },
+    {
+        "id": "sc-pa-pools-missing",
+        "lines": ["env.MADEIRA_SC_PA_POOLS = 2"],
+        "priority": 8,
+        # Grand Theft Auto IV through the Rockstar Launcher (J1J40D, 3JTHRV, build 580, 512 GB map): the Launcher's Social Club browser asks for
+        # PartitionAlloc's glued 32 GB pools and BCD says "without env.MADEIRA_SC_PA_POOLS=1 there is none to give", SocialClubHelper.exe
+        # exits 0x80000003, the Launcher logs "Browser subprocess no longer running" and respawns it every 5 s until the pool is full. GTA V's
+        # and RDR2's lists carry layout 2. Only a 512 GB map: layout 2 needs 28 GB of space the 63 GB and 454 GB maps do not have (there the
+        # message is printed too, with the switch in force, and the switch changes nothing: G2G7WA, 4X7N94).
+        "all": [s("[sc-cef] SocialClubHelper.exe asks for PartitionAlloc's glued 32 GB pools", "without env.MADEIRA_SC_PA_POOLS=1"),
+                s("[device] address-map=", "512GB")],
+        "none": [s("[madeira-env] game MADEIRA_SC_PA_POOLS=")],
+        "reason": "The Rockstar Launcher's Social Club browser needs address space for its memory pools and BCD keeps none free by default; the "
+                  "line reserves it, as for Grand Theft Auto V.",
+        "evidence": ["grand-theft-auto-iv-sc-pa-pools-2026-10-22 (J1J40D, build 580)", "3JTHRV"],
+    },
+    {
+        "id": "java-zgc-off",
+        "lines": ["env._JAVA_OPTIONS = -XX:-UseZGC"],
+        "priority": 20,
+        # Project Zomboid (GCN1GC, build 580): its JVM runs ZGC, which reserves its heap at 4 TiB and up ("[jumbo#1] ... size=0x7cda00000
+        # (31962 MB) hint=0x40000000000 -> 0x0 st=0xc0000018", then 12,230 refused reservations up to 8 TiB) and the process exits 1; BCD's map
+        # ends at 512 GB. _JAVA_OPTIONS is read after the command line, so -XX:-UseZGC turns the collector off and the default one reserves
+        # its heap low. An attempt: the JVM's own choice afterwards is not shown by any log.
+        "all": [s("[jumbo#1]", "hint=0x40000000000", "st=0xc0000018"), s("jvm.dll")],
+        "none": [s("[madeira-env] game _JAVA_OPTIONS=")],
+        "reason": "The game's Java runtime uses a collector (ZGC) that needs address space at 4 TiB, which this device does not have; the "
+                  "line switches that collector off so the runtime reserves its memory low.",
+        "evidence": ["project-zomboid-zgc-2026-10-22 (GCN1GC, build 580)"],
     },
 ] + SWAP_RULES
 
