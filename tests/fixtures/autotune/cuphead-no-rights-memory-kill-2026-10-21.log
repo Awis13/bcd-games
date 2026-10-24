@@ -1,0 +1,247 @@
+[22:57:48.625] [INFO] Checking entitlements...
+[22:57:48.626] [INFO] [build] v0.1.574 (574)
+[22:57:48.627] [INFO] [device] model=iPhone14,3 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=5639MB available=3053MB cores=6
+[22:57:48.627] [INFO] [device] address-map=[0x102958000,0x7180000000) 454GB increased-memory=0 extended-va=0
+[22:57:48.644] [INFO] [device] gpu="Apple A15 GPU" family=apple8 argument-buffers=tier2 mesh=1 bc=0 atomics64=0 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[22:57:49.836] [INFO] [bcd] library launch Cuphead: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[22:57:49.838] [INFO] Requesting JIT with Built-in StikJIT...
+[22:57:52.859] [INFO] [dock-launch] image-retire=1
+[22:57:52.860] [INFO] [dock-launch] image-map-guard=1
+[22:57:52.875] [INFO] [dock-installers] app=268910 scripts=0 programs=0
+[22:57:52.875] [INFO] [madeira-dock] starting the host for app 268910; Valve's client authenticates and authorizes the launch
+[22:57:52.888] [INFO] Running full Wine sequence...
+[22:57:52.888] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102958000,0x7180000000) 454GB available=3040MB low-power=0 thermal=serious
+[22:57:52.897] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[22:57:52.897] [INFO] Allocating 896MB JIT pool via debugger...
+[22:57:52.897] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[22:57:52.898] [INFO] [jit-debugger] attached=1 at the pool request
+[22:57:52.900] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[22:57:53.902] [INFO] RX pool at 0x148000000
+[22:57:53.926] [INFO] Detaching debugger...
+[phase] wine-start             t+  1.081s rev=ml526
+[swap] ml1077 backed 0x717fe00000+0x200000 (whole reservation, ml1257) (file off 0 MB): 2 MB in 1 extents, peak 2 MB, 0 refused
+[22:57:54.426] [Wine init_process] reply_pipe=42, sending init_first_thread...
+ml992: os_proc_available_memory=2431 MB + phys_footprint=640 MB = 3072 MB (hw.memsize says 5639 MB)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[footprint] rev=ml358 phys=641 MB (peak 641) internal=640 MB compressed=0 MB external=58 MB reusable=5 MB (cycle=1)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+0024:err:seh:init_syscall_frame page0: trying debugger (BRK #0xf00d, x16=3)...
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[nls-getptr] type=11 id=1252 peb=0x717fff0000
+[nls-getptr] type=11 id=437 peb=0x717fff0000
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[swap] ml1077 backed 0x7175980000+0x100000 (whole reservation, ml1257) (file off 2 MB): 3 MB in 2 extents, peak 3 MB, 0 refused
+[nls-getptr] type=11 id=20127 peb=0x717fff0000
+[gdi-shared] session table 0x7175f60000 (1572864 bytes, section-backed, name=L"\\KernelObjects\\__wine_ios_gdi_shared")
+[nls-getptr] type=11 id=10000 peb=0x717fff0000
+[nls-getptr] type=11 id=10000 peb=0x717fff0000
+[nls-getptr] type=11 id=10000 peb=0x717fff0000
+[swap] ml1077 backed 0x71760e0000+0x100000 (whole reservation, ml1257) (file off 3 MB): 4 MB in 3 extents, peak 4 MB, 0 refused
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[swap] ml1077 backed 0x7176230000+0x480000 (whole reservation, ml1257) (file off 4 MB): 8 MB in 4 extents, peak 8 MB, 0 refused
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #5 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[footprint] rev=ml358 phys=665 MB (peak 665) internal=665 MB compressed=0 MB external=84 MB reusable=5 MB (cycle=2)
+[swap] ml1077 stats: 8 MB file-backed now (peak 8), 4 extents, file used 8 of 131072 MB, backs 4 releases 0 unbacks 0 refused 0 | coverage broad: disk 0 MB of 3072 cap, reservations 4, holes 0, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  4.164s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1498d4000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x149a0c000)
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x149aa2000)
+[file-wfail] ml669 #2 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #3 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[swap] ml1077 backed 0x7179050000+0x100000 (whole reservation, ml1257) (file off 8 MB): 9 MB in 5 extents, peak 9 MB, 0 refused
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  5.170s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[swap] ml1077 backed 0x7179df0000+0x24c000 (whole reservation, ml1257) (file off 9 MB): 11 MB in 6 extents, peak 11 MB, 0 refused
+[file-wfail] ml669 #4 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #5 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #6 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=695 MB (peak 695) internal=694 MB compressed=0 MB external=99 MB reusable=5 MB (cycle=3)
+[file-wfail] ml669 #7 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x14ae70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 119E40000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 717E610000
+[nls-getptr] type=11 id=437 peb=0x109258000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 717C190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 717C110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 717C000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 717BF40000
+[free-delay] #1 release of 0x717a760000+0x100000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x717a860000+0x200000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x717aa60000+0x400000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x717ae60000+0x800000 held for 2000 ms (4 in flight)
+[footprint] rev=ml358 phys=735 MB (peak 735) internal=734 MB compressed=0 MB external=109 MB reusable=5 MB (cycle=4)
+[file-wfail] ml669 #19 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #20 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #21 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #22 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=809 MB (peak 809) internal=809 MB compressed=0 MB external=124 MB reusable=5 MB (cycle=5)
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x7025280000+0xc000
+[footprint] rev=ml358 phys=826 MB (peak 826) internal=825 MB compressed=0 MB external=133 MB reusable=5 MB (cycle=6)
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x2000000 align=0x10000 bottom-up tries=261633 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0x2000000 align=0x10000 bottom-up tries=261633 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #1 size=0x2000000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14ee8d000)
+[free-delay] #5 release of 0x702b000000+0x802000 held for 2000 ms (1 in flight)
+[free-delay] #6 release of 0x7027c10000+0x200000 held for 2000 ms (2 in flight)
+[free-delay] #7 release of 0x7033600000+0x802000 held for 2000 ms (3 in flight)
+[free-delay] #8 release of 0x7033400000+0x200000 held for 2000 ms (4 in flight)
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+0050:err:seh:NtGetContextThread [ec-getctx] ml715 #1 handle=0000000000000190 status=c0000022 native_pc=0000000000000000 is_ec=-1 -> returned rip=0000000000000000 rsp=0000000000000000 flags=00000000
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:seh:NtGetContextThread [ec-getctx] ml715 #2 handle=00000000000002BC status=c0000022 native_pc=0000000000000000 is_ec=-1 -> returned rip=0000000000000000 rsp=0000000000000000 flags=00000000
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead.exe" t+ 26.288s rev=ml526
+[session-log] Steam game Cuphead.exe: logs/Cuphead.exe-2026-10-20_22-58-19.txt
+[Wine child thread] calling wine_ios_child_main...
+[nls-getptr] type=11 id=1252 peb=0x117d0c000
+[nls-getptr] type=11 id=437 peb=0x117d0c000
+[nls-getptr] type=11 id=20127 peb=0x117d0c000
+[nls-getptr] type=11 id=1252 peb=0x117d0c000
+[nls-getptr] type=11 id=437 peb=0x117d0c000
+[copy-verify] rpcrt4.dll: OK, 19 .text pages executable (copy @0x154404000)
+[22:58:24.020] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[unixlib] opengl32 (GL-absent stub table) (module 0x716c700000) -> 64-bit table (0x104f800a0)
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=39 resident=1425MB dbg=DEBUGGED rev=ml525
+[file-wfail] ml669 #82 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+E AC [mono-cfg] ml623 module=mono.dll base=0x716bd00000 xend=0x716bfd2d5e | MonoHacks=1 Multiblock=1 MaxInst=5000 => HOOKS ARMED (MarkMonoDetected)
+E AC [mono-cfg] ml623 module=mono.dll base=0x716bd00000 xend=0x716bfd2d5e | MonoHacks=1 Multiblock=1 MaxInst=5000 => HOOKS ARMED (MarkMonoDetected)
+[swp-emul] ml626 #1 REFUSING unaligned atomic: insn=0xf8f980d9 size=8 addr=0x7137b10056 rw=0x700e09c056
+[store-undecoded] #1 rev=ml350 insn=0xf8f980d9 pc=0x16b321820 addr=0x7137b10056 rw_addr=0x700e09c056 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[av-detail] ml613 #1 p0=WRITE p1=0x7137b10056 hostpc=0x16b321820 hinsn=0xf8f980d9 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x16aff8000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x716bda3d89 pc=0x16b321820 addr=0x7137b10056 kr=2(PROTECTION_FAILURE) entryprot=5 nowprot=5 region=0x7137b10000+0x4000 [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x16b321820 addr=0x7137b10056 x18=0x717ff00000 type=1 lr=0x16b3208b8 sp=0x716f5a0000 x16=0x151af19a4 x17=0x716f59ff20
+[guest-code] rev=ml333 pool_rip=0x155c37d89 (PE 0x716bda3d89): 48 85 c0 74 16 8b 88 00 01 00 00 48 8b 05 3d 44
+[fault-host] 16b321720: 33642110 45623110 00746125 d503201f 000007e8 10ffffea f900038a b945eb8b
+[fault-host] 16b321740: 3400004b d4395fc0 f90012fb a9bf76f9 a9bf6af3 f81f8ef4 d10142f7 d2898206
+[fault-host] 16b321760: f2ad7ec6 f2c00e26 d94000c8 d503201f ca170108 f1000109 f90022e8 aa0203f9
+[fault-host] 16b321780: 9100c2e3 528001c2 aa0103fd 52800206 b90022e6 d2819e26 f2ad7ca6 f2c00e26
+[fault-host] 16b3217a0: f81f8ee6 1000004a 97fffbff 10fffc2a f900038a b945eb8b 3400004b d4395fc0
+[fault-host] 16b3217c0: 52800926 3940c6e7 53081cea 6b06615f 3940e6e6 b3401cc0 2a0803f3 540000c1
+[mach_exc] insn_stream PC-12..PC+8: 7100011f 54001fc0 d1002fa6 [f8f980d9] 140000fb b2607ff4 ea190289
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x717ff00000 TEB=0x717ff00000 TEB[0x58]=0x71357165d0 *(gs_cached+0x58)=0x71357165d0
+[swp-emul] ml626 #2 REFUSING unaligned atomic: insn=0xf8f980d9 size=8 addr=0x7137b10056 rw=0x700e09c056
+[store-undecoded] #2 rev=ml350 insn=0xf8f980d9 pc=0x16b321820 addr=0x7137b10056 rw_addr=0x700e09c056 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[av-detail] ml613 #2 p0=WRITE p1=0x7137b10056 hostpc=0x16b321820 hinsn=0xf8f980d9 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x16aff8000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x716bda3d89 pc=0x16b321820 addr=0x7137b10056 kr=2(PROTECTION_FAILURE) entryprot=5 nowprot=5 region=0x7137b10000+0x4000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x16b321820 addr=0x7137b10056 x18=0x717ff00000 type=1 lr=0x16b3208b8 sp=0x716f5a0000 x16=0x151af19a4 x17=0x716f59ff20
+[guest-code] rev=ml333 pool_rip=0x155c37d89 (PE 0x716bda3d89): 48 85 c0 74 16 8b 88 00 01 00 00 48 8b 05 3d 44
+[fault-host] 16b321780: 9100c2e3 528001c2 aa0103fd 52800206 b90022e6 d2819e26 f2ad7ca6 f2c00e26
+[fault-host] 16b3217a0: f81f8ee6 1000004a 97fffbff 10fffc2a f900038a b945eb8b 3400004b d4395fc0
+[fault-host] 16b3217c0: 52800926 3940c6e7 53081cea 6b06615f 3940e6e6 b3401cc0 2a0803f3 540000c1
+[fault-host] 16b3217e0: 52801766 3940cae7 53081cea 6b06615f 540000a0 52801d06 53081c0a 6b06615f
+[fault-host] 16b321800: 54001e01 52801d06 53081c0a 6b06615f 540000c0 7100011f 54001fc0 d1002fa6
+[fault-host] 16b321820: f8f980d9 140000fb b2607ff4 ea190289 00000000 00000000 00000000 00000000
+[mach_exc] insn_stream PC-12..PC+8: 7100011f 54001fc0 d1002fa6 [f8f980d9] 140000fb b2607ff4 ea190289
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x717ff00000 TEB=0x717ff00000 TEB[0x58]=0x71357165d0 *(gs_cached+0x58)=0x71357165d0
+ml998: [wr-strip-declined] 0x7137b10056 vprot=0x25 { COMMITTED READ EXEC  } unix_prot=5
+ml998: [wr-strip-declined]   view 0x7137b10000+0x100000 protect=0x27 {  } page_off=0
+ml998: [wr-strip-declined]   neighbours prev=00 this=0x25 next=0x27
+00ac:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 RIP=0x16b321820 RX from -32, 64 of 64 bytes: 01 1e 00 54 06 1d 80 52 0a 1c 08 53 5f 61 06 6b c0 00 00 54 1f 01 00 71 c0 1f 00 54 a6 2f 00 d1 d9 80 f9 f8 fb 00 00 14 f4 7f 60 b2 89 02 19 ea 1f 40 00 d5 20 18 00 54 a6 a7 81 d2 a6 7c ad f2 
+00ac:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 no RW alias for 0x16b321820 (not an anon-JIT page)
+D AC Handled self-modifying code: pc: 16B321820 fault: 7137B10056
+[file-wfail] ml669 #83 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[win-name] #33 hwnd=0x10066 class='' text="Default IME" rev=ml853
+D AC Load module winspool.drv (winspool.drv-1d86ae048b0921a6): 716B230000
+D AC Load module compstui.dll (compstui.dll-6caceb67ab4f8333): 716B190000
+D AC Load module comctl32.dll (comctl32.dll-8c564d137baf4ee2): 716B010000
+[footprint] rev=ml1060 fast phys=1348 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=1370 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=1402 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=1424 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=1445 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=1465 MB compressed=0 MB
+D AC Load module mmdevapi.dll (mmdevapi.dll-57db4935cb1d4a81): 716A870000
+D 14C Load module avrt.dll (avrt.dll-cbf6d88ff1151c3b): 716A770000
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #1 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:module:load_dll [dll-missing] rev=ml336 #55 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead_Data\\Managed\\UnityEngine.SpatialTracking.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #56 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead_Data\\Managed\\Rewired_Core.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #57 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead_Data\\Managed\\Rewired_Windows_Lib.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #58 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead_Data\\Managed\\UnityEngine.StandardEvents.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:load_dll [dll-missing] rev=ml336 #59 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead_Data\\Managed\\System.Core.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #2 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #3 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #4 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #5 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #6 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+[win-name] #35 hwnd=0x2005e class='' text="Cuphead" rev=ml853
+D AC Load module xinput1_3.dll (xinput1_3.dll-1e6b917460b75bf3): 716A6A0000
+[win-name] #36 hwnd=0x2005e class='' text="Cuphead" rev=ml853
+[footprint] rev=ml358 phys=1748 MB (peak 1748) internal=1713 MB compressed=0 MB external=252 MB reusable=5 MB (cycle=20)
+[launch-view] dismissed reason=game-window logs=0
+00ac:err:module:load_dll [dll-missing] rev=ml336 #60 L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Cuphead\\Cuphead_Data\\Managed\\System.Xml.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #19 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #20 handle=000000000000032C status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012C98E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #21 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #22 handle=000000000000032C status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012C98E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #23 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #24 handle=000000000000032C status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012C98E9D0 flags=00100003
+err:   [bc-decode] ml679 #0 BC7 512x256 level=0 slice=0 -> 4B/texel 524288B
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x2010000 align=0x10000 bottom-up tries=261632 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0x2010000 align=0x10000 bottom-up tries=261632 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #2 size=0x2010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+err:   [bc-decode] ml679 #1 BC7 2048x4096 level=0 slice=0 -> 4B/texel 33554432B
+err:   [bc-decode] ml679 #2 BC7 2048x2048 level=0 slice=0 -> 4B/texel 16777216B
+err:   [bc-decode] ml679 #3 BC7 1024x1024 level=0 slice=0 -> 4B/texel 4194304B
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #25 handle=0000000000000120 status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012438E9D0 flags=00100003
+00ac:err:seh:NtGetContextThread [ec-getctx] ml715 #26 handle=000000000000032C status=00000000 native_pc=0000000244A21EE8 is_ec=0 -> returned rip=0000000244A21EE8 rsp=000000012C98E9D0 flags=00100003
+[footprint] rev=ml358 phys=1927 MB (peak 1927) internal=1782 MB compressed=0 MB external=274 MB reusable=5 MB (cycle=21)
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #3 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+err:   [bc-decode] ml679 #4 BC7 4096x4096 level=0 slice=0 -> 4B/texel 67108864B
+[steer] #4 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+err:   [bc-decode] ml679 #5 BC7 4096x4096 level=0 slice=0 -> 4B/texel 67108864B
+[steer] #5 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[footprint] rev=ml358 phys=2143 MB (peak 2143) internal=1693 MB compressed=205 MB external=307 MB reusable=5 MB (cycle=22)
+[steer] #6 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[swap] ml1077 backed 0x715d2d0000+0x4010000 (whole reservation, ml1257) (file off 306 MB): 280 MB in 58 extents, peak 372 MB, 0 refused
+[steer] #7 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[swap] ml1077 backed 0x715d2d0000+0x4010000 (whole reservation, ml1257) (file off 306 MB): 280 MB in 58 extents, peak 372 MB, 0 refused
+[footprint] rev=ml358 phys=2484 MB (peak 2484) internal=1555 MB compressed=489 MB external=294 MB reusable=5 MB (cycle=23)
+[steer] #8 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[swap] ml1077 backed 0x715d2d0000+0x4010000 (whole reservation, ml1257) (file off 306 MB): 280 MB in 58 extents, peak 372 MB, 0 refused
+[steer] #9 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[swap] ml1077 backed 0x715d2d0000+0x4010000 (whole reservation, ml1257) (file off 306 MB): 280 MB in 58 extents, peak 372 MB, 0 refused
+[footprint] rev=ml1060 fast phys=2709 MB compressed=729 MB
+[steer] #10 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[swap] ml1077 backed 0x715d2d0000+0x4010000 (whole reservation, ml1257) (file off 306 MB): 280 MB in 58 extents, peak 372 MB, 0 refused
+[footprint] rev=ml358 phys=2899 MB (peak 2899) internal=1301 MB compressed=926 MB external=322 MB reusable=5 MB (cycle=24)
+[swap] ml1077 backed 0x715ab50000+0x210000 (whole reservation, ml1257) (file off 219 MB): 292 MB in 95 extents, peak 372 MB, 0 refused
+[footprint] rev=ml1060 fast phys=2762 MB compressed=931 MB
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #11 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[footprint] rev=ml1060 fast phys=2790 MB compressed=931 MB
+[footprint] rev=ml1060 fast phys=2826 MB compressed=931 MB
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #12 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[footprint] rev=ml358 phys=2850 MB (peak 2899) internal=1006 MB compressed=928 MB external=363 MB reusable=5 MB (cycle=25)
+[footprint] rev=ml1060 fast phys=2938 MB compressed=943 MB
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7c00000000..0x8000000000 views=0 maxgap=0x400000000 tailgap=0x400000000 stop=no-views-in-range | firstfail=0x7c00000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] FAILED window=0x7400000000..0x7800000001 size=0x4010000 align=0x10000 bottom-up tries=261120 skips=0 | seen=0x7400000000..0x7800000001 views=0 maxgap=0x400000001 tailgap=0x400000001 stop=no-views-in-range | firstfail=0x7400000000 errno=12(Cannot allocate memory)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[steer] #13 size=0x4010000 reserved_total=0MB armed=va-pressure -> FAILED, falling back 0x0
+[footprint] rev=ml1060 fast phys=2980 MB compressed=943 MB

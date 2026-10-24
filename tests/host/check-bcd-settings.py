@@ -179,8 +179,9 @@ func check(_ cond: Bool, _ what: String) {
 typealias N = BCDSettingsNavigator
 let all = BCDSettingsSection.allCases
 let list = BCDSettingsID.list
-check(all.count == 15 && all.last == .about && all[all.count - 2] == .updates && all.contains(.developer),
-      "fifteen sections (Developer among them), Updates then About last")
+check(all.count == 16 && all.last == .about && all[all.count - 2] == .updates && all.contains(.developer)
+      && all.firstIndex(of: .gecko) == all.firstIndex(of: .vcruntime)! + 1,
+      "sixteen sections (Developer among them, the HTML engine for installers right after Visual C++), Updates then About last")
 check(all.firstIndex(of: .feedback) == all.firstIndex(of: .logs)! + 1 && BCDSettingsSection.feedback.title == "Feedback"
       && BCDSettingsSection(name: "feedback") == .feedback && !BCDSettingsSection.feedback.placeholder,
       "Feedback is a section of its own, right after Logs")

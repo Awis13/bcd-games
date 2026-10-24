@@ -193,7 +193,7 @@ check("account.$cloud.map { _ in () }" in store and "self?.noteSavesDiffer()" in
       "savesDiffer is read as the cloud state moves and with every rebuild, and dropped while a game runs")
 
 # ---- around the shell: setup, settings, errors, controller ---------------------------------
-check(".fullScreenCover(isPresented: $onboarding.presented) { OnboardingView() }" in front
+check(".fullScreenCover(isPresented: $onboarding.presented, onDismiss: BCDPresentation.didClose) { OnboardingView() }" in front
       and "onboarding.presentIfNeeded()" in front and 'EndedSessionSurface.hide(reason: "library-appeared")' in front,
       "first-run setup opens over BCD's interface as over the classic library")
 # Wave 3 (2026-10-19): the classic Settings page (BCDOpenClassicSettings, LibrarySettingsForm) is deleted; the
@@ -214,7 +214,7 @@ check("LogUploadSettingsSection" not in front and "sendLog" not in front and "BC
       "no old Send Log sheet (Send Log lives in Settings › Logs and on the game page); Steam sign-in is BCD's own page")
 # Add a game and a game's page (after Add a game, and the Play question's Choose saves) are BCD's
 # own screens, full screen (ui-game-page, 2026-10-18): the classic browser and page never open.
-check("BCDAddGame(close:" in front and "BCDGamePage(gameID:" in front and ".fullScreenCover(item: pageShown)" in front
+check("BCDAddGame(close:" in front and "BCDGamePage(gameID:" in front and ".fullScreenCover(item: pageShown, onDismiss: BCDPresentation.didClose)" in front
       and "ExecutableBrowser" not in front and "LibraryDetail" not in front,
       "Add a game and a game's page are BCD's own screens, never the classic ones")
 check("@StateObject private var focus = BCDFocus(watchControllers: false)" in front

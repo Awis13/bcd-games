@@ -1,0 +1,14 @@
+{
+ "dialogs": [
+  "Error"
+ ],
+ "end": {},
+ "matched": [
+  "game-mandatory-aslr-box"
+ ],
+ "next": [],
+ "note": "Round 2026-10-24 (ajan22/loglar): Demon Slayer The Hinokami Chronicles 2 (APK2), build 592: the game's own box 'Disable Mandatory ASLR' before any window; exe-window-mb = 512 and the NOCOPY line were in force and changed nothing. A known stop with no setting that changes it (no line, auto-tune says so).",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

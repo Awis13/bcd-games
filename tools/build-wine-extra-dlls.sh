@@ -94,6 +94,15 @@ NTS=""
 if [ "${MADEIRA_NTDLL_SYNC_BUILD:-1}" != 0 ] && [ -f "$R/wine/dlls/ntdll/sync.c" ] && [ -f "$SHIP/ntdll.dll" ]; then
     NTS=ntdll
 fi
+# madeira-bcd, from thebcd69/bcd-games#4 and thebcd69/bcd-wine#1 by mckenna654 (modified 2026-10-24): another new file.
+# ntdll-xsec.dll is Wine's ntdll built with tools/patch-wine-ntdll-xsec.py (the emulator is told about the executable views of
+# non-image sections, and two code-probe recoveries) and ships NEXT TO the shipped ntdll.dll, which stays. The unix loader maps it only
+# with env.MADEIRA_NTDLL_XSEC = 1 (Diablo II: Resurrected's list). Built only when this tree, unpatched, first rebuilds the shipped
+# ntdll.dll byte for byte apart from its time stamps (the same proof as for ntdll-sync.dll). MADEIRA_NTDLL_XSEC_BUILD=0 skips it.
+XSE=""
+if [ "${MADEIRA_NTDLL_XSEC_BUILD:-1}" != 0 ] && [ -f "$R/wine/dlls/ntdll/signal_arm64ec.c" ] && [ -f "$SHIP/ntdll.dll" ]; then
+    XSE=ntdll
+fi
 # madeira-bcd: a new file too, a diagnostic. kernelbase-fibertrace.dll is Wine's
 # kernelbase built with tools/patch-wine-kernelbase-fibertrace.py (the fiber calls,
 # parked fibers and overlapped reads logged as [fiber-trace] lines) and ships NEXT
@@ -147,7 +156,15 @@ fi
 # SensApi.dll (VFM84T); each ended at once with c0000135 (Borderlands 3 with UE4's delay-load exception). The 32-bit set has
 # all three; the 64-bit one had none. oledlg imports ole32, comdlg32, user32 and advapi32, all shipped; fwpuclnt and sensapi
 # import nothing beyond the kernel. A program that loads one of them optionally today keeps running without it, hence opt-in.
-OPTIN_WANT="dxva2 evr xpsprint sfc sfc_os tbs twinapi.appcore mfasfsrcsnk wmvdecod wmadmod oledlg fwpuclnt sensapi"
+# ddraw (2026-10-23, the owner's Dying Light log 17:27:59, build 593): its renderer rd3d11_x64_rwdi.dll imports DDRAW.dll, which the
+# 64-bit set lacks; the game said "Cannot load 'rd3d11_x64_rwdi.dll'" and "FATAL ERROR Cannot initialize renderer". Wine's ddraw imports
+# wined3d, user32, gdi32 and advapi32, all shipped.
+# msi, mspatcha, odbccp32, sxs and rstrtmgr (2026-10-23, the owner's EA app install on build 594, log 19:20:11): the MSI package
+# installed, then its StartServices action started EABackgroundService.exe, a 64-bit service that imports msi.dll and
+# RstrtMgr.dll; the 64-bit set has neither, the loader stopped with c0000135, services.exe answered 1053 and the MSI rolled back
+# (1627, "INST-14-1627"). msi.dll in turn imports mspatcha, odbccp32 and sxs, the three others the 64-bit set lacks; all
+# their own imports ship. Only the EA app's launcher entry names them.
+OPTIN_WANT="dxva2 evr xpsprint sfc sfc_os tbs twinapi.appcore mfasfsrcsnk wmvdecod wmadmod oledlg fwpuclnt sensapi ddraw msi mspatcha odbccp32 sxs rstrtmgr"
 OPT=""
 if [ "${MADEIRA_OPTIN_BUILD:-1}" != 0 ]; then
     for d in $OPTIN_WANT; do
@@ -169,7 +186,7 @@ SDL=""
 if [ "${MADEIRA_SETUPAPI_BUILD:-1}" != 0 ] && [ -f "$R/wine/dlls/setupapi/devinst.c" ] && [ -f "$SHIP/setupapi.dll" ]; then
     SDL=setupapi
 fi
-[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER$WTY$OPT$SDL" ] || { echo "nothing to build"; exit 0; }
+[ -n "$todo$XI$WGI$UCX$NTS$XSE$FBT$WER$WTY$OPT$SDL" ] || { echo "nothing to build"; exit 0; }
 
 # The cached tree may have disabled winegstreamer because macOS has no
 # GStreamer headers. Only its real PE frontend is needed here; the iOS unix
@@ -387,6 +404,53 @@ PY
     fi
     git -C "$R/wine" checkout -- dlls/ntdll/sync.c dlls/ntdll/ntdll.spec dlls/ntdll/Makefile.in
     rm -f "$R/wine/dlls/ntdll/sync_x64.c" "$nt" "$B"/dlls/ntdll/arm64ec-windows/*.o "$B/ntdll-stock.dll"
+fi
+# madeira-bcd, from thebcd69/bcd-games#4 and thebcd69/bcd-wine#1 by mckenna654 (modified 2026-10-24): ntdll-xsec.dll (see XSE above),
+# from the restored tree, the same way as ntdll-sync.dll: first the unpatched ntdll.dll, which must equal the shipped one apart from its
+# time stamps (the check is patch-wine-ntdll-sync.py's --same-as); then the patched one, verified before it ships (marker, log strings,
+# the stock export set, room for the RtlPcToFileHeader trampoline). The tree and the ntdll objects are restored afterwards
+# (wine/build-arm64ec is cached). A failure ships nothing: env.MADEIRA_NTDLL_XSEC = 1 then maps the shipped ntdll.dll.
+if [ -n "$XSE" ]; then
+    xnt="$B/dlls/ntdll/arm64ec-windows/ntdll.dll"
+    xflags="-g -O2"
+    xsrc="$(sed -n 's/^srcdir = //p' "$B/Makefile")"
+    case "$xsrc" in /*) xflags="$xflags -ffile-prefix-map=$xsrc=.. -fno-file-reproducible" ;; esac
+    xse_make() {
+        rm -f "$xnt" "$B"/dlls/ntdll/arm64ec-windows/*.o
+        make -C "$B" -j"$JOBS" arm64ec_CFLAGS="$xflags" x86_64_CFLAGS="$xflags" \
+            dlls/ntdll/arm64ec-windows/ntdll.dll >> "$B.ntdll-xsec.log" 2>&1 && [ -f "$xnt" ]
+    }
+    # stripped and padded to SizeOfImage + 0x50000, as build/wine-pe/build-ntdll.sh does
+    xse_ship() {
+        cp "$xnt" "$1" && "$MINGW/arm64ec-w64-mingw32-strip" "$1" && python3 - "$1" <<'PY'
+import struct, sys
+p = sys.argv[1]; d = open(p, 'rb').read()
+pe = struct.unpack_from('<I', d, 0x3c)[0]
+target = struct.unpack_from('<I', d, pe + 24 + 56)[0] + 0x50000
+if len(d) > target:
+    raise SystemExit("ntdll is larger than SizeOfImage + 0x50000")
+open(p, 'ab').write(b'\0' * (target - len(d)))
+PY
+    }
+    : > "$B.ntdll-xsec.log"
+    if xse_make && xse_ship "$B/ntdll-xsec-stock.dll" &&
+       python3 "$R/tools/patch-wine-ntdll-sync.py" --same-as "$B/ntdll-xsec-stock.dll" "$SHIP/ntdll.dll"; then
+        if python3 "$R/tools/patch-wine-ntdll-xsec.py" "$R/wine" && xse_make &&
+           xse_ship "$SHIP/ntdll-xsec.dll.tmp" &&
+           python3 "$R/tools/patch-wine-ntdll-xsec.py" --verify "$SHIP/ntdll-xsec.dll.tmp" "$SHIP/ntdll.dll"; then
+            mv "$SHIP/ntdll-xsec.dll.tmp" "$SHIP/ntdll-xsec.dll"
+            echo "::notice::ntdll-xsec.dll (executable views of non-image sections told to the emulator, two code-probe recoveries; opt-in, mapped only with env.MADEIRA_NTDLL_XSEC = 1): built next to the shipped ntdll.dll"
+        else
+            rm -f "$SHIP/ntdll-xsec.dll.tmp"
+            echo "::warning::ntdll-xsec.dll did not build or failed its check; not shipped (env.MADEIRA_NTDLL_XSEC = 1 maps the shipped ntdll.dll)"
+            grep -m 10 "error" "$B.ntdll-xsec.log"
+        fi
+    else
+        echo "::warning::this tree does not rebuild the shipped ntdll.dll apart from time stamps; ntdll-xsec.dll not shipped"
+        grep -m 10 "error" "$B.ntdll-xsec.log"
+    fi
+    git -C "$R/wine" checkout -- dlls/ntdll/signal_arm64ec.c
+    rm -f "$xnt" "$B"/dlls/ntdll/arm64ec-windows/*.o "$B/ntdll-xsec-stock.dll"
 fi
 xi_built=0; xi_failed=""
 if [ "$xi_patched" = 1 ]; then

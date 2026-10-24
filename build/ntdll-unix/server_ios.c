@@ -140,6 +140,7 @@ static void wine_log_write(const char *fmt, ...)
 #include "wine/debug.h"
 #include "unix_private.h"
 #include "ios_wow.h"
+#include "ios_iosb_dead.h"
 #include "ddk/wdm.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(server);
@@ -244,6 +245,15 @@ struct ios_fdt_ent
 static struct ios_fdt_ent ios_fdt[IOS_FDT_MAX];
 static unsigned int ios_fdt_gen;
 
+/* madeira-bcd (lead, 2026-10-23): the thread id for the fd ledger's lines, 0 on a thread without a TEB.
+ * GetCurrentThreadId() reads the TEB; the storm-end worker (ios_storm_end_thread, a plain host thread) has none, and
+ * its first [fdtrace] line read NULL+0x48 and ended the whole app (Battle.net, build 593, log 16:23). */
+static unsigned int ios_fdt_tid(void)
+{
+    TEB *teb = NtCurrentTeb();
+    return teb ? (unsigned int)HandleToULong( teb->ClientId.UniqueThread ) : 0;
+}
+
 static void ios_fdt_reg( int fd, int kind, void *peb )
 {
     struct ios_fdt_ent *e;
@@ -256,11 +266,11 @@ static void ios_fdt_reg( int fd, int kind, void *peb )
         if (reuse_cap++ < 200)
             wine_log_write("[fdtrace] SILENT-CLOSE fd=%d was %s owner_tid=%04x owner_peb=%p gen=%u; rereg %s tid=%04x peb=%p rev=ml586",
                            fd, ios_fdt_names[e->kind], e->tid, e->peb, e->gen,
-                           ios_fdt_names[kind], (unsigned int)GetCurrentThreadId(), peb);
+                           ios_fdt_names[kind], ios_fdt_tid(), peb);
     }
     e->kind = (unsigned char)kind;
     e->prev_kind = 0;
-    e->tid  = (unsigned int)GetCurrentThreadId();
+    e->tid  = ios_fdt_tid();
     e->peb  = peb;
     e->gen  = __sync_add_and_fetch( &ios_fdt_gen, 1 );
 }
@@ -294,14 +304,14 @@ static void ios_fdt_note_close( int fd, const char *why, void *dead_peb )
         int cross = (e->peb != dead_peb);
         wine_log_write("[fdtrace]%s close fd=%d why=%s kind=%s owner_tid=%04x owner_peb=%p gen=%u closer_tid=%04x dead_peb=%p rev=ml586",
                        cross ? " CROSS!" : "", fd, why, ios_fdt_names[e->kind],
-                       e->tid, e->peb, e->gen, (unsigned int)GetCurrentThreadId(), dead_peb);
+                       e->tid, e->peb, e->gen, ios_fdt_tid(), dead_peb);
         e->prev_kind = e->kind;
         e->kind = FDT_CLOSED;
     }
     else
         wine_log_write("[fdtrace] close fd=%d why=%s untracked%s closer_tid=%04x dead_peb=%p rev=ml586",
                        fd, why, (e->kind == FDT_CLOSED) ? " (prev comm fd)" : "",
-                       (unsigned int)GetCurrentThreadId(), dead_peb);
+                       ios_fdt_tid(), dead_peb);
 }
 
 /* victim autopsy: what the ledger knows about a failing comm fd */
@@ -309,7 +319,7 @@ static void ios_fdt_autopsy( const char *what, int fd, int ret, int err )
 {
     struct ios_fdt_ent *e = (fd >= 0 && fd < IOS_FDT_MAX) ? &ios_fdt[fd] : NULL;
     wine_log_write("[fdtrace] VICTIM %s tid=%04x fd=%d ret=%d errno=%d ledger=%s owner_tid=%04x owner_peb=%p gen=%u prev=%s rev=ml586",
-                   what, (unsigned int)GetCurrentThreadId(), fd, ret, err,
+                   what, ios_fdt_tid(), fd, ret, err,
                    e ? ios_fdt_names[e->kind] : "oob", e ? e->tid : 0, e ? e->peb : NULL,
                    e ? e->gen : 0, e ? ios_fdt_names[e->prev_kind] : "oob");
 }
@@ -342,6 +352,96 @@ int ios_peb_is_dead( const void *peb )
     for (i = 0; i < n; i++) if (ios_proc_sockets[i].peb == peb) return 0;
     for (i = 0; i < IOS_DEAD_PEB_MAX; i++) if (ios_dead_pebs[i] == peb) return 1;
     return 0;
+}
+
+/* ajan11-wow64stack: is this the PEB of a LIVE child pseudo-process (one that registered a master socket with the wineserver)?
+ * The session's first process has no entry here, and neither has a PEB nobody knows: both answer 0. Lock-free, like
+ * ios_peb_is_dead (read from the Mach exception thread). */
+int ios_peb_is_live_child( const void *peb )
+{
+    int i, n = ios_proc_socket_count;
+    if (!peb) return 0;
+    if (n > IOS_MAX_PROC_SOCKETS) n = IOS_MAX_PROC_SOCKETS;
+    for (i = 0; i < n; i++) if (ios_proc_sockets[i].peb == peb) return 1;
+    return 0;
+}
+
+/* ajan11-wow64stack: END ONE CHILD PSEUDO-PROCESS FROM OUTSIDE ITS THREADS.
+ *
+ * The redelivery guard (signal_arm64_ios.c, "[redeliv] 2000 identical redeliveries") used to end the whole app, whichever
+ * Windows process the storm was in. A storm in a child (Battle.net: its network-service helper, build 592) now ends that
+ * process only. process_exit_wrapper does the bookkeeping on the dying process's own thread; the storming thread cannot be
+ * made to run it (its stack is the problem), so the same steps run here, keyed by the PEB, on a short-lived worker thread
+ * (the Mach exception thread must never wait on a lock a Windows thread holds):
+ *   - the master socket closes: the wineserver sees EOF, wakes the process's waiters and kills its threads server-side;
+ *   - the child table (process_ios.c), the dead-PEB list, the fd cache, the sub-floor windows, the JIT pool allocations and the
+ *     guest window are released exactly as process_exit_wrapper releases them.
+ * Not done here: ios_retire_own_fixed_base_image (it needs the owning thread's server connection); the caller does not use this
+ * path for a process that owns the fixed-base image. The process's other threads are left as an ordinary exit leaves them: the
+ * ones that wake into reclaimed memory are ended one by one by the [zombie] rule in signal_arm64_ios.c. */
+struct ios_storm_end { void *peb; int status; };
+static struct ios_storm_end ios_storm_end_args[8];   /* no malloc on the Mach exception thread; a few at a time at most */
+static unsigned ios_storm_end_next;
+
+static void *ios_storm_end_thread( void *arg )
+{
+    struct ios_storm_end a = *(struct ios_storm_end *)arg;
+    extern int ios_child_slot_name( void *peb, char *out, size_t len );
+    extern void ios_child_slot_exited( void *peb );
+    extern int ios_child_slot_note_exit( void *peb, int status );
+    extern void ios_jit_reclaim_process( void *peb );
+    extern void ios_fd_cache_release( void *peb );
+    extern void ios_subfloor_release_owner( void *owner );
+    extern void ios_wow_window_release( void *peb_id );
+    char name[64];
+    int i, n, fd = -1;
+
+    pthread_setname_np( "wine-storm-end" );
+    ios_child_slot_name( a.peb, name, sizeof(name) );
+    n = ios_proc_socket_count;
+    if (n > IOS_MAX_PROC_SOCKETS) n = IOS_MAX_PROC_SOCKETS;
+    for (i = 0; i < n; i++)
+    {
+        /* claim the entry the way an ordinary exit clears it: whoever gets there first does the closing, once */
+        if (ios_proc_sockets[i].peb != a.peb) continue;
+        fd = ios_proc_sockets[i].fd;
+        if (!__sync_bool_compare_and_swap( &ios_proc_sockets[i].peb, a.peb, NULL )) fd = -1;
+        break;
+    }
+    if (fd < 0)
+    {
+        wine_log_write( "[redeliv] the Windows process %s (peb=%p) had already ended; nothing more to release rev=ajan11", name, a.peb );
+        return NULL;
+    }
+    wine_log_write( "[redeliv] ending only the Windows process %s (peb=%p, master socket %d): the app and the other processes keep running "
+                    "rev=ajan11", name, a.peb, fd );
+    ios_fdt_note_close( fd, "exit-master-storm", a.peb );
+    close( fd );
+    ios_child_slot_exited( a.peb );
+    ios_child_slot_note_exit( a.peb, a.status );
+    ios_dead_pebs[__sync_fetch_and_add( &ios_dead_peb_next, 1 ) % IOS_DEAD_PEB_MAX] = a.peb;
+    ios_fd_cache_release( a.peb );
+    ios_subfloor_release_owner( a.peb );
+    ios_jit_reclaim_process( a.peb );
+    ios_wow_window_release( a.peb );
+    wine_log_write( "[redeliv] the Windows process %s (peb=%p) is released: socket, child table, JIT allocations, guest window rev=ajan11",
+                    name, a.peb );
+    return NULL;
+}
+
+/* 1: a worker thread was started and will end the process; 0: nothing was done (the caller keeps its old behaviour). */
+int ios_end_child_process_async( void *peb, int status )
+{
+    struct ios_storm_end *a;
+    pthread_t t;
+
+    if (!ios_peb_is_live_child( peb )) return 0;
+    a = &ios_storm_end_args[__sync_fetch_and_add( &ios_storm_end_next, 1 ) % 8];
+    a->peb = peb;
+    a->status = status;
+    if (pthread_create( &t, NULL, ios_storm_end_thread, a )) return 0;
+    pthread_detach( t );
+    return 1;
 }
 #endif
 static _Thread_local int initial_cwd = -1;
@@ -3442,6 +3542,37 @@ static NTSTATUS invoke_user_apc( CONTEXT *context, const struct user_apc *apc, N
 }
 
 
+/* madeira-bcd (ajan16, build 596): the completion of an async I/O in a 32-bit process stores an IO_STATUS_BLOCK32 where the request said.
+ * Only a store that cannot land is skipped (ios_iosb_dead.h: Battle.net's Agent, whose console writes from 64-bit native code inside the
+ * 32-bit process carry a 64-bit status block that was never a cookie; "[iosb-dead]" in the log). Everything else is set_async_iosb() as
+ * it was, and so is every 64-bit process. MADEIRA_IOSB_DEAD_TARGET=0 stores anyway. */
+extern int ios_iosb_probe_mapped( unsigned long long addr, unsigned long long len );
+extern int ios_iosb_probe_served_low( unsigned long long addr, unsigned long long len );
+
+static void ios_set_async_iosb( client_ptr_t iosb, NTSTATUS status, ULONG_PTR info )
+{
+    static int enabled = -1;
+
+    if (iosb && in_wow64_call())
+    {
+        if (enabled < 0) enabled = ios_iosb_dead_enabled();
+        if (enabled && ios_iosb32_target_dead( iosb, ios_wow_base(), ios_iosb_probe_mapped, ios_iosb_probe_served_low ))
+        {
+            static volatile unsigned count;
+            unsigned n = __sync_add_and_fetch( &count, 1 );
+
+            if (n <= 8 || !(n & (n - 1)))
+                dprintf( 2, "[iosb-dead] ajan16 #%u async I/O completion in a 32-bit process (window %p): the status block pointer %#llx is not "
+                         "memory; the store of status=%#x information=%#llx is skipped (a 64-bit caller's status block taken for a guest one; "
+                         "MADEIRA_IOSB_DEAD_TARGET=0 stores anyway)\n",
+                         n, (void *)ios_wow_base(), (unsigned long long)iosb, (unsigned)status, (unsigned long long)info );
+            return;
+        }
+    }
+    set_async_iosb( iosb, status, info );
+}
+
+
 /***********************************************************************
  *              invoke_system_apc
  */
@@ -3469,7 +3600,7 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
             result->async_io.status = status;
             result->async_io.total = info;
             /* the server will pass us NULL if a call failed synchronously */
-            set_async_iosb( call->async_io.sb, result->async_io.status, info );
+            ios_set_async_iosb( call->async_io.sb, result->async_io.status, info );
         }
         else result->async_io.status = STATUS_PENDING; /* restart it */
         break;

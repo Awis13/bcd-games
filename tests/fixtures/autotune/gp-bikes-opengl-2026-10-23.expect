@@ -1,0 +1,15 @@
+{
+ "dialogs": [
+  "Error",
+  "Dummy window: ChoosePixelFormat failed."
+ ],
+ "end": {},
+ "matched": [
+  "opengl-only-no-context"
+ ],
+ "next": [],
+ "note": "OpenGL-only game on BCD's GL-absent opengl32 stub (Send Log CCKWDR, build 592): the game cannot make its window. No setting helps; auto-tune says so.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

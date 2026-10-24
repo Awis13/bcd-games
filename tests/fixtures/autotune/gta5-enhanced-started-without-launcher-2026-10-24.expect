@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "gta5-enhanced-started-without-launcher"
+ ],
+ "next": [],
+ "note": "GTA V Enhanced started from GTA5_Enhanced.exe itself (a non-Steam copy), build 592, iPhone16,2: the game loads its DLLs, raises c000001d at its own code and a single-step trap and calls NtTerminateProcess(0xdeadc0de) 3 seconds in (L3265); no launcher process, no window. The same in GQ2P52 and QS7HRE. Tester log FNVAQJ, scrubbed.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

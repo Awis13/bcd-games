@@ -71,7 +71,7 @@ struct BCDFrontEnd: View {
         .foregroundStyle(BCDStyle.text)
         .preferredColorScheme(.dark)
         // Settings clears the buttons when it goes: the shell's come back once it has.
-        .fullScreenCover(isPresented: $showSettings, onDismiss: { installButtons() }) {
+        .fullScreenCover(isPresented: $showSettings, onDismiss: { installButtons(); BCDPresentation.didClose() }) {
             BCDSettingsRoot(store: store, close: { showSettings = false; settingsSection = nil }, section: settingsSection)
                 .environmentObject(focus)
         }

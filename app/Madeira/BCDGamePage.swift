@@ -402,7 +402,10 @@ struct BCDGameDetails: Equatable {
     func restoreSaves(from file: URL) async throws -> Int
     func lastLog(of game: BCDGame) async -> BCDGameLog?
     /// Sends the log; the answer is the code to quote.
-    func send(_ log: BCDGameLog, of game: BCDGame, progress: @escaping (String) -> Void) async throws -> String
+    /// The sender's comment for a log about to be sent (BCDLogComment): the text (empty for none), nil when they cancel.
+    func logComment() async -> String?
+    /// `comment`: the sender's words for the top of the log (BCDLogComment), empty for none.
+    func send(_ log: BCDGameLog, of game: BCDGame, comment: String, progress: @escaping (String) -> Void) async throws -> String
     /// The game's own config, as text (key = value lines); nil: none to edit.
     func configText(for game: BCDGame) -> String?
     func saveConfig(_ text: String, for game: BCDGame)
@@ -1143,9 +1146,14 @@ struct BCDGamePending: Equatable {
                 return "Put back \(count) file\(count == 1 ? "" : "s")."
             }
         case .sendLog(let log):
-            work("report") { [weak self] backend in
-                let code = try await backend.send(log, of: game) { step in self?.messages["report"] = step }
-                return "Sent. Quote this code: \(code)"
+            guard let backend else { return }
+            Task { [weak self] in
+                // The sender's comment first (BCDLogComment through the backend); Cancel sends nothing.
+                guard let comment = await backend.logComment() else { return }
+                self?.work("report") { [weak self] backend in
+                    let code = try await backend.send(log, of: game, comment: comment) { step in self?.messages["report"] = step }
+                    return "Sent. Quote this code: \(code)"
+                }
             }
         case .saveConfig(let text):
             backend?.saveConfig(text, for: game)
@@ -1244,7 +1252,7 @@ private struct BCDGamePagePresenter: ViewModifier {
     let from: String
 
     func body(content: Content) -> some View {
-        content.fullScreenCover(item: $game) { opened in
+        content.fullScreenCover(item: $game, onDismiss: BCDPresentation.didClose) { opened in
             BCDGamePage(gameID: opened.id, from: from) { game = nil }
                 .environmentObject(store)
                 .environmentObject(focus)
@@ -2705,6 +2713,7 @@ private struct BCDGameTextPage: View {
             .padding(.top, 4)
         }
         .onAppear { typing = true }
+        .bcdKeyboardDone { typing = false }
     }
 }
 
@@ -2717,6 +2726,7 @@ private struct BCDGameConfigPage: View {
     @Environment(\.verticalSizeClass) private var vertical
     @State private var draft = ""
     @State private var loaded = false
+    @FocusState private var typing: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -2729,6 +2739,7 @@ private struct BCDGameConfigPage: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .scrollContentBackground(.hidden)
+                .focused($typing)
                 // A phone on its side has little height: Save and Cancel stay in sight under it.
                 .frame(height: vertical == .compact ? 120 : 210)
                 .padding(8)
@@ -2747,6 +2758,7 @@ private struct BCDGameConfigPage: View {
             draft = model.configDraft ?? model.backend?.configText(for: game) ?? ""
             loaded = true
         }
+        .bcdKeyboardDone { typing = false }
     }
 
     private var buttons: some View {

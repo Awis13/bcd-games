@@ -80,13 +80,14 @@ enum LogUpload {
 
     /// Packs and sends one of the `listed` newest logs; `done` runs on the main queue with the
     /// intake's code.
-    static func send(_ log: URL, game: String,
+    static func send(_ log: URL, game: String, comment: String? = nil,
                      progress: ((String) -> Void)? = nil, done: ((Result<String, Error>) -> Void)? = nil) {
         func finish(_ r: Result<String, Error>) {
             switch r {
             case .success(let code):
                 remember(Sent(name: log.lastPathComponent, code: code, date: Date()))
-                LogStore.shared.log("[bcd-logs] sent \(log.lastPathComponent): code \(code)")
+                let commented = LogUploadCore.commentLines(comment).isEmpty ? "" : " (with the sender's comment)"
+                LogStore.shared.log("[bcd-logs] sent \(log.lastPathComponent): code \(code)\(commented)")
             case .failure(let e):
                 LogStore.shared.log("[bcd-logs] could not send \(log.lastPathComponent): \(e.localizedDescription)", level: .error)
             }
@@ -101,7 +102,7 @@ enum LogUpload {
             let packed: (raw: Int, packed: Int)
             do {
                 say("Compressing…")
-                packed = try LogUploadCore.pack(log, to: gz) { f in say("Compressing… \(Int(f * 100))%") }
+                packed = try LogUploadCore.pack(log, to: gz, comment: comment) { f in say("Compressing… \(Int(f * 100))%") }
             } catch {
                 try? FileManager.default.removeItem(at: gz)
                 return finish(.failure(error))

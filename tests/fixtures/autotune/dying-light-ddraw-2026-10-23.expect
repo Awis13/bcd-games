@@ -1,0 +1,19 @@
+{
+ "dialogs": [
+  "FATAL ERROR Cannot initialize renderer?"
+ ],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [
+  "ddraw-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = ddraw"
+ ],
+ "note": "Dying Light (Steam 239140, the owner's iPhone18,2, build 593, 17:27:59, LC_ALL in force): rd3d11_x64_rwdi.dll imports DDRAW.dll, which the 64-bit set lacks; 'Cannot load rd3d11_x64_rwdi.dll' / 'FATAL ERROR Cannot initialize renderer'. ddraw-dll-optin proposes env.MADEIRA_OPTIN_DLLS = ddraw (Dying Light's own list v2 names setupapi,ddraw).",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

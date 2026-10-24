@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "wow-window-no-address-space"
+ ],
+ "next": [],
+ "note": "Round tur600 (ajan36): Far Cry 3 (Steam 220240, FC3UpdaterSteam.exe, a 32-bit program), Dock, build 592, iPhone15,2 on a 17 GB map without the memory entitlements (W9521T = ERCDZS = ECMHQH, one session sent three times): the 32-bit program was refused its 4 GB window (map too small, guest-window-reserve c0000017) and Steam's launch failed (client error 46, host result 45). The user was away at the end, and the rule's signals keep the verdict a failure. No setting changes it, so auto-tune stops at once and says why.",
+ "outcome": "exited-early",
+ "stage": 2,
+ "status": "known"
+}

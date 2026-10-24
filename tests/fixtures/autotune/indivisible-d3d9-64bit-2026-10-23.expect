@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "d3d9-64bit-dxmt-crash"
+ ],
+ "next": [
+  "env.MADEIRA_D3D9_X64 = dxmt"
+ ],
+ "note": "Indivisible (Steam 421170, 64-bit Direct3D 9), build 592, iPhone17,4, Send Log YE8TT0: d3d9_init FAILED, then a call through a NULL pointer (Indivisible.exe+0x31c429, AV EXEC of 0). The log's own auto-tune line had added dxva2 (no effect). UNPROVEN: env.MADEIRA_D3D9_X64 = dxmt.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

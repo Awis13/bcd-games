@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "fallout-4-launcher-swap"
+ ],
+ "next": [
+  "env.MADEIRA_SPAWN_SWAP = Fallout4Launcher.exe=Fallout4.exe"
+ ],
+ "note": "Round 2026-10-24 (ajan28/ozellik): Fallout 4 (Steam 377160) through BCD Dock, C050A4 (build 580). Steam's launch configuration for the game is one entry, Fallout4Launcher.exe (key 0); the launcher starts a second instance of itself and that one fails ('failed to create main module ... Fallout4Launcher.exe, status c0000018', L9334), the Dock ends the session 19 s after Play. The rule adds env.MADEIRA_SPAWN_SWAP = Fallout4Launcher.exe=Fallout4.exe (build 598), so Valve's client's launch of the launcher starts Fallout4.exe. Before the rule the log matched nothing (exe-window-fixed-base is excluded by '[exe-window] ... gets the window').",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

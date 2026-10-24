@@ -30,11 +30,11 @@ extension BCDEpic {
     static let hostProgram = "C:\\windows\\system32\\bcdhost.exe"
 
     /// A switch for one game: its own config line (its settings file, then the entry's own lines), else bcd.cfg's, else on.
-    static func flag(_ name: String, entry: LibraryEntry) -> Bool {
+    static func flag(_ name: String, entry: LibraryEntry, fallback: Bool = true) -> Bool {
         let key = "env." + name
         if let value = GameProfile(windowsPath: entry.windowsPath).get(key) { return value != "0" }
         if let value = MadeiraConfig.parse(entry.gameConfigText ?? "")[key], !value.isEmpty { return value != "0" }
-        return MadeiraConfig.flag(name, fallback: true)
+        return MadeiraConfig.flag(name, fallback: fallback)
     }
 
     func record(forEntry id: UUID) -> BCDEpicInstallRecord? { installs.values.first { $0.entryID == id } }
@@ -159,6 +159,7 @@ extension BCDEpic {
     /// reads the request written here; for any other start nothing changes (and a request path left in the environment goes).
     func applyLaunch(_ entry: LibraryEntry) {
         unsetenv("BCD_HOST_REQUEST")
+        LibraryEntry.clearEpicHostStart()   // a hold of an earlier start never reaches this one
         guard let record = record(forEntry: entry.id) else { return }
         let held = ticket
         ticket = nil
@@ -217,6 +218,13 @@ extension BCDEpic {
         } else {
             setenv("MADEIRA_EXE", Self.hostProgram, 1)
             setenv("MADEIRA_ARGS", "--epic", 1)
+        }
+        // The second configureLaunch (LibraryEntry.applyEnvironment, on the launch worker) put the game's program back in builds 590 to 597; with
+        // env.BCD_EPIC_HOST_START = 1 in the game's config the host's values are held for it to set again. Off, nothing changes.
+        if Self.flag("BCD_EPIC_HOST_START", entry: entry, fallback: Self.hostStartDefault) {
+            LibraryEntry.holdEpicHostStart(entry: entry.id, exe: desktop ? "explorer.exe" : Self.hostProgram,
+                                           args: desktop ? "/desktop=shell,\(entry.resolution) \"\(Self.hostProgram)\" --epic" : "--epic")
+            BCDEpicLog.write("[epic-launch] host start held (env.BCD_EPIC_HOST_START = 1)")
         }
         hostRan = true
         hostGame = record.hostFolder

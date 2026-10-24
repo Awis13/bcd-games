@@ -360,7 +360,7 @@ check('the build restores the five files and drops the patched objects',
       all(f in fbt for f in ft.FILES) and 'git -C "$R/wine" checkout -- $kbsrc' in fbt and
       fbt.count('rm -f "$kb" "$B"/dlls/kernelbase/arm64ec-windows/*.o') == 2)
 check('MADEIRA_FIBER_TRACE_BUILD=0 skips it', '"${MADEIRA_FIBER_TRACE_BUILD:-1}" != 0' in build and
-      '[ -n "$todo$XI$WGI$UCX$NTS$FBT$WER$WTY$OPT$SDL" ]' in build)
+      '[ -n "$todo$XI$WGI$UCX$NTS$XSE$FBT$WER$WTY$OPT$SDL" ]' in build)
 bridge = (root / 'app/Madeira/WineProcessBridge.m').read_text()
 blk = bridge[bridge.index('const char *fiberTrace = getenv("MADEIRA_FIBER_TRACE");'):]
 blk = blk[:blk.index('\n            }\n')]

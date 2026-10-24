@@ -149,11 +149,13 @@ struct GameConfigEditor: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
+    @FocusState private var typing: Bool
 
     var body: some View {
         Form {
             Section {
                 TextEditor(text: $text)
+                    .focused($typing)
                     .font(.caption.monospaced())
                     .frame(minHeight: 260)
                     .autocorrectionDisabled()
@@ -167,6 +169,7 @@ struct GameConfigEditor: View {
         }
         .navigationTitle("Game config")
         .navigationBarTitleDisplayMode(.inline)
+        .bcdKeyboardDone { typing = false }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {

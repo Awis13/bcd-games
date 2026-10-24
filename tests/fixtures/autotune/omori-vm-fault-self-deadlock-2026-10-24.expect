@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "virtual-mutex-fault-self-deadlock"
+ ],
+ "next": [],
+ "note": "OMORI (Steam 1150690, NW.js, 32-bit), build 592, iPhone17,1, through Madeira Dock: no window in 146 s. CrRendererMain is parked in memset under NtFreeVirtualMemory (it holds virtual_mutex) while the Mach exception thread waits for that mutex in ios_virtual_handle_fault_for_thread; the browser's threads spin in FEX's allocator lock. The player said it froze",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "known"
+}

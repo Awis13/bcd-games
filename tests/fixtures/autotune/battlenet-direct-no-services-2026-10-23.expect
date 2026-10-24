@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "launcher-without-windows-services"
+ ],
+ "next": [],
+ "note": "Battle.net started on its own from build 593's launcher card (the owner's iPhone18,2, 16:12): no services.exe, AgentHelper --install could not reach the service manager (\\\\pipe\\\\svcctl) and crashed, the Agent quit, the login window never drew (presents=0 for 3 minutes). launcher-without-windows-services: known, fixed in 594 (launchers start in a Wine desktop with services).",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "known"
+}

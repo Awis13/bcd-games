@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [
+  "eaapp-installer-turkish-locale"
+ ],
+ "next": [
+  "env.LC_ALL = en_US.UTF-8"
+ ],
+ "note": "EA app installer in the owner's Windows desktop (build 593, 17:09:52): with the Turkish locale the bootstrapper loaded code page 1254 and died on an uncaught ATL::CAtlException after its telemetry step (C7-2F79). eaapp-installer-turkish-locale proposes env.LC_ALL = en_US.UTF-8, with which the installer reached its MSI package (17:15:17). Build 594's launcher card sets the line for the EA app itself.",
+ "outcome": "killed",
+ "stage": 2,
+ "status": "trying"
+}

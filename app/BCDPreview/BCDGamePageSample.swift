@@ -83,6 +83,8 @@ import SwiftUI
                 resolution,
                 choice("scaling", "Scaling", "fit", [("fit", "Fit"), ("fill", "Fill and crop"), ("stretch", "Stretch"), ("aspect", "The game's own shape")],
                        note: "Fit shows the whole picture, with bars where its shape differs from the screen's. Fill covers the screen and crops."),
+                choice("orientation", "Screen orientation", "", BCDOrientationRules.gameChoices(global: nil).map { ($0.value, $0.label) },
+                       note: "How the screen turns while this game runs. Landscape keeps it in landscape however you hold the device, lying down, say; it goes back to following the device when the game ends. Settings has the choice for every game."),
                 fps,
                 choice("metalfx-upscale", "MetalFX upscaling", "", [("", "Off"), ("1.5", "1.5×"), ("2", "2×")],
                        note: "Direct3D 11 and 12 games draw at the resolution above, and Apple's MetalFX enlarges the picture by this much."),
@@ -302,7 +304,9 @@ import SwiftUI
                           date: Date() - 3600, bytes: 2_400_000)
     }
 
-    func send(_ log: BCDGameLog, of game: BCDGame, progress: @escaping (String) -> Void) async throws -> String {
+    func logComment() async -> String? { "" }
+
+    func send(_ log: BCDGameLog, of game: BCDGame, comment: String, progress: @escaping (String) -> Void) async throws -> String {
         progress("Compressing…")
         try? await Task.sleep(nanoseconds: 500_000_000)
         progress("Sending 1 MB…")

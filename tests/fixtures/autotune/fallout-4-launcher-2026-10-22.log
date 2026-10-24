@@ -1,0 +1,156 @@
+[10:28:13.043] [INFO] Checking entitlements...
+[10:28:13.044] [INFO] [build] v0.1.580 (580)
+[10:28:13.044] [INFO] [device] model=iPhone19,3 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=11514MB available=6631MB cores=6
+[10:28:13.044] [INFO] [device] address-map=[0x104f78000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[10:28:13.057] [INFO] [device] gpu="Apple A20 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[10:28:15.866] [INFO] [bcd] library launch Fallout 4: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[10:28:15.866] [INFO] Requesting JIT with Built-in StikJIT...
+[10:28:18.850] [INFO] [dock-launch] image-retire=1
+[10:28:18.850] [INFO] [dock-launch] image-map-guard=1
+[10:28:18.857] [INFO] [dock-installers] app=377160 scripts=0 programs=0
+[10:28:18.858] [INFO] [madeira-dock] starting the host for app 377160; Valve's client authenticates and authorizes the launch
+[10:28:18.867] [INFO] Running full Wine sequence...
+[10:28:18.867] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104f78000,0x8000000000) 512GB available=8146MB low-power=0 thermal=nominal
+[10:28:18.870] [INFO] Allocating 512MB JIT pool (BRK will suspend process)...
+[10:28:18.870] [INFO] Allocating 512MB JIT pool via debugger...
+[10:28:18.870] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[10:28:18.870] [INFO] [jit-debugger] attached=1 at the pool request
+[10:28:19.361] [INFO] RX pool at 0x148000000
+[10:28:19.374] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.541s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7618 MB + phys_footprint=573 MB = 8192 MB (hw.memsize says 11514 MB)
+ml985: preferred base 0x140000000+0x70000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x70000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+[gdi-shared] session table 0x7020f50000 (1572864 bytes, section-backed, name=L"\\KernelObjects\\__wine_ios_gdi_shared")
+[footprint] rev=ml358 phys=584 MB (peak 584) internal=583 MB compressed=0 MB external=73 MB reusable=8 MB (cycle=1)
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  0.858s rev=ml526
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1498d4000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x149a0c000)
+[copy-verify] oleaut32.dll: OK, 21 .text pages executable (copy @0x149aa0000)
+[file-wfail] ml669 #2 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  0.903s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x14ae70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 124EC0000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+[nls-getptr] type=11 id=437 peb=0x10ba58000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[free-delay] #1 release of 0x7025650000+0x100000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x7025750000+0x200000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x7025950000+0x400000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x7025d50000+0x800000 held for 2000 ms (4 in flight)
+[file-wfail] ml669 #3 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[nt-fail] #1 NtAllocateVirtualMemory status=c000000d proc=dockhost.exe tid=0038 size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=1 rev=ajan5-rockstar
+[steer] #1 size=0x2000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c05400000
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14ee8d000)
+[file-wfail] ml669 #5 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+[file-wfail] ml669 #8 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:seh:NtGetContextThread [ec-getctx] ml715 #1 handle=0000000000000110 status=c0000022 native_pc=0000000000000000 is_ec=-1 -> returned rip=0000000000000000 rsp=0000000000000000 flags=00000000
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[file-wfail] ml669 #9 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[file-wfail] ml669 #11 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:seh:NtGetContextThread [ec-getctx] ml715 #2 handle=00000000000002B8 status=c0000022 native_pc=0000000000000000 is_ec=-1 -> returned rip=0000000000000000 rsp=0000000000000000 flags=00000000
+[footprint] rev=ml358 phys=1050 MB (peak 1050) internal=1049 MB compressed=0 MB external=160 MB reusable=8 MB (cycle=2)
+[footprint] rev=ml358 phys=1063 MB (peak 1063) internal=1062 MB compressed=0 MB external=160 MB reusable=8 MB (cycle=3)
+[file-wfail] ml669 #72 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #73 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=1067 MB (peak 1067) internal=1066 MB compressed=0 MB external=160 MB reusable=8 MB (cycle=4)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Fallout 4\\Fallout4Launcher.exe" t+  7.882s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[exe-window] 0x140000000+0x454000 is under the 64MB floor but its relocations are stripped: it can only run at this base, so it gets the window (MADEIRA_EXE_WINDOW_SMALL_FIXED=0 refuses it as before)
+[nls-getptr] type=11 id=1252 peb=0x10b95c000
+[nls-getptr] type=11 id=437 peb=0x10b95c000
+[nls-getptr] type=11 id=20127 peb=0x10b95c000
+[nls-getptr] type=11 id=1252 peb=0x10b95c000
+[nls-getptr] type=11 id=437 peb=0x10b95c000
+[free-delay] #5 release of 0x702b940000+0x100000 held for 2000 ms (1 in flight)
+[copy-verify] ole32.dll: OK, 23 .text pages executable (copy @0x153a80000)
+D A8 Load module vcruntime140.dll (vcruntime140.dll-3d8a8f46733c0f4e): 71F35D0000
+D A8 Load module comctl32.dll (comctl32.dll-8c564d137baf4ee2): 71F3450000
+D A8 Load module VERSION.dll (version.dll-f3f7d5759bd2c065): 71F33C0000
+D A8 Load module VCRUNTIME140_1.dll (vcruntime140_1.dll-5a9099dd3d46b520): 71F3330000
+D A8 Load module imm32.dll (imm32.dll-d32ec4d784d2a68d): 71F3290000
+D A8 Load module concrt140.dll (concrt140.dll-7f7bd0536697a14b): 71F3200000
+[file-wfail] ml669 #74 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Fallout 4\\Fallout4Launcher.exe" t+  8.095s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+00a8:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=8377
+wine: failed to create main module for L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Fallout 4\\Fallout4Launcher.exe", status c0000018
+00b0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000018) syscalls=0 unix_calls=8381
+[Wine ntdll/server] process_exit_wrapper(-1073741800): closing child fd_socket=462
+[Wine ntdll/server] process_exit_wrapper(-1073741800)
+[Wine child thread] child exited with code -1073741800
+00a8:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=8399
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=393
+[Wine ntdll/server] process_exit_wrapper(0)
+[10:28:27.374] [INFO] [dock-game-end] fallout4launcher.exe ended with status 0xc0000018; the session goes on for now (grace)
+[footprint] rev=ml358 phys=1151 MB (peak 1151) internal=1149 MB compressed=0 MB external=192 MB reusable=8 MB (cycle=5)
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[file-wfail] ml669 #75 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[10:28:28.371] [INFO] [dock-report] launch-game-running=1
+[footprint] rev=ml358 phys=1150 MB (peak 1151) internal=1149 MB compressed=0 MB external=192 MB reusable=8 MB (cycle=6)
+[file-wfail] ml669 #76 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:module:load_dll [dll-missing] rev=ml336 #47 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #48 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[file-wfail] ml669 #77 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=1150 MB (peak 1151) internal=1149 MB compressed=0 MB external=192 MB reusable=8 MB (cycle=7)
+[footprint] rev=ml358 phys=1150 MB (peak 1151) internal=1149 MB compressed=0 MB external=192 MB reusable=8 MB (cycle=8)
+[free-delay] #6 release of 0x7028d80000+0x120000 held for 2000 ms (1 in flight)
+[free-delay] #7 release of 0x70216a0000+0x800000 held for 2000 ms (2 in flight)
+[free-delay] #8 release of 0x7027570000+0x800000 held for 2000 ms (3 in flight)
+[10:28:34.369] [INFO] [dock-report] launch-game-ended=1
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=103
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=134
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0)
+[10:28:34.867] [INFO] [dock-report] probe-result=0
+[footprint] rev=ml358 phys=976 MB (peak 1151) internal=974 MB compressed=0 MB external=188 MB reusable=7 MB (cycle=9)
+[10:28:37.372] [INFO] [dock-game-end] fallout4launcher.exe ended with status 0xc0000018 after 0 s, the host finished and nothing of the game runs: ending the session
+[WineProc] stopping wineserver...
+[footprint] rev=ml358 phys=976 MB (peak 1151) internal=974 MB compressed=0 MB external=188 MB reusable=7 MB (cycle=10)
+[10:28:37.875] [INFO] [exit-report] status=0xc0000018
+[frontend] returned to library
+[10:28:39.394] [INFO] Detaching debugger...
+[footprint] rev=ml358 phys=989 MB (peak 1151) internal=987 MB compressed=0 MB external=190 MB reusable=6 MB (cycle=11)
+[footprint] rev=ml358 phys=989 MB (peak 1151) internal=988 MB compressed=0 MB external=190 MB reusable=6 MB (cycle=12)

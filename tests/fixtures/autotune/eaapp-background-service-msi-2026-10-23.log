@@ -1,0 +1,376 @@
+[19:19:55.924] [INFO] [recs] the kept download was not used: older than the list in use: dying-light v1 is older than v2
+[19:19:55.925] [INFO] [recs] in use: built-in list v7 (2026-10-23), 79 rules, build 594
+[19:19:55.944] [INFO] [epic-install] start installed=0 refused=0
+[19:19:56.023] [INFO] [xinput] ml1920 physical controllers enabled=1
+[19:19:56.023] [INFO] [touch-xinput] ml1930 enabled=1
+[19:19:56.024] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[19:19:56.030] [INFO] [steam-library] start signed-in=1 cached=40
+[19:19:56.049] [INFO] [bcd-ui] shown games=45 downloads=0
+[19:19:56.049] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[19:19:56.049] [INFO] SIGTRAP handler installed (no debugger)
+[19:19:56.049] [INFO] Checking entitlements...
+[19:19:56.049] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[19:19:56.050] [OK]   increased-memory-limit: true
+[19:19:56.050] [OK]   extended-virtual-addressing: true
+[19:19:56.050] [OK]   increased-debugging-memory-limit: true
+[19:19:56.050] [INFO] [build] v0.1.594 (594)
+[19:19:56.050] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6636MB cores=6
+[19:19:56.050] [INFO] [device] address-map=[0x100bd0000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[19:19:56.051] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=354d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[19:19:56.051] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[19:19:56.060] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=+03:00 free-disk=107GB stikdebug-url=1
+[19:19:56.064] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[19:19:56.121] [INFO] [steam-games] installed=2 ready=2
+[19:19:56.123] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[19:19:56.142] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[19:19:56.143] [INFO] [epic-auth] start signed-in=1
+[19:19:56.143] [INFO] [epic-library] start cached=6 listed=4
+[19:19:56.582] [INFO] [epic-auth] verify status=200 ms=438
+[19:19:57.705] [INFO] [steam-playtime] apps=30
+[19:19:57.707] [INFO] [steam-cloud] sync games=2 automatic=1
+[19:19:58.714] [INFO] [steam-cloud] app=432940 cloud-change=1 cloud-files=1 same=0 differ=1 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=1
+[19:19:59.677] [INFO] [steam-cloud] app=239140 cloud-change=1 cloud-files=2 same=2 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[19:20:09.358] [INFO] [launcher] eaapp download from https://origin-a.akamaihd.net
+[19:20:09.564] [INFO] [launcher] eaapp download answered from https://origin-a.akamaihd.net
+[19:20:09.565] [INFO] [launcher] eaapp installer kept bytes=2141200 bits=32 signed=1
+[19:20:09.573] [INFO] [launcher] eaapp installer start bits=32 desktop=1 services=1 args=0
+[19:20:09.574] [INFO] [bcd-ui] play launcher
+[19:20:09.574] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[19:20:09.575] [INFO] Requesting JIT with Built-in StikJIT...
+[19:20:09.615] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 10.7.1.1)
+[19:20:09.686] [INFO] [jit-helper] enable: started com.thebcd69.bcd.JITHelper as pid 34894
+[19:20:11.086] [OK] JIT enabled and debugger attached.
+[19:20:11.087] [OK] JIT enabled! Debugger attached.
+[19:20:11.088] [INFO] [jit-on-play] JIT is on: starting the game
+[19:20:11.109] [INFO] [bcd] library launch EAappInstaller.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=0 metalfx=off
+[19:20:11.111] [INFO] Session log: logs/EAappInstaller.exe-2026-10-23_19-20-11.txt
+[19:20:11.120] [INFO] [bcd-ui] in-game=1
+[19:20:11.125] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[19:20:11.126] [INFO] [steam-depot] paused for a game session count=0
+[19:20:11.127] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[19:20:11.127] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[19:20:11.128] [INFO] bcd.cfg: absent
+[19:20:11.128] [INFO] Running full Wine sequence...
+[19:20:11.128] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100bd0000,0x8000000000) 512GB available=8149MB low-power=0 thermal=nominal
+[19:20:11.130] [INFO] [game-cfg] env.LC_ALL=en_US.UTF-8 env.MADEIRA_APC_BUSY_QUEUE=1 env.MADEIRA_GDI_SHARED_SECTION=1 env.MADEIRA_MSIEXEC_SYSTEM32=1
+[19:20:11.131] [INFO] [display-shape] resolution=1408x648 mode=fit
+[19:20:11.131] [INFO] [launch-route] library profile applied
+[19:20:11.132] [INFO] [gecko] downloaded Wine Gecko 2.47.4 is this session's cache (XDG_CACHE_HOME)
+[19:20:11.134] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[19:20:11.135] [INFO] Allocating 896MB JIT pool via debugger...
+[19:20:11.135] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[19:20:11.135] [INFO] [jit-debugger] attached=1 at the pool request
+[19:20:11.136] [INFO] JIT-pool frontier already at 0x11e734000 — no pin needed
+[19:20:11.136] [OK] ml1040: executable window [0x140000000,+128MB) held since image load
+[19:20:11.136] [ERR] ml1040: no early pool placeholder was obtained — placement is left to chance
+[19:20:11.137] [ERR] ml1135: the placeholder was blocked at image load by a mapping at 0x14dd00000+0MB (VM tag 1, prot 3) -- this is what shrinks the JIT pool
+[19:20:11.137] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x11e734000+536MB 0x148000000+93MB 0x150800000+489MB 0x16f7a8000+264MB
+[19:20:11.138] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 528MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[19:20:11.800] [INFO] RX pool at 0x11e734000
+[19:20:11.807] [OK] ml977: RX=[0x11e734000,0x13f734000) RW=[0x7000000000,0x7021000000) offset=0x6ee18cc000 windowHeld=true rwOverlap=false
+[19:20:11.808] [INFO] RW mapping at 0x7000000000
+[19:20:11.809] [INFO] [no-footprint] pool-RW-alias: [plain/TASK_NULL] entry covers only 16384 of 553648128 bytes (partial)
+[19:20:11.809] [INFO] [no-footprint] pool-RW-alias: [plain/TASK_NULL] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[19:20:11.809] [INFO] [no-footprint] pool-RW-alias: [plain/self] entry covers only 16384 of 553648128 bytes (partial)
+[19:20:11.809] [INFO] [no-footprint] pool-RW-alias: [plain/self] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[19:20:11.810] [INFO] [touch] layout="none" kind=none keys-path=n/a pad=n/a controls=0
+[19:20:11.810] [INFO] [touch-xinput] connected=0 accepting=0 controls=0
+[19:20:11.812] [INFO] [no-footprint] pool-RW-alias: [share/self] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[19:20:11.814] [INFO] [no-footprint] pool-RW-alias: [share/TASK_NULL] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[19:20:11.814] [INFO] [no-footprint] pool-RW-alias: ALL 4 variants refused — pool stays jetsam-counted rev=ml458
+[19:20:11.814] [ERR] [no-footprint] pool applied=false
+[19:20:11.814] [OK] JIT pool ready (debugger still attached).
+[19:20:11.815] [INFO] BRK suspension lasted 0.68s
+[19:20:11.815] [DBG] madeira-d3d12: gate off (bcd.cfg d3d12 unset)
+[19:20:11.816] [OK] JIT pool: RX=0x11e734000, RW=0x7000000000, size=528MB
+[19:20:11.816] [INFO] Detaching debugger...
+[19:20:11.820] [OK] Debugger detached.
+[19:20:11.821] [OK] [early-detach] rev=ml524 took 6 ms
+[19:20:11.825] [OK] MetalLayer registered with DXMT shim (window-hosted singleton)
+[19:20:11.828] [INFO] Starting wineserver...
+[19:20:11.828] [INFO] [jit-helper] enable: finished success=1
+[19:20:11.828] [OK] [jit-built-in] BCD detached cleanly from its built-in JIT helper.
+[19:20:11.828] [INFO] Wine prefix: /var/mobile/Containers/Data/Application/<uuid>/Documents/wine
+[19:20:11.829] [wineserver-bridge] ws_log test - log file set up OK
+[19:20:11.829] [Wine] Wineserver thread started
+[19:20:11.829] [Wine] WINEPREFIX=/var/mobile/Containers/Data/Application/<uuid>/Documents/wine
+[19:20:11.829] [OK] Wineserver thread launched successfully
+[phase] wineserver-up          t+  0.695s rev=ml526
+[19:20:11.829] [Wine] NLS dir=/private/var/containers/Bundle/Application/<uuid>/Madeira.app/nls
+[19:20:11.829] [Wine] Calling wineserver_main...
+[19:20:11.829] [wineserver] starting init...
+[19:20:11.829] [wineserver] master_socket_timeout set to INFINITE (9223372036854775807)
+[19:20:11.829] [wineserver] init_limits...
+[19:20:11.829] [wineserver] sock_init...
+[19:20:11.829] [wineserver] open_master_socket...
+[19:20:11.829] [wineserver] acquire_lock: listening on fd=21 (NONBLOCK), server_dir=/var/mobile/Containers/Data/Application/<uuid>/Documents/wine/.wineserver/server-1000007-12462b3
+[madsync] ml1058 in-process synchronisation disabled (bcd.cfg inproc-sync = 1 enables; fastsync is the default)
+[madsync] config inproc-sync=unset cfg=absent dir=env (MADEIRA_CFG_EARLY_DOCS=0 restores the old lookup)
+[19:20:11.830] [wineserver-fd] init_epoll: SKIPPING kqueue on iOS, using poll()
+[19:20:11.830] [wineserver-fd] add_poll_user: user=0 unix_fd=-1 active_users=1
+[19:20:11.830] [wineserver] acquire_lock: master_socket->fd unix_fd=21
+[19:20:11.830] [wineserver] init_signals...
+[19:20:11.830] [wineserver-fd] add_poll_user: user=1 unix_fd=-1 active_users=2
+[19:20:11.830] [wineserver-fd] add_poll_user: user=2 unix_fd=-1 active_users=3
+[19:20:11.830] [wineserver-fd] add_poll_user: user=3 unix_fd=-1 active_users=4
+[19:20:11.830] [wineserver-fd] add_poll_user: user=4 unix_fd=-1 active_users=5
+[19:20:11.830] [wineserver-fd] add_poll_user: user=5 unix_fd=-1 active_users=6
+[19:20:11.830] [wineserver] init_memory...
+[19:20:11.830] [wineserver] load_intl_file + init_directories...
+[19:20:11.830] [wineserver] get_nls_dir: using bridge path '/private/var/containers/Bundle/Application/<uuid>/Madeira.app/nls'
+[x18-tramp] .text 0x123710000: 1656 patched -- 675 via dest reg, 876 via x18, 105 MOV-direct; 0 use the stack (was: all of them, and x86 hands us an 8-mod-16 SP)
+[srv-kill] kill_process pid=0048 violent=0 threads: 004c rev=ml586
+[srv-kill] kill_thread tid=004c pid=0048 violent=0 rev=ml586
+0038:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=000000702478EAA0 sem=0000000000000000 lock=-1
+[apc-requeue] on (MADEIRA_APC_REQUEUE=0 restores dropping async I/O APCs for busy threads)
+[apc-requeue] MADEIRA_APC_BUSY_QUEUE=1: an async I/O APC nobody else can take stays on its busy thread (no in-process engine)
+[apc-requeue] #1 async I/O APC status=00000101 for busy thread 0038 -> kept on the busy thread 0038
+0038:err:file:NtReadFile ml955 [read-src] #3 handle=0x18 type=FILE(1) options=00000060 len=8192 offset=(none) I64x async=0
+[nls-getptr] type=10 id=0 peb=0x107a20000
+[nls-getptr] type=11 id=1252 peb=0x107a20000
+[nls-getptr] type=11 id=437 peb=0x107a20000
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028B0A940 sem=0000000000000000 lock=-1
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028B0A940 sem=0000000000000000 lock=-1
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028B0A940 sem=0000000000000000 lock=-1
+0274:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EABackgroundService.exe" cmdline=L"\"C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EABackgroundService.exe\" -start"
+[phase] spawn:L"C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EABackgroundService.exe" t+ 39.717s rev=ml526
+[jit-env] L"C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EABackgroundService.exe" starts without the JIT pool's variables (a service gets its environment from the registry): added WINE_IOS_JIT_RX WINE_IOS_JIT_SIZE WINE_IOS_JIT_RW so its emulator writes code through the RW alias (env.MADEIRA_JIT_ENV_INHERIT=0 leaves it)
+[runtime-info] ml663 parent-pre-serialise EMPTY (len=0) -> UCRT takes the GetStdHandle path
+[srv-own] receive_fd tid=0274 pid=0050 client_fd=710 server_dup=711 kind=sock rev=ml586
+[srv-own] new_thread tid=027c pid=0278 requester=0274 request_unixfd=-1 rev=ml586
+0274:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EABackgroundService.exe\" -start" (fd=683, unixdir=684, dup_unixdir=714) cwd=L"C:\\bcd-launchers\\"
+[Wine child thread] ENTRY: fd=713, argc=4, exe=wine
+[Wine child thread] calling wine_ios_child_main...
+[Wine child] wine_ios_child_main: argc=4 argv[1]=wine fd=713
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #34 base=00000071EFF70000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 CRYPT32.dll sec=0x71eff80000-0x71effdda15
+E 27C [iOS-xins] tracker=0x129834bc8 CRYPT32.dll sec=0x71effe0000-0x71effe0f50
+E 27C [img-map] ml710 #34 intervals-only CRYPT32.dll base=0x71eff70000
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #35 base=00000071F00A0000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 Qt5Network.dll sec=0x71f00a1000-0x71f0187f14
+E 27C [img-map] ml710 #35 intervals-only Qt5Network.dll base=0x71f00a0000
+E 27C [iOS-xrem] via=aligned #2 tracker=0x129834bc8 0x7c274c1000-0x7c274d0000
+027c:err:module:load_dll [dll-missing] rev=ml336 #1 L"msi.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+027c:err:module:import_dll Library msi.dll (which is needed by L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EABackgroundService.exe") not found
+027c:err:module:find_dll_file mixed-arch fallback: L"OLEAUT32.dll" -> L"\\??\\C:\\windows\\sysx64\\OLEAUT32.dll"
+[jit-pool] image 0x71efe40000+0x130000 (oleaut32.dll) → pool 0x12b4ec000 used=0xceec000/0x21000000 tramp+0x4000
+[x18-patch] ml1005 text=0x12b4fc000+0x5d063 (rw=0x700cdc8000) patched=47 skipped=0 tramp=0x12b61c000+0x4000 used=940
+[x18-tramp] .text 0x12b4fc000: 47 patched -- 39 via dest reg, 8 via x18, 0 MOV-direct; 0 use the stack (was: all of them, and x86 hands us an 8-mod-16 SP)
+027c:err:seh:ios_map_gate_probe [map-gate] ml709 NtMapViewOfSection handle=0000000000000030 process=FFFFFFFFFFFFFFFF status=40000003 ok=1 cur=1 area=000000014A900000 insc_before=0 entered=1 base=00000071EFE40000 size=0000000000130000
+027c:err:seh:notify_map_view_of_section [map-notify] addr=00000071EFE40000 size=0000000000130000 alloc=0 prot=20 pfn=1 aup=000000702B30C798
+E 27C [iOS-xins] tracker=0x129834bc8 OLEAUT32.dll sec=0x71efe50000-0x71efead063
+E 27C [iOS-xins] tracker=0x129834bc8 OLEAUT32.dll sec=0x71efeb0000-0x71efeb1a00
+D 27C Load module OLEAUT32.dll (oleaut32.dll-ed3f8116102cb254): 71EFE40000
+027c:err:seh:arm64ec_update_hybrid_metadata arm64ec_update_hybrid_metadata: module=00000071EFE40000 dispatch_call_rva=b1de0 check_call=0000000127A0E330
+027c:err:module:import_dll [ec-bind] rpcrt4.dll.NdrClientCall2 pre=00000071F1840800 post=0000000124A5C1F0 redirected=1 IsEcCode(post)=1 importer=00000071EFE40000 | slot=00000071EFEC01A8 poolslot=000000012B56C1A8 poolval=00000000000A90C2 POOL STALE  <== executing copy sees the OLD x64 thunk (BIND TIME)
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #36 base=00000071EFE40000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 OLEAUT32.dll sec=0x71efe50000-0x71efead063
+E 27C [iOS-xins] tracker=0x129834bc8 OLEAUT32.dll sec=0x71efeb0000-0x71efeb1a00
+E 27C [img-map] ml710 #36 intervals-only OLEAUT32.dll base=0x71efe40000
+027c:err:module:load_dll [dll-missing] rev=ml336 #2 L"RstrtMgr.DLL" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+027c:err:module:import_dll Library RstrtMgr.DLL (which is needed by L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EABackgroundService.exe") not found
+027c:err:module:find_dll_file mixed-arch fallback: L"WINTRUST.dll" -> L"\\??\\C:\\windows\\sysx64\\WINTRUST.dll"
+[stale-heal] 0x71f30ea80c -> 0x127a2280c, rewrote 0 slot(s) (each copy translated for the process that maps it)
+[jit-pool] image 0x71efda0000+0xa0000 (wintrust.dll) → pool 0x12b620000 used=0xcf90000/0x21000000 tramp+0x4000
+[x18-patch] ml1005 text=0x12b630000+0x16880 (rw=0x700cefc000) patched=161 skipped=0 tramp=0x12b6c0000+0x4000 used=3220
+[x18-tramp] .text 0x12b630000: 161 patched -- 46 via dest reg, 115 via x18, 0 MOV-direct; 0 use the stack (was: all of them, and x86 hands us an 8-mod-16 SP)
+027c:err:seh:ios_map_gate_probe [map-gate] ml709 NtMapViewOfSection handle=0000000000000030 process=FFFFFFFFFFFFFFFF status=40000003 ok=1 cur=1 area=000000014A900000 insc_before=0 entered=1 base=00000071EFDA0000 size=00000000000A0000
+E 27C [iOS-xins] tracker=0x129834bc8 WINTRUST.dll sec=0x71efdb0000-0x71efdc6880
+E 27C [iOS-xins] tracker=0x129834bc8 WINTRUST.dll sec=0x71efdd0000-0x71efdd0800
+D 27C Load module WINTRUST.dll (wintrust.dll-f4c54b53ba879395): 71EFDA0000
+027c:err:seh:arm64ec_update_hybrid_metadata arm64ec_update_hybrid_metadata: module=00000071EFDA0000 dispatch_call_rva=50360 check_call=0000000127A0E330
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #37 base=00000071EFDA0000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 WINTRUST.dll sec=0x71efdb0000-0x71efdc6880
+E 27C [iOS-xins] tracker=0x129834bc8 WINTRUST.dll sec=0x71efdd0000-0x71efdd0800
+E 27C [img-map] ml710 #37 intervals-only WINTRUST.dll base=0x71efda0000
+027c:err:module:find_dll_file mixed-arch fallback: L"WTSAPI32.dll" -> L"\\??\\C:\\windows\\sysx64\\WTSAPI32.dll"
+[jit-pool] reused freed range off=0x3108000 size=0x84000 (freelist 110 ranges) no-madvise
+[jit-pool] image 0x71efd20000+0x80000 (wtsapi32.dll) → pool 0x12183c000 used=0x318c000/0x21000000 tramp+0x4000
+[x18-patch] ml1005 text=0x12184c000+0x4286 (rw=0x7003118000) patched=38 skipped=0 tramp=0x1218bc000+0x4000 used=736
+[x18-tramp] .text 0x12184c000: 38 patched -- 14 via dest reg, 18 via x18, 6 MOV-direct; 0 use the stack (was: all of them, and x86 hands us an 8-mod-16 SP)
+027c:err:seh:ios_map_gate_probe [map-gate] ml709 NtMapViewOfSection handle=0000000000000030 process=FFFFFFFFFFFFFFFF status=40000003 ok=1 cur=1 area=000000014A900000 insc_before=0 entered=1 base=00000071EFD20000 size=0000000000080000
+E 27C [iOS-xins] tracker=0x129834bc8 WTSAPI32.dll sec=0x71efd30000-0x71efd34286
+E 27C [iOS-xins] tracker=0x129834bc8 WTSAPI32.dll sec=0x71efd40000-0x71efd40350
+D 27C Load module WTSAPI32.dll (wtsapi32.dll-23700616da7721fb): 71EFD20000
+027c:err:seh:arm64ec_update_hybrid_metadata arm64ec_update_hybrid_metadata: module=00000071EFD20000 dispatch_call_rva=40040 check_call=0000000127A0E330
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #38 base=00000071EFD20000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 WTSAPI32.dll sec=0x71efd30000-0x71efd34286
+E 27C [iOS-xins] tracker=0x129834bc8 WTSAPI32.dll sec=0x71efd40000-0x71efd40350
+E 27C [img-map] ml710 #38 intervals-only WTSAPI32.dll base=0x71efd20000
+[data-align] dbghelp.dll shifted +0x2000 so .data lands on a 16KB page
+[jit-pool] image 0x71efae0000+0x240000 (dbghelp.dll) → pool 0x12b6c6000 used=0xd1d6000/0x21000000 tramp+0x0
+ml957: dbghelp.dll backing 0x71efae0000+0x4000 W RESTORED (section declares EXECUTE|WRITE; backing stays non-exec, pool copy keeps X)
+027c:err:seh:ios_map_gate_probe [map-gate] ml709 NtMapViewOfSection handle=0000000000000030 process=FFFFFFFFFFFFFFFF status=40000003 ok=1 cur=1 area=000000014A900000 insc_before=0 entered=1 base=00000071EFAE0000 size=0000000000240000
+E 27C [iOS-xins] tracker=0x129834bc8 dbghelp.dll sec=0x71efae1000-0x71efc78f9c
+E 27C [iOS-xins] tracker=0x129834bc8 dbghelp.dll sec=0x71efc79000-0x71efc7a000
+D 27C Load module dbghelp.dll (dbghelp.dll-0415b8776be43415): 71EFAE0000
+027c:err:module:alloc_tls_slot [tls-life] ml704 slot=4 module=L"dbghelp.dll" base=00000071EFAE0000 callbacks=00000071EFC936E8 rawsize=2896 zerofill=0
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #39 base=00000071EFAE0000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 dbghelp.dll sec=0x71efae1000-0x71efc78f9c
+E 27C [iOS-xins] tracker=0x129834bc8 dbghelp.dll sec=0x71efc79000-0x71efc7a000
+E 27C [img-map] ml710 #39 intervals-only dbghelp.dll base=0x71efae0000
+[data-align] libssl-1_1-x64.dll shifted +0x1000 so .data lands on a 16KB page
+[jit-pool] image 0x71efa30000+0xac000 (libssl-1_1-x64.dll) → pool 0x12b909000 used=0xd285000/0x21000000 tramp+0x0
+ml957: libssl-1_1-x64.dll backing 0x71efa30000+0x4000 W RESTORED (section declares EXECUTE|WRITE; backing stays non-exec, pool copy keeps X)
+027c:err:seh:ios_map_gate_probe [map-gate] ml709 NtMapViewOfSection handle=0000000000000030 process=FFFFFFFFFFFFFFFF status=40000003 ok=1 cur=1 area=000000014A900000 insc_before=0 entered=1 base=00000071EFA30000 size=00000000000AC000
+E 27C [iOS-xins] tracker=0x129834bc8 libssl-1_1-x64.dll sec=0x71efa31000-0x71efaa3eb7
+D 27C Load module libssl-1_1-x64.dll (libssl-1_1-x64.dll-e35f7f98064ab9f1): 71EFA30000
+027c:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #40 base=00000071EFA30000 peb=0000000107924000
+E 27C [iOS-xins] tracker=0x129834bc8 libssl-1_1-x64.dll sec=0x71efa31000-0x71efaa3eb7
+E 27C [img-map] ml710 #40 intervals-only libssl-1_1-x64.dll base=0x71efa30000
+027c:err:module:loader_init Importing dlls for L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EABackgroundService.exe" failed, status c0000135
+027c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000135) syscalls=0 unix_calls=32172
+[term-stack] rip=0 stack=[70fefa0000..70fefe0000]
+[term-stack] g0-7: 0 0 0 0 0 0 0 0
+[term-stack] g8-15: 0 0 0 0 0 0 0 0
+[std-handles] ml662 at-terminate peb=0x107924000 console=0x0
+[std-handles] ml662 at-terminate   stdin  handle=0x0 (NULL => CRT should store -2, which _isatty tolerates) -> FAILED fd=-1
+[std-handles] ml662 at-terminate   stdout handle=0x0 (NULL => CRT should store -2, which _isatty tolerates) -> FAILED fd=-1
+[std-handles] ml662 at-terminate   stderr handle=0x0 (NULL => CRT should store -2, which _isatty tolerates) -> FAILED fd=-1
+[unwind] term ml661 begin rip=0 rsp=0 window=[0..800000) max=32
+[unwind] term ml661 #00 pc=0 rsp=0  <no module — STOP>
+[unwind] term ml661 end
+[term-stack] no readable stack candidate produced hits
+027c:err:thread:abort_process abort_process: status=0xc0000135 — tearing down this pseudo-process only (ml937; was _exit, which killed the app)
+[Wine ntdll/server] process_exit_wrapper(-1073741515): closing child fd_socket=713
+[fdtrace] close fd=713 why=exit-master kind=master owner_tid=0000 owner_peb=0x107924000 gen=786 closer_tid=027c dead_peb=0x107924000 rev=ml586
+[fdtrace] close fd=684 why=fd-cache-release untracked closer_tid=027c dead_peb=0x107924000 rev=ml586
+[fdtrace] CROSS! close fd=795 why=fd-cache-release kind=wait_wr owner_tid=019c owner_peb=0x7300310000 gen=503 closer_tid=027c dead_peb=0x107924000 rev=ml586
+[fdtrace] CROSS! close fd=800 why=fd-cache-release kind=wait_rd owner_tid=0240 owner_peb=0x7700310000 gen=718 closer_tid=027c dead_peb=0x107924000 rev=ml586
+[fd-cache] rev=ml961 released peb=0x107924000, closed 3 cached fd(s) (decoded fd+1; skipped FD_TYPE_INVALID; munmap for secondary blocks)
+[alias-push] madeira-bcd peb=0x107924000 exits while its emulator receives the alias pushes (cb=0x129585050): callback dropped before its pool copy is reclaimed
+[srv-kill] kill_process pid=0278 violent=0 threads: 027c rev=ml586
+[srv-kill] kill_thread tid=027c pid=0278 violent=0 rev=ml586
+0274:err:service:process_send_start_message service L"EABackgroundService" failed to start
+014c:err:msi:ITERATE_StartService failed to start service L"EABackgroundService" (1053)
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AF8348 sem=0000000000000000 lock=-1
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AFA4C8 sem=0000000000000000 lock=-1
+014c:err:msi:execute_script Execution of script 0 halted; action L"StartServices" returned 1627
+014c:err:msi:ITERATE_Actions Execution halted, action L"InstallFinalize" returned 1627
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AFA4C8 sem=0000000000000000 lock=-1
+0274:err:sync:NtWaitForAlertByThreadId [alert-storm] tid=0274 consecutive=16 ring(from->to): 01c4->0274 01c4->0274 01c4->0274 01c4->0274 01c4->0274 01c4->0274 01c4->0274 01c4->0274
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AF8348 sem=0000000000000000 lock=-1
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AFA4C8 sem=0000000000000000 lock=-1
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AF8348 sem=0000000000000000 lock=-1
+0274:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=0000007028AFA4C8 sem=0000000000000000 lock=-1
+[Wine child thread] child exited with code 0
+[Wine child thread] thread exiting cleanly
+[srv-kill] kill_process pid=0188 violent=0 threads: 018c rev=ml586
+[srv-kill] kill_thread tid=018c pid=0188 violent=0 rev=ml586
+0198:err:rpc:rpcrt4_conn_np_read [rpc-np] read failed: status 0xc000014b, 16 bytes asked, read_closed 0, io 0xc000014b/0
+0198:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=01721AE8 sem=00000000 lock=-1
+0198:err:thread:RtlExitUserThread [thr-exit] ml806 RtlExitUserThread tid=0198 status=00000000 caller=7BEF40C8
+0198:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=016F1F68 sem=00000000 lock=-1
+[guest-log] #10 tid=00a8 [0148:014C][2026-10-23T16:21:13]e000: Error 0x8007065b: Failed to install MSI package.
+0198:err:thread:NtTerminateThread [thr-exit] ml805 target=0xfffffffffffffffe self=1 exit_code=0 by_tid=0198 caller=0x101d85a7c
+[guest-log] #11 tid=00a8 [0148:014C][2026-10-23T16:21:13]e000: Error 0x8007065b: Failed to execute MSI package.
+[guest-log] #12 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]e000: Error 0x8007065b: Failed to configure per-machine MSI package.
+[guest-log] #13 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]i000: EAXBA* INFO  (BootstrapperApplication::UpdateInstallStatus:2832) Updating install status from Success. (00000000) to Function failed. (8007065b)
+[guest-log] #14 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]i000: EAXBA* TRACE (BootstrapperApplication::OnExecutePackageComplete:2290) wzPackageId=EAapp_13.813.1.6327_d5ea2a1ad_6d16299b_16195906.msi, hrStatus=Function failed., restart=BOOTSTRAPPER_APPLY_RESTART_NONE, nRecommendation=0
+[guest-log] #15 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]e000: Error 0x8007065b: Failed to execute MSI package.
+E BC [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E BC [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E BC [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E BC [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E BC [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+[sock-tl] fd=125 gen=9 port=443 open->CH=-1.0 CH->flight=-1.0 flight->fin=-1.0 fin->tail=-1.0 tail->post=50324.1 total=50324.1ms tx=1/650B rx=1/217B alerts=0 post=650:17 03 fate=upgrade-sent rev=ml591
+00c0:fixme:oleacc:AccPropServices_SetHwndPropStr (00010086 4294967292 0 {608d3df8-8128-4aa7-a428-f55e49267291} L"Installing the EA app\2026")
+00c0:fixme:gdiplus:GdipGetLineSpacing ignoring style
+00c0:fixme:oleacc:AccPropServices_SetHwndPropStr (00010090 4294967292 0 {608d3df8-8128-4aa7-a428-f55e49267291} L"")
+00c0:fixme:oleacc:AccPropServices_SetHwndPropStr (00010092 4294967292 0 {608d3df8-8128-4aa7-a428-f55e49267291} L"")
+00c0:fixme:oleacc:AccPropServices_SetHwndPropStr (00010094 4294967292 0 {608d3df8-8128-4aa7-a428-f55e49267291} L"")
+[win-pos] #689 hwnd=0x10086 after=0x0 flags=00001a17 vis={28,232,392,268} surface=0x0 rev=ml505 style=52020001 visible=1 parent=0x1006c
+[win-name] #689 hwnd=0x10086 class='' text="LABEL_TITLE" rev=ml853
+[win-pos] #690 hwnd=0x10088 after=0x0 flags=00001a1f vis={28,268,392,300} surface=0x0 rev=ml505 style=42020001 visible=0 parent=0x1006c
+[win-name] #690 hwnd=0x10088 class='' text="LABEL_SUBTITLE" rev=ml853
+[win-pos] #691 hwnd=0x1008a after=0x0 flags=00001a1f vis={28,284,392,304} surface=0x0 rev=ml505 style=42030001 visible=0 parent=0x1006c
+[win-name] #691 hwnd=0x1008a class='' text="LABEL_BODY" rev=ml853
+[win-pos] #692 hwnd=0x10074 after=0x0 flags=00001a1f vis={26,64,394,78} surface=0x0 rev=ml505 style=40020000 visible=0 parent=0x1006c
+[win-name] #692 hwnd=0x10074 class='' text="LABEL_APPINSTALLLOC" rev=ml853
+[win-pos] #693 hwnd=0x1007c after=0x0 flags=00001a1f vis={26,130,394,144} surface=0x0 rev=ml505 style=40020000 visible=0 parent=0x1006c
+[win-name] #693 hwnd=0x1007c class='' text="LABEL_GAMEINSTALLLOC" rev=ml853
+[win-pos] #694 hwnd=0x10078 after=0x0 flags=00001a1f vis={26,90,332,106} surface=0x0 rev=ml505 style=40028000 visible=0 parent=0x1006c
+[win-name] #694 hwnd=0x10078 class='' text="EDIT_APPINSTALLLOC" rev=ml853
+[win-pos] #695 hwnd=0x1007e after=0x0 flags=00001a1f vis={26,156,332,172} surface=0x0 rev=ml505 style=40028000 visible=0 parent=0x1006c
+[win-name] #695 hwnd=0x1007e class='' text="EDIT_GAMEINSTALLLOC" rev=ml853
+[win-pos] #696 hwnd=0x10084 after=0x0 flags=00001a17 vis={158,88,263,208} surface=0x0 rev=ml505 style=5000000d visible=1 parent=0x1006c
+[srv-own] read_request EOF tid=0198 pid=0148 request_unixfd=785 -> kill_thread rev=ml586
+[srv-kill] kill_thread tid=0198 pid=0148 violent=0 rev=ml586
+[win-pos] #697 hwnd=0x10096 after=0x0 flags=00001a17 vis={56,440,364,448} surface=0x0 rev=ml505 style=50000000 visible=1 parent=0x1006c
+[win-pos] #698 hwnd=0x10090 after=0x0 flags=00001a1f vis={42,416,151,448} surface=0x0 rev=ml505 style=40010000 visible=0 parent=0x1006c
+[win-name] #698 hwnd=0x10090 class='' text="BTN_ACTION" rev=ml853
+[win-pos] #699 hwnd=0x10092 after=0x0 flags=00001a1f vis={156,416,265,448} surface=0x0 rev=ml505 style=40010000 visible=0 parent=0x1006c
+[win-name] #699 hwnd=0x10092 class='' text="BTN_ACTION2" rev=ml853
+[win-pos] #700 hwnd=0x10094 after=0x0 flags=00001a1f vis={270,416,379,448} surface=0x0 rev=ml505 style=40010000 visible=0 parent=0x1006c
+[win-name] #700 hwnd=0x10094 class='' text="BTN_ACTION3" rev=ml853
+[win-pos] #701 hwnd=0x10098 after=0x0 flags=00001a17 vis={378,16,406,48} surface=0x0 rev=ml505 style=50010f00 visible=1 parent=0x1006c
+[win-name] #701 hwnd=0x10098 class='' text="x" rev=ml853
+[win-pos] #702 hwnd=0x1008e after=0x0 flags=00001a1f vis={28,372,392,392} surface=0x0 rev=ml505 style=40010000 visible=0 parent=0x1006c
+[win-name] #702 hwnd=0x1008e class='' text="BTN_INSTALLOPT" rev=ml853
+[win-pos] #703 hwnd=0x1007a after=0x0 flags=00001a1f vis={340,90,401,106} surface=0x0 rev=ml505 style=40010000 visible=0 parent=0x1006c
+[win-name] #703 hwnd=0x1007a class='' text="BTN_BROWSEAPPINSTALLLOC" rev=ml853
+[win-pos] #704 hwnd=0x10080 after=0x0 flags=00001a1f vis={340,156,401,172} surface=0x0 rev=ml505 style=40010000 visible=0 parent=0x1006c
+[win-name] #704 hwnd=0x10080 class='' text="BTN_BROWSEGAMEINSTALLLOC" rev=ml853
+[win-pos] #705 hwnd=0x10082 after=0x0 flags=00001a1f vis={28,196,403,220} surface=0x0 rev=ml505 style=40010003 visible=0 parent=0x1006c
+[win-name] #705 hwnd=0x10082 class='' text="CB_SHORTCUT" rev=ml853
+[win-pos] #706 hwnd=0x1008c after=0x0 flags=00001a1f vis={28,316,392,336} surface=0x0 rev=ml505 style=40010303 visible=0 parent=0x1006c
+[win-name] #706 hwnd=0x1008c class='' text="CHK_QUESTION" rev=ml853
+[guest-log] #16 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]i000: EAXBA* TRACE (BootstrapperApplication::OnExecuteComplete:2304) hrStatus=Function failed.
+E B8 [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E B8 [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E B8 [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E B8 [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+E B8 [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+00b8:err:file:NtReadFile ml955 [read-src] #44 handle=0x338 type=FILE(1) options=00000060 len=502 offset=(none) I64x async=0
+[guest-log] #17 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]i000: EAXBA* INFO  (BootstrapperApplication::logRattError:3331) ecod[0x8007065b aka 'INST-14-1627'], estr[Function failed.], einv[true], emsg[unknown]
+[blit] #6 rop=cc0020  SRC phys=0,0 420x480 vis={0,0,420,480}  DST phys=0,0 420x480 vis={0,0,420,480} rev=ml506
+E B8 [iOS-xrem] via=section tracker=0x12698ce50 0x7201840000-0x7201848000
+[guest-log] #18 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]i000: EAXBA* INFO  (BootstrapperApplication::logRattError:3332) pkgcache: DACL[D:(A;OICI;FA;;;SY)(A;OICI;FA;;;S-1-5-21-0-0-0-1000)(A;OICI;0x1200a9;;;WD)], owner[Unique User Account]
+[sock-tl] fd=745 gen=10 port=443 open->CH=0.0 CH->flight=133.1 flight->fin=-1.0 fin->tail=-1.0 tail->post=50008.8 total=50279.1ms tx=3/2417B rx=2/924B alerts=0 post=1150:17 03 fate=upgrade-sent rev=ml591
+014c:err:sync:RtlDeleteCriticalSection [cs-life] ml672 delete crit=01736CE0 sem=00000000 lock=-1
+[winios] present hwnd=0x1006c #189 dirty=(0,0 424x480) surf=512x512 bits=0x7205c00000 sig=51ddc647 rev=ml504
+[guest-log] #19 tid=00a8 [00A4:00A8][2026-10-23T16:21:13]i000: EAXBA* TRACE (BootstrapperApplication::OnApplyComplete:2352) hrStatus=Function failed., restart=BOOTSTRAPPER_APPLY_RESTART_NONE
+E C0 Failed to mprotect last page of code buffer.
+E C0 [vname] FEXMem_CPUBackend 0x7c0bfa0000..0x7c0bfb1000 size=0x11000
+[winios] present hwnd=0x1006c #190 dirty=(56,16 352x431) surf=512x512 bits=0x7205c00000 sig=71c93532 rev=ml504
+E C0 Failed to mprotect last page of code buffer.
+[thread-sample] ml876 b0 "" teb=0x7214200000 cpu=0% wait pc=libsystem_kernel.dylib`read+0x8 lr=Madeira`wait_select_reply+0x38 sp=0x15f6fe9d0 NATIVE (no FEX state) sp-cand=[ ]
+[thread-sample] ml876 b0 "" teb=0x72141f0000 cpu=0% wait pc=libsystem_kernel.dylib`read+0x8 lr=Madeira`wait_select_reply+0x38 sp=0x15fffe9d0 NATIVE (no FEX state) sp-cand=[ ]
+[thread-sample] ml876 b0 "" teb=0x72141e0000 cpu=0% wait pc=libsystem_kernel.dylib`read+0x8 lr=Madeira`wait_select_reply+0x38 sp=0x1608fe9d0 NATIVE (no FEX state) sp-cand=[ ]
+[thread-sample] ml876 b0 "" teb=0x72141c0000 cpu=0% wait pc=libsystem_kernel.dylib`read+0x8 lr=Madeira`wait_select_reply+0x38 sp=0x161afe610 NATIVE (no FEX state) sp-cand=[ ]
+[thread-sample] ml876 b0 "" teb=0x72141b0000 cpu=0% wait pc=libsystem_kernel.dylib`read+0x8 lr=Madeira`wait_select_reply+0x38 sp=0x1623fe9d0 NATIVE (no FEX state) sp-cand=[ ]
+[xp] 19:21:14.742 +62.56 dt=300 cpu=61 (thr 61) P=1 E=60 run=74 pgw=0.0 GHz P=1.19 E=1.45 Minst=296 IPC=3.36 mJ=8 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:14.742 m7593061:0/37:0.0/1.7:248 m7593417:1/12:1.1/0.9:26 m7593475:0/4:0.0/2.1:10
+[xp] 19:21:15.061 +62.88 dt=318 cpu=23 (thr 23) P=0 E=23 run=38 pgw=0.0 GHz P=0.00 E=0.85 Minst=41 IPC=2.06 mJ=2 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:15.061 m7593417:0/14:0.0/0.8:27 -00c0:0/2:0.0/0.9:4
+[xp] 19:21:15.344 +63.16 dt=283 cpu=21 (thr 20) P=0 E=21 run=32 pgw=0.0 GHz P=0.00 E=0.81 Minst=36 IPC=2.15 mJ=1 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:15.344 m7593417:0/13:0.0/0.8:24
+[thread-sample] ml876 b3 "" teb=0x0 cpu=4% RUN pc=libsystem_kernel.dylib`semaphore_timedwait_trap+0x8 lr=Madeira`main_loop+0x914 sp=0x16f3cea70 NATIVE (no FEX state) sp-cand=[ ]
+[thread-sample] ml876 b3 "wine-stale-heal" teb=0x0 cpu=0% RUN pc=libsystem_kernel.dylib`__semwait_signal+0x8 lr=libsystem_c.dylib`nanosleep+0xdc sp=0x16fa5ef20 NATIVE (no FEX state) sp-cand=[ ]
+[xp] 19:21:15.668 +63.49 dt=325 cpu=25 (thr 24) P=0 E=25 run=38 pgw=0.0 GHz P=0.00 E=0.81 Minst=45 IPC=2.26 mJ=2 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:15.668 m7593417:0/15:0.0/0.8:27 m7593061:0/2:0.0/0.8:6 -00c0:0/2:0.0/0.8:3
+[xp-api] 19:21:15.668 x64->EC 0/s FPCR-writes 0/s EC->x64 0/s | CS contended 0/s (spin0 0%) spin-won 0/s wait 0.0 ms/s [<2us 0 <10 0 <50 0 <200 0 <1ms 0 >=1ms 0]/s wakes 0/s | WaitOnAddress 0/s wake1 0/s wakeAll 0/s | SetEvent 102/s ResetEvent 0/s Pulse 0/s | wait1 33/s waitN 535/s polls 0/s (empty 0/s) | yield 526/s (slept 0/s) | delay 0/s [0 0 <1ms 0 <5ms 0 <20ms 0 >=20ms 0 inf 0] | alert wait 0/s wake 0/s
+[thread-sample] ml876 burst done
+[sync-census] ml1122 alert wake latency: 64 samples, avg 4.7 us, <5us 39, <20 25, <50 0, <100 0, <500 0, >=500 0; spin 0 tries 0 hits
+[sync-census] ml1115 thread alerts: 3 wakes/s, 3 waits/s; ml1117 server requests 13327/s, QPC syscalls 24210/s, SetThreadAffinityMask 0/s (over 21.2 s)
+[rip-profile] ml981 gen=3: no guest threads found (no plausible RIP at x28+0x18)
+[xp] 19:21:15.979 +63.80 dt=311 cpu=23 (thr 23) P=0 E=23 run=36 pgw=0.0 GHz P=0.00 E=0.81 Minst=41 IPC=2.19 mJ=2 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:15.979 m7593417:0/14:0.0/0.8:26 -00c0:0/2:0.0/0.8:3
+[xp] 19:21:16.231 +64.05 dt=251 cpu=19 (thr 19) P=0 E=19 run=29 pgw=0.0 GHz P=0.00 E=0.81 Minst=33 IPC=2.14 mJ=1 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:16.231 m7593417:0/12:0.0/0.8:22 -00c0:0/2:0.0/0.8:3
+[xp] 19:21:16.546 +64.37 dt=315 cpu=69 (thr 69) P=0 E=69 run=194 pgw=0.0 GHz P=0.00 E=1.31 Minst=151 IPC=1.66 mJ=7 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:16.546 m7593028:0/39:0.0/1.3:94 m7593417:0/13:0.0/1.3:27 m7593084:0/9:0.0/1.3:16 -00c0:0/2:0.0/1.3:3
+[alert-ring] pos=531 (+0 since last) last8: 00bc->00b8 00b8->00bc 00b8->00bc 00b8->00a8 00a8->00b8 00a8->00b8 00b8->00a8 00b8->00a8 rev=ml439
+[waiters] parked=11 over60s=0 rev=ml444
+[footprint] rev=ml358 phys=2066 MB (peak 2079) internal=2024 MB compressed=35 MB external=271 MB reusable=0 MB (cycle=33)
+[xp] 19:21:16.834 +64.65 dt=288 cpu=25 (thr 25) P=1 E=25 run=45 pgw=0.0 GHz P=1.57 E=1.71 Minst=50 IPC=1.16 mJ=3 pin=0 rdKB=0 fpMB=2066
+[xp-t] 19:21:16.834 m7593417:1/11:1.5/1.6:24 m7593475:0/3:0.0/2.1:10 -00c0:0/3:1.6/1.7:4
+[xp-api] 19:21:16.834 x64->EC 0/s FPCR-writes 0/s EC->x64 0/s | CS contended 0/s (spin0 0%) spin-won 0/s wait 0.0 ms/s [<2us 0 <10 0 <50 0 <200 0 <1ms 0 >=1ms 0]/s wakes 0/s | WaitOnAddress 0/s wake1 0/s wakeAll 0/s | SetEvent 102/s ResetEvent 0/s Pulse 0/s | wait1 33/s waitN 526/s polls 0/s (empty 0/s) | yield 517/s (slept 0/s) | delay 0/s [0 0 <1ms 0 <5ms 0 <20ms 0 >=20ms 0 inf 0] | alert wait 0/s wake 0/s
+0c0:0/2:0.0/0.8:3
+[19:21:16.231] [xp] 19:21:16.231 +64.05 dt=251 cpu=19 (thr 19) P=0 E=19 run=29 pgw=0.0 GHz P=0.00 E=0.81 Minst=33 IPC=2.14 mJ=1 pin=0 rdKB=0 fpMB=2066
+[19:21:16.231] [xp-t] 19:21:16.231 m7593417:0/12:0.0/0.8:22 -00c0:0/2:0.0/0.8:3
+[19:21:16.546] [xp] 19:21:16.546 +64.37 dt=315 cpu=69 (thr 69) P=0 E=69 run=194 pgw=0.0 GHz P=0.00 E=1.31 Minst=151 IPC=1.66 mJ=7 pin=0 rdKB=0 fpMB=2066
+[19:21:16.546] [xp-t] 19:21:16.546 m7593028:0/39:0.0/1.3:94 m7593417:0/13:0.0/1.3:27 m7593084:0/9:0.0/1.3:16 -00c0:0/2:0.0/1.3:3
+[19:21:16.834] [xp] 19:21:16.834 +64.65 dt=288 cpu=25 (thr 25) P=1 E=25 run=45 pgw=0.0 GHz P=1.57 E=1.71 Minst=50 IPC=1.16 mJ=3 pin=0 rdKB=0 fpMB=2066
+[19:21:16.834] [xp-t] 19:21:16.834 m7593417:1/11:1.5/1.6:24 m7593475:0/3:0.0/2.1:10 -00c0:0/3:1.6/1.7:4
+[19:21:16.834] [xp-api] 19:21:16.834 x64->EC 0/s FPCR-writes 0/s EC->x64 0/s | CS contended 0/s (spin0 0%) spin-won 0/s wait 0.0 ms/s [<2us 0 <10 0 <50 0 <200 0 <1ms 0 >=1ms 0]/s wakes 0/s | WaitOnAddress 0/s wake1 0/s wakeAll 0/s | SetEvent 102/s ResetEvent 0/s Pulse 0/s | wait1 33/s waitN 526/s polls 0/s (empty 0/s) | yield 517/s (slept 0/s) | delay 0/s [0 0 <1ms 0 <5ms 0 <20ms 0 >=20ms 0 inf 0] | alert wait 0/s wake 0/s

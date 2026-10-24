@@ -1,0 +1,244 @@
+[18:14:12.082] [INFO] Checking entitlements...
+[18:14:12.083] [INFO] [build] v0.1.592 (592)
+[18:14:12.083] [INFO] [device] model=iPhone16,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=7655MB available=6125MB cores=6
+[18:14:12.084] [INFO] [device] address-map=[0x100f80000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[18:14:12.112] [INFO] [device] gpu="Apple A17 Pro GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[18:14:12.913] [INFO] Requesting JIT with Built-in StikJIT...
+[18:14:14.428] [INFO] [bcd] library launch Subnautica2.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[18:14:14.430] [INFO] Session log: logs/Subnautica2.exe-2026-10-23_18-14-14.txt
+[18:14:14.454] [INFO] Running full Wine sequence...
+[18:14:14.454] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100f80000,0x8000000000) 512GB available=6116MB low-power=0 thermal=serious
+[18:14:14.461] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[18:14:14.461] [INFO] Allocating 896MB JIT pool via debugger...
+[18:14:14.462] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[18:14:14.462] [INFO] [jit-debugger] attached=1 at the pool request
+[18:14:14.465] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 608MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[18:14:15.415] [INFO] RX pool at 0x148000000
+[18:14:15.438] [INFO] Detaching debugger...
+[phase] wine-start             t+  1.027s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[vcrt-arm64] madeira-bcd: HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\arm64 (volatile) Installed=1 Version 14.44.35211.0: 2 of 2 view(s) written, 0 already there and left alone, 0 could not be made; MADEIRA_VCRT_ARM64_KEY unset or 0 turns it off
+[18:14:15.790] [vcrt-arm64] madeira-bcd: HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\arm64 (volatile) Installed=1 Version 14.44.35211.0: 2 of 2 view(s) written, 0 already there and left alone, 0 could not be made; MADEIRA_VCRT_ARM64_KEY unset or 0 turns it off
+ml992: os_proc_available_memory=5489 MB + phys_footprint=654 MB = 6144 MB (hw.memsize says 7655 MB)
+ml985: preferred base 0x140000000+0x5e000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x60000 rev=ajan5-motor
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Subnautica 2\\Subnautica2.exe" 0x116b60000+0x5e000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[x64-image] #1 0x116b60000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x116b60000+0x14000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x116b74000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x116b74000+0x4000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x116b80000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x148004000)
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x14813e000)
+[copy-verify] ucrtbase.dll: OK, 34 .text pages executable (copy @0x148558000)
+[copy-verify] kernel32.dll: OK, 10 .text pages executable (copy @0x14868c000)
+[copy-verify] kernelbase.dll: OK, 28 .text pages executable (copy @0x148754000)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+D 24 Load module Subnautica2.exe (subnautica2.exe-347c363440f18bff): 116B60000
+D 24 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FFCD0000
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] user32.dll: OK, 36 .text pages executable (copy @0x148a58000)
+[footprint] rev=ml358 phys=696 MB (peak 696) internal=696 MB compressed=0 MB external=68 MB reusable=1 MB (cycle=1)
+D 24 Load module USER32.dll (user32.dll-7d4349728057d260): 71FE150000
+D 24 Load module gdi32.dll (gdi32.dll-c5970f8a59a953f3): 71FE060000
+D 24 Load module advapi32.dll (advapi32.dll-e40c14e1190b1df2): 71FDFB0000
+D 24 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FDF30000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[phase] spawn:L"C:\\Program Files (x86)\\Subnautica 2\\Subnautica2\\Binaries\\Win64\\Subnautica2-Win64-Shipping.exe" t+  1.545s rev=ml526
+ml985: map_image_view size=0xdca4000 base=0x140000000 info_base=0x140000000 map_addr=0 flags=0x4 charact=0x22 limits=0x10000..0x73fffeffff
+ml985: preferred base 0x140000000+0xdca4000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0xdca4000 rev=ajan5-motor
+[copy-verify] ucrtbase.dll: OK, 34 .text pages executable (copy @0x14a3ec000)
+[copy-verify] kernel32.dll: OK, 10 .text pages executable (copy @0x14a520000)
+[copy-verify] kernelbase.dll: OK, 28 .text pages executable (copy @0x14a5e8000)
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14a8ed000)
+[copy-verify] winmm.dll: OK, 9 .text pages executable (copy @0x14b5bc000)
+[footprint] rev=ml358 phys=1368 MB (peak 1368) internal=1367 MB compressed=0 MB external=126 MB reusable=1 MB (cycle=2)
+[footprint] rev=ml358 phys=1374 MB (peak 1374) internal=1373 MB compressed=0 MB external=126 MB reusable=1 MB (cycle=3)
+002c:err:module:load_dll [dll-missing] rev=ml336 #1 L"amfrt64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+002c:err:module:load_dll [dll-missing] rev=ml336 #2 L"nvEncodeAPI64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+002c:err:module:load_dll [dll-missing] rev=ml336 #3 L"mfplay.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml358 phys=1338 MB (peak 1374) internal=1337 MB compressed=0 MB external=129 MB reusable=1 MB (cycle=4)
+002c:err:module:load_dll [dll-missing] rev=ml336 #4 L"Kerberos.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+002c:err:module:load_dll [dll-missing] rev=ml336 #5 L"MSV1_0.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=002c | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+[nt-fail] #1 NtAllocateVirtualMemory status=c000000d proc=subnautica2-win64-shipping.exe tid=002c size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=1 rev=ajan5-rockstar
+[free-delay] #1 release of 0x7036a60000+0x400000 held for 2000 ms (1 in flight)
+LogOnline: Warning: STEAM: Steamworks: SteamUtils() failed!
+002c:err:module:load_dll [dll-missing] rev=ml336 #6 L"steamclient64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[alloc-fail] ml814 #2 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=002c | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+[nt-fail] #2 NtAllocateVirtualMemory status=c000000d proc=subnautica2-win64-shipping.exe tid=002c size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=2 rev=ajan5-rockstar
+[guest-log] #52 tid=0058 LogOnline: Warning: STEAM: Steamworks: SteamUtils() failed!
+[copy-verify] wbemprox.dll: OK, 9 .text pages executable (copy @0x14dba0000)
+[free-delay] #2 release of 0x703e1a0000+0x120000 held for 2000 ms (2 in flight)
+LogOnline: Warning: STEAM: Steam API failed to initialize!
+[guest-log] #62 tid=0058 LogOnline: Warning: STEAM: Steam API failed to initialize!
+[nls-getptr] type=11 id=10000 peb=0x107dd0000
+[nls-getptr] type=11 id=10000 peb=0x107dd0000
+[nls-getptr] type=11 id=10000 peb=0x107dd0000
+[win-name] #4 hwnd=0x20028 class='' text="SplashScreenGuard" rev=ml853
+[win-name] #5 hwnd=0x20028 class='' text="SplashScreenGuard" rev=ml853
+[win-name] #10 hwnd=0x10050 class='' text="Default IME" rev=ml853
+[win-name] #11 hwnd=0x2004c class='' text="SplashScreen" rev=ml853
+[launch-view] dismissed reason=surface logs=0
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] command queue: type 3
+[madeira-d3d12] command queue: type 3
+[madeira-d3d12] command queue: type 2
+[madeira-d3d12] command queue: type 2
+[madeira-d3d12] ml1057 live GPU backing (estimated) total=49MB: tex-RT=1MB/2 (peak 1) tex-DS=0MB/0 (peak 0) tex-UAV=0MB/1 (peak 0) tex-sampled=0MB/34 (peak 0) tex-MSAA=0MB/0 (peak 0) buf-private=32MB/1 (peak 32) buf-shared=16MB/4 (peak 16)
+[madeira-d3d12] ml1057 live GPU backing (estimated) total=49MB: tex-RT=1MB/2 (peak 1) tex-DS=0MB/0 (peak 0) tex-UAV=0MB/1 (peak 0) tex-sampled=0MB/34 (peak 0) tex-MSAA=0MB/0 (peak 0) buf-private=32MB/1 (peak 32) buf-shared=16MB/4 (peak 16)
+[footprint] rev=ml358 phys=1996 MB (peak 1996) internal=1829 MB compressed=0 MB external=148 MB reusable=1 MB (cycle=5)
+[free-delay] #3 release of 0x705b010000+0x110000 held for 2000 ms (2 in flight)
+[free-delay] #4 release of 0x705af00000+0x110000 held for 2000 ms (3 in flight)
+[free-delay] #5 release of 0x705adf0000+0x110000 held for 2000 ms (4 in flight)
+[win-name] #15 hwnd=0x10058 class='' text="Default IME" rev=ml853
+[win-name] #16 hwnd=0x10052 class='' text="SN2  " rev=ml853
+[hwinput] keyboard focus: program (program cursor)
+[swap-diag] #1 layer 0x10cc2b880: drawable 2136x984 format 90 -> 2136x984 format 90, set on the iOS main thread (dispatch_sync) ...
+[18:14:24.353] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[free-delay] #6 release of 0x7029bd0000+0x162000 held for 2000 ms (5 in flight)
+[free-delay] #7 release of 0x702ae40000+0x1fc000 held for 2000 ms (6 in flight)
+[free-delay] #8 release of 0x7032fe0000+0x2f7000 held for 2000 ms (7 in flight)
+[footprint] rev=ml358 phys=2383 MB (peak 2383) internal=2140 MB compressed=0 MB external=151 MB reusable=1 MB (cycle=6)
+[footprint] rev=ml1060 fast phys=2693 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=2730 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=2807 MB compressed=0 MB
+002c:err:module:load_dll [dll-missing] rev=ml336 #18 L"DXCore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml1060 fast phys=3111 MB compressed=0 MB
+LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[footprint] rev=ml1060 fast phys=3182 MB compressed=29 MB
+[nls-getptr] type=11 id=10000 peb=0x107dd0000
+[nls-getptr] type=11 id=10000 peb=0x107dd0000
+[win-name] #36 hwnd=0x10062 class='' text="Error" rev=ml853
+[win-name] #37 hwnd=0x10062 class='' text="Error" rev=ml853
+[win-name] #39 hwnd=0x10062 class='' text="Error" rev=ml853
+[win-name] #42 hwnd=0x10062 class='' text="Error" rev=ml853
+[nls-getptr] type=11 id=10000 peb=0x107dd0000
+[footprint] rev=ml1060 fast phys=3224 MB compressed=62 MB
+[win-name] #43 hwnd=0x10062 class='' text="Error" rev=ml853
+002c:err:module:load_dll [dll-missing] rev=ml336 #19 L"GameInput.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+LogAudio: Display: Initializing Audio Device Manager...
+LogAudio: Display: Loading Default Audio Settings Objects...
+LogAudioMixer: Display: Initializing Sound Submixes...
+LogOnline: Warning: STEAM: Steamworks: SteamUtils() failed!
+002c:err:module:load_dll [dll-missing] rev=ml336 #20 L"steamclient64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+002c:err:module:load_dll [dll-missing] rev=ml336 #21 L"steamclient64.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\tier0_s64.dll" 0x71f1670000+0x19c000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\vstdlib_s64.dll" 0x71f15a0000+0xc1000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 2C Load module MSWSOCK.dll (mswsock.dll-e1b26fc99ab81cd3): 71F1510000
+[alloc-fail] ml814 #3 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=002c | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+[nt-fail] #3 NtAllocateVirtualMemory status=c000000d proc=subnautica2-win64-shipping.exe tid=002c size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=3 rev=ajan5-rockstar
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\crashhandler64.dll" 0x71f1320000+0x1af000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 184 Load module crashhandler64.dll (crashhandler64.dll-e67a01ab35a49685): 71F1320000
+LogOnline: Warning: STEAM: Steam API failed to initialize!
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\steamclient64.dll" 0x71f1810000+0x18bb000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 2C Load module steamclient64.dll (steamclient64.dll-dbf91bc6a46681a3): 71F1810000
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\tier0_s64.dll" 0x71f1670000+0x19c000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 2C Load module tier0_s64.dll (tier0_s64.dll-46fed3100444d04b): 71F1670000
+[x64-image] L"\\??\\C:\\Program Files (x86)\\Steam\\vstdlib_s64.dll" 0x71f15a0000+0xc1000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 2C Load module vstdlib_s64.dll (vstdlib_s64.dll-0805e0d24f89e963): 71F15A0000
+D 2C Load module MSWSOCK.dll (mswsock.dll-e1b26fc99ab81cd3): 71F1510000
+[alloc-fail] ml814 #4 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=002c | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+[nt-fail] #4 NtAllocateVirtualMemory status=c000000d proc=subnautica2-win64-shipping.exe tid=002c size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=4 rev=ajan5-rockstar
+[store-noalias] #1 rev=ml348 addr=0x0 insn=0xd9400008 pc=0x16b80dde0 NO pool/anon alias | region 0x100f80000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x0 hostpc=0x16b80dde0 hinsn=0xd9400008 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x163ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x71f92e86a3 pc=0x16b80dde0 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x16b80dde0 addr=0x0 x18=0x71fffd0000 type=1 lr=0x71f92e86a3 sp=0x71fc5c0000 x16=0x16cff8108 x17=0x11f9e0000
+[guest-code] rev=ml333 pool_rip=0x71f92e86a3 (PE 0x71f92e86a3) -- NO pool copy for this address (identity translate)
+[fault-host] 16b80dce0: f81f8ef3 d100defd 2a3703f8 f10242e9 aa0903f7 aa0003f9 d280cf06 f2a5ae86
+[fault-host] 16b80dd00: f2c00026 d94000c6 d503201f d295c987 f2a51cc7 f2c00027 f81f8ee7 a94a2f8a
+[fault-host] 16b80dd20: 8a06116b 8b0b014a a940294b cb06014a b400006a f945b38b f9000f86 d63f0160
+[fault-host] 16b80dd40: 10fffc0a f900038a b945eb8b 3400004b d4395fc0 52800013 2b0863ff aa0803e9
+[fault-host] 16b80dd60: d500401f 540020c0 d289a400 f2a5ab80 f2c00020 52800026 19038326 d280d306
+[fault-host] 16b80dd80: f2a5ae86 f2c00026 d94000c6 d503201f d295cd07 f2a51cc7 f2c00027 f81f8ee7
+[mach_exc] insn_stream PC-12..PC+8: d4395fc0 d9400100 d503201f [d9400008] d503201f d94d0106 d503201f
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fffd0000 TEB=0x71fffd0000 TEB[0x58]=0x7028056200 *(gs_cached+0x58)=0x7028056200
+[store-noalias] #2 rev=ml348 addr=0x0 insn=0xd9400008 pc=0x16b80dde0 NO pool/anon alias | region 0x100f80000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=READ p1=0x0 hostpc=0x16b80dde0 hinsn=0xd9400008 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x163ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x71f92e86a3 pc=0x16b80dde0 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x16b80dde0 addr=0x0 x18=0x71fffd0000 type=1 lr=0x71f92e86a3 sp=0x71fc5c0000 x16=0x16cff8108 x17=0x11f9e0000
+[guest-code] rev=ml333 pool_rip=0x71f92e86a3 (PE 0x71f92e86a3) -- NO pool copy for this address (identity translate)
+[fault-host] 16b80dd40: 10fffc0a f900038a b945eb8b 3400004b d4395fc0 52800013 2b0863ff aa0803e9
+[fault-host] 16b80dd60: d500401f 540020c0 d289a400 f2a5ab80 f2c00020 52800026 19038326 d280d306
+[fault-host] 16b80dd80: f2a5ae86 f2c00026 d94000c6 d503201f d295cd07 f2a51cc7 f2c00027 f81f8ee7
+[fault-host] 16b80dda0: a94a2f8a 8a06116b 8b0b014a a940294b cb06014a b400006a f945b38b f9000f86
+[fault-host] 16b80ddc0: d63f0160 10fff7ea f900038a b945eb8b 3400004b d4395fc0 d9400100 d503201f
+[fault-host] 16b80dde0: d9400008 d503201f d94d0106 d503201f 00000000 00000000 00000000 00000000
+[mach_exc] insn_stream PC-12..PC+8: d4395fc0 d9400100 d503201f [d9400008] d503201f d94d0106 d503201f
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fffd0000 TEB=0x71fffd0000 TEB[0x58]=0x7028056200 *(gs_cached+0x58)=0x7028056200
+002c:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 RIP=0x16b80dde0 RX from -32, 64 of 64 bytes: 60 01 3f d6 ea f7 ff 10 8a 03 00 f9 8b eb 45 b9 4b 00 00 34 c0 5f 39 d4 00 01 40 d9 1f 20 03 d5 08 00 40 d9 1f 20 03 d5 06 01 4d d9 1f 20 03 d5 87 ce 95 d2 c7 1c a5 f2 27 00 c0 f2 e7 8e 1f f8 
+002c:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 no RW alias for 0x16b80dde0 (not an anon-JIT page)
+002c:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #2 RIP=0x128e6ae6b RX from -32, 64 of 64 bytes: 04 45 33 e4 84 c0 0f 84 13 01 00 00 48 8d 0d c2 9e 75 04 c6 46 38 01 ff 15 30 58 8d 04 48 8b 08 48 8b 01 ff 90 d0 00 00 00 84 c0 0f 84 ee 00 00 00 48 8b 0d 4d 6a 8e 04 48 85 c9 75 0c e8 d3 01 
+002c:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #2 no RW alias for 0x128e6ae6b (not an anon-JIT page)
+0030:err:module:load_dll [dll-missing] rev=ml336 #22 L"tbs.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0030:err:module:load_dll [dll-missing] rev=ml336 #23 L"dbgcore.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[store-noalias] #3 rev=ml348 addr=0x28 insn=0x99428002 pc=0x16984b45c NO pool/anon alias | region 0x100f80000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #3 p0=READ p1=0x28 hostpc=0x16984b45c hinsn=0x99428002 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x163ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=3 rip=0x12220dc26 pc=0x16984b45c addr=0x28 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x100f80000+0x22a4000 [first] rev=ml555
+[mach_exc] UNHANDLED #3 pc=0x16984b45c addr=0x28 x18=0x7083f20000 type=1 lr=0x1642725a8 sp=0x71f3470000 x16=0x16cff8108 x17=0x119e10000
+[guest-code] rev=ml333 pool_rip=0x12220dc26 (PE 0x12220dc26) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: a9bf4ef4 f81f8ef6 d10182f7 [99428002] d503201f aa0003fd d28ae606
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x7083f20000 TEB=0x7083f20000 TEB[0x58]=0x7039950990 *(gs_cached+0x58)=0x7039950990
+[store-noalias] #4 rev=ml348 addr=0x28 insn=0x99428002 pc=0x16984b45c NO pool/anon alias | region 0x100f80000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #4 p0=READ p1=0x28 hostpc=0x16984b45c hinsn=0x99428002 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=4 base=0x163ff8000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=4 rip=0x12220dc26 pc=0x16984b45c addr=0x28 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x100f80000+0x22a4000 rev=ml555
+[mach_exc] UNHANDLED #4 pc=0x16984b45c addr=0x28 x18=0x7083f20000 type=1 lr=0x1642725a8 sp=0x71f3470000 x16=0x16cff8108 x17=0x119e10000
+[guest-code] rev=ml333 pool_rip=0x12220dc26 (PE 0x12220dc26) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: a9bf4ef4 f81f8ef6 d10182f7 [99428002] d503201f aa0003fd d28ae606
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+0160:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #3 RIP=0x16984b45c RX from -32, 64 of 64 bytes: 8b eb 45 b9 4b 00 00 34 c0 5f 39 d4 fd 6e bf a9 fa 66 bf a9 f4 4e bf a9 f6 8e 1f f8 f7 82 01 d1 02 80 42 99 1f 20 03 d5 fd 03 00 aa 06 e6 8a d2 66 ba a5 f2 26 00 c0 f2 d6 00 40 b9 13 00 80 52 
+0160:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #3 no RW alias for 0x16984b45c (not an anon-JIT page)
+0160:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #4 RIP=0x125d6da9f RX from -32, 64 of 64 bytes: 25 84 11 5e 04 cc cc cc cc cc cc cc cc cc cc cc cc 40 53 55 56 57 41 54 41 55 41 57 48 83 ec 60 44 8b 41 28 48 8b e9 44 8b 3d 83 7c fc 07 45 33 e4 65 48 8b 04 25 58 00 00 00 90 b9 14 0e 00 00 
+0160:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #4 no RW alias for 0x125d6da9f (not an anon-JIT page)
+[store-noalias] #5 rev=ml348 addr=0x0 insn=0xf9400021 pc=0x16cff8574 NO pool/anon alias | region 0x100f80000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #5 p0=READ p1=0x0 hostpc=0x16cff8574 hinsn=0xf9400021 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x16cff8000 size=0x4000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=5 rip=0x707372bad0 pc=0x16cff8574 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) [first] rev=ml555
+[mach_exc] UNHANDLED #5 pc=0x16cff8574 addr=0x0 x18=0x704e550000 type=1 lr=0x16cff8354 sp=0x71f76c0000 x16=0x149eef758 x17=0x71f76bfbf0
+[guest-code] rev=ml333 pool_rip=0x707372bad0 (PE 0x707372bad0) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: 4c9f2d48 4c9f2d4c 52800001 [f9400021] d53b420a b9040b8a a9020388
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[store-noalias] #6 rev=ml348 addr=0x0 insn=0xf9400021 pc=0x16cff8574 NO pool/anon alias | region 0x100f80000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #6 p0=READ p1=0x0 hostpc=0x16cff8574 hinsn=0xf9400021 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x16cff8000 size=0x4000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=6 rip=0x707372bad0 pc=0x16cff8574 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[win-name] #85 hwnd=0x20062 class='' text="Wine C++ Runtime Library" rev=ml853
+[win-name] #87 hwnd=0x10082 class='' text="Runtime error!??Program: C:\Program Files (x86)\Subnautica 2\Subnautica2\Binaries\Win64\Subnautica2-Win64-Shipping.exe?Error: R6025??Press OK to exit the program, or Cancel to start the Wine debugger" rev=ml853
+[win-name] #91 hwnd=0x10076 class='' text="OK" rev=ml853
+[win-name] #92 hwnd=0x10078 class='' text="Cancel" rev=ml853
+[win-name] #93 hwnd=0x20062 class='' text="Wine C++ Runtime Library" rev=ml853
+[footprint] rev=ml1060 fast phys=4408 MB compressed=1619 MB
+[footprint] rev=ml1060 fast phys=4753 MB compressed=1862 MB
+[footprint] rev=ml1060 fast phys=5130 MB compressed=2282 MB
+[footprint] rev=ml1060 fast phys=5411 MB compressed=2510 MB
+[footprint] rev=ml1060 fast phys=5520 MB compressed=2590 MB
+[ios_audio] ml1230 pacing stream=0x10cce6000 lead 60 ms: client wrote 9.98 s of audio in 10.01 s (99.7%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x10fb1ea00 lead 60 ms: client wrote 9.98 s of audio in 10.00 s (99.8%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2752..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[footprint] rev=ml1060 fast phys=5626 MB compressed=2590 MB
+[18:14:44.376] [OK] Early detach: game presenting and settled
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=88 resident=2793MB dbg=DEBUGGED rev=ml525
+[ios_audio] ml1230 pacing stream=0x10fb1d400 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[win-name] #94 hwnd=0x20062 class='' text="Wine C++ Runtime Library" rev=ml853
+[int3-guest] guest_rip=0x14a47d1d4 x28=0x7c0a401140 read=1 rev=ml554
+[store-undecoded] #1 rev=ml350 insn=0xd43e0000 pc=0x14a5ff8a8 addr=0x14a5ff8a8 rw_addr=0x70025ff8a8 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[fault_rip] cnt=7 rip=0x14a47d1d4 pc=0x14a5ff8a8 addr=0x14a5ff8a8 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x14a5fc000+0x4000 [first] rev=ml555
+0030:err:seh:call_seh_handlers [exc] ml811 code=c000001d addr=000000014A5FF8A8 flags=0 nparams=0 tid=0030 hit=1
+0030:err:seh:call_seh_handlers [unwind-root] ml633 ACCEPTING terminal root frame 7029350000 (== stack hi) ControlPc=71ffd32dd8 handler=00000071FFCF5388 — this is the unhandled-exception filter frame
+[18:14:46.388] [INFO] Detaching debugger...
+[ios_audio] ml1230 pacing stream=0x10cce6000 lead 60 ms: client wrote 10.00 s of audio in 10.00 s (100.0%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x10fb1ea00 lead 60 ms: client wrote 9.98 s of audio in 10.00 s (99.8%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2752..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[footprint] rev=ml358 phys=5553 MB (peak 5626) internal=2544 MB compressed=2693 MB external=119 MB reusable=0 MB (cycle=18)
+[footprint] rev=ml358 phys=5553 MB (peak 5626) internal=2544 MB compressed=2693 MB external=119 MB reusable=0 MB (cycle=19)
+[footprint] rev=ml358 phys=5553 MB (peak 5626) internal=2544 MB compressed=2693 MB external=119 MB reusable=0 MB (cycle=20)
+[ios_audio] ml1230 pacing stream=0x10fb1d400 lead 60 ms: client wrote 9.98 s of audio in 10.00 s (99.8%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[footprint] rev=ml358 phys=5553 MB (peak 5626) internal=2544 MB compressed=2693 MB external=119 MB reusable=0 MB (cycle=21)
+[footprint] rev=ml358 phys=5553 MB (peak 5626) internal=2544 MB compressed=2693 MB external=119 MB reusable=0 MB (cycle=22)
+[ios_audio] ml1230 pacing stream=0x10cce6000 lead 60 ms: client wrote 10.03 s of audio in 10.00 s (100.3%) over 235 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2304..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[ios_audio] ml1230 pacing stream=0x10fb1ea00 lead 60 ms: client wrote 10.03 s of audio in 10.00 s (100.2%) over 234 wakes; device short 0.0 ms in 0 of 469 passes (largest pass 1024 frames); ring 2752..4800 frames; worst late wake 0.1 ms; clamped 0 samples
+[footprint] rev=ml358 phys=5555 MB (peak 5626) internal=2295 MB compressed=2943 MB external=129 MB reusable=0 MB (cycle=23)
+[hwinput] keyboard focus: elsewhere (app inactive)

@@ -31,6 +31,9 @@ import UniformTypeIdentifiers
     /// "The game's own program": the install folder's programs, by App ID, once listed.
     private var programs: [Int: [String]] = [:]
     private var resolving = Set<Int>()
+    /// BCD Dock's Steam launch option (2026-10-24): the entries Steam's launch configuration lists for the game that a Dock
+    /// start can run (SteamDirectStart.dockOptions), by App ID, read from the cached library once the page opens.
+    private var dockOptions: [Int: [SteamDirectStart.DockOption]] = [:]
 
     nonisolated override init() { super.init() }
 
@@ -222,6 +225,11 @@ import UniformTypeIdentifiers
         rates += [BCDGameChoice(value: "1", label: "60 FPS"), BCDGameChoice(value: "0", label: "The screen's maximum"),
                   BCDGameChoice(value: "2", label: "No limit")]
         let fps = rates.first { $0.value == String(entry.fpsMode) }?.label ?? "\(entry.fpsMode)"
+        // The game's own screen orientation (BCDOrientation.swift): "" follows Settings; a value this build does not know stays listed.
+        var orientations = BCDOrientationRules.gameChoices(global: BCDOrientationLive.global).map { BCDGameChoice(value: $0.value, label: $0.label) }
+        if let saved = entry.orientationLock, !saved.isEmpty, !orientations.contains(where: { $0.value == saved }) {
+            orientations.append(BCDGameChoice(value: saved, label: saved))
+        }
         var settings = [
             BCDGameSetting(id: "resolution", title: "Resolution", kind: .choice(sizes), value: entry.resolution,
                            defaultValue: ResolutionChoices.defaultValue,
@@ -230,6 +238,8 @@ import UniformTypeIdentifiers
                            kind: .choice(DisplayMode.allCases.map { BCDGameChoice(value: $0.rawValue, label: Self.scaling[$0.rawValue] ?? $0.label) }),
                            value: entry.displayMode.rawValue, defaultValue: DisplayMode.fit.rawValue,
                            note: "Fit shows the whole picture, with bars where its shape differs from the screen's. Fill and crop covers the screen. Stretch fills it and bends the shape. The game's own shape fits what the game really draws, so a 4:3 picture stays 4:3."),
+            BCDGameSetting(id: "orientation", title: "Screen orientation", kind: .choice(orientations), value: entry.orientationLock ?? "", defaultValue: "",
+                           note: "How the screen turns while this game runs. Landscape keeps it in landscape however you hold the device, lying down, say; it goes back to following the device when the game ends. Settings has the choice for every game."),
             BCDGameSetting(id: "fps", title: "Frame-rate limit", kind: .choice(rates), value: String(entry.fpsMode), defaultValue: "1",
                            note: "The most frames a second the game shows. 30 and 40 keep the device cooler; No limit lets the game run as fast as it can."),
             Self.line("metalfx-upscale", "MetalFX upscaling", profile, Self.named(GameProfile.metalFXChoices, ["": "Off"]),
@@ -494,6 +504,19 @@ import UniformTypeIdentifiers
                                                defaultValue: entry.steamProgram ?? "", note: source))
             }
         } else {
+            // A Steam game with more than one launch entry Valve's client could start lets you pick which one; one that never
+            // picked starts as it always did (SteamDirectStart.dockLaunch). Nothing is shown for a game with a single entry.
+            let listed = dockOptions[appID] ?? []
+            if listed.count > 1 || entry.steamLaunchOption != nil {
+                var list = [BCDGameChoice(value: "", label: "Steam's choice")]
+                list += listed.map { BCDGameChoice(value: String($0.index), label: $0.label) }
+                let chosen = entry.steamLaunchOption.map(String.init) ?? ""
+                let known = chosen.isEmpty || listed.contains { String($0.index) == chosen }
+                settings.append(BCDGameSetting(id: "launchoption", title: "Steam launch option", kind: .choice(list),
+                                               value: known ? chosen : "", defaultValue: "",
+                                               note: known ? "Which of the game's launch entries Steam starts. Steam's choice is the first one that runs here, as before."
+                                                           : "The entry chosen earlier is not in Steam's list for this install any more, so Steam's choice starts."))
+            }
             settings.append(Self.toggle("smallpool", "Smaller JIT pool (512 MB)", dock.compactPool,
                                         note: "Starts through BCD Dock get a 512 MB JIT pool instead of the usual one, for every Steam game, until BCD closes."))
             if DockOffline.enabled {
@@ -703,6 +726,21 @@ import UniformTypeIdentifiers
             Task { await steam.syncCloud(id) }
         }
         resolveProgram(game)
+        readDockOptions(game)
+    }
+
+    /// The entries of Steam's launch configuration a Dock start can run, for "Steam launch option": from the cached library
+    /// only (no connection is opened for it), off the main thread. A game with no more than one such entry shows no choice.
+    private func readDockOptions(_ game: BCDGame) {
+        guard let entry = entry(for: game), let appID = entry.steamAppID,
+              let launches = SteamOwnedLibrary.shared.game(appID)?.launches, launches.allSatisfy({ $0.index != nil }) else { return }
+        let folder = LibraryModel.drive.appendingPathComponent(entry.relativePath, isDirectory: true)
+        Task { [weak self] in
+            let found = await Task.detached(priority: .userInitiated) { SteamDirectStart.dockOptions(launches, installFolder: folder) }.value
+            guard let self, self.dockOptions[appID] != found else { return }
+            self.dockOptions[appID] = found
+            self.onChange?()
+        }
     }
 
     /// The Direct3D version (or other API) a game's program imports, read off the main thread
@@ -764,6 +802,9 @@ import UniformTypeIdentifiers
         case "fps":
             guard let mode = Int(value) else { return }
             change(game) { $0.fpsMode = mode }
+        case "orientation":
+            guard value.isEmpty || BCDOrientationChoice(rawValue: value) != nil else { return }
+            change(game) { $0.orientationLock = value.isEmpty ? nil : value }
         case "metalfx-upscale", "dxil-tess-max-factor", "async-submit", "fence-chain", GamepadInput.padModeKey:
             setLine(game, setting, value)
         case "framegen":
@@ -827,6 +868,11 @@ import UniformTypeIdentifiers
                 entry.steamProgramSource = "choice"
             }
             LogStore.shared.log("[steam-start] app=\(appID(game) ?? 0) program=choice")
+        case "launchoption":
+            let key = Int(value)
+            guard value.isEmpty || (key != nil && key! >= 0), let id = appID(game) else { return }
+            change(game) { $0.steamLaunchOption = key }
+            LogStore.shared.log("[steam-start] app=\(id) launch-option=\(key == nil ? "default" : "choice")")
         case "smallpool": MadeiraDockModel.shared.compactPool = on
         case "installs": if let id = appID(game) { MadeiraDockModel.shared.setRunsInstallers(id, on) }
         case "installrequest": if let id = appID(game) { MadeiraDockModel.shared.setInstallRequest(id, DockInstallRequest(rawValue: value)) }
@@ -1005,10 +1051,16 @@ import UniformTypeIdentifiers
         return BCDGameLog(file: found, name: found.lastPathComponent, date: LogUpload.modified(found), bytes: LogUpload.size(found))
     }
 
+    func logComment() async -> String? {
+        await withCheckedContinuation { continuation in
+            BCDLogComment.ask({ continuation.resume(returning: $0) }, cancelled: { continuation.resume(returning: nil) })
+        }
+    }
+
     /// Send Log, by hand, as Settings › Send Log sends one (LogUpload.send).
-    func send(_ log: BCDGameLog, of game: BCDGame, progress: @escaping (String) -> Void) async throws -> String {
+    func send(_ log: BCDGameLog, of game: BCDGame, comment: String, progress: @escaping (String) -> Void) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
-            LogUpload.send(log.file, game: LogUpload.game(of: log.file), progress: progress) { result in
+            LogUpload.send(log.file, game: LogUpload.game(of: log.file), comment: comment, progress: progress) { result in
                 continuation.resume(with: result)
             }
         }

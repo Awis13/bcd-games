@@ -566,10 +566,11 @@ check('the catalog note names setupapi and says it is the one name shipped for e
       'tools/patch-wine-setupapi-devinst-lock.py' in note)
 recs = json.loads((root / 'recommended/recommendations.json').read_text())
 dying = [r for r in recs['rules'] if r['id'] == 'dying-light']
-check('Dying Light (Steam 239140) has a list with the line from build 577 on, after the standard line',
+check('Dying Light (Steam 239140) has a list with the line from build 577 on (577-593 setupapi, 594 on setupapi,ddraw), after the standard lines',
       len(dying) == 1 and dying[0]['match']['steamAppIDs'] == [239140] and
-      dying[0]['config'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0',
-                                 {'line': 'env.MADEIRA_OPTIN_DLLS = setupapi', 'minBuild': 577}])
+      dying[0]['config'][2:] == ['env.MADEIRA_EC_HOOK_TRACE = 0', 'env.LC_ALL = en_US.UTF-8',
+                                 {'line': 'env.MADEIRA_OPTIN_DLLS = setupapi', 'minBuild': 577, 'maxBuild': 593},
+                                 {'line': 'env.MADEIRA_OPTIN_DLLS = setupapi,ddraw', 'minBuild': 594}])
 check('no other list names setupapi',
       all('setupapi' not in json.dumps(r) for r in recs['rules'] if r['id'] != 'dying-light'))
 rules = (root / 'build/tools/autotune_rules.py').read_text()

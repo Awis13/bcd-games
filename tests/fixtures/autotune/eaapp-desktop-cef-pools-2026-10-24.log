@@ -1,0 +1,264 @@
+[13:54:38.804] [INFO] Checking entitlements...
+[13:54:38.804] [INFO] [build] v0.1.598 (598)
+[13:54:38.804] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6636MB cores=6
+[13:54:38.805] [INFO] [device] address-map=[0x104ec0000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:54:38.817] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[13:54:41.723] [INFO] Requesting JIT with Built-in StikJIT...
+[13:54:43.146] [INFO] [bcd] library launch EADesktop.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[13:54:43.148] [INFO] Session log: logs/EADesktop.exe-2026-10-24_13-54-43.txt
+[13:54:43.176] [INFO] Running full Wine sequence...
+[13:54:43.176] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104ec0000,0x8000000000) 512GB available=8162MB low-power=0 thermal=nominal
+[13:54:43.182] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[13:54:43.183] [INFO] Allocating 896MB JIT pool via debugger...
+[13:54:43.183] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[13:54:43.183] [INFO] [jit-debugger] attached=1 at the pool request
+[13:54:43.186] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 544MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[13:54:43.859] [INFO] RX pool at 0x148000000
+[13:54:44.286] [INFO] Detaching debugger...
+[phase] wine-start             t+  1.145s rev=ml526
+[madeira-env] game LC_ALL=en_US.UTF-8
+[madeira-env] game MADEIRA_APC_BUSY_QUEUE=1
+[madeira-env] game LC_ALL=en_US.UTF-8
+[madeira-env] game MADEIRA_APC_BUSY_QUEUE=1
+[WineProc] MADEIRA_OPTIN_DLLS: msi.dll -> msi-optin.dll (Wine's msi.dll for this game)
+[WineProc] MADEIRA_OPTIN_DLLS: dxva2.dll -> dxva2-optin.dll (Wine's dxva2.dll for this game)
+[shell-dir] user folders for madeira, mobile: 0 created (Start Menu included)
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[iOS env] INCLUDED: SteamAppId=356400
+ml992: os_proc_available_memory=7284 MB + phys_footprint=907 MB = 8192 MB (hw.memsize says 11695 MB)
+ml985: preferred base 0x140000000+0x70000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x70000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[ec-hook] #1 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c60a58+0x4: rva 0x10a58, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | pool before sync: 6a 7d 01 14 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | jump -> 0 (-) bytes there: -
+[ec-hook] #2 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c61038+0x4: rva 0x11038, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 42 6a 40 b9 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | pool before sync: f7 7b 01 14 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | jump -> 0 (-) bytes there: -
+[ec-hook] #3 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c613a4+0x4: rva 0x113a4, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 53 6a 40 b9 e0 03 16 aa 83 05 00 94 e4 03 00 aa | pool before sync: 21 7b 01 14 e0 03 16 aa 83 05 00 94 e4 03 00 aa | jump -> 0 (-) bytes there: -
+[ec-hook] #4 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c61a40+0x4: rva 0x11a40, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | pool before sync: 7f 79 01 14 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | jump -> 0 (-) bytes there: -
+[ec-hook] #5 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c60a58+0x4: rva 0x10a58, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | pool before sync: 6a 7d 01 14 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | jump -> 0 (-) bytes there: -
+[ec-hook] #6 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c61038+0x4: rva 0x11038, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 42 6a 40 b9 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | pool before sync: f7 7b 01 14 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | jump -> 0 (-) bytes there: -
+[ec-hook] #7 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c613a4+0x4: rva 0x113a4, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 53 6a 40 b9 e0 03 16 aa 83 05 00 94 e4 03 00 aa | pool before sync: 21 7b 01 14 e0 03 16 aa 83 05 00 94 e4 03 00 aa | jump -> 0 (-) bytes there: -
+[ec-hook] #8 scope=difference view=difference tid=0024 image 0x119c50000 (pool copy 0x148004000) 0x119c61a40+0x4: rva 0x11a40, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | pool before sync: 7f 79 01 14 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | jump -> 0 (-) bytes there: -
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+[gdi-shared] session table 0x70385a0000 (1572864 bytes, section-backed, name=L"\\KernelObjects\\__wine_ios_gdi_shared")
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[footprint] rev=ml358 phys=918 MB (peak 918) internal=917 MB compressed=0 MB external=71 MB reusable=3 MB (cycle=1)
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="shell - Wine Desktop" rev=ml853
+[win-name] #6 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #10 hwnd=0x1003a class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\cmd.exe" t+  1.646s rev=ml526
+[file-wfail] ml669 #2 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.695s rev=ml526
+[copy-verify] imm32.dll: OK, 4 .text pages executable (copy @0x14afac000)
+[phase] spawn:L"C:\\windows\\system32\\start.exe" t+  1.737s rev=ml526
+[phase] spawn:L"C:\\windows\\system32\\services.exe" t+  1.782s rev=ml526
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=377
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=380
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=138
+[ec-hook] #1 scope=other-jump view=pool tid=0054 image 0x1244a0000 (pool copy 0x14cda8000) 0x1244b7101+0x7: rva 0x17101, section #0 '.text' rva 0x10000+0x90d4 chars 0x60000020 (R-X CODE) | PE bytes: e9 0f 36 44 6a 40 b9 42 00 00 d0 42 00 29 91 43 | pool before sync: e9 0f 36 05 24 01 14 42 00 00 d0 42 00 29 91 43 | jump -> 0x170e12715 (no pool copy) bytes there: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+[ec-hook] #2 scope=other-jump view=pool tid=0054 image 0x1244a0000 (pool copy 0x14cda8000) 0x1244b7101+0x7: rva 0x17101, section #0 '.text' rva 0x10000+0x90d4 chars 0x60000020 (R-X CODE) | PE bytes: e9 0f 36 44 6a 40 b9 42 00 00 d0 42 00 29 91 43 | pool before sync: e9 0f 36 05 24 01 14 42 00 00 d0 42 00 29 91 43 | jump -> 0x170e12715 (no pool copy) bytes there: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+[Wine ntdll/server] process_exit_wrapper(0)
+[phase] spawn:L"C:\\windows\\system32\\start.exe" t+  1.799s rev=ml526
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x14d82c000)
+[phase] spawn:L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EADesktop.exe" t+  1.857s rev=ml526
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EADesktop.exe" 0x124970000+0x1f45000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #1 0x124970000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #2 0x124970000+0x1590000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #3 0x126858000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #4 0x126890000+0x4000 prot=rwx -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying rw- (MADEIRA_X64_IMAGE_NOCOPY)
+[x64-image] #5 0x124971000+0x158f000 prot=r-x -- pure-x64 image page, EXEC has no host meaning here (the emulator runs it at the PE VA); applying r-- (MADEIRA_X64_IMAGE_NOCOPY)
+005c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=567
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=145
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=102
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=126
+[Wine ntdll/server] process_exit_wrapper(0)
+[phase] spawn:L"C:\\windows\\system32\\rpcss.exe" t+  1.931s rev=ml526
+D 6C Load module EADesktop.exe (eadesktop.exe-905a416a9cd33f06): 124970000
+D 6C Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71F9C00000
+[nls-getptr] type=11 id=437 peb=0x119b80000
+D 6C Load module Qt5Core.dll (qt5core.dll-000cb966deb80381): 71F7650000
+D 6C Load module MPR.dll (mpr.dll-09cefd52a3669014): 71F75C0000
+D 6C Load module user32.dll (user32.dll-7d4349728057d260): 71F73A0000
+[launch-view] dismissed reason=surface logs=0
+D 6C Load module gdi32.dll (gdi32.dll-c5970f8a59a953f3): 71F72B0000
+[copy-verify] cryptbase.dll: OK, 1 .text pages executable (copy @0x15071c000)
+ml985: map_image_view size=0xbdda000 base=0x6fffef7b0000 info_base=0x180000000 map_addr=0x6fffef7b0000 flags=0x4 charact=0x2022 limits=0x10000..0x73fffeffff
+D 6C Load module libcef.dll (libcef.dll-869078e2355529e5): 71E9BF0000
+[copy-verify] opengl32.dll: OK, 38 .text pages executable (copy @0x15318c000)
+006c:err:module:load_dll [dll-missing] rev=ml336 #1 L"Kerberos.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+006c:err:module:load_dll [dll-missing] rev=ml336 #2 L"MSV1_0.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[jumbo#1] +0ms tid=17fcff000 wtid=006c peb=0x119b80000 nrip=0x71f8384f00 grip=0x0 size=0x400000000 (16384 MB) hint=0x47d400000000 -> 0x7800000000 st=0x0 | granted=16384 MB ok=1 fail=0
+[unixlib] opengl32 (GL-absent stub table) (module 0x71e7fb0000) -> 64-bit table (0x107882558)
+[soft-pool] GRANTED soft 0x7800000000 (base returned 0x77ffff0000, size=0x400010000) — unbacked, commits materialise on demand
+[free-delay] #1 release of 0x7047e40000+0x320000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x7048160000+0x320000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x7049ac0000+0x800000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x704a2c0000+0xfd0000 held for 2000 ms (4 in flight)
+[free-delay] #5 release of 0x704b290000+0xfd0000 held for 2000 ms (5 in flight)
+[free-delay] #6 release of 0x704c260000+0xfd0000 held for 2000 ms (6 in flight)
+[free-delay] #7 release of 0x704d230000+0xfd0000 held for 2000 ms (7 in flight)
+[free-delay] #8 release of 0x704e200000+0xfd0000 held for 2000 ms (8 in flight)
+006c:err:module:load_dll [dll-missing] rev=ml336 #3 L"C:\\windows\\system32\\wintab32.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #31 hwnd=0x1005e class='' text="QtPowerDummyWindow" rev=ml853
+[win-name] #33 hwnd=0x10060 class='' text="QtClipboardView" rev=ml853
+[footprint] rev=ml358 phys=1481 MB (peak 1481) internal=1480 MB compressed=0 MB external=223 MB reusable=3 MB (cycle=2)
+[win-name] #37 hwnd=0x10066 class='' text="Origin" rev=ml853
+[footprint] rev=ml1060 fast phys=1686 MB compressed=0 MB
+[win-name] #41 hwnd=0x1006c class='' text="Default IME" rev=ml853
+0128:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EACefSubProcess.exe" cmdline=L"\"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EACefSubProcess.exe\" --type=gpu-process --no-sandbox --log-severity=warning --user-agent-product=\"Origin/10.6.0.00000 EAApp/13.813.1.6327 Chrome/109.0.5414.120\" --lang=en-US --user-data-dir=\"C:\\users\\mobile"...
+[phase] spawn:L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EACefSubProcess.exe" t+  4.403s rev=ml526
+0128:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\EACefSubProcess.exe\" --type=gpu-process --no-sandbox --log-severity=warning --user-agent-product=\"Origin/10.6.0.00000 EAApp/13.813.1.6327 Chrome/109.0.5414.120\" --lang=en-US --user-data-dir=\"C:\\users\\mobile"... (fd=609, unixdir=616, dup_unixdir=620) cwd=L"C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\"
+[Wine child thread] calling wine_ios_child_main...
+[nls-getptr] type=11 id=1252 peb=0x119b38000
+[nls-getptr] type=11 id=437 peb=0x119b38000
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[nls-getptr] type=11 id=20127 peb=0x119b38000
+[nt-fail] #1 NtAllocateVirtualMemory status=c000000d proc=eadesktop.exe tid=006c size=0x0 type=0x1000 prot=0x4 hint=0x780020d000 zb=0x0 hits=1 rev=ajan5-rockstar
+[nt-fail] #2 NtAllocateVirtualMemory status=c000000d proc=eadesktop.exe tid=006c size=0x0 type=0x1000 prot=0x4 hint=0x780020d000 zb=0x0 hits=2 rev=ajan5-rockstar
+[int3-guest] guest_rip=0x71eba1d202 x28=0x7c00801140 read=1 rev=ml554
+[store-undecoded] #1 rev=ml350 insn=0xd4200000 pc=0x17f5cc52c addr=0x17f5cc52c rw_addr=0x70375cc52c — alias OK, ADD THIS ENCODING to the case-4 emulator
+[fault_rip] cnt=1 rip=0x71eba1d202 pc=0x17f5cc52c addr=0x17f5cc52c kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x17f5cc000+0x4000 [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x17f5cc52c addr=0x17f5cc52c x18=0x71fff20000 type=6 lr=0x17f5cc354 sp=0x71f7ca0000 x16=0x71eba1d1b5 x17=0x71eba1d1b5
+[guest-code] rev=ml333 pool_rip=0x71eba1d202 (PE 0x71eba1d202) -- NO pool copy for this address (identity translate)
+[fault-host] 17f5cc42c: d63f0080 aa0003ea d53bd068 927df108 f9448508 f94bc508 f940191c b9440b88
+[fault-host] 17f5cc44c: d51b4208 91070388 4cdf2d00 4cdf2d04 4cdf2d08 4cdf2d0c a9420388 a9436f81
+[fault-host] 17f5cc46c: a9447797 a9456b99 a9460f82 a9471784 a9485393 a9495b95 29426389 d53bd06b
+[fault-host] 17f5cc48c: 927df16b f944856b f94bc56b 3900057f d61f0140 d4400000 d4400000 d53b420a
+[fault-host] 17f5cc4ac: b9040b8a a9020388 a9036f81 a9047797 a9056b99 a9060f82 a9071784 a9085393
+[fault-host] 17f5cc4cc: a9095b95 29026389 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c d4400000
+[mach_exc] insn_stream PC-12..PC+8: 4c9f2d44 4c9f2d48 4c9f2d4c [d4200000] d53b420a b9040b8a a9020388
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fff20000 TEB=0x71fff20000 TEB[0x58]=0x70476a6fa0 *(gs_cached+0x58)=0x70476a6fa0
+006c:err:seh:call_seh_handlers [unwind-root] ml633 ACCEPTING terminal root frame 7040f70000 (== stack hi) ControlPc=71f9c62dd8 handler=00000071F9C25388 — this is the unhandled-exception filter frame
+[footprint] rev=ml1060 fast phys=1884 MB compressed=159 MB
+[nls-getptr] type=11 id=1252 peb=0x119b38000
+[nls-getptr] type=11 id=437 peb=0x119b38000
+ml985: map_image_view size=0xbdda000 base=0x6fffef7b0000 info_base=0x180000000 map_addr=0x6fffef7b0000 flags=0x4 charact=0x2022 limits=0x10000..0x73fffeffff
+D 134 Load module libcef.dll (libcef.dll-869078e2355529e5): 71D7CF0000
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\dbghelp.dll" 0x71d6ad0000+0x240000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[copy-verify] rpcrt4.dll: OK, 19 .text pages executable (copy @0x1554d8000)
+[footprint] rev=ml1060 fast phys=2117 MB compressed=345 MB
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\chrome_elf.dll" 0x71d55f0000+0x16e000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+[copy-verify] dxva2.dll: OK, 2 .text pages executable (copy @0x14e8a4000)
+D 134 Load module ESENT.dll (esent.dll-ba010a2abfddc376): 71D41B0000
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\MSVCP140.dll" 0x71d4120000+0x8d000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 134 Load module MSVCP140.dll (msvcp140.dll-fd95f6e95c4c85e4): 71D4120000
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\VCRUNTIME140.dll" 0x71d4100000+0x1e000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 134 Load module VCRUNTIME140.dll (vcruntime140.dll-3d836f4662ecfd07): 71D4100000
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\VCRUNTIME140_1.dll" 0x71d40f0000+0xc000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 134 Load module VCRUNTIME140_1.dll (vcruntime140_1.dll-5a9959dd40a153d2): 71D40F0000
+0134:err:module:load_dll [dll-missing] rev=ml336 #1 L"Kerberos.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0134:err:module:load_dll [dll-missing] rev=ml336 #2 L"MSV1_0.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[pool-owner] searching 187 module copies for 4 granted pool bases...
+[alloc-fail] ml814 #1 status=c0000018 hint=0x39c400000000 size=0x400000000 type=0x2000 protect=0x1 tid=0134 | STAGE=anon-mmap err=12 at 0x0+0x400010000
+[nt-fail] #3 NtAllocateVirtualMemory status=c0000018 proc=eacefsubprocess.exe tid=0134 size=0x400000000 type=0x2000 prot=0x1 hint=0x39c400000000 zb=0x0 hits=1 rev=ajan5-rockstar
+[alloc-fail] ml814 #2 status=c0000018 hint=0x14b400000000 size=0x400000000 type=0x2000 protect=0x1 tid=0134 | STAGE=anon-mmap err=12 at 0x0+0x400010000
+[nt-fail] #4 NtAllocateVirtualMemory status=c0000018 proc=eacefsubprocess.exe tid=0134 size=0x400000000 type=0x2000 prot=0x1 hint=0x14b400000000 zb=0x0 hits=2 rev=ajan5-rockstar
+[footprint] rev=ml358 phys=2145 MB (peak 2145) internal=1704 MB compressed=438 MB external=284 MB reusable=1 MB (cycle=3)
+[alloc-fail] ml814 #3 status=c0000018 hint=0x755400000000 size=0x400000000 type=0x2000 protect=0x1 tid=0134 | STAGE=anon-mmap err=12 at 0x0+0x400010000
+[nt-fail] #5 NtAllocateVirtualMemory status=c0000018 proc=eacefsubprocess.exe tid=0134 size=0x400000000 type=0x2000 prot=0x1 hint=0x755400000000 zb=0x0 hits=3 rev=ajan5-rockstar
+[jumbo] kernel-pick reserve failed (0xc0000017) for size=0x7ffff0000 — top window is full
+[alloc-fail] ml814 #4 status=c0000017 hint=0x0 size=0x7ffff0000 type=0x2000 protect=0x1 tid=0134 | STAGE=anon-mmap err=12 at 0x0+0x800000000
+[nt-fail] #6 NtAllocateVirtualMemory status=c0000017 proc=eacefsubprocess.exe tid=0134 size=0x7ffff0000 type=0x2000 prot=0x1 hint=0x0 zb=0x0 hits=1 rev=ajan5-rockstar
+[jumbo] kernel-pick reserve failed (0xc0000017) for size=0x7ffff0000 — top window is full
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #1 handle=00000000000003A0 status=00000000 native_pc=00000002514E4EE8 is_ec=0 -> returned rip=00000002514E4EE8 rsp=000000012892E9D0 flags=00100003
+[alloc-fail] ml814 #5 status=c0000017 hint=0x0 size=0x7ffff0000 type=0x2000 protect=0x1 tid=0134 | STAGE=anon-mmap err=12 at 0x0+0x800000000
+[nt-fail] #7 NtAllocateVirtualMemory status=c0000017 proc=eacefsubprocess.exe tid=0134 size=0x7ffff0000 type=0x2000 prot=0x1 hint=0x0 zb=0x0 hits=2 rev=ajan5-rockstar
+[int3-guest] guest_rip=0x71d56ced55 x28=0x7c6b801140 read=1 rev=ml554
+[store-undecoded] #2 rev=ml350 insn=0xd4200000 pc=0x17e5c852c addr=0x17e5c852c rw_addr=0x70365c852c — alias OK, ADD THIS ENCODING to the case-4 emulator
+[fault_rip] cnt=2 rip=0x71d56ced55 pc=0x17e5c852c addr=0x17e5c852c kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x17e5c8000+0x4000 [first] rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x17e5c852c addr=0x17e5c852c x18=0x7047e90000 type=6 lr=0x17e5c8274 sp=0x71e3de0000 x16=0x14bc959a4 x17=0x71e3ddff20
+[guest-code] rev=ml333 pool_rip=0x71d56ced55 (PE 0x71d56ced55) -- NO pool copy for this address (identity translate)
+[fault-host] 17e5c848c: 927df16b f944856b f94bc56b 3900057f d61f0140 d4400000 d4400000 d53b420a
+[fault-host] 17e5c84ac: b9040b8a a9020388 a9036f81 a9047797 a9056b99 a9060f82 a9071784 a9085393
+[fault-host] 17e5c84cc: a9095b95 29026389 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c d4400000
+[fault-host] 17e5c84ec: d53b420a b9040b8a a9020388 a9036f81 a9047797 a9056b99 a9060f82 a9071784
+[fault-host] 17e5c850c: a9085393 a9095b95 29026389 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c
+[fault-host] 17e5c852c: d4200000 d53b420a b9040b8a a9020388 00000000 00000000 00000000 00000000
+[mach_exc] insn_stream PC-12..PC+8: 4c9f2d44 4c9f2d48 4c9f2d4c [d4200000] d53b420a b9040b8a a9020388
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x7047e90000 TEB=0x7047e90000 TEB[0x58]=0x70676ed8e0 *(gs_cached+0x58)=0x70676ed8e0
+0134:err:module:loader_init "chrome_elf.dll" failed to initialize, aborting
+0134:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=6139
+[Wine ntdll/server] process_exit_wrapper(-2147483645): closing child fd_socket=619
+[Wine ntdll/server] process_exit_wrapper(-2147483645)
+[Wine child thread] child exited with code -2147483645
+[guest-log] #12 tid=00dc     20	[2026-10-24T10:54:47.677Z]	PID:   104	TID:   108	ERROR   	(eax::services::exception::ExceptionHandlerClient::Notify)	Gathering information about the crash - this may take some time...
+[guest-log] #15 tid=00dc     77	[2026-10-24T10:54:47.677Z]	PID:   104	TID:   108	ERROR   	(eax::services::exception::ExceptionHandlerClient::Notify)	Gathering information about the crash - this may take some time...
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #2 handle=0000000000000328 status=00000000 native_pc=00000002514E4EE8 is_ec=0 -> returned rip=00000002514E4EE8 rsp=0000000128B2E9C0 flags=00100003
+[lock-reap] SRW 0x71f50aa500 dead_teb=0xdead released exclusive (word 00010013 -> 00000012) rev=ml446
+[lock-reap] SRW 0x71f50aa500 dead_teb=0xdead released exclusive (word 00010011 -> 00000010) rev=ml446
+010c:err:sync:RtlReleaseSRWLockExclusive Lock 00000071F50AA500 is not owned exclusive!
+0114:err:sync:RtlReleaseSRWLockExclusive Lock 00000071F50AA500 is not owned exclusive!
+0100:err:sync:RtlReleaseSRWLockExclusive Lock 00000071F50AA500 is not owned exclusive!
+[footprint] rev=ml358 phys=1897 MB (peak 2145) internal=1457 MB compressed=437 MB external=284 MB reusable=1 MB (cycle=4)
+D 108 Load module POWRPROF.dll (powrprof.dll-147faff017e7494a): 71D4070000
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #3 handle=0000000000000328 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=0000000128D2FA00 flags=00100003
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #4 handle=0000000000000328 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=0000000128F2FA00 flags=00100003
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #5 handle=0000000000000328 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012912FA00 flags=00100003
+[footprint] rev=ml358 phys=1899 MB (peak 2145) internal=1459 MB compressed=437 MB external=285 MB reusable=1 MB (cycle=5)
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #6 handle=0000000000000328 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012932FA00 flags=00100003
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #7 handle=0000000000000328 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012952FA00 flags=00100003
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #8 handle=0000000000000328 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012972FA00 flags=00100003
+[footprint] rev=ml358 phys=1899 MB (peak 2145) internal=1459 MB compressed=437 MB external=285 MB reusable=1 MB (cycle=6)
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=66 resident=1752MB dbg=DEBUGGED rev=ml525
+[13:55:14.350] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[x64-image] L"\\??\\C:\\Program Files\\Electronic Arts\\EA Desktop\\13.813.1.6327\\EA Desktop\\dbgcore.dll" 0x71d4020000+0x43000 mapped without a pool copy (pure x64: the emulator runs it at the PE VA; MADEIRA_X64_IMAGE_NOCOPY)
+D 6C Load module dbgcore.dll (dbgcore.dll-a00a64e99a415de1): 71D4020000
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #41 handle=00000000000003AC status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=0000000128F2FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #42 handle=00000000000003B0 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012912FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #43 handle=00000000000003B4 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012932FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #44 handle=00000000000003B8 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012952FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #45 handle=00000000000003BC status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012972FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #46 handle=00000000000003C0 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=000000012992FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #47 handle=00000000000003C4 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=0000000129B2FA00 flags=0010000b
+006c:err:seh:NtGetContextThread [ec-getctx] ml715 #48 handle=00000000000003C8 status=00000000 native_pc=00000002514DFAE8 is_ec=0 -> returned rip=00000002514DFAE8 rsp=0000000129D2FA00 flags=0010000b
+[store-noalias] #1 rev=ml348 addr=0x7048ac7ff0 insn=0x38401426 pc=0x1a596015c NO pool/anon alias | region 0x7048ac0000+0x8000 prot=0 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x7048ac7ff0 hostpc=0x1a596015c hinsn=0x38401426 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[store-noalias] #2 rev=ml348 addr=0x71d4740000 insn=0x00785a4d pc=0x71d4740000 NO pool/anon alias | region 0x71d4740000+0x10000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=EXECUTE p1=0x71d4740000 hostpc=0x71d4740000 hinsn=0x00785a4d rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=3 rip=0x71d40405f2 pc=0x71d4740000 addr=0x71d4740000 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x71d4740000+0x10000 [first] rev=ml555
+[mach_exc] UNHANDLED #3 pc=0x71d4740000 addr=0x71d4740000 x18=0x0 type=1 lr=0x71d4740000 sp=0x1269be450 x16=0x14ebf068c x17=0x1269be3e0
+[guest-code] rev=ml333 pool_rip=0x71d40405f2 (PE 0x71d40405f2) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: 00000000 00000000 00000000 [00785a4d] 00000001 00000004 00000000
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fff20000 TEB=0x71fff20000 TEB[0x58]=0x70476a6fa0 *(gs_cached+0x58)=0x70476a6fa0
+[store-noalias] #3 rev=ml348 addr=0x71d4740000 insn=0x00785a4d pc=0x71d4740000 NO pool/anon alias | region 0x71d4740000+0x10000 prot=1 max=3 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #3 p0=EXECUTE p1=0x71d4740000 hostpc=0x71d4740000 hinsn=0x00785a4d rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=4 rip=0x71d40405f2 pc=0x71d4740000 addr=0x71d4740000 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x71d4740000+0x10000 rev=ml555
+[mach_exc] UNHANDLED #4 pc=0x71d4740000 addr=0x71d4740000 x18=0x0 type=1 lr=0x71d4740000 sp=0x1269be450 x16=0x14ebf068c x17=0x1269be3e0
+[guest-code] rev=ml333 pool_rip=0x71d40405f2 (PE 0x71d40405f2) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: 00000000 00000000 00000000 [00785a4d] 00000001 00000004 00000000
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+006c:err:seh:NtRaiseException Unhandled exception code 23 flags 0 addr 0x1269bfcc0
+006c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x23) syscalls=0 unix_calls=6974
+[Wine ntdll/server] process_exit_wrapper(35): closing child fd_socket=183
+[Wine ntdll/server] process_exit_wrapper(35)
+[store-noalias] #4 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x14ecd2000 NO pool/anon alias | region 0x104ec0000+0x2330000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #5 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x14ecd2000 NO pool/anon alias | region 0x104ec0000+0x2330000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #6 rev=ml348 addr=0x785a4d insn=0x00785a4d pc=0x14ecd2000 NO pool/anon alias | region 0x104ec0000+0x2330000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[13:55:44.442] [INFO] detach-wait: presents=0 running=1 elapsed=60s
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=47 resident=1762MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1906 MB (peak 2145) internal=1476 MB compressed=426 MB external=284 MB reusable=1 MB (cycle=42)
+[footprint] rev=ml358 phys=1906 MB (peak 2145) internal=1476 MB compressed=426 MB external=284 MB reusable=1 MB (cycle=43)
+[footprint] rev=ml358 phys=1906 MB (peak 2145) internal=1476 MB compressed=426 MB external=284 MB reusable=1 MB (cycle=44)
+[footprint] rev=ml358 phys=1906 MB (peak 2145) internal=1476 MB compressed=426 MB external=284 MB reusable=1 MB (cycle=45)
+[13:56:14.551] [INFO] detach-wait: presents=0 running=1 elapsed=90s
+[freeze] alive t+90s beats=3 gaps=0 iter=357 gen=1 threads=48 resident=1762MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1906 MB (peak 2145) internal=1476 MB compressed=426 MB external=284 MB reusable=1 MB (cycle=46)
+[footprint] rev=ml358 phys=1906 MB (peak 2145) internal=1476 MB compressed=426 MB external=284 MB reusable=1 MB (cycle=47)

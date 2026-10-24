@@ -1,0 +1,121 @@
+[13:51:34.607] [INFO] [recs] in use: downloaded list v7 (2026-10-23), 78 rules, build 592
+[13:51:34.619] [INFO] [epic-install] start installed=0 refused=0
+[13:51:34.696] [INFO] [xinput] ml1920 physical controllers enabled=1
+[13:51:34.696] [INFO] [touch-xinput] ml1930 enabled=1
+[13:51:34.697] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[13:51:34.701] [INFO] [steam-library] start signed-in=1 cached=40
+[13:51:34.728] [INFO] [bcd-ui] shown games=44 downloads=0
+[13:51:34.728] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[13:51:34.728] [INFO] SIGTRAP handler installed (no debugger)
+[13:51:34.728] [INFO] Checking entitlements...
+[13:51:34.729] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[13:51:34.729] [OK]   increased-memory-limit: true
+[13:51:34.729] [OK]   extended-virtual-addressing: true
+[13:51:34.729] [OK]   increased-debugging-memory-limit: true
+[13:51:34.729] [INFO] [build] v0.1.592 (592)
+[13:51:34.729] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8173MB cores=6
+[13:51:34.729] [INFO] [device] address-map=[0x102f08000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:51:34.730] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=354d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[13:51:34.730] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[13:51:34.748] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=+03:00 free-disk=111GB stikdebug-url=1
+[13:51:34.751] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[13:51:34.838] [INFO] [steam-games] installed=2 ready=2
+[13:51:34.865] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[13:51:34.866] [INFO] [epic-auth] start signed-in=1
+[13:51:34.866] [INFO] [epic-library] start cached=6 listed=4
+[13:51:35.144] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[13:51:43.430] [INFO] [epic-auth] verify status=200 ms=8562
+[13:51:45.708] [INFO] [steam-playtime] apps=30
+[13:51:45.710] [INFO] [steam-cloud] sync games=2 automatic=1
+[13:51:50.151] [INFO] [bcd-ui] play local
+[13:51:50.153] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[13:51:50.154] [INFO] Requesting JIT with Built-in StikJIT...
+[13:51:50.209] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 10.7.1.1)
+[13:51:50.247] [INFO] [jit-helper] enable: started com.thebcd69.bcd.JITHelper as pid 33706
+[13:51:50.382] [INFO] [steam-cloud] app=432940 cloud-change=1 cloud-files=1 same=0 differ=1 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=1
+[13:51:51.576] [OK] JIT enabled and debugger attached.
+[13:51:51.577] [OK] JIT enabled! Debugger attached.
+[13:51:51.578] [INFO] [jit-on-play] JIT is on: starting the game
+[13:51:51.588] [INFO] [bcd] library launch Spider-Man.exe: avx=0 wine-vcrt=0 nvidia=1 game-config=1 metalfx=off
+[13:51:51.590] [INFO] Session log: logs/Spider-Man.exe-2026-10-23_13-51-51.txt
+[13:51:51.594] [INFO] [bcd-ui] in-game=1
+[13:51:51.606] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[13:51:51.607] [INFO] [steam-depot] paused for a game session count=0
+[13:51:51.608] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[13:51:51.608] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[13:51:51.609] [INFO] bcd.cfg: absent
+[13:51:51.609] [INFO] Running full Wine sequence...
+[13:51:51.609] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102f08000,0x8000000000) 512GB available=8145MB low-power=0 thermal=nominal
+[13:51:51.611] [INFO] [game-cfg] env.MADEIRA_EC_HOOK_TRACE=0 env.MADEIRA_X64_IMAGE_NOCOPY=1 gpu-sync=1 mip0-full=1 queue-trace=1 quiet-log=1
+[13:51:51.612] [INFO] [display-shape] resolution=1408x648 mode=fit
+[13:51:51.612] [INFO] [bcd] game switches: nvidia
+[13:51:51.612] [INFO] [launch-route] library profile applied
+[13:51:51.615] [INFO] DXMT config: dxgi.customDeviceId=2544 via the game's settings
+[13:51:51.616] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[13:51:51.616] [INFO] Allocating 896MB JIT pool via debugger...
+[13:51:51.616] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[13:51:51.617] [INFO] [jit-debugger] attached=1 at the pool request
+[13:51:51.618] [INFO] JIT-pool frontier already at 0x125400000 — no pin needed
+[13:51:51.618] [OK] ml1040: executable window [0x140000000,+128MB) held since image load
+[13:51:51.618] [INFO] ml1040: released the early pool placeholder 0x148000000+576MB for the debugger
+[phase] wine-start             t+  0.792s rev=ml526
+[game-cfg]   mip0-full = 1
+[game-cfg]   quiet-log = 1
+[game-cfg]   queue-trace = 1
+[game-cfg]   gpu-sync = 1
+[madeira-env] game MADEIRA_EC_HOOK_TRACE=0
+D 24 Load module Spider-Man.exe (spider-man.exe-8489496ad873697d): 126100000
+[madeira-d3d12] command queue: type 0
+[madeira-d3d12] dxgi asked the queue for its Metal device; swapchain bridge engaged
+[swap-diag] #1 swapchain creation enter: hwnd 0000000000020038 1408x648 x2 format 28, flags 0x802, windowed 1, tid 007c
+[swap-win] hwnd=0x20038 presents through a swapchain: its style, position, show, activation and destruction are logged as [swap-win] lines
+[winios] game window hwnd=0x20038 presents through Metal; its GDI surface is not drawn
+[iOS DXMT] supportsBCTextureCompression = YES supports32BitFloatFiltering = YES MTL_DEBUG_LAYER=unset device class AGXG18PDevice
+[f32-tex] madeira-bcd device Apple A19 Pro GPU: supports32BitFloatFiltering=1 apple7=1 apple8=1 apple9=1
+[swap-diag] #1 layer 0x118fb5f00: drawable 800x600 format 80 -> 1408x648 format 70, set on the iOS main thread (dispatch_sync) ...
+[swap-diag] #1 layer 0x118fb5f00 set in 0.0 ms
+[madeira-d3d12] swapchain: 1408x648, 2 buffers, format 28, hwnd 0000000000020038
+[swap-diag] #1 swapchain 000000716EA1FD90 creation -> 0 in 0.5 ms (Metal view 0.0 ms, layer 0x118fb5f00)
+[sync-diag] madeira-bcd DIAGNOSTIC: fence-strict=0 upload-guard=0 (256 bytes a range) desc-guard=0 cbv-snapshot=0 bytes queue-trace=400
+[sync-diag] madeira-bcd DIAGNOSTIC: gpu-sync=1 pso-first-use=0 present-min-ms=0
+[madeira-d3d12] ResolveQueryData: non-occlusion queries resolve to zero (not measured yet)
+[vfree] ml842 # base=0x7c06251000 size=0xf000 type=0x4000 tid=002c
+[vfree] ml842 # base=0x7c061e1000 size=0xf000 type=0x4000 tid=002c
+[madeira-d3d12] unimplemented: ID3D12GraphicsCommandList7::WriteBufferImmediate
+[queue-trace] #79 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 31: fence at 30, asked 30, committed 30; GPU serial 10 of 10 committed
+[queue-trace] #80 tid 00e0 queue 000000716E8F41B0 (type 0) ExecuteCommandLists 1 list(s)
+[queue-trace] #81 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 32: fence at 31, asked 31, committed 31; GPU serial 11 of 11 committed
+[queue-trace] #82 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 33: fence at 32, asked 32, committed 32; GPU serial 11 of 11 committed
+[queue-trace] #83 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 34: fence at 33, asked 33, committed 33; GPU serial 11 of 11 committed
+[queue-trace] #84 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 35: fence at 34, asked 34, committed 34; GPU serial 11 of 11 committed
+[queue-trace] #85 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 36: fence at 35, asked 35, committed 35; GPU serial 11 of 11 committed
+[queue-trace] #86 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 37: fence at 36, asked 36, committed 36; GPU serial 11 of 11 committed
+[queue-trace] #87 tid 00e0 queue 000000716E8F41B0 (type 0) Wait fence 000000717A74BD40 value 3: fence at 3, asked 3, committed 3; GPU serial 11 of 11 committed
+[queue-trace] #88 tid 00e0 queue 000000716E8F41B0 (type 0) ExecuteCommandLists 1 list(s)
+[queue-trace] #89 tid 00e0 queue 000000716E8F41B0 (type 0) Signal fence 000000717A7299E0 value 38: fence at 37, asked 37, committed 37; GPU serial 12 of 12 committed
+[spin] ml1140 13:52:04.581 look 1: x64->EC 43218237/s, 100% of the sampled calls for 4 s go to d3d12.dll+0x4e9c4 (0x14aeb79c4)
+[spin] ml1140 thread 00ec teb=0x7179530000 cpu=99% host pc=0x148081fa8 (ARM64EC image copy) lr=0x12798d3a3 sp=0x71bb89faf0 x23=0xc4ec | guest RIP exact=0x0 (hostPC outside block) State.rip=0x1279d4cfb
+[spin] ml1140   RAX=0x71bb89fb98 RCX=0x71bb89fdf8 RDX=0x64e6fb1aabd RBX=0x64e6fb1aabd RSP=0x71bb89faf0 RBP=0x0 RSI=0x12c116800 RDI=0x129dc5820 R8=0x8 R9=0x1296f452c R10=0x71bb89fba0 R11=0x71bb89fe20 R12=0x0 R13=0x71c6465452 R14=0x71bb89fe20 R15=0x64e6fb1aabd
+[spin] ml1140   x86 code from RIP-32 (RIP is byte 32): d2 74 0d 45 8b c1 33 d2 49 8b ca e8 d5 f6 d1 01 48 8b 0d ae cc 0c 06 48 8b 01 ff 90 38 01 00 00 8b d8 85 c0 79 40 e8 3a db 3b 00 89 5c 24 28 4c 8d 0d 2f bd 50 03 4c 8d 05 d0 83 3e 02 89 5c 24 20 48 8d 15 e9 83 3e 02 48 8b c8 4c 8b 10 41 ff 52 48 e8 6e da 3b 00 8b d3 48 8b c8 4c 8b 00 41 ff 90 68 01 00 00 b8 01 00 00 00 48 83 c4 30 5b c3 4d 85 d2 74 2a 45 8b c1 49 8b d3 49 8b ca e8
+[spin] ml1140   return addresses on the x86 stack (a CALL right before them) from RSP=0x71bb89faf0: sp+0xa8=spider-man.exe+0x188d3a3(call indirect) sp+0x2b8=spider-man.exe+0x18d4cfb(call indirect) sp+0x2f8=spider-man.exe+0x186fcc8(call rel32)
+[spin] ml1140   first stack qwords: 3ecf09b082ea2aac 0 3f800000 0 3fc3333333333333 0 408f400000000000 0
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=102 resident=2242MB dbg=DEBUGGED rev=ml525
+[spin] ml1140 13:52:23.465 look 2: x64->EC 40955812/s, 100% of the sampled calls for 20 s go to d3d12.dll+0x4e9c4 (0x14aeb79c4)
+[spin] ml1140 thread 00ec teb=0x7179530000 cpu=99% host pc=0x148254900 (ARM64EC image copy) lr=0x162986548 sp=0x71bb89fda8 x23=0xffffff8f4f1079c4 | guest RIP exact=0x0 (hostPC outside block) State.rip=0x14aeb79c4
+[spin] ml1140   RAX=0x14af03058 RCX=0x716e8eee30 RDX=0x0 RBX=0x0 RSP=0x71bb89fda8 RBP=0x0 RSI=0x12c116800 RDI=0x12aee03f8 R8=0x8 R9=0x1296f452c R10=0x90000 R11=0x71bb89fe20 R12=0x0 R13=0x71c6465452 R14=0x71bb89fe20 R15=0x64e6fb1aabd
+[spin] ml1140   x86 code from RIP-32 (RIP is byte 32): f5 00 b0 72 f5 ff ff 17 19 66 01 00 08 b8 69 f9 e0 03 01 aa 28 00 00 f9 c0 03 5f d6 a1 62 01 00 09 38 40 b9 a8 00 80 52 48 0f b1 72 3f 01 00 71 e0 03 88 1a c0 03 5f d6 85 62 01 00 08 20 00 91 09 fd 5f 88 20 05 00 11 00 fd 09 88 a9 ff ff 35 c0 03 5f d6 69 62 01 00 20 00 80 52 c0 03 5f d6 51 66 01 00 ff 43 05 d1 f3 53 11 a9 f5 5b 12 a9 f9 6b 13 a9 fb 7b 14 a9 c8 01 80 52 f6 03 00 aa
+[spin] ml1140   return addresses on the x86 stack (a CALL right before them) from RSP=0x71bb89fda8: sp+0x0=spider-man.exe+0x18d4cfb(call indirect) sp+0x40=spider-man.exe+0x186fcfb(call indirect) sp+0xd0=spider-man.exe+0x188d701(call rel32)
+[spin] ml1140   first stack qwords: 1279d4cfb 0 0 0 0 3ecf09b082ea2aac 0 717a79d900
+[freeze] alive t+242s beats=8 gaps=0 iter=952 gen=1 threads=100 resident=2233MB dbg=DEBUGGED rev=ml525
+[xp] 13:56:01.415 +248.69 dt=287 cpu=322 (thr 322) P=300 E=23 run=339 pgw=0.0 GHz P=3.52 E=2.28 Minst=7044 IPC=6.36 mJ=1134 pin=1 rdKB=0 fpMB=3760 | pres 0/0 thr=0.0 ecl 0/0.0 sig 0/0.0 wait 0/0.0 prs=0.0 (flush 0.0 lat 0/0.0 draw 0.0 cmt 0.0) pool=0.0 caller-ecl 0/0.0
+[xp-t] 13:56:01.415 -00ec:286/1:3.5/2.5:6871 m7328247:8/11:3.5/2.6:116 m7328631:2/1:3.5/1.9:19 m7328879:0/2:3.5/2.6:8 m7328980:1/1:3.5/2.4:9
+[xp] 13:56:01.740 +249.02 dt=325 cpu=347 (thr 347) P=332 E=15 run=430 pgw=0.0 GHz P=3.37 E=2.23 Minst=7360 IPC=6.39 mJ=1062 pin=0 rdKB=0 fpMB=3760 | pres 0/0 thr=0.0 ecl 0/0.0 sig 0/0.0 wait 0/0.0 prs=0.0 (flush 0.0 lat 0/0.0 draw 0.0 cmt 0.0) pool=0.0 caller-ecl 0/0.0
+[xp-t] 13:56:01.740 -00ec:322/2:3.4/2.6:7260 m7328247:3/5:3.5/2.5:47 m7328631:3/1:3.3/1.9:21
+[xp-api] 13:56:01.740 x64->EC 37886657/s FPCR-writes 0/s EC->x64 5/s | CS contended 8/s (spin0 0%) spin-won 13/s wait 0.1 ms/s [<2us 2 <10 0 <50 6 <200 0 <1ms 0 >=1ms 0]/s wakes 8/s | WaitOnAddress 1489/s wake1 8/s wakeAll 3/s | SetEvent 94/s ResetEvent 0/s Pulse 0/s | wait1 228/s waitN 48/s polls 0/s (empty 0/s) | yield 426/s (slept 0/s) | delay 234/s [0 0 <1ms 0 <5ms 0 <20ms 186 >=20ms 48 inf 0] | alert wait 1488/s wake 6/s
+[xp-api-top] 13:56:01.740 4096 samples: d3d12.dll+0x4e9c4=37886657/s
+[xp-api-qpc] 13:56:01.740 QPC 18942008/s gaps <1us 100% <10us 0% <100us 0% <1ms 0% >=1ms 0%; top threads: 00ec=18941780/s(<1us 100% <10us 0%) 0138=227/s(<1us 5% <10us 1%) 0180=2/s(<1us 50% <10us 0%)
+[xp-api-cs] 13:56:01.740 3 sampled contended enters (process heap 0x7024030000): 0x12d7a8c18=67%(spin 1500 contention 0 spider-man.exe+0x76a8c18) 0x12d7a8670=33%(spin 1500 contention 0 spider-man.exe+0x76a8670)
+mpty 0/s) | yield 426/s (slept 0/s) | delay 234/s [0 0 <1ms 0 <5ms 0 <20ms 186 >=20ms 48 inf 0] | alert wait 1488/s wake 6/s
+[13:56:01.740] [xp-api-top] 13:56:01.740 4096 samples: d3d12.dll+0x4e9c4=37886657/s
+[13:56:01.740] [xp-api-qpc] 13:56:01.740 QPC 18942008/s gaps <1us 100% <10us 0% <100us 0% <1ms 0% >=1ms 0%; top threads: 00ec=18941780/s(<1us 100% <10us 0%) 0138=227/s(<1us 5% <10us 1%) 0180=2/s(<1us 50% <10us 0%)
+[13:56:01.740] [xp-api-cs] 13:56:01.740 3 sampled contended enters (process heap 0x7024030000): 0x12d7a8c18=67%(spin 1500 contention 0 spider-man.exe+0x76a8c18) 0x12d7a8670=33%(spin 1500 contention 0 spider-man.exe+0x76a8670)

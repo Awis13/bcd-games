@@ -1536,6 +1536,42 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "err:combase:RoGetActivationFactory Failed to load module",
+     "wintypes.dll"
+    ]
+   },
+   {
+    "has": [
+     "Unhandled exception 0xe06d7363"
+    ]
+   }
+  ],
+  "evidence": [
+   "risk-of-rain-2-2026-10-23 (1M1KDQ, build 592; WJPFEG, build 579: the same stop)",
+   "megabonk 2FYRC6 (build 592): the same plugin runs with the line"
+  ],
+  "id": "winrt-wintypes-uncaught-exception",
+  "lines": [
+   "env.MADEIRA_WINTYPES = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_WINTYPES=1: wintypes.dll -> wintypes-optin.dll"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 10,
+  "reason": "The game's input plugin asked Windows for a Windows Runtime class, found no wintypes.dll and threw an exception nothing catches; the line gives this game Wine's wintypes.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "err:module:import_dll Library dxva2.dll",
      "not found"
     ]
@@ -1837,6 +1873,72 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 10,
   "reason": "The game's controller library and its main thread listed devices at the same moment, and Wine's device list code read a table that was not made yet; the line gives this game a copy of that library with a lock round the table."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "failed to create main module",
+     "Fallout4Launcher.exe",
+     "c0000018"
+    ]
+   }
+  ],
+  "evidence": [
+   "fallout-4-launcher-2026-10-22 (C050A4, build 580)",
+   "CW3VZF (build 592: the game started under the launcher's name ran 14 minutes)",
+   "tests/host/check-spawn-swap.py (build 598)"
+  ],
+  "id": "fallout-4-launcher-swap",
+  "lines": [
+   "env.MADEIRA_SPAWN_SWAP = Fallout4Launcher.exe=Fallout4.exe"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[spawn-swap]",
+     "starts as",
+     "(command line"
+    ]
+   }
+  ],
+  "priority": 5,
+  "reason": "Fallout 4's launcher cannot start twice here (a second copy of the same program cannot be loaded). The line starts the game's own program in its place, as swapping the two file names did for two players.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "failed to create main module",
+     "SkyrimSELauncher.exe",
+     "c0000018"
+    ]
+   }
+  ],
+  "evidence": [
+   "skyrim-se-launcher-2026-10-23 (WYE377, build 592)",
+   "TRMJDZ (build 592: the game started under the launcher's name ran)",
+   "tests/host/check-spawn-swap.py (build 598)"
+  ],
+  "id": "skyrim-se-launcher-swap",
+  "lines": [
+   "env.MADEIRA_SPAWN_SWAP = SkyrimSELauncher.exe=SkyrimSE.exe"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[spawn-swap]",
+     "starts as",
+     "(command line"
+    ]
+   }
+  ],
+  "priority": 5,
+  "reason": "Skyrim Special Edition's launcher cannot start twice here (a second copy of the same program cannot be loaded). The line starts the game's own program in its place, as renaming the two files did for a player.",
+  "session": "dock"
  },
  {
   "all": [
@@ -2366,6 +2468,49 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "[wow-window] refused: map too small"
+    ]
+   },
+   {
+    "has": [
+     "[device] address-map=",
+     "increased-memory=0",
+     "extended-va=0"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "BOOT FAILED at stage 'guest-window-reserve'"
+    ]
+   },
+   {
+    "has": [
+     "[wow-window] main-process reserve FAILED"
+    ]
+   }
+  ],
+  "evidence": [
+   "far-cry-3-wow-window-no-address-space-2026-10-24 (W9521T, ERCDZS, ECMHQH: one session, build 592, iPhone15,2, 17 GB map)",
+   "metro-2033-wow-window-no-address-space-2026-10-24 (8ZHPR2, ZSQP7H, build 592, iPad13,8, 454 GB map)",
+   "tests/host/check-autotune.py (the two fixtures)"
+  ],
+  "id": "wow-window-no-address-space",
+  "lines": [],
+  "maxStage": 3,
+  "noFix": true,
+  "outcomes": [
+   "crashed",
+   "exited-early"
+  ],
+  "priority": 60,
+  "reason": "A 32-bit program could not get the 4 GB address window it needs, because this install lacks the increased memory limit and extended virtual addressing that give BCD enough address space. Add them with GetMoreRam (with SideStore or LiveContainer), or sign BCD with a paid developer account."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[store-undecoded]",
      "ADD THIS ENCODING"
     ]
@@ -2797,6 +2942,181 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "err:module:import_dll Library",
+     "not found"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "err:module:import_dll Library DDRAW.dll",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library DDRAW.DLL",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library ddraw.dll",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library ddraw.DLL",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library DDraw.dll",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library DDraw.DLL",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library Ddraw.dll",
+     "not found"
+    ]
+   },
+   {
+    "has": [
+     "err:module:import_dll Library Ddraw.DLL",
+     "not found"
+    ]
+   }
+  ],
+  "evidence": [
+   "dying-light-ddraw-2026-10-23 (owner, build 593, rd3d11_x64_rwdi.dll)"
+  ],
+  "id": "ddraw-dll-optin",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = ddraw"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: ddraw.dll -> ddraw-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "A part of the game imports DDRAW.dll (DirectDraw), which BCD does not ship for every game; the line gives this game Wine's ddraw.dll."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "err:module:import_dll Library msi.dll (which is needed by",
+     "EABackgroundService.exe"
+    ]
+   }
+  ],
+  "evidence": [
+   "eaapp-background-service-msi-2026-10-23 (owner, build 594, EABackgroundService.exe)"
+  ],
+  "id": "eaapp-background-service-msi-dll",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = msi,mspatcha,odbccp32,sxs,rstrtmgr"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: msi.dll -> msi-optin.dll"
+    ]
+   }
+  ],
+  "priority": 10,
+  "reason": "The EA app's background service needs Windows Installer's msi.dll and the Restart Manager, which BCD does not ship for every program; the line gives this session both."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "err:module:import_dll Library dxva2.dll (which is needed by",
+     "EA Desktop",
+     "libcef.dll"
+    ]
+   }
+  ],
+  "evidence": [
+   "eaapp-desktop-libcef-dxva2-2026-10-24 (owner, build 598, EADesktop.exe Launch)",
+   "tests/host/check-bcd-launchers.py (build 599)"
+  ],
+  "id": "eaapp-desktop-libcef-dxva2",
+  "lines": [
+   "env.MADEIRA_OPTIN_DLLS = msi,mspatcha,odbccp32,sxs,rstrtmgr,dxva2"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_OPTIN_DLLS: dxva2.dll -> dxva2-optin.dll"
+    ]
+   }
+  ],
+  "priority": 9,
+  "reason": "The EA app's built-in browser (CEF) needs dxva2.dll, which BCD does not ship for every program; the line gives this session Wine's dxva2.dll next to the DLLs the EA app's service needs."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[soft-pool] GRANTED soft 0x7800000000",
+     "base returned 0x77ffff0000",
+     "size=0x400010000"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Session log: logs/EADesktop.exe-"
+    ]
+   },
+   {
+    "has": [
+     "library launch EADesktop.exe:"
+    ]
+   }
+  ],
+  "evidence": [
+   "eaapp-desktop-cef-pools-2026-10-24 (owner, build 598, EADesktop.exe Launch)",
+   "tests/host/check-ea-cef.py (build 599)"
+  ],
+  "id": "eaapp-desktop-cef-pools",
+  "lines": [
+   "env.MADEIRA_SC_PA_POOLS = 2",
+   "env.MADEIRA_EA_CEF = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_EA_CEF="
+    ]
+   }
+  ],
+  "priority": 8,
+  "reason": "The EA app's built-in browser needs four 16 GB memory pools and BCD gave two of them the same address space; the lines run the browser in one process and give each pool its own slot."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "Assertion failed: (!(length % block_size))",
      "nettle_cbc_"
     ]
@@ -3088,6 +3408,24 @@ enum AutoTuneBuiltInRules {
   "all": [
    {
     "has": [
+     "Assertion failed: (0 && \"unhandled geometry shader input\")"
+    ]
+   }
+  ],
+  "evidence": [
+   "robobeat-gs-input-assert-2026-10-23 (HH0KNF, build 592)",
+   "tests/host/check-airconv-gs-instance-id.py (build 598)"
+  ],
+  "fixedIn": 598,
+  "id": "gs-input-instance-id-assert",
+  "lines": [],
+  "priority": 1,
+  "reason": "BCD's shader converter stopped on a declaration in one of the game's geometry shaders (its instance id) and that ended the game; from this build on it accepts that declaration."
+ },
+ {
+  "all": [
+   {
+    "has": [
      "[anon-cas] build580 insn="
     ]
    },
@@ -3100,7 +3438,8 @@ enum AutoTuneBuiltInRules {
   ],
   "evidence": [
    "jetboard-joust-livelock-2026-10-22 (GHVYNG; T9CQD7, RTSYP6, CTR7BV)",
-   "tests/host/check-anon-cas-flush.py (build 591)"
+   "tests/host/check-anon-cas-flush.py (build 591)",
+   "stardew-valley-2026-10-23 (7FZXF2: the same spin, the player closed the game)"
   ],
   "id": "anon-cas-flush",
   "lines": [
@@ -3193,6 +3532,98 @@ enum AutoTuneBuiltInRules {
   "priority": 5,
   "reason": "Valve's copy protection (CEG) could not prepare this game's program: the Steam client in BCD Dock reported result 55 and the game never ran. It is not a game setting, and starting again gives the same result.",
   "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[badrip] rev=ajan2-tani",
+     "is not a canonical user address"
+    ]
+   },
+   {
+    "count": 3,
+    "has": [
+     "[ec-getctx] ml715",
+     "is_ec=0"
+    ]
+   }
+  ],
+  "evidence": [
+   "no-rest-for-the-wicked-2026-10-23 (RKZSCQ, GGFKAY, build 592)",
+   "31 logs of eight Unity titles, builds 576-592 (the burst, then the stop)",
+   "megabonk 2FYRC6 (build 592: the same order with a smaller game)"
+  ],
+  "id": "unity-gc-stopped-thread-context",
+  "lines": [
+   "env.MADEIRA_CTX_FRAME = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_CTX_FRAME=1"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 30,
+  "reason": "The game's memory manager stopped its threads and was handed their system state instead of their registers and stack, then the game used an object it had freed; the line makes BCD report a stopped thread by its saved call frame."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[win-name] #",
+     "Disable Mandatory ASLR"
+    ]
+   }
+  ],
+  "evidence": [
+   "demon-slayer-hinokami-chronicles-2-2026-10-23 (PPV8SW, build 592; KG3A3G, N4GR8A, 4V6S9J: the same box on two devices)"
+  ],
+  "id": "game-mandatory-aslr-box",
+  "lines": [],
+  "noFix": true,
+  "priority": 3,
+  "reason": "The game stopped with its own message \"Disable Mandatory ASLR\" before it opened a window. It is a check in the game's start-up; BCD does not know yet what it looks at, and no setting changes it."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "loader_init \"D2R_loader.dll\" failed to initialize"
+    ]
+   },
+   {
+    "has": [
+     "NEVER WRITTEN AT ALL"
+    ]
+   }
+  ],
+  "evidence": [
+   "diablo-ii-resurrected-2026-10-24 (T844FE, XADA1A: the same session twice)",
+   "bcd-games issue #4 (the reporter's run stopped in D2R_loader.dll's start)",
+   "bcd-games#4 by mckenna654 (the five switches, host checks; device runs of the author's own builds)"
+  ],
+  "id": "d2r-loader-empty-code-view",
+  "lines": [
+   "env.MADEIRA_NTDLL_XSEC = 1",
+   "env.MADEIRA_SHARED_SECTION_EXEC = 1",
+   "env.MADEIRA_NTDLL_DATA_SYNC_RANGE = 1",
+   "env.MADEIRA_FAULT_LOOP_GUEST_PROGRESS = 1",
+   "env.MADEIRA_D2R_PROBE_RECOVERY = 1"
+  ],
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_SHARED_SECTION_EXEC=1"
+    ]
+   }
+  ],
+  "priority": 3,
+  "reason": "The game's loader maps one block of memory twice (one view to write its code, one to run it) and jumps into the running view while it is still empty; the lines keep the two views one block and tell the emulator that the running one holds code."
  },
  {
   "all": [
@@ -3312,6 +3743,1654 @@ enum AutoTuneBuiltInRules {
   ],
   "priority": 20,
   "reason": "The game's Java runtime uses a collector (ZGC) that needs address space at 4 TiB, which this device does not have; the line switches that collector off so the runtime reserves its memory low."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "unimplemented: ID3D12GraphicsCommandList7::WriteBufferImmediate"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Session log: logs/Spider-Man.exe-"
+    ]
+   },
+   {
+    "has": [
+     "library launch Spider-Man.exe:"
+    ]
+   }
+  ],
+  "api": "d3d12",
+  "evidence": [
+   "spider-man-remastered-wbi-2026-10-23 (owner, build 592)",
+   "tests/host/check-write-buffer-immediate.py (build 593)"
+  ],
+  "id": "d3d12-write-buffer-immediate-spider-man",
+  "lines": [
+   "write-buffer-immediate = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "write-buffer-immediate = 1 (opt-in)"
+    ]
+   }
+  ],
+  "priority": 6,
+  "reason": "The game waits for a value it asks the GPU to write (WriteBufferImmediate), which BCD did not write; the line turns that write on for this game."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[redeliv] terminating process"
+    ]
+   },
+   {
+    "has": [
+     "[fault-rgn]   history: view 0x",
+     "+0x800000 protect=0x23 DELETED by tid"
+    ]
+   },
+   {
+    "has": [
+     "[wow-window] slot",
+     "bound to peb="
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-network-service-stack-2026-10-23 (build 592, explorer.exe session)"
+  ],
+  "fixedIn": 593,
+  "id": "wow-stack-freed-by-other-process",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[wow-stack-free]"
+    ]
+   }
+  ],
+  "priority": 2,
+  "reason": "A 32-bit helper process of the program had its thread's stack released by another process's thread exiting, and the app ended when the thread kept running on it."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[mach_exc] sym pc=",
+     "_platform_memmove",
+     "NtReadVirtualMemory"
+    ]
+   },
+   {
+    "has": [
+     "NtRaiseException Exception frame is not in stack limits"
+    ]
+   }
+  ],
+  "evidence": [
+   "ea-app-installer-read-virtual-memory-2026-10-23 (build 592, Windows desktop session)"
+  ],
+  "fixedIn": 593,
+  "id": "syscall-protection-fault-uncaught",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[syscall-fault]"
+    ]
+   }
+  ],
+  "priority": 2,
+  "reason": "A program probed memory it may not read with ReadProcessMemory; the call should simply have failed, but BCD ended the program's process instead."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "REJECTED: the slot is still held by an exited process whose teardown did not complete"
+    ]
+   },
+   {
+    "has": [
+     "BOOT FAILED at stage 'guest-window-reserve'"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-agent-window-slots-2026-10-23 (build 592, explorer.exe session)",
+   "tests/host/check-wow-reap.py (build 593)"
+  ],
+  "fixedIn": 593,
+  "id": "wow-window-held-by-exited-process-threads",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[wow-reap]"
+    ]
+   }
+  ],
+  "priority": 3,
+  "reason": "A 32-bit program could not start because threads of programs that had already exited still held their memory windows; from this build BCD ends those leftover threads and gives the windows back."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[redeliv] ending only the Windows process"
+    ]
+   },
+   {
+    "has": [
+     "Madeira`ios_fdt_note_close"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-storm-end-parked-threads-2026-10-23 (build 593)",
+   "tests/host/check-wow-reap.py (build 594)"
+  ],
+  "fixedIn": 594,
+  "id": "wow-storm-end-worker-teb",
+  "lines": [],
+  "priority": 2,
+  "reason": "A helper program of the launcher went wrong and BCD meant to close only that program, but the closing step itself ended the app; from this build it closes only the helper."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[wow-reap]",
+     "left suspended"
+    ]
+   },
+   {
+    "has": [
+     "BOOT FAILED at stage 'guest-window-reserve'"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-storm-end-parked-threads-2026-10-23 (build 593)",
+   "tests/host/check-wow-reap.py (build 594)"
+  ],
+  "fixedIn": 594,
+  "id": "wow-window-held-by-unterminable-threads",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "parked, suspended for good"
+    ]
+   }
+  ],
+  "priority": 3,
+  "reason": "A 32-bit program could not start because threads of programs that had exited still held their memory windows and could not be ended; from this build BCD parks them and gives the windows back."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Easy Anti-Cheat Launch Error"
+    ]
+   },
+   {
+    "has": [
+     "exit_code=0xeac9"
+    ]
+   }
+  ],
+  "evidence": [
+   "halo-mcc-easy-anti-cheat-2026-10-23 (B4874F, build 592; ER8CRF and NEKWXD the same on iPhone18,4)",
+   "analysis/ajan3-motor.md (VJSK5K, Armored Core VI: confirmed Easy Anti-Cheat, no bypass)"
+  ],
+  "id": "easy-anti-cheat-launch-error",
+  "lines": [],
+  "noFix": true,
+  "priority": 2,
+  "reason": "The game starts Easy Anti-Cheat, and it refuses to run here (\"Failed to initialize Wine helper buffer\"). No setting changes that, and BCD does not work around an anti-cheat. If the game offers a start without Easy Anti-Cheat (an offline mode), use that."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[nt-fail]",
+     "NtAllocateVirtualMemory status=c0000017",
+     "proc=rdr2.exe",
+     "size=0x700000000"
+    ]
+   }
+  ],
+  "evidence": [
+   "rdr2-reserve-28gb-2026-10-23 (P8H75J and 91C75Y, build 592, iPad17,4; 1Z27N7 build 579 iPad17,3)",
+   "the 8 RDR2 logs that reach the game's own reserve: 5 at 6143/7455 MB (NYKYVY, 7PC4Q2, 791FKD, BCDYF7, X00VX2) ask 8960 MB and get it, 3 at 15389 MB (1Z27N7, P8H75J, 91C75Y) ask 28672 MB and fail",
+   "build/ntdll-unix/virtual_ios.c ml992/ml993 (totalphys)"
+  ],
+  "id": "rdr2-reserve-28gb-totalphys",
+  "lines": [
+   "totalphys = 8191"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "ml993: totalphys ->"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 6,
+  "reason": "RDR2 asked for 28 GB of address space, sized from the 16 GB of memory this iPad reports, and BCD has no such room. The line reports 8191 MB, as the iPhones RDR2 runs on do; the game then asks for the 9 GB the list keeps free."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[framegen] interpolator ready:"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Assertion failed: (MAX(srcSize->width >> *srcMip"
+    ]
+   },
+   {
+    "has": [
+     "failed assertion `commit command buffer with uncommitted encoder'"
+    ]
+   }
+  ],
+  "evidence": [
+   "gta-v-enhanced-framegen-assert-2026-10-23 (S2B3GE, 03K0PX; AYMMDC the driver variant), build 592, iPhone18,3",
+   "VQ3K21 (build 592, iPhone18,2, 960x540, no frame generation): played"
+  ],
+  "id": "framegen-interpolator-assert",
+  "lines": [],
+  "noFix": true,
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 3,
+  "reason": "Frame generation (experimental) was on with a very large picture (MetalFX upscaling on the screen's own resolution) and the graphics driver stopped the game. Turn Frame generation off in the game's settings, or use a lower resolution without MetalFX upscaling, then start the game again."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[bcd] library launch GTA5_Enhanced.exe"
+    ]
+   },
+   {
+    "has": [
+     "exit_code=0xdeadc0de"
+    ]
+   }
+  ],
+  "evidence": [
+   "gta5-enhanced-direct-start-2026-10-24 (FNVAQJ, GQ2P52, QS7HRE, build 592, iPhone16,2)"
+  ],
+  "id": "gta5-enhanced-started-without-launcher",
+  "lines": [],
+  "noFix": true,
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 3,
+  "reason": "GTA V Enhanced was started from GTA5_Enhanced.exe and ended itself a few seconds in (exit 0xDEADC0DE). The game needs Rockstar's launcher to start it: start PlayGTAV.exe (or the game from your library) instead."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[mach_exc] pc PE: ntdll.dll+0x68008"
+    ]
+   },
+   {
+    "has": [
+     "Unhandled page fault on read access to"
+    ]
+   }
+  ],
+  "evidence": [
+   "control-runonce-keyed-event-2026-10-23 (X49WBQ and three more, build 592)",
+   "slay-the-spire-2-runonce-keyed-event-2026-10-22 (GZFVM3, build 579)",
+   "tests/host/check-keyed-event-per-process.py (build 598)"
+  ],
+  "id": "runonce-stale-waiter-keyed-event",
+  "lines": [
+   "env.MADEIRA_KEYED_EVENT_PER_PROCESS = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_KEYED_EVENT_PER_PROCESS=1"
+    ]
+   },
+   {
+    "has": [
+     "[keyed-event] ml2200:"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 5,
+  "reason": "Two threads of the game raced to run the same one-time initialisation and the one that waited never slept, because a program started by another one had no keyed event of its own; the line gives every such program its own."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Unhandled exception code c0000602"
+    ]
+   },
+   {
+    "has": [
+     "[unwind] term",
+     "ChakraCore.dll+0x"
+    ]
+   }
+  ],
+  "evidence": [
+   "glyphica-chakracore-failfast-2026-10-24 (777YHV and JAHWGD, build 592)",
+   "tests/host/check-zero-mitigation-policy.py (build 600)"
+  ],
+  "id": "chakracore-cfg-policy-failfast",
+  "lines": [
+   "env.MADEIRA_ZERO_MITIGATION_POLICY = 1"
+  ],
+  "maxStage": 2,
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_ZERO_MITIGATION_POLICY=1"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 5,
+  "reason": "The game's script engine (ChakraCore) stopped the program while it started, because Windows' answer to its question about security features was never filled in; the line makes the answer empty."
+ },
+ {
+  "all": [
+   {
+    "count": 4,
+    "has": [
+     "kIOGPUCommandBufferCallbackErrorInnocentVictim"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Session log: logs/GTA5.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/GTA5_Enhanced.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/PlayGTAV.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/RDR2.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/PlayRDR2.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/GhostOfTsushima.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/GoW.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/GoWR.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/HorizonZeroDawn.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/HorizonZeroDawnRemastered.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/HorizonForbiddenWest.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/Spider-Man.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/MilesMorales.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/Spider-Man2.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/RiftApart.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/tlou-i.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/HogwartsLegacy.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/FlightSimulator2024.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/Cyberpunk2077.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Steam game GTA5.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game GTA5_Enhanced.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game PlayGTAV.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game RDR2.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game PlayRDR2.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game GhostOfTsushima.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game GoW.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game GoWR.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game HorizonZeroDawn.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game HorizonZeroDawnRemastered.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game HorizonForbiddenWest.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game Spider-Man.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game MilesMorales.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game Spider-Man2.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game RiftApart.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game tlou-i.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game HogwartsLegacy.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game FlightSimulator2024.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Steam game Cyberpunk2077.exe:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Grand Theft Auto V:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Grand Theft Auto V Legacy:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Grand Theft Auto V Enhanced:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Red Dead Redemption 2:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Ghost of Tsushima:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Ghost of Tsushima DIRECTOR'S CUT:"
+    ]
+   },
+   {
+    "has": [
+     "library launch God of War:"
+    ]
+   },
+   {
+    "has": [
+     "library launch God of War Ragnar\u00f6k:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Horizon Zero Dawn:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Horizon Zero Dawn Remastered:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Horizon Forbidden West:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Horizon Forbidden West Complete Edition:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Marvel's Spider-Man Remastered:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Marvel's Spider-Man: Miles Morales:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Marvel's Spider-Man 2:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Ratchet & Clank: Rift Apart:"
+    ]
+   },
+   {
+    "has": [
+     "library launch The Last of Us Part I:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Hogwarts Legacy:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Microsoft Flight Simulator 2024:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Cyberpunk 2077:"
+    ]
+   }
+  ],
+  "evidence": [
+   "gta-v-legacy-gpu-reset-2026-10-23 (Discord tester, build 592; Very High settings, lower ones played)",
+   "gta-v-legacy-2026-10-15-12-35-46 (owner, build 546: the same recovery at Story Mode)",
+   "tests/host/check-gta5l-gpu-reset.py"
+  ],
+  "id": "gpu-reset-lower-graphics-settings",
+  "lines": [],
+  "noFix": true,
+  "priority": 25,
+  "reason": "The phone's GPU was reset while the game was drawing: the game's own graphics settings are too high. Set every option in the game's Graphics menu to its lowest value (MSAA and reflection MSAA off, Post FX, shadows, grass and all the rest at the minimum)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "wined3d_adapter_gl_init Failed to get a GL context"
+    ]
+   },
+   {
+    "has": [
+     "Direct3DCreate9 called -> d3d9_init FAILED"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[win-name] #",
+     "graphics subsystem"
+    ]
+   },
+   {
+    "has": [
+     "[win-name] #",
+     "Direct3D"
+    ]
+   },
+   {
+    "has": [
+     "[win-name] #",
+     "DirectX 9"
+    ]
+   },
+   {
+    "has": [
+     "[win-name] #",
+     "D3D9"
+    ]
+   },
+   {
+    "has": [
+     "OutputDebugStringA: \"Failed to create D3D9!.\""
+    ]
+   }
+  ],
+  "evidence": [
+   "darksiders-2-d3d9-64bit-2026-10-23 (Discord tester, build 592, iPad16,5, Send Log 3F3TYX)",
+   "tests/host/check-d3d9-x64.py (build 595)",
+   "docs/OPENGL.md",
+   "counter-strike-source-d3d9-64bit-2026-10-23 (38S4C1, build 592, iPad17,2)"
+  ],
+  "id": "d3d9-64bit-dxmt",
+  "lines": [
+   "env.MADEIRA_D3D9_X64 = dxmt"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_D3D9_X64=dxmt: d3d9.dll -> d3d9-dxmt.dll"
+    ]
+   },
+   {
+    "has": [
+     "[wow-window]"
+    ]
+   },
+   {
+    "has": [
+     "wow64cpu"
+    ]
+   }
+  ],
+  "priority": 8,
+  "reason": "This 64-bit Direct3D 9 game ran on Wine's Direct3D 9, which needs OpenGL, and the phone has none. The line gives it BCD's Direct3D 9 for 64-bit games (DXMT, drawing through Metal)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "wined3d_adapter_gl_init Failed to get a GL context"
+    ]
+   },
+   {
+    "has": [
+     "Direct3DCreate9 called -> d3d9_init FAILED"
+    ]
+   },
+   {
+    "has": [
+     "MADEIRA_D3D9_X64=dxmt: d3d9.dll -> d3d9-dxmt.dll"
+    ]
+   }
+  ],
+  "evidence": [
+   "darksiders-2-d3d9-64bit-line-ran-2026-10-23 (the first fixture with the line's two log lines added; the engine's reading of a session where the line did not take)",
+   "docs/OPENGL.md"
+  ],
+  "id": "d3d9-64bit-needs-opengl",
+  "lines": [],
+  "noFix": true,
+  "priority": 25,
+  "reason": "BCD's Direct3D 9 for 64-bit games was in use for this game, but it still ended in Wine's Direct3D 9, which needs OpenGL: the game loads its Direct3D 9 from somewhere else. Its message about the screen resolution is a guess; no setting changes it today."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "wined3d_adapter_gl_init Failed to get a GL context"
+    ]
+   },
+   {
+    "has": [
+     "Direct3DCreate9 called -> d3d9_init FAILED"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[session-log] Steam game MudRunner.exe:"
+    ]
+   },
+   {
+    "has": [
+     "library launch MudRunner:"
+    ]
+   },
+   {
+    "has": [
+     "[session-log] Steam game Indivisible.exe:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Indivisible:"
+    ]
+   }
+  ],
+  "evidence": [
+   "mudrunner-d3d9-64bit-2026-10-23 (96X0F0, build 580)",
+   "indivisible-d3d9-64bit-2026-10-23 (YE8TT0, build 592)",
+   "tests/host/check-d3d9-x64.py (build 595)",
+   "docs/OPENGL.md"
+  ],
+  "id": "d3d9-64bit-dxmt-crash",
+  "lines": [
+   "env.MADEIRA_D3D9_X64 = dxmt"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_D3D9_X64=dxmt: d3d9.dll -> d3d9-dxmt.dll"
+    ]
+   },
+   {
+    "has": [
+     "[wow-window]"
+    ]
+   },
+   {
+    "has": [
+     "wow64cpu"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 9,
+  "reason": "This 64-bit Direct3D 9 game ran on Wine's Direct3D 9, which needs OpenGL, and the phone has none; the game then used the empty result and crashed. The line gives it BCD's Direct3D 9 for 64-bit games (DXMT, drawing through Metal)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[nls-getptr] type=11 id=932"
+    ]
+   },
+   {
+    "has": [
+     "[exc] ml811 code=e06d7363"
+    ]
+   },
+   {
+    "has": [
+     "[fast-fail] ml604 code=7"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[session-log] Steam game sekiro.exe:"
+    ]
+   },
+   {
+    "has": [
+     "library launch Sekiro:"
+    ]
+   }
+  ],
+  "evidence": [
+   "sekiro-nls-932-2026-10-23 (51Y0RM and 9Y7G8T, build 592)",
+   "ZGH9MT and A7V9T2 (tur591 C.md T5)",
+   "UNPROVEN: the first session with the line decides"
+  ],
+  "id": "nls-extra-codepage-dock-sekiro",
+  "lines": [
+   "env.MADEIRA_NLS_EXTRA = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[nls-extra]"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 61,
+  "reason": "The game asked for the Japanese code page, whose table BCD does not load for every game, and ended on an unhandled exception right after; the line gives this game Wine's tables for the Japanese, Chinese, Korean and Thai code pages.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "LAUNCHER_ERR_STEAM_FAILED"
+    ]
+   },
+   {
+    "has": [
+     "[epic-launch] start"
+    ]
+   },
+   {
+    "has": [
+     "INCLUDED: SteamAppId="
+    ]
+   }
+  ],
+  "evidence": [
+   "rockstar-launcher-epic-steam-identity-2026-10-23 (Discord tester, GTA V Legacy from Epic, build 592, Send Log YZZFYA)"
+  ],
+  "id": "rockstar-launcher-epic-steam-identity",
+  "lines": [
+   "env.MADEIRA_STEAM_IDENTITY = none"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "MADEIRA_STEAM_IDENTITY=none"
+    ]
+   }
+  ],
+  "priority": 6,
+  "reason": "Rockstar's launcher of the Epic version took itself for the Steam version, because BCD gave it a Steam game identity; the line gives this game none."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "AgentHelper.exe",
+     "--install"
+    ]
+   },
+   {
+    "has": [
+     "pipe\\svcctl"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-direct-no-services-2026-10-23 (build 593)",
+   "tests/host/check-bcd-launchers.py (build 594)"
+  ],
+  "fixedIn": 594,
+  "id": "launcher-without-windows-services",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[phase] spawn:",
+     "services.exe"
+    ]
+   }
+  ],
+  "priority": 4,
+  "reason": "Battle.net needs Windows' services, and BCD started it without them; from this build the launcher starts in a Wine desktop with services (or set Launch: In a Wine desktop and Start Windows services first on its game page)."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "CAtlException@ATL"
+    ]
+   },
+   {
+    "has": [
+     "[nls-getptr] type=11 id=1254"
+    ]
+   },
+   {
+    "has": [
+     "EAappInstaller.exe"
+    ]
+   }
+  ],
+  "evidence": [
+   "eaapp-installer-turkish-locale-2026-10-23 (build 593)",
+   "tests/host/check-bcd-launchers.py (build 594)"
+  ],
+  "id": "eaapp-installer-turkish-locale",
+  "lines": [
+   "env.LC_ALL = en_US.UTF-8"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game LC_ALL="
+    ]
+   }
+  ],
+  "priority": 5,
+  "reason": "The EA app's installer fails with the phone's Turkish language settings; the line gives it an English locale."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Execution halted, action L\"JunoInitializeSession\" returned 1603"
+    ]
+   }
+  ],
+  "evidence": [
+   "eaapp-installer-msi-pipe-answer-lost-2026-10-23 (build 593, log 17:15:17)",
+   "tests/host/check-apc-busy-queue.py (build 594)",
+   "tests/host/check-bcd-launchers.py (build 594)"
+  ],
+  "id": "eaapp-installer-msi-pipe-answer-lost",
+  "lines": [
+   "env.MADEIRA_APC_BUSY_QUEUE = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_APC_BUSY_QUEUE=1"
+    ]
+   }
+  ],
+  "priority": 6,
+  "reason": "The EA app's installer lost an answer between its setup steps; the line keeps that answer until the installer is ready for it."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[mach_exc] sym pc=",
+     "invoke_system_apc"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[lowalloc] ml966 REFUSED guest 0x1"
+    ]
+   },
+   {
+    "has": [
+     "[av-detail]",
+     "p0=WRITE p1=0x1"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-agent-console-iosb-2026-10-23 (build 594, iPhone18,2)",
+   "tests/host/check-iosb-dead-target.py (build 596)"
+  ],
+  "fixedIn": 596,
+  "id": "wow64-native-iosb-completion-store",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "[iosb-dead]"
+    ]
+   }
+  ],
+  "priority": 3,
+  "reason": "A 32-bit console program of the launcher (Battle.net's Agent) wrote a result into memory that does not exist and BCD recovered by repeating the fault; from this build BCD skips that write."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "--type=renderer"
+    ]
+   },
+   {
+    "has": [
+     "Load module libcef.dll"
+    ]
+   },
+   {
+    "has": [
+     "[int3-guest] guest_rip="
+    ]
+   },
+   {
+    "has": [
+     "exit_code=0x80000003"
+    ]
+   }
+  ],
+  "evidence": [
+   "battlenet-renderer-v8-flags-freeze-2026-10-23 (build 596, iPhone18,2)",
+   "tests/host/check-wc-old-prot.py (build 597)",
+   "tests/host/check-int3-x86-diag.py (build 597)"
+  ],
+  "id": "chromium-v8-flags-freeze-writecopy",
+  "lines": [
+   "env.MADEIRA_PROTECT_WRITECOPY_AS_RW = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_PROTECT_WRITECOPY_AS_RW=1"
+    ]
+   }
+  ],
+  "priority": 3,
+  "reason": "Chromium's JavaScript engine in the launcher's browser asks Windows for a page's old protection when it freezes its flags and ends the process with an int3 when it is told the wrong one; the line makes BCD tell it what Windows does."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Unhandled page fault on read access to 0000000000000000 at address 00000001400192CC"
+    ]
+   }
+  ],
+  "evidence": [
+   "explorer-startmenu-user-folder-2026-10-24 (build 597, Battle.net sign-in)",
+   "tests/host/check-bcd-startmenu.py (build 598)"
+  ],
+  "fixedIn": 598,
+  "id": "explorer-startmenu-user-folder-missing",
+  "lines": [],
+  "none": [
+   {
+    "has": [
+     "(Start Menu included)"
+    ]
+   }
+  ],
+  "priority": 3,
+  "reason": "The Windows desktop's Start menu had no folder for the user's own entries and ended the session when it opened; from this build BCD makes that folder."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "D3D9 frontend: MADEIRA_D3D9=native via bcd.cfg d3d9"
+    ]
+   },
+   {
+    "has": [
+     "Unhandled exception code c0000005 flags 0 addr 0x0"
+    ]
+   }
+  ],
+  "evidence": [
+   "resident-evil-6-d3d9-native-2026-10-23 (TPATQR, build 592, iPhone18,3)",
+   "resident-evil-revelations-2-d3d9-native-2026-10-23 (04G226, build 592, iPhone18,2)",
+   "round 580 C N5 (RE6 DZ4AZR, E9W05E), round 591 B (RE6 on the standard frontend plays at 60 FPS)"
+  ],
+  "id": "d3d9-native-null-call",
+  "lines": [
+   "env.MADEIRA_D3D9 = emulated"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-env] game MADEIRA_D3D9=emulated"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 6,
+  "reason": "The game's Direct3D 9 was set to the native ARM64 frontend (Settings > Graphics) and the game ended by calling address 0 through it a few seconds after its first frame; the line gives this game the standard, emulated frontend."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[madeira-d3d12] unimplemented: ID3D12PipelineState::GetCachedBlob"
+    ]
+   },
+   {
+    "has": [
+     "to unimplemented function COMCTL32.dll.345"
+    ]
+   }
+  ],
+  "evidence": [
+   "resident-evil-requiem-demo-getcachedblob-2026-10-23 (SAG071, build 592, iPhone18,3)",
+   "tests/host/check-d3d12-pso-cached-blob.py (build 598)"
+  ],
+  "id": "d3d12-pso-cached-blob-fatal",
+  "lines": [
+   "d3d12-pso-cached-blob = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[madeira-d3d12] d3d12-pso-cached-blob = 1"
+    ]
+   }
+  ],
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 12,
+  "reason": "The game asks Direct3D 12 for a pipeline's cached blob, which BCD did not answer, and its error dialog (a Windows function BCD lacks) ended it; the line makes BCD answer the call."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[av-detail]",
+     "p0=READ",
+     "hinsn=0x78402509"
+    ]
+   },
+   {
+    "has": [
+     "Exception frame is not in stack limits => unable to dispatch exception"
+    ]
+   }
+  ],
+  "evidence": [
+   "bioshock-remastered-createwindow-atom-2026-10-23 (DW1G97, build 592, iPhone18,1)",
+   "LEGO Batman 2 XJ7SDS (build 592, the same host function and exit code)",
+   "Need For Speed The Run 0WJTA3 (build 579, atom 0xC023)",
+   "tests/host/check-wow64win-atoms.py (build 598)"
+  ],
+  "fixedIn": 598,
+  "id": "wow64-atom-class-rebased",
+  "lines": [],
+  "priority": 1,
+  "reason": "The game created its first window with a class given as a number (an atom) and BCD's 32-bit conversion treated the number as a memory address; the next build gives such a number back as the number."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "failed to create main module",
+     "c0000018"
+    ]
+   }
+  ],
+  "evidence": [
+   "persona-4-golden-too-large-exe-2026-10-23 (2AXZ1C, build 592, iPhone14,3)",
+   "round 580 C N1 (2F8ZK6, 9AMZKP, QK7BQP)",
+   "persona-4-golden-2026-10-21 (QK7BQP: 888 MiB, the rules above do not match)"
+  ],
+  "exeMinMB": 704,
+  "id": "exe-too-large-for-fixed-window",
+  "lines": [],
+  "noFix": true,
+  "none": [
+   {
+    "has": [
+     "[exe-window]",
+     "gets the window"
+    ]
+   },
+   {
+    "has": [
+     "failed to create main module",
+     "\\\\Temp\\\\"
+    ]
+   },
+   {
+    "has": [
+     "failed to create main module",
+     "infinst.exe"
+    ]
+   }
+  ],
+  "priority": 5,
+  "reason": "The game's program is one file of 704 MB or more that must load at a fixed address, and the part of the address space iOS leaves free there is smaller (at most about 760 MB). No setting changes that, so BCD cannot run this game on this device yet."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Load module EOSSDK-Win32-Shipping.dll"
+    ]
+   },
+   {
+    "has": [
+     "NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x1)"
+    ]
+   },
+   {
+    "has": [
+     "[epic-launch] start",
+     "host=1"
+    ]
+   },
+   {
+    "has": [
+     "[bcd-host] no report"
+    ]
+   }
+  ],
+  "evidence": [
+   "bioshock-infinite-epic-host-lost-2026-10-24 (4Q0RNC, build 592, iPhone18,3)",
+   "tests/host/check-epic-host-hold.py (build 598)"
+  ],
+  "id": "epic-host-start-lost",
+  "lines": [
+   "env.BCD_EPIC_HOST_START = 1"
+  ],
+  "noRetry": true,
+  "none": [
+   {
+    "has": [
+     "[epic-launch] host start held"
+    ]
+   }
+  ],
+  "outcomes": [
+   "exited-early"
+  ],
+  "priority": 14,
+  "reason": "The Epic game uses Epic's online services and left at once; BCD meant to start it through its sign-in helper but did not, and the line makes the start go through it."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Could not map",
+     "file probably truncated"
+    ]
+   },
+   {
+    "has": [
+     "Importing dlls for",
+     "failed, status c0000135"
+    ]
+   }
+  ],
+  "evidence": [
+   "subnautica-below-zero-truncated-unityplayer-2026-10-24 (build 592, iPhone16,2, Send Logs 2CPQ3Z and ZVHPH8)"
+  ],
+  "id": "game-file-truncated-import",
+  "lines": [],
+  "noFix": true,
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 3,
+  "reason": "A file of the game is incomplete: the log line \"Could not map ... file probably truncated\" names it (Subnautica: Below Zero, UnityPlayer.dll). The program cannot start with half a file. Copy or download the game again so that every file is whole."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "LogOnline: Warning: STEAM: Steam API failed to initialize!"
+    ]
+   },
+   {
+    "has": [
+     "Steamworks: SteamUtils() failed!"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "Session log: logs/Subnautica2.exe-"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/Subnautica2-Win64-Shipping.exe-"
+    ]
+   }
+  ],
+  "evidence": [
+   "subnautica-2-no-steam-2026-10-23 (build 592, iPhone16,2, Send Logs 0F0JDZ and 89THM6)"
+  ],
+  "id": "subnautica-2-steam-client-missing",
+  "lines": [],
+  "noFix": true,
+  "outcomes": [
+   "crashed"
+  ],
+  "priority": 24,
+  "reason": "Subnautica 2 was started as a program file, without Valve's Steam client: its Steam module could not start and the game crashes on the missing Steam interface. Sign in to Steam in BCD and start the game from your Steam library (BCD Dock), not as a program.",
+  "session": "library"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[unixlib] opengl32 (GL-absent stub table)"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[win-name] #",
+     "ChoosePixelFormat failed"
+    ]
+   },
+   {
+    "has": [
+     "[win-name] #",
+     "Unable to create OpenGL window"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/GeometryDash.exe-"
+    ]
+   },
+   {
+    "has": [
+     "[session-log] Steam game GeometryDash.exe:"
+    ]
+   }
+  ],
+  "evidence": [
+   "gp-bikes-opengl-2026-10-23 (Send Log CCKWDR, build 592)",
+   "gravity-circuit-love-opengl-2026-10-23 (Send Log HESXRX, build 592)",
+   "geometry-dash-opengl-2026-10-23 (Send Log 1H4EFS, build 592)",
+   "cry-of-fear-opengl-2026-10-23 (Send Log RT4TB5, build 592)",
+   "docs/OPENGL.md"
+  ],
+  "id": "opengl-only-no-context",
+  "lines": [],
+  "noFix": true,
+  "priority": 2,
+  "reason": "This game draws with OpenGL, and BCD has no OpenGL yet: the game cannot make its window and stops. This is not a setting; Direct3D games are not affected."
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[session-log] Steam game JustCause3.exe:"
+    ]
+   }
+  ],
+  "evidence": [
+   "just-cause-3-world-stall-2026-10-23 (Send Log Z0YFZ9, build 592, iPad17,4)"
+  ],
+  "id": "justcause3-world-stall",
+  "lines": [],
+  "minStage": 4,
+  "noFix": true,
+  "outcomes": [
+   "hung"
+  ],
+  "priority": 3,
+  "reason": "Just Cause 3 stopped drawing after its world loaded: it showed one frame every few seconds while the game's threads waited. No BCD setting is known to change this. Lowering the game's own graphics settings (textures, shadows) may help; the next update's report from this game will show whether the GPU or the game is what waits.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[device] gpu=",
+     "bc=0"
+    ]
+   },
+   {
+    "has": [
+     "[bc-decode] ml679"
+    ]
+   },
+   {
+    "has": [
+     "[swap] ml1077 backed"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[session-log] Steam game Cuphead.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/Cuphead.exe-"
+    ]
+   },
+   {
+    "has": [
+     "library launch Cuphead:"
+    ]
+   }
+  ],
+  "evidence": [
+   "cuphead-bc-decode-memory-kill-dock-2026-10-24 (Send Log SX9FB2, build 592, iPhone15,2)",
+   "cuphead-bc-decode-memory-kill-direct-2026-10-24 (Send Log AXP6SQ, the same tester, started from the game's own program)",
+   "~/madeira-local/intake/analysis/tur600/ajan37.md"
+  ],
+  "id": "cuphead-bc-decode-memory-kill-dock",
+  "lines": [],
+  "memoryMinPct": 85,
+  "noFix": true,
+  "none": [
+   {
+    "has": [
+     "[device] address-map=",
+     "increased-memory=0"
+    ]
+   }
+  ],
+  "outcomes": [
+   "killed"
+  ],
+  "priority": 49,
+  "reason": "Cuphead needs more memory than iOS gives an app on this phone. The phone's GPU (iPhone 15 and older, A16 or older) cannot read the game's compressed textures, so they are expanded to four times their size, and iOS closes the game while it loads. Starting it from its own program instead of BCD Dock (the game's page, Start with) leaves out the Steam client's share of memory, which let it last longer in one tester's logs; phones from the iPhone 15 Pro on, and iPads with an M chip, read these textures without expanding them.",
+  "session": "dock"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "[device] gpu=",
+     "bc=0"
+    ]
+   },
+   {
+    "has": [
+     "[bc-decode] ml679"
+    ]
+   },
+   {
+    "has": [
+     "[swap] ml1077 backed"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "[session-log] Steam game Cuphead.exe:"
+    ]
+   },
+   {
+    "has": [
+     "Session log: logs/Cuphead.exe-"
+    ]
+   },
+   {
+    "has": [
+     "library launch Cuphead:"
+    ]
+   }
+  ],
+  "evidence": [
+   "cuphead-bc-decode-memory-kill-direct-2026-10-24 (Send Log AXP6SQ, build 592, iPhone15,2)",
+   "cuphead-bc-decode-memory-kill-dock-2026-10-24 (Send Log SX9FB2, the same tester, started through Madeira Dock)",
+   "~/madeira-local/intake/analysis/tur600/ajan37.md"
+  ],
+  "id": "cuphead-bc-decode-memory-kill-direct",
+  "lines": [],
+  "memoryMinPct": 85,
+  "noFix": true,
+  "none": [
+   {
+    "has": [
+     "[device] address-map=",
+     "increased-memory=0"
+    ]
+   }
+  ],
+  "outcomes": [
+   "killed"
+  ],
+  "priority": 49,
+  "reason": "Cuphead needs more memory than iOS gives an app on this phone. The phone's GPU (iPhone 15 and older, A16 or older) cannot read the game's compressed textures, so they are expanded to four times their size, and iOS closes the game while a scene loads. Phones from the iPhone 15 Pro on, and iPads with an M chip, read these textures without expanding them.",
+  "session": "library"
+ },
+ {
+  "all": [
+   {
+    "has": [
+     "Madeira`ios_virtual_handle_fault_for_thread"
+    ]
+   },
+   {
+    "has": [
+     "\"wine-x18-exc\"",
+     "psynch_mutexwait"
+    ]
+   },
+   {
+    "has": [
+     "pc=libsystem_platform.dylib`_platform_mem",
+     "run=3 susp=0 cpu=0"
+    ]
+   }
+  ],
+  "any": [
+   {
+    "has": [
+     "bt[0] Madeira`NtFreeVirtualMemory+"
+    ]
+   },
+   {
+    "has": [
+     "bt[0] Madeira`virtual_map_section+"
+    ]
+   }
+  ],
+  "evidence": [
+   "omori-vm-fault-self-deadlock-2026-10-24 (Send Log N87QMH, build 592, iPhone17,1)",
+   "demons-roots-vm-fault-self-deadlock-2026-10-21 (Send Log 4ZA68R, build 579, iPhone18,1)",
+   "saints-row-iv-vm-fault-self-deadlock-2026-10-23 (Send Log ZZ2S3X, build 592, iPhone18,2)",
+   "one-piece-bounty-rush-vm-fault-self-deadlock-2026-10-23 (Send Log WCSJBK, build 592, iPhone16,2)",
+   "~/madeira-local/intake/analysis/tur600/ajan37.md"
+  ],
+  "id": "virtual-mutex-fault-self-deadlock",
+  "lines": [],
+  "noFix": true,
+  "outcomes": [
+   "hung",
+   "exited-early"
+  ],
+  "priority": 4,
+  "reason": "A thread of the game stopped inside one of BCD's memory calls: it holds the lock that the part serving its own page fault needs, so neither goes on and no frame is ever drawn. This is an open bug of BCD's; no setting changes it."
  },
  {
   "all": [

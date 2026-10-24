@@ -1,0 +1,15 @@
+{
+ "dialogs": [
+  "Easy Anti-Cheat Launch Error",
+  "Failed to initialize Wine helper buffer"
+ ],
+ "end": {},
+ "matched": [
+  "easy-anti-cheat-launch-error"
+ ],
+ "next": [],
+ "note": "Halo: The Master Chief Collection (Steam 976730, Dock), build 592, iPad16,10 (M4, 12 GB), no signing profile: mcclauncher.exe starts Easy Anti-Cheat, whose client shows \"Easy Anti-Cheat Launch Error\" over \"Failed to initialize Wine helper buffer\" and the process exits with 0xeac9 (L9648) about 10 s after the start, before any game window. The same boxes and exit in ER8CRF and NEKWXD (iPhone18,4, build 592), and in the earlier Halo and Armored Core VI logs. Tester log B4874F, scrubbed.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

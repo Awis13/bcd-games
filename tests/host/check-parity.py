@@ -161,7 +161,7 @@ check("if let jitProblem { jitConnectionActions(jitProblem, retry: enableJIT) { 
       and 'isPresented: Binding(get: { library.error != nil }' in front,
       "BCD's interface shows the library's error, with the JIT connection fixes")
 check('.alert("Steam", isPresented: Binding(get: { steam.error != nil }' in front, "BCD's interface shows Steam's error")
-check(".fullScreenCover(isPresented: $onboarding.presented) { OnboardingView() }" in front
+check(".fullScreenCover(isPresented: $onboarding.presented, onDismiss: BCDPresentation.didClose) { OnboardingView() }" in front
       and "onboarding.presentIfNeeded()" in front, "first-run setup opens over BCD's interface")
 check("EndedSessionSurface.install()" in front and 'EndedSessionSurface.hide(reason: "library-appeared")' in front,
       "an ended desktop session's surface never stays over BCD's interface")

@@ -74,6 +74,7 @@
 #include "ddk/ntddk.h"
 #include "unix_private.h"
 #include "ios_wow.h"
+#include "ios_spawn_swap.h"   /* Modified by BCD (2026-10-24): env.MADEIRA_SPAWN_SWAP, below */
 #include "../bcd_epic_mask.h"   /* Modified by BCD (2026-10-22): Epic's sign-in arguments are masked in the command line printed below */
 #include "wine/condrv.h"
 #include "wine/server.h"
@@ -588,6 +589,31 @@ void ios_child_slot_exited( void *peb )
             ios_child_slots[i].exited_at = now;
         }
     pthread_mutex_unlock( &ios_child_lock );
+}
+
+/* ajan11-wow64stack: the file name (lower case) of the child process with this PEB, for the one log line that says which Windows
+ * process the storm guard ended. 1 and the name in `out`, or 0 (the table has no such process: out is "?"). Never the path. */
+int ios_child_slot_name( void *peb, char *out, size_t len )
+{
+    unsigned i;
+    int found = 0;
+
+    if (!out || !len) return 0;
+    out[0] = '?'; if (len > 1) out[1] = 0;
+    if (!peb) return 0;
+    pthread_mutex_lock( &ios_child_lock );
+    for (i = 0; i < IOS_CHILD_SLOTS && !found; i++)
+        if (ios_child_slots[i].used && ios_child_slots[i].peb == peb)
+        {
+            size_t n = strlen( ios_child_slots[i].name );
+
+            if (n > len - 1) n = len - 1;
+            memcpy( out, ios_child_slots[i].name, n );
+            out[n] = 0;
+            found = 1;
+        }
+    pthread_mutex_unlock( &ios_child_lock );
+    return found;
 }
 
 /* madeira-bcd (round 579): the child process with this PEB ended with this status (process_exit_wrapper, any thread,
@@ -1348,6 +1374,30 @@ static int sc_helper_kind( const WCHAR *image, int image_len, const WCHAR *cl, i
     return sc_switch_end( cl, cl_len, "--type=" ) >= 0 ? SC_CHILD : SC_BROWSER;
 }
 
+/* madeira-bcd: the EA app's Chromium (env.MADEIRA_EA_CEF = 1, set only by the EA app's launcher entry).
+ *
+ * EADesktop.exe is CEF's browser process (CEF 109); it starts EACefSubProcess.exe --type=gpu-process (and, for
+ * the pages, renderers and utility processes). Every CEF process of this Chromium needs four 16 GB
+ * PartitionAlloc pools and the band has four slots (virtual_ios.c, "the EA app's Chromium"), so, as for Social
+ * Club's helper and Steam's webhelper:
+ *   - the browser gets --single-process: renderer and GPU become its threads;
+ *   - a --type= child of EADesktop.exe or EACefSubProcess.exe it still starts is refused;
+ *   - the rest of the command line is Social Club's (sc_browser_cmdline): PartitionAllocBackupRefPtr off where the
+ *     switch is honoured, V8 --jitless unless MADEIRA_JITLESS=0, --no-proxy-server unless it names a proxy,
+ *     and env.MADEIRA_EA_CEF_FLAGS appended verbatim.
+ * env.MADEIRA_EA_CEF_CMDLINE = 0 leaves the browser's command line alone (the children are still refused): the
+ * EA app parses its own command line before CEF sees it and may not take a switch it does not know. */
+enum { EA_NOT_CEF = 0, EA_BROWSER = 1, EA_CHILD = 2 };
+
+static int ea_cef_kind( const WCHAR *image, int image_len, const WCHAR *cl, int cl_len )
+{
+    int browser = ios_image_name_is( image, image_len, "eadesktop.exe" );
+
+    if (!browser && !ios_image_name_is( image, image_len, "eacefsubprocess.exe" )) return EA_NOT_CEF;
+    if (sc_switch_end( cl, cl_len, "--type=" ) >= 0) return EA_CHILD;
+    return browser ? EA_BROWSER : EA_NOT_CEF;
+}
+
 /* madeira-bcd: env.MADEIRA_CHILD_ARGS = "<exe name> <arguments>" appends the
  * arguments to the command line of every started process whose image file is
  * <exe name> (any directory, ASCII case ignored). GTA V's PlayGTAV.exe starts
@@ -1373,6 +1423,81 @@ static const char *child_extra_args( const char *spec, const WCHAR *image, int i
     while (*spec == ' ') spec++;
     if (!*spec || !ios_image_name_is( image, image_len, name )) return NULL;
     return spec;
+}
+
+/* Modified by BCD (2026-10-24): env.MADEIRA_SPAWN_SWAP = <from.exe>=<to.exe>;... (see ios_spawn_swap.h). Fallout 4's Steam launch entry is its
+ * launcher alone, which cannot start here (a relocation-less image that starts itself twice); the game's list swaps it for Fallout4.exe from the
+ * same folder, as two players did by renaming the files. When the program being created is <from.exe> and <to.exe> exists in its folder, the NT
+ * image name, the DOS image name and the first word of the command line (when it is the old path) become <to.exe>'s; the old and new names are
+ * logged. Any other program, and a folder without <to.exe>, start as asked. The new strings leak once per swap, like the rewrites below. */
+static BOOL spawn_swap_apply( const char *list, UNICODE_STRING *path, RTL_USER_PROCESS_PARAMETERS *params )
+{
+    const WCHAR *nt = path->Buffer, *dos = params->ImagePathName.Buffer, *line = params->CommandLine.Buffer;
+    size_t nt_len = path->Length / sizeof(WCHAR), dos_len = params->ImagePathName.Length / sizeof(WCHAR);
+    size_t line_len = params->CommandLine.Length / sizeof(WCHAR);
+    size_t nt_base, dos_base, name_len, to_len, new_nt_len, new_dos_len, new_line_len = 0;
+    const char *to;
+    WCHAR *new_nt, *new_dos, *new_line = NULL;
+    UNICODE_STRING probe_name, probe_nt = {0};
+    OBJECT_ATTRIBUTES probe;
+    char *probe_unix = NULL;
+    NTSTATUS status;
+
+    if (!list || !*list || !nt || !dos || !nt_len || !dos_len || nt_len >= 0x7fff || dos_len >= 0x7fff) return FALSE;
+    nt_base = spawn_swap_base( nt, nt_len );
+    dos_base = spawn_swap_base( dos, dos_len );
+    name_len = nt_len - nt_base;
+    if (!name_len || name_len != dos_len - dos_base || !spawn_swap_equal_w_w( nt + nt_base, dos + dos_base, name_len )) return FALSE;
+    if (!(to = spawn_swap_find( list, nt + nt_base, name_len, &to_len ))) return FALSE;
+    new_nt = malloc( (nt_len + to_len + 1) * sizeof(WCHAR) );
+    new_dos = malloc( (dos_len + to_len + 1) * sizeof(WCHAR) );
+    if (!new_nt || !new_dos) goto fail;
+    new_nt_len = spawn_swap_path( nt, nt_len, to, to_len, new_nt, nt_len + to_len + 1 );
+    new_dos_len = spawn_swap_path( dos, dos_len, to, to_len, new_dos, dos_len + to_len + 1 );
+    if (!new_nt_len || !new_dos_len || new_nt_len >= 0x7fff || new_dos_len >= 0x7fff) goto fail;   /* a UNICODE_STRING holds 0x7fff characters at most */
+
+    /* the replacement has to be there: a file name lookup in the same folder, nothing is opened */
+    probe_name.Buffer = new_nt;
+    probe_name.Length = new_nt_len * sizeof(WCHAR);
+    probe_name.MaximumLength = probe_name.Length + sizeof(WCHAR);
+    InitializeObjectAttributes( &probe, &probe_name, OBJ_CASE_INSENSITIVE, 0, 0 );
+    status = get_nt_and_unix_names( &probe, &probe_nt, &probe_unix, FILE_OPEN, FALSE );
+    free( probe_unix );
+    free( probe_nt.Buffer );
+    if (status)
+    {
+        dprintf( 2, "[spawn-swap] env.MADEIRA_SPAWN_SWAP: %.*s is not in the folder of %s (status %08x): it starts as asked\n",
+                 (int)to_len, to, debugstr_wn( nt + nt_base, name_len ), (unsigned int)status );
+        goto fail;
+    }
+
+    if (line && line_len && (new_line = malloc( (line_len + to_len + dos_len + 2) * sizeof(WCHAR) )))
+    {
+        new_line_len = spawn_swap_cmdline( line, line_len, dos, dos_len, new_dos, new_dos_len, new_line,
+                                           line_len + to_len + dos_len + 2 );
+        if (!new_line_len || new_line_len >= 0x7fff) { free( new_line ); new_line = NULL; }
+    }
+
+    path->Buffer = new_nt;
+    path->Length = new_nt_len * sizeof(WCHAR);
+    path->MaximumLength = path->Length + sizeof(WCHAR);
+    params->ImagePathName.Buffer = new_dos;
+    params->ImagePathName.Length = new_dos_len * sizeof(WCHAR);
+    params->ImagePathName.MaximumLength = params->ImagePathName.Length + sizeof(WCHAR);
+    if (new_line)
+    {
+        params->CommandLine.Buffer = new_line;
+        params->CommandLine.Length = new_line_len * sizeof(WCHAR);
+        params->CommandLine.MaximumLength = params->CommandLine.Length + sizeof(WCHAR);
+    }
+    dprintf( 2, "[spawn-swap] env.MADEIRA_SPAWN_SWAP: %s starts as %.*s (command line %s)\n",
+             debugstr_wn( nt + nt_base, name_len ), (int)to_len, to, new_line ? "rewritten" : "kept" );
+    return TRUE;
+
+fail:
+    free( new_nt );
+    free( new_dos );
+    return FALSE;
 }
 
 /* madeira-bcd: consoles without a window. kernelbase's alloc_console starts
@@ -1805,6 +1930,14 @@ NTSTATUS WINAPI NtCreateUserProcess( HANDLE *process_handle_ptr, HANDLE *thread_
                 list = end ? end + 1 : NULL;
             }
         }
+    }
+
+    /* Modified by BCD (2026-10-24): env.MADEIRA_SPAWN_SWAP (spawn_swap_apply above). Off unless the variable is set; after the gates, so every
+     * later line (the phase stamp, the session log, the child slot) names the program that really starts. */
+    {
+        const char *swap = getenv( "MADEIRA_SPAWN_SWAP" );
+
+        if (swap && *swap) spawn_swap_apply( swap, &path, params );
     }
 
     /* ml526: stamp every accepted spawn on the startup timeline. This is the
@@ -2295,6 +2428,74 @@ NTSTATUS WINAPI NtCreateUserProcess( HANDLE *process_handle_ptr, HANDLE *thread_
                 free( nbuf );
                 dprintf( 2, "[sc-cef] SocialClubHelper.exe browser: command line NOT rewritten "
                             "(no memory) -- it runs multi-process\n" );
+            }
+        }
+    }
+
+    /* madeira-bcd: the EA app's Chromium -- see ea_cef_kind. Nothing below is read unless env.MADEIRA_EA_CEF is 1. */
+    {
+        const char *ea = getenv( "MADEIRA_EA_CEF" );
+        int kind = (ea && ea[0] == '1' && !ea[1])
+                 ? ea_cef_kind( params->ImagePathName.Buffer, params->ImagePathName.Length / sizeof(WCHAR),
+                                params->CommandLine.Buffer, params->CommandLine.Length / sizeof(WCHAR) )
+                 : EA_NOT_CEF;
+        if (kind == EA_CHILD)
+        {
+            dprintf( 2, "[ea-cef] REFUSING a --type= child of the EA app's Chromium (%s): its browser runs "
+                        "--single-process, one CEF process is all the address space holds "
+                        "(env.MADEIRA_EA_CEF=0 allows it)\n", debugstr_us( &params->ImagePathName ) );
+            return STATUS_ACCESS_DENIED;
+        }
+        if (kind == EA_BROWSER)
+        {
+            const char *cmd = getenv( "MADEIRA_EA_CEF_CMDLINE" );
+            if (cmd && cmd[0] == '0' && !cmd[1])
+                dprintf( 2, "[ea-cef] EADesktop.exe browser: command line left as it is (env.MADEIRA_EA_CEF_CMDLINE=0)\n" );
+            else
+            {
+                const char *jl = getenv( "MADEIRA_JITLESS" );
+                const char *extra = getenv( "MADEIRA_EA_CEF_FLAGS" );
+                int cl_len = params->CommandLine.Length / sizeof(WCHAR), how = 0, o = -1;
+                int cap = cl_len + 160 + (extra ? (int)strlen( extra ) : 0);
+                WCHAR *nbuf = malloc( cap * sizeof(WCHAR) );   /* leaks once per launch, as above */
+
+                if (nbuf)
+                    o = sc_browser_cmdline( params->CommandLine.Buffer, cl_len, !(jl && jl[0] == '0'), extra,
+                                            nbuf, cap, &how );
+                if (o >= 0)
+                {
+                    char tail[136];
+                    int tstart = o > 128 ? o - 128 : 0, ti;
+
+                    params->CommandLine.Buffer = nbuf;
+                    params->CommandLine.Length = o * sizeof(WCHAR);
+                    params->CommandLine.MaximumLength = params->CommandLine.Length + sizeof(WCHAR);
+                    for (ti = 0; ti + tstart < o && ti < 135; ti++)
+                    {
+                        WCHAR c = nbuf[tstart + ti];
+                        tail[ti] = (c >= 0x20 && c < 0x7f) ? (char)c : '?';
+                    }
+                    tail[ti] = 0;
+                    dprintf( 2, "[ea-cef] EADesktop.exe browser: %s; BackupRefPtr off (%s); V8 %s; %s; "
+                                "MADEIRA_EA_CEF_FLAGS %s\n",
+                             (how & SC_SINGLE_ADDED) ? "--single-process added" : "already --single-process",
+                             (how & SC_BRP_SPLICED) ? "spliced into its --disable-features list"
+                                                    : "new --disable-features switch",
+                             (how & SC_JITLESS_ADDED) ? "--jitless (MADEIRA_JITLESS=0 turns it off)"
+                             : (how & SC_JITLESS_MERGED) ? "--jitless put first in MADEIRA_EA_CEF_FLAGS' --js-flags "
+                                                           "(Chromium keeps only the last one)"
+                             : (how & SC_OWN_JS_FLAGS) ? "flags left as the app set them"
+                                                       : "JIT (MADEIRA_JITLESS=0)",
+                             (how & SC_NOPROXY_ADDED) ? "--no-proxy-server added" : "its own proxy switch kept",
+                             (how & SC_EXTRA_ADDED) ? "appended" : "unset" );
+                    dprintf( 2, "[ea-cef] cmdline-tail: ...%s\n", tail );
+                }
+                else
+                {
+                    free( nbuf );
+                    dprintf( 2, "[ea-cef] EADesktop.exe browser: command line NOT rewritten "
+                                "(no memory) -- it runs multi-process\n" );
+                }
             }
         }
     }

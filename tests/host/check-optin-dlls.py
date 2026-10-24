@@ -100,7 +100,9 @@ recs = json.loads((root / 'recommended/recommendations.json').read_text())
 # Senua's Saga: Hellblade II has no list: its only log (XJ7Z6Y) was a copy outside Steam (the lead, round 579); the
 # twinapi.appcore DLL and the auto-tune rule are engine-level and stay. No list may name twinapi.appcore before build 579.
 named = [r['id'] for r in recs['rules'] if 'twinapi.appcore' in json.dumps(r)]
-check("no list names twinapi.appcore (Hellblade II's only log was a copy; the DLL and the rule stay engine-level)", named == [])
+# 2026-10-24: the recipe of thebcd69/bcd-games#16 by le0-VV (Minecraft Dungeons II) names it; no other list does.
+check("only Minecraft Dungeons II's list names twinapi.appcore (Hellblade II's only log was a copy; the DLL and the rule stay engine-level)",
+      named == ['minecraft-dungeons-2'])
 
 # oledlg, fwpuclnt and sensapi (2026-10-23, testers' logs of build 580): Digimon Story Cyber Sleuth's exe imports oledlg.dll (PGET5A),
 # FINAL FANTASY XV's ffxv_s.exe fwpuclnt.dll (DM9SAF, CDC7AK), Borderlands 3's vivoxsdk.dll SensApi.dll (VFM84T); each ended with
@@ -123,9 +125,30 @@ if (wine / 'dlls/oledlg/Makefile.in').exists():
               all((shipdir / (i + '.dll')).exists() or i in ('uuid', 'dxguid', 'strmiids') for i in imports))
 else:
     print('note SKIPPED: no Wine sources here (set WINE_SRC); the three DLLs\' Makefile.in files are not read')
+# msi, mspatcha, odbccp32, sxs and rstrtmgr (2026-10-23, the owner's EA app install on build 594, log 19:20:11): the 64-bit
+# EABackgroundService.exe imports msi.dll and RstrtMgr.dll, msi.dll imports mspatcha, odbccp32 and sxs; none was in the 64-bit
+# set, the service never started (1053) and the MSI rolled back (1627). Only the EA app's launcher entry names them.
+EA5 = ['msi', 'mspatcha', 'odbccp32', 'sxs', 'rstrtmgr']
+check('OPTIN_WANT also lists msi, mspatcha, odbccp32, sxs and rstrtmgr', set(EA5) <= set(names))
+check('none of the five is in the list shipped under its own name', not any(re.search(r'\b%s\b' % n, want) for n in EA5))
+check('no msi.dll, mspatcha.dll, odbccp32.dll, sxs.dll or rstrtmgr.dll ships in the 64-bit set',
+      not any((shipdir / (n + '.dll')).exists() for n in EA5))
+if (wine / 'dlls/msi/Makefile.in').exists():
+    for n in EA5:
+        mk = (wine / 'dlls' / n / 'Makefile.in').read_text()
+        imports = re.search(r'^IMPORTS\s*=\s*(.*)$', mk, re.M)
+        imports = imports.group(1).split() if imports else []
+        check('Wine builds %s.dll; its imports %s ship in the 64-bit set or are among the five' % (n, imports),
+              re.search(r'^MODULE\s*=\s*%s\.dll$' % n, mk, re.M) and
+              all((shipdir / (i + '.dll')).exists() or re.search(r'\b%s\b' % i, want) or i in EA5 or i in ('uuid', 'dxguid', 'strmiids')
+                  for i in imports))   # want: the DLLs this script builds and ships under their own name (cabinet)
+launchers = (root / 'app/Madeira/BCDLaunchers.swift').read_text()
+check('only the EA app\'s launcher entry names them',
+      launchers.count('"env.MADEIRA_OPTIN_DLLS = msi,mspatcha,odbccp32,sxs,rstrtmgr,dxva2"') == 1 and
+      not any('mspatcha' in json.dumps(r) for r in recs['rules']))
 policy = (root / 'app/Madeira/GameRecommendationsList.swift').read_text()
 check('RecommendationsPolicy lets a downloaded list name oledlg, fwpuclnt and sensapi',
-      '["oledlg", "fwpuclnt", "sensapi"].contains($0)' in policy and 'wmadmod, or oledlg, fwpuclnt, sensapi' in policy)
+      '["oledlg", "fwpuclnt", "sensapi", "ddraw"].contains($0)' in policy and 'wmadmod, or oledlg, fwpuclnt, sensapi' in policy)
 check('the catalog note names the three DLLs', 'oledlg, fwpuclnt and sensapi are three small system DLLs' in gen)
 import importlib.util
 spec = importlib.util.spec_from_file_location('autotune_rules', root / 'build/tools/autotune_rules.py')

@@ -1,0 +1,93 @@
+[00:56:36.961] [INFO] Checking entitlements...
+[00:56:36.962] [INFO] [build] v0.1.592 (592)
+[00:56:36.962] [INFO] [device] model=iPad16,3 idiom=pad os=iPadOS Version 27.0 (Build 24A437) ram=7455MB available=6122MB cores=9
+[00:56:36.962] [INFO] [device] address-map=[0x10231c000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[00:56:36.982] [INFO] [device] gpu="Apple M4 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[00:57:13.250] [INFO] [bcd] library launch Glyphica: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[00:57:13.259] [INFO] Running full Wine sequence...
+[00:57:13.259] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x10231c000,0x8000000000) 512GB available=6096MB low-power=0 thermal=nominal
+[00:57:13.261] [INFO] D3D9 frontend: MADEIRA_D3D9=native via bcd.cfg d3d9
+[00:57:13.261] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[00:57:13.262] [INFO] Allocating 896MB JIT pool via debugger...
+[00:57:13.262] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[00:57:13.262] [INFO] [jit-debugger] attached=1 at the pool request
+[00:57:13.263] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[00:57:15.084] [INFO] RX pool at 0x148000000
+[00:57:15.111] [INFO] Detaching debugger...
+[00:57:15.129] [INFO] Starting wineserver...
+[phase] wine-start             t+  1.893s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[00:57:15.387] [Wine init_process] waiting for request_fd from wineserver...
+[Wine init_process] reply_pipe=43, sending init_first_thread...
+[00:57:15.387] [Wine init_process] reply_pipe=43, sending init_first_thread...
+[iOS env] INCLUDED: SteamAppId=2400160
+ml992: os_proc_available_memory=5490 MB + phys_footprint=653 MB = 6144 MB (hw.memsize says 7455 MB)
+ml985: preferred base 0x140000000+0x49a000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x49c000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 191 .text pages executable (copy @0x148007000)
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1484a4000)
+0024:err:seh:init_syscall_frame page0: trying debugger (BRK #0xf00d, x16=3)...
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=850 peb=0x71ffff0000
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x1485de000)
+[copy-verify] ucrtbase.dll: OK, 34 .text pages executable (copy @0x1489f8000)
+[copy-verify] kernel32.dll: OK, 10 .text pages executable (copy @0x148b2c000)
+[copy-verify] kernelbase.dll: OK, 28 .text pages executable (copy @0x148bf4000)
+[footprint] rev=ml358 phys=677 MB (peak 677) internal=676 MB compressed=0 MB external=112 MB reusable=15 MB (cycle=1)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+D 24 Load module neosphere.exe (neosphere.exe-c5e7d4f8c0c5d600): 125800000
+D 24 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FFCD0000
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=850 peb=0x71ffff0000
+D 24 Load module OPENGL32.dll (opengl32.dll-9fddefc254677b75): 71FE210000
+D 24 Load module gdi32.dll (gdi32.dll-c5970f8a59a953f3): 71FE120000
+D 24 Load module user32.dll (user32.dll-7d4349728057d260): 71FDF00000
+D 24 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FDE80000
+[copy-verify] msacm32.dll: OK, 4 .text pages executable (copy @0x149b74000)
+[copy-verify] shlwapi.dll: OK, 8 .text pages executable (copy @0x149c08000)
+[copy-verify] shcore.dll: OK, 3 .text pages executable (copy @0x149cbc000)
+[copy-verify] dsound.dll: OK, 8 .text pages executable (copy @0x149d40000)
+[copy-verify] ChakraCore.dll: OK, 368 .text pages executable (copy @0x149e04000)
+[copy-verify] bcrypt.dll: OK, 4 .text pages executable (copy @0x14a588000)
+D 24 Load module VERSION.dll (version.dll-f3f7d5759bd2c065): 71FCC00000
+D 24 Load module WS2_32.dll (ws2_32.dll-590ada9b52e97b01): 71FCB60000
+D 24 Load module IMM32.dll (imm32.dll-d32ec4d784d2a68d): 71FCAC0000
+D 24 Load module COMDLG32.dll (comdlg32.dll-bb3453125056fbd5): 71FC960000
+D 24 Load module shell32.dll (shell32.dll-a220962968ad1278): 71FBFE0000
+D 24 Load module comctl32.dll (comctl32.dll-8c564d137baf4ee2): 71FBE60000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[unixlib] opengl32 (GL-absent stub table) (module 0x71fe210000) -> 64-bit table (0x110702e50)
+[steer] #1 size=0x8000000 reserved_total=0MB armed=va-pressure -> above ceiling 0x7c04000000
+0024:err:seh:NtRaiseException Unhandled exception code c0000602 flags 1 addr 0x148c6cb10
+0024:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000602) syscalls=0 unix_calls=622
+[unwind] term ml661 begin rip=71fe4539a0 rsp=702580f2a8 window=[702580f2a8..702600f2a8) max=32
+[unwind] term ml661 #00 pc=71fe4539a0 rsp=702580f2a8  kernelbase.dll+0x839a0
+[unwind] term ml662 #00 nv: rbx=0 rbp=0 rsi=71fd42e4c0 rdi=71fd42e1f8 r12=71fcd20000 r13=702580f780 r14=71fcd20000 r15=70260407e0
+[unwind] term ml662   rsi=71fd42e4c0: e0cb3bfd 71000000 00003dfe 71000000 01000000 00000000 00000000 00000000
+[unwind] term ml662   rdi=71fd42e1f8: ffffffff ffffffff 00000000 01000000 24000000 00000000 00000000 00000000
+[unwind] term ml661 #01 pc=71fd2245a7 rsp=702580f2b0  ChakraCore.dll+0x5045a7
+[unwind] term ml662   global @+0x6e -> 71fd2e07c0 = 0x00000000 (0)
+[unwind] term ml662   global @+0x87 -> 71fd2e07a0 = 0x00000000 (0)
+[unwind] term ml661 #05 pc=71fd2b2030 rsp=702580f380  ChakraCore.dll+0x592030
+[unwind] term ml662 #05 nv: rbx=71fd2b20f0 rbp=702580f400 rsi=702580f4e0 rdi=148574000 r12=71fcd20000 r13=702580f780 r14=1 r15=70260407e0
+[unwind] term ml661 #06 pc=14852216c rsp=702580f3e0  <no module — STOP>
+[unwind] term ml661 end
+[Wine ntdll/server] process_exit_wrapper(-1073740286)
+[WineProc] Wine exited with code -1073740286 (caught by longjmp)
+[WineProc] stopping wineserver...
+[00:57:15.760] [INFO] [exit-report] status=0xc0000602
+[frontend] returned to library
+[hwinput] keyboard focus: elsewhere (poll)
+[footprint] rev=ml358 phys=790 MB (peak 790) internal=790 MB compressed=0 MB external=142 MB reusable=14 MB (cycle=2)
+[swap] ml1077 stats: 0 MB file-backed now (peak 0), 0 extents, file used 0 of 2048 MB, backs 0 releases 0 unbacks 0 refused 0 | coverage classic: disk 0 MB of 2048 cap, reservations 0, holes 0, disk-full refusals 0 | ml1258 churn: 0 sizes, 0 blocks left anonymous
+[00:57:17.923] [INFO] Detaching debugger...
+[footprint] rev=ml358 phys=786 MB (peak 790) internal=785 MB compressed=0 MB external=142 MB reusable=14 MB (cycle=3)
+[footprint] rev=ml358 phys=761 MB (peak 790) internal=761 MB compressed=0 MB external=142 MB reusable=16 MB (cycle=4)
+[footprint] rev=ml358 phys=754 MB (peak 790) internal=754 MB compressed=0 MB external=142 MB reusable=18 MB (cycle=5)
+[footprint] rev=ml358 phys=755 MB (peak 790) internal=754 MB compressed=0 MB external=142 MB reusable=18 MB (cycle=6)

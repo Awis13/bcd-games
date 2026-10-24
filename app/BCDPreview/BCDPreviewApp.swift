@@ -15,13 +15,18 @@ import UIKit
 ///                                             screen is up (up, down, left, right, a, b, x, y, lb, rb, menu;
 ///                                             anything else, such as w, waits a slot: a page takes a moment to come up)
 ///   -BCDSection differ                        with -BCDTab library: a game whose Steam Cloud saves differ
+///   -BCDSection launcher-battlenet[+installed|downloading|failed|starting]   with -BCDTab library: a launcher's chip and card (BCDLauncherSample.swift)
 ///   -BCDSection memory|graphics|...           with -BCDTab settings: open that section;
 ///                                             section+state picks a sample's state (vcruntime+installed)
 ///   -BCDTab game[-<game id>[-<what>]]          a game's page (BCDGamePageSample.swift)
 ///   -BCDTab add[-games|-pick]                  Add a game (BCDAddGameSample.swift)
 ///   -BCDTab epic-ask[-offline|-owned|-signin]  the question BCD asks when an Epic game's signed-in start can't be made (BCDPreviewEpicAsk.swift)
+///   -BCDOrientationLock landscape|landscape-camera-left|landscape-camera-right   the screen orientation lock of a game's session
+///                                             (BCDOrientation.swift), turned on 2 s after the screen is up; -BCDOrientationRelease <seconds>
+///                                             turns it off that long after that. It names the same lock and app delegate as the app's.
 @main
 struct BCDPreviewApp: App {
+    @UIApplicationDelegateAdaptor(BCDOrientationDelegate.self) private var orientationDelegate
     @StateObject private var store: BCDStore
     @StateObject private var focus = BCDFocus(watchControllers: false)
     private let actions = BCDPreviewActions()
@@ -39,6 +44,7 @@ struct BCDPreviewApp: App {
         BCDGameDetailSource.backend = BCDGamePageSample()
         BCDControllerHub.shareSample(empty: defaults.bool(forKey: "BCDEmpty"))   // Settings › Controls › Controllers
         BCDAddGameSource.backend = BCDAddGameSample()
+        BCDLauncherSample.prepare(defaults.string(forKey: "BCDSection"))   // the launchers' chips (Battle.net, EA app) on sample data
     }
 
     var body: some Scene {
@@ -50,6 +56,7 @@ struct BCDPreviewApp: App {
                     focus.preview(focused: UserDefaults.standard.string(forKey: "BCDFocus"))
                     BCDPreviewMeasure.start(store: store, focus: focus)   // -BCDSampleGames, -BCDMeasure (tools/ui-memory.py)
                     pressButtons(UserDefaults.standard.string(forKey: "BCDButtons"))
+                    lockOrientation()
                     // tools/ui-preview.py waits for this line before it photographs the screen.
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         print("BCDPreview: ready")
@@ -107,6 +114,20 @@ struct BCDPreviewApp: App {
                 default: break
                 }
             }
+        }
+    }
+
+    /// -BCDOrientationLock: the session's lock, on 2 s after the screen is up, and off again after -BCDOrientationRelease seconds.
+    private func lockOrientation() {
+        let defaults = UserDefaults.standard
+        guard let word = defaults.string(forKey: "BCDOrientationLock"), case let choice = BCDOrientationChoice(setting: word), choice.locked else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            BCDOrientationLock.shared.onLog = { print($0); fflush(stdout) }
+            BCDOrientationLock.shared.apply(choice)
+        }
+        let release = defaults.double(forKey: "BCDOrientationRelease")
+        if release > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2 + release) { BCDOrientationLock.shared.apply(.free) }
         }
     }
 

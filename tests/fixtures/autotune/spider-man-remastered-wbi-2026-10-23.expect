@@ -1,0 +1,17 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "d3d12-write-buffer-immediate-spider-man"
+ ],
+ "next": [
+  "write-buffer-immediate = 1"
+ ],
+ "note": "Marvel's Spider-Man Remastered (spider-man.exe), build 592, the owner's iPhone18,2 (2026-10-23 13:51, gpu-sync = 1): a black screen after the launcher. queue-trace stops at #89 with every GPU serial committed (12 of 12), and the game's Render Thread spins on GetDeviceRemovedReason (~38 million calls a second) for four minutes; the game's first WriteBufferImmediate had reached the stub ('unimplemented: ID3D12GraphicsCommandList7::WriteBufferImmediate'). The owner ended the app. d3d12-write-buffer-immediate-spider-man proposes write-buffer-immediate = 1 (build 593, opt-in), for this game only (its session log's name).",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "trying"
+}

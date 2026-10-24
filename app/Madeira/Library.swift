@@ -253,6 +253,10 @@ struct LibraryEntry: Codable, Identifiable {
     var steamProgramArguments: String?
     var steamProgramFolder: String?
     var steamProgramSource: String?
+    /// BCD Dock's Steam launch option (Game details › Steam › Steam launch option, 2026-10-24): the `config.launch` key of the
+    /// entry the Dock start asks Valve's client for. nil: what every Dock start used before (SteamDirectStart.dockLaunch).
+    /// Optional, so older library files decode.
+    var steamLaunchOption: Int?
     /// The install folder, build and picked program a Steam game's `bits` and
     /// `graphicsAPI` were read for, and whether Steam's launch configuration was
     /// cached (LibraryModel.refreshSteamMetadata); any change reads them again.
@@ -277,6 +281,10 @@ struct LibraryEntry: Codable, Identifiable {
     /// MetalFX spatial upscaling factor (Display › MetalFX upscaling: 1.5 or 2;
     /// nil = off), passed on as this game's `metalfx-upscale` line.
     var metalFXUpscale: Double?
+    /// This game's screen orientation during its sessions (BCDOrientation.swift: "off", "landscape",
+    /// "landscape-camera-left", "landscape-camera-right"); nil follows Settings, which by default
+    /// follows the device. Optional, so older library files decode.
+    var orientationLock: String?
 
     /// What MadeiraConfig.applyGame writes for this game: the lines its pickers
     /// stand for, then its own config, which wins where both set a key.
@@ -484,9 +492,42 @@ struct LibraryEntry: Codable, Identifiable {
         }
     }
 
+    // epic-host-hold:begin
+    /// madeira-bcd (2026-10-24): BCD Host as the first program of an Epic game's signed-in start. BCDEpic.applyLaunch (main thread, right after the
+    /// first configureLaunch) sets MADEIRA_EXE / MADEIRA_ARGS to the host; applyEnvironment below runs configureLaunch AGAIN on the launch worker and
+    /// put the game's own program back in builds 590 to 597, so no Epic game ever started through the host ("[bcd-host] no report" in all twelve Epic
+    /// sessions of the logs of 2026-10-23/24, the game's argv[1] its own exe with Epic's public arguments only). With env.BCD_EPIC_HOST_START = 1 in the
+    /// game's own config BCDEpic holds the host's two values here and they are set again once, right after that second configureLaunch. Nothing is held
+    /// otherwise (the default): the start is exactly what builds 590 to 597 did.
+    private static let epicHostLock = NSLock()
+    private static var epicHostHold: (entry: UUID, exe: String, args: String)?
+
+    static func holdEpicHostStart(entry: UUID, exe: String, args: String) {
+        epicHostLock.lock(); defer { epicHostLock.unlock() }
+        epicHostHold = (entry, exe, args)
+    }
+
+    static func clearEpicHostStart() {
+        epicHostLock.lock(); defer { epicHostLock.unlock() }
+        epicHostHold = nil
+    }
+
+    /// The held values go back into MADEIRA_EXE and MADEIRA_ARGS when they are this entry's; whatever was held is spent either way.
+    static func restoreEpicHostStart(for entry: UUID) {
+        epicHostLock.lock()
+        let hold = epicHostHold
+        epicHostHold = nil
+        epicHostLock.unlock()
+        guard let hold, hold.entry == entry else { return }
+        setenv("MADEIRA_EXE", hold.exe, 1)
+        setenv("MADEIRA_ARGS", hold.args, 1)
+    }
+    // epic-host-hold:end
+
     /// Runs on the launch worker, before the JIT pool is taken.
     func applyEnvironment() {
         configureLaunch()
+        Self.restoreEpicHostStart(for: id)   // madeira-bcd: BCD Host stays an Epic game's first program when its config says so (env.BCD_EPIC_HOST_START)
         // Unset unless chosen: FEX's own default then applies, as for any other launch.
         if reducedX87 { setenv("FEX_X87REDUCEDPRECISION", "1", 1) } else { unsetenv("FEX_X87REDUCEDPRECISION") }
         // Exported only when chosen: unset keeps the engine's own default (and any
@@ -887,21 +928,23 @@ final class LibraryModel: ObservableObject {
     static let programExtensions: Set<String> = ["exe", "bat", "cmd"]
     static func executable(_ relative: String) throws -> URL {
         let url = drive.appendingPathComponent(relative).resolvingSymlinksInPath().standardizedFileURL
-        guard url.path.hasPrefix(drive.path + "/"), programExtensions.contains(url.pathExtension.lowercased()),
+        // The original test first; the SSD folder chosen in Settings > Storage (C:\External) is asked only about what it refuses.
+        guard url.path.hasPrefix(drive.path + "/") || ExternalGameStorage.shared.admits(url),
+              programExtensions.contains(url.pathExtension.lowercased()),
               FileManager.default.fileExists(atPath: url.path) else {
             throw LibraryError.message("Pick a program in drive_c: an .exe, .bat or .cmd file.")
         }
         return url
     }
     static func inspect(_ url: URL) throws -> LibraryEntry {
-        guard url.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/") else {
+        // drive_c's relative path as it always was; C:\External (the SSD folder) only where that refuses (ExternalGameStorage).
+        guard let relative = ExternalGameStorage.shared.relativePath(for: url, drive: drive) else {
             throw LibraryError.message("Only programs inside drive_c can be added.")
         }
         if ["bat", "cmd"].contains(url.pathExtension.lowercased()) {
             // ml1163: a batch file has no PE header. Like every entry it starts
             // directly by default, as upstream starts every game; the details page
             // warns that Wine then stops when cmd.exe, its first process, exits.
-            let relative = String(url.resolvingSymlinksInPath().path.dropFirst(drive.path.count + 1))
             return LibraryEntry(title: url.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "_", with: " "),
                                 relativePath: relative, bits: 0)
         }
@@ -915,7 +958,6 @@ final class LibraryModel: ObservableObject {
         guard pe.count == 6, Array(pe.prefix(4)) == [0x50, 0x45, 0, 0] else { throw LibraryError.message("The file has no PE header.") }
         let machine = Int(pe[4]) | Int(pe[5]) << 8
         guard machine == 0x14c || machine == 0x8664 else { throw LibraryError.message("BCD runs x86 and x64 programs only.") }
-        let relative = String(url.resolvingSymlinksInPath().path.dropFirst(drive.path.count + 1))
         let name = url.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "_", with: " ")
         var entry = LibraryEntry(title: name, relativePath: relative, bits: machine == 0x14c ? 32 : 64)
         entry.graphicsAPI = graphicsImports(url)
@@ -941,8 +983,30 @@ final class LibraryModel: ObservableObject {
         return levels
     }
     static func graphicsImports(_ url: URL) -> String? {
-        let levels = apiNames(importNames(url))
+        var levels = apiNames(importNames(url))
+        if levels.isEmpty { levels = folderAPIs(url, imports: { apiNames(importNames($0)) }) }
         return levels.isEmpty ? nil : levels.sorted().joined(separator: " / ")
+    }
+    /// madeira-bcd (2026-10-24): the API a program's own imports do not name, from what lies beside it (the idea is MaPC's
+    /// GraphicsProbe, Apache-2.0; written anew here, no code taken). A Unity game's exe is a stub that imports UnityPlayer.dll, whose
+    /// imports name the API; a game with the D3D12 Agility SDK ships D3D12\D3D12Core.dll beside it, and the DXIL compiler DLLs
+    /// (dxil.dll, dxilconv*.dll) come with D3D12 games that load d3d12.dll at run time. Only for what the library shows (the game
+    /// page's facts, the log line): nothing a game does depends on it.
+    static func folderAPIs(_ exe: URL, imports: (URL) -> Set<String>) -> Set<String> {
+        let fm = FileManager.default
+        let folder = exe.deletingLastPathComponent()
+        let names = (try? fm.contentsOfDirectory(atPath: folder.path)) ?? []
+        let lower = Dictionary(names.map { ($0.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
+        if let unity = lower["unityplayer.dll"] {
+            let found = imports(folder.appendingPathComponent(unity))
+            if !found.isEmpty { return found }
+        }
+        if let sdk = lower["d3d12"],
+           ((try? fm.contentsOfDirectory(atPath: folder.appendingPathComponent(sdk).path)) ?? []).contains(where: { $0.lowercased() == "d3d12core.dll" }) {
+            return ["D3D12"]
+        }
+        if lower["dxil.dll"] != nil || lower.keys.contains(where: { $0.hasPrefix("dxilconv") && $0.hasSuffix(".dll") }) { return ["D3D12"] }
+        return []
     }
     static func importNames(_ url: URL) -> [String] {
         guard let h = try? FileHandle(forReadingFrom: url) else { return [] }
@@ -1070,6 +1134,7 @@ final class LibraryModel: ObservableObject {
         applyControllerMode()
         MetalHostView.shared.isHidden = false
         ProMotionIntent.apply(mode: entry.effectiveFPSMode)
+        BCDOrientationLive.sessionBegan(entry)   // madeira-bcd: Settings › Graphics › Screen orientation, or the game's own choice; "follow the device" (the default) does nothing
         if remember { var played = entry; played.lastPlayed = Date(); save(played) }
         launchDismissLogged = false
         DockStartScreen.shared.begin(dock, at: launchStarted)
@@ -1342,6 +1407,7 @@ final class LibraryModel: ObservableObject {
         MetalHostView.shared.isHidden = true
         ProMotionIntent.shared.setActive(false)
         SystemGestures.endSession()   // madeira-bcd: env.MADEIRA_PAD_SYSTEM_GESTURES; without it nothing to undo
+        BCDOrientationLive.sessionEnded()   // madeira-bcd: the interface follows the device again; with no lock on, nothing to undo
         fputs("[frontend] returned to library\n", stderr)
     }
     /// madeira-bcd: what auto-tune needs from a session that ended (AutoTune.swift).
@@ -1522,7 +1588,7 @@ private actor LibraryMetadataScanner {
     /// `countBytes: false` skips the size walk (a Steam game's size is its install record's).
     func scan(_ executable: URL, drive: URL, countBytes: Bool = true) -> (bytes: Int64?, api: String?) {
         let folder = executable.deletingLastPathComponent()
-        guard folder.path.hasPrefix(drive.path + "/"), !Task.isCancelled else { return (nil, nil) }
+        guard folder.path.hasPrefix(drive.path + "/") || ExternalGameStorage.shared.admits(folder), !Task.isCancelled else { return (nil, nil) }
         let manager = FileManager.default
         // Executables commonly live below the installation root. Only ascend
         // conventional binary directories, never an arbitrary library parent.
@@ -1531,13 +1597,16 @@ private actor LibraryMetadataScanner {
         for _ in 0..<4 {
             guard binaryFolders.contains(installation.lastPathComponent.lowercased()) else { break }
             let parent = installation.deletingLastPathComponent()
-            guard parent.path.hasPrefix(drive.path + "/"),
+            // The SSD folder itself (C:\External) is never an installation: a game's size is not the drive's.
+            guard parent.path.hasPrefix(drive.path + "/") || ExternalGameStorage.shared.admits(parent),
+                  !ExternalGameStorage.shared.isMountRoot(parent),
                   !["program files", "program files (x86)", "games", "common", "steamapps"].contains(parent.lastPathComponent.lowercased()) else { break }
             installation = parent
         }
         var complete = true
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
-        let walker = countBytes ? manager.enumerator(at: installation, includingPropertiesForKeys: Array(keys), options: [], errorHandler: { _, _ in complete = false; return true }) : nil
+        // A game whose program sits directly in the SSD folder has the whole folder as its installation: not counted.
+        let walker = countBytes && !ExternalGameStorage.shared.isMountRoot(installation) ? manager.enumerator(at: installation, includingPropertiesForKeys: Array(keys), options: [], errorHandler: { _, _ in complete = false; return true }) : nil
         var bytes: Int64 = 0
         var files = 0
         while let file = walker?.nextObject() as? URL {
@@ -1553,7 +1622,7 @@ private actor LibraryMetadataScanner {
         let siblings = (try? manager.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
         var local: [String: URL] = [:]
         for file in siblings where file.pathExtension.lowercased() == "dll" {
-            if file.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/") { local[file.lastPathComponent.lowercased()] = file }
+            if file.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/") || ExternalGameStorage.shared.admits(file) { local[file.lastPathComponent.lowercased()] = file }
         }
         var budget = 32 * 1024 * 1024
         var pending = [executable], visited = Set<String>(), apis = Set<String>()
@@ -1562,7 +1631,7 @@ private actor LibraryMetadataScanner {
         if LibraryModel.graphicsImports(executable) == nil {
             pending.insert(contentsOf: siblings.filter {
                 $0.pathExtension.lowercased() == "exe" && $0 != executable &&
-                $0.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/")
+                ($0.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/") || ExternalGameStorage.shared.admits($0))
             }.sorted { $0.path < $1.path }.prefix(8), at: 0)
         }
         while let file = pending.popLast(), visited.count < 64, !Task.isCancelled {

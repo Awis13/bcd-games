@@ -3,10 +3,12 @@
  "end": {
   "killed": true
  },
- "matched": [],
+ "matched": [
+  "gpu-reset-lower-graphics-settings"
+ ],
  "next": [],
- "note": "GTA V Legacy, build 546, iPhone18,2 (11695 MB): hung",
+ "note": "GTA V Legacy, build 546, iPhone18,2 (11695 MB): hung. The owner's start with the same game file but no env.MADEIRA_DXMT_FAULT_INFO = 1; the rule gta5l-gpu-reset-encoder-status proposes that line (build 547 had it and no GPU error: gta-v-legacy-13-37-35 below), ajan12/gta5l, 2026-10-23",
  "outcome": "hung",
  "stage": 5,
- "status": "stuck"
+ "status": "known"
 }

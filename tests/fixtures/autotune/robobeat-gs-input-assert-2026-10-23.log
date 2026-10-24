@@ -1,0 +1,157 @@
+[07:21:01.091] [INFO] Checking entitlements...
+[07:21:01.092] [INFO] [build] v0.1.592 (592)
+[07:21:01.094] [INFO] [device] model=iPhone18,1 idiom=phone os=iOS Version 27.2 (Build 24B5089g) ram=11722MB available=6122MB cores=6
+[07:21:01.094] [INFO] [device] address-map=[0x104274000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[07:21:01.112] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[07:21:25.397] [INFO] [bcd] library launch ROBOBEAT.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[07:21:25.412] [INFO] Running full Wine sequence...
+[07:21:25.412] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x104274000,0x8000000000) 512GB available=8127MB low-power=0 thermal=fair
+[07:21:25.417] [INFO] Allocating 1152MB JIT pool (BRK will suspend process)...
+[07:21:25.417] [INFO] Allocating 1152MB JIT pool via debugger...
+[07:21:25.419] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[07:21:25.419] [INFO] [jit-debugger] attached=1 at the pool request
+[07:21:25.421] [ERR] ml1036: no hole fits a 1152MB pool — SHRINKING to 560MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[07:21:27.161] [INFO] RX pool at 0x148000000
+[07:21:27.204] [INFO] Detaching debugger...
+[07:21:27.212] [INFO] Starting wineserver...
+[phase] wine-start             t+  1.833s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[Wine init_process] reply_pipe=43, sending init_first_thread...
+[07:21:27.583] [Wine init_process] reply_pipe=43, sending init_first_thread...
+ml992: os_proc_available_memory=7556 MB + phys_footprint=635 MB = 8192 MB (hw.memsize says 11722 MB)
+ml985: preferred base 0x140000000+0xa5000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0xa8000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] WindowsPlayer.exe: OK, 3 .text pages executable (copy @0x148007000)
+[copy-verify] ntdll.dll: OK, 30 .text pages executable (copy @0x1480b0000)
+0024:err:seh:init_syscall_frame page0: trying debugger (BRK #0xf00d, x16=3)...
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x1481ea000)
+[copy-verify] ucrtbase.dll: OK, 34 .text pages executable (copy @0x148604000)
+[copy-verify] kernel32.dll: OK, 10 .text pages executable (copy @0x148738000)
+[footprint] rev=ml358 phys=649 MB (peak 649) internal=647 MB compressed=0 MB external=118 MB reusable=12 MB (cycle=1)
+[copy-verify] kernelbase.dll: OK, 28 .text pages executable (copy @0x148800000)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+D 24 Load module ROBOBEAT.exe (robobeat.exe-4c7fcac28803019c): 10E770000
+D 24 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FFCD0000
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+D 24 Load module UnityPlayer.dll (unityplayer.dll-56b2647efd092304): 71FC750000
+D 24 Load module USER32.dll (user32.dll-7d4349728057d260): 71FC530000
+D 24 Load module gdi32.dll (gdi32.dll-c5970f8a59a953f3): 71FC440000
+D 24 Load module advapi32.dll (advapi32.dll-e40c14e1190b1df2): 71FC390000
+[copy-verify] shcore.dll: OK, 3 .text pages executable (copy @0x14b258000)
+[copy-verify] setupapi.dll: OK, 14 .text pages executable (copy @0x14b2dc000)
+[copy-verify] cfgmgr32.dll: OK, 4 .text pages executable (copy @0x14b3c0000)
+[copy-verify] shell32.dll: OK, 34 .text pages executable (copy @0x14b444000)
+[copy-verify] opengl32.dll: OK, 38 .text pages executable (copy @0x14bdc8000)
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[steer] #1 size=0x1ffff000 reserved_total=511MB armed=va-pressure -> above ceiling 0x7c04000000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[steer] #2 size=0x1ffff000 reserved_total=1023MB armed=va-pressure -> above ceiling 0x7c25000000
+[steer] #3 size=0x1ffff000 reserved_total=1535MB armed=va-pressure -> above ceiling 0x7c45000000
+[steer] #4 size=0x1ffff000 reserved_total=2047MB armed=va-pressure -> above ceiling 0x7c65000000
+[steer] #5 size=0x1ffff000 reserved_total=2559MB armed=va-pressure -> above ceiling 0x7c85000000
+[steer] #6 size=0x1ffff000 reserved_total=3071MB armed=va-pressure -> above ceiling 0x7ca5000000
+[steer] #7 size=0x1ffff000 reserved_total=3583MB armed=va-pressure -> above ceiling 0x7cc5000000
+[steer] #8 size=0x1ffff000 reserved_total=4095MB armed=va-pressure -> above ceiling 0x7ce5000000
+[steer] #11 size=0x1ffff000 reserved_total=5631MB armed=va-pressure -> above ceiling 0x7d45400000
+E 24 [mono-cfg] ml623 module=mono-2.0-bdwgc.dll base=0x71f9fc0000 xend=0x71fa34d7f0 | MonoHacks=1 Multiblock=1 MaxInst=5000 => HOOKS ARMED (MarkMonoDetected)
+D 24 Load module mono-2.0-bdwgc.dll (mono-2.0-bdwgc.dll-0f65d8a11ff7238f): 71F9FC0000
+E 24 [mono-cfg] ml623 module=mono-2.0-bdwgc.dll base=0x71f9fc0000 xend=0x71fa34d7f0 | MonoHacks=1 Multiblock=1 MaxInst=5000 => HOOKS ARMED (MarkMonoDetected)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed\\mscorlib.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed/mono/aot-cache/amd64/mscorlib.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[stp-emul] ml629 #1 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50c30 rw=0x7005088c30 base 0x7024a50c30 -> 0x7024a50c50 (writeback)
+[stp-emul] ml629 #2 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50c50 rw=0x7005088c50 base 0x7024a50c50 -> 0x7024a50c70 (writeback)
+[stp-emul] ml629 #3 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50c70 rw=0x7005088c70 base 0x7024a50c70 -> 0x7024a50c90 (writeback)
+[stp-emul] ml629 #4 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50c90 rw=0x7005088c90 base 0x7024a50c90 -> 0x7024a50cb0 (writeback)
+[stp-emul] ml629 #5 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50cb0 rw=0x7005088cb0 base 0x7024a50cb0 -> 0x7024a50cd0 (writeback)
+[stp-emul] ml629 #6 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50cd0 rw=0x7005088cd0 base 0x7024a50cd0 -> 0x7024a50cf0 (writeback)
+[stp-emul] ml629 #7 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50cf0 rw=0x7005088cf0 base 0x7024a50cf0 -> 0x7024a50d10 (writeback)
+[stp-emul] ml629 #8 insn=0xac814570 mode=post off=+32 Rt=q16 Rt2=q17 Rn=x11 addr=0x7024a50d10 rw=0x7005088d10 base 0x7024a50d10 -> 0x7024a50d30 (writeback)
+[swp-emul] ml626 #1 insn=0xf8fa80da size=8 Rs=x26 Rt=x26 addr=0x7024a50bb8 rw=0x7005088bb8 in=0x7024a50d80 old=0x7024a50c0b
+[copy-verify] iphlpapi.dll: OK, 4 .text pages executable (copy @0x14d098000)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Plugins\\x86_64\\EOSGenerated.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #4 L"Kerberos.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #5 L"MSV1_0.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: "..............."
+[win-name] #5 hwnd=0x10036 class='' text="Default IME" rev=ml853
+[steer] #12 size=0x1ffff000 reserved_total=6143MB armed=va-pressure -> above ceiling 0x7d9a010000
+[steer] #13 size=0x1ffff000 reserved_total=6655MB armed=va-pressure -> above ceiling 0x7dba010000
+D 24 Load module compstui.dll (compstui.dll-6caceb67ab4f8333): 71F73A0000
+D 24 Load module comctl32.dll (comctl32.dll-8c564d137baf4ee2): 71F7220000
+[steer] #14 size=0x1ffff000 reserved_total=7167MB armed=va-pressure -> above ceiling 0x7de4000000
+D 24 Load module mmdevapi.dll (mmdevapi.dll-57db4935cb1d4a81): 71F7140000
+D BC Load module avrt.dll (avrt.dll-cbf6d88ff1151c3b): 71F7040000
+0024:err:module:load_dll [dll-missing] rev=ml336 #6 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed\\UnityEngine.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #55 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed/mono/aot-cache/amd64/UnityEngine.LocalizationModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #56 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed\\UnityEngine.ParticleSystemModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #57 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed/mono/aot-cache/amd64/UnityEngine.ParticleSystemModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #58 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed\\UnityEngine.PerformanceReportingModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #59 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed/mono/aot-cache/amd64/UnityEngine.PerformanceReportingModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] rev=ml336 #60 L"C:\\Program Files\\Epic Games\\RobobeateUL6R\\ROBOBEAT_Data\\Managed\\UnityEngine.PhysicsModule.dll.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[alloc-fail] ml814 #1 status=c0000018 hint=0x7024a60000 size=0x20000 type=0x3000 protect=0x40 tid=0024 | STAGE=none err=1 at 0x100000000+0x100000
+[nt-fail] #1 NtAllocateVirtualMemory status=c0000018 proc=robobeat.exe tid=0024 size=0x20000 type=0x3000 prot=0x40 hint=0x7024a60000 zb=0x0 hits=1 rev=ajan5-rockstar
+[footprint] rev=ml358 phys=1373 MB (peak 1373) internal=1316 MB compressed=0 MB external=168 MB reusable=13 MB (cycle=2)
+[footprint] rev=ml1060 fast phys=1359 MB compressed=0 MB
+[steer] #15 size=0x1ffff000 reserved_total=7679MB armed=va-pressure -> above ceiling 0x7e10c00000
+[footprint] rev=ml1060 fast phys=1390 MB compressed=0 MB
+[steer] #16 size=0x1ffff000 reserved_total=8191MB armed=va-pressure -> above ceiling 0x7e30c00000
+[steer] #17 size=0x1ffff000 reserved_total=8703MB armed=va-pressure -> above ceiling 0x7e51000000
+[footprint] rev=ml1060 fast phys=1430 MB compressed=0 MB
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[alloc-fail] ml814 #2 status=c0000018 hint=0x7037ec0000 size=0x10000 type=0x3000 protect=0x40 tid=0024 | STAGE=none err=1 at 0x100000000+0x100000
+[nt-fail] #2 NtAllocateVirtualMemory status=c0000018 proc=robobeat.exe tid=0024 size=0x10000 type=0x3000 prot=0x40 hint=0x7037ec0000 zb=0x0 hits=1 rev=ajan5-rockstar
+[alloc-fail] ml814 #3 status=c0000018 hint=0x7035050000 size=0x10000 type=0x3000 protect=0x40 tid=0024 | STAGE=none err=1 at 0x100000000+0x100000
+[nt-fail] #3 NtAllocateVirtualMemory status=c0000018 proc=robobeat.exe tid=0024 size=0x10000 type=0x3000 prot=0x40 hint=0x7035050000 zb=0x0 hits=2 rev=ajan5-rockstar
+[footprint] rev=ml1060 fast phys=1505 MB compressed=0 MB
+[free-delay] #1 release of 0x703fdc0000+0xfd0000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x7040d90000+0xfd0000 held for 2000 ms (2 in flight)
+[win-name] #7 hwnd=0x2002e class='' text="ROBOBEAT" rev=ml853
+D 24 Load module xinput1_4.dll (xinput1_4.dll-a6149d3778e63e2c): 71F6E30000
+D 24 Load module xinput1_3.dll (xinput1_3.dll-1e6b917460bb9656): 71F6CE0000
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[win-name] #10 hwnd=0x2002e class='' text="ROBOBEAT" rev=ml853
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[07:21:31.293] [INFO] Game is presenting (#1, splash) — early detach in 20s
+[footprint] rev=ml1060 fast phys=1539 MB compressed=0 MB
+[launch-view] dismissed reason=present logs=0
+[footprint] rev=ml1060 fast phys=1769 MB compressed=0 MB
+[footprint] rev=ml358 phys=1804 MB (peak 1804) internal=1475 MB compressed=0 MB external=174 MB reusable=13 MB (cycle=3)
+[footprint] rev=ml358 phys=1848 MB (peak 1848) internal=1580 MB compressed=0 MB external=174 MB reusable=13 MB (cycle=4)
+[alloc-fail] ml814 #4 status=c0000018 hint=0x7037f40000 size=0x10000 type=0x3000 protect=0x40 tid=00ec | STAGE=none err=3 at 0x73fffb0000+0x40000
+[nt-fail] #4 NtAllocateVirtualMemory status=c0000018 proc=robobeat.exe tid=00ec size=0x10000 type=0x3000 prot=0x40 hint=0x7037f40000 zb=0x0 hits=3 rev=ajan5-rockstar
+[alloc-fail] ml814 #5 status=c0000018 hint=0x7037fa0000 size=0x10000 type=0x3000 protect=0x40 tid=00ec | STAGE=none err=3 at 0x73fffb0000+0x40000
+[nt-fail] #5 NtAllocateVirtualMemory status=c0000018 proc=robobeat.exe tid=00ec size=0x10000 type=0x3000 prot=0x40 hint=0x7037fa0000 zb=0x0 hits=4 rev=ajan5-rockstar
+[steer] #18 size=0x1ffff000 reserved_total=9215MB armed=va-pressure -> above ceiling 0x7e8a000000
+[alloc-fail] ml814 #6 status=c0000018 hint=0x703feb0000 size=0x10000 type=0x3000 protect=0x40 tid=00ec | STAGE=none err=3 at 0x73fffb0000+0x40000
+[alloc-fail] ml814 #7 status=c0000018 hint=0x7040030000 size=0x10000 type=0x3000 protect=0x40 tid=00ec | STAGE=none err=3 at 0x73fffb0000+0x40000
+[footprint] rev=ml358 phys=1976 MB (peak 1976) internal=1685 MB compressed=0 MB external=174 MB reusable=13 MB (cycle=5)
+[alloc-fail] ml814 #8 status=c0000018 hint=0x7040300000 size=0x10000 type=0x3000 protect=0x40 tid=00ec | STAGE=none err=3 at 0x73fffb0000+0x40000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x7040510000 size=0x10000 type=0x3000 protect=0x40 tid=00ec | STAGE=none err=3 at 0x73fffb0000+0x40000
+[nt-fail] #6 NtAllocateVirtualMemory status=c0000018 proc=robobeat.exe tid=00ec size=0x10000 type=0x3000 prot=0x40 hint=0x7040510000 zb=0x0 hits=8 rev=ajan5-rockstar
+[free-delay] #3 release of 0x7044180000+0x410000 held for 2000 ms (1 in flight)
+Assertion failed: (0 && "unhandled geometry shader input"), function handle_signature_gs, file dxbc_signature.cpp, line 1082.
+00b0:err:seh:NtRaiseException Unhandled exception code 80000101 flags 1 addr 0x23e3e91fc
+00b0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000101) syscalls=0 unix_calls=6883
+[Wine ntdll/server] process_exit_wrapper(-2147483391)
+[srv-kill] kill_process pid=0020 violent=0 threads: 00b0 rev=ml586
+[footprint] rev=ml358 phys=1926 MB (peak 1976) internal=1681 MB compressed=0 MB external=174 MB reusable=13 MB (cycle=6)
+[footprint] rev=ml358 phys=1922 MB (peak 1976) internal=1682 MB compressed=0 MB external=174 MB reusable=13 MB (cycle=7)
+[WineProc] stopping wineserver...
+[frontend] returned to library
+[footprint] rev=ml358 phys=1997 MB (peak 1997) internal=1758 MB compressed=0 MB external=175 MB reusable=12 MB (cycle=8)
+[07:21:42.656] [INFO] Detaching debugger...
+[footprint] rev=ml1060 fast phys=2094 MB compressed=0 MB
+[footprint] rev=ml358 phys=2126 MB (peak 2126) internal=1886 MB compressed=0 MB external=176 MB reusable=12 MB (cycle=9)
+[footprint] rev=ml1060 fast phys=2140 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=2158 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=2189 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=2208 MB compressed=0 MB
+[footprint] rev=ml1060 fast phys=2228 MB compressed=0 MB

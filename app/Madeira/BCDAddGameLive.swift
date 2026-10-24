@@ -21,18 +21,25 @@ import Foundation
         path.isEmpty ? drive : drive.appendingPathComponent(path)
     }
 
-    /// Only what lies inside drive_c, links followed: a link out of it is not listed.
-    private func inside(_ url: URL) -> Bool { url.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/") }
+    /// Only what lies inside drive_c, links followed: a link out of it is not listed. The one link that leads out
+    /// and is listed is C:\External, the SSD folder the player chose in Settings > Storage (while it is connected).
+    private func inside(_ url: URL) -> Bool {
+        url.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/") || ExternalGameStorage.shared.admits(url)
+    }
 
     func list(_ folder: String) throws -> [BCDDriveItem] {
         let base = url(folder)
         guard folder.isEmpty || inside(base) else { throw BCDGameError("This folder is outside drive_c.") }
         let names: [URL]
-        do {
-            names = try FileManager.default.contentsOfDirectory(at: base, includingPropertiesForKeys: [.isDirectoryKey],
-                                                                options: .skipsHiddenFiles)
-        } catch {
-            throw BCDGameError("BCD couldn't open this folder.")
+        if let linked = ExternalGameStorage.shared.linkedChildren(of: base) {
+            names = linked       // the SSD folder, listed by path: the URL listing does not follow the C:\External link
+        } else {
+            do {
+                names = try FileManager.default.contentsOfDirectory(at: base, includingPropertiesForKeys: [.isDirectoryKey],
+                                                                    options: .skipsHiddenFiles)
+            } catch {
+                throw BCDGameError("BCD couldn't open this folder.")
+            }
         }
         var items: [BCDDriveItem] = []
         for file in names where inside(file) {

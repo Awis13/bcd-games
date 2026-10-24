@@ -1,0 +1,195 @@
+[19:26:08.444] [INFO] Checking entitlements...
+[19:26:08.445] [INFO] [build] v0.1.592 (592)
+[19:26:08.445] [INFO] [device] model=iPad17,3 idiom=pad os=iPadOS Version 27.0.1 (Build 24A446) ram=11443MB available=12267MB cores=9
+[19:26:08.445] [INFO] [device] address-map=[0x102750000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[19:26:08.464] [INFO] [device] gpu="Apple M5 GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[19:26:09.188] [INFO] [bcd] library launch Sekiro: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[19:26:09.189] [INFO] Requesting JIT with Built-in StikJIT...
+[19:26:11.408] [INFO] [dock-launch] image-retire=1
+[19:26:11.408] [INFO] [dock-launch] image-map-guard=1
+[19:26:11.414] [INFO] [dock-installers] app=814380 scripts=0 programs=0
+[19:26:11.415] [INFO] [madeira-dock] starting the host for app 814380; Valve's client authenticates and authorizes the launch
+[19:26:11.424] [INFO] Running full Wine sequence...
+[19:26:11.424] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102750000,0x8000000000) 512GB available=12247MB low-power=0 thermal=nominal
+[19:26:11.427] [INFO] Allocating 1152MB JIT pool (BRK will suspend process)...
+[19:26:11.427] [INFO] Allocating 1152MB JIT pool via debugger...
+[19:26:11.427] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[19:26:11.427] [INFO] [jit-debugger] attached=1 at the pool request
+[19:26:11.428] [ERR] ml1036: no hole fits a 1152MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[19:26:12.070] [INFO] RX pool at 0x148000000
+[19:26:12.084] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.699s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=11644 MB + phys_footprint=643 MB = 12288 MB (hw.memsize says 11443 MB)
+ml985: preferred base 0x140000000+0x70000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x70000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+[gdi-shared] session table 0x7025f50000 (1572864 bytes, section-backed, name=L"\\KernelObjects\\__wine_ios_gdi_shared")
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[footprint] rev=ml358 phys=655 MB (peak 655) internal=653 MB compressed=0 MB external=75 MB reusable=6 MB (cycle=1)
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #6 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  1.010s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x149a0e000)
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x149e28000)
+[file-wfail] ml669 #2 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.057s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x14ae70000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 122800000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[free-delay] #1 release of 0x702a5c0000+0x100000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x702a6c0000+0x200000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x702a8c0000+0x400000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x702acc0000+0x800000 held for 2000 ms (4 in flight)
+[file-wfail] ml669 #4 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[nt-fail] #1 NtAllocateVirtualMemory status=c000000d proc=dockhost.exe tid=0038 size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=1 rev=ajan5-rockstar
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x14ee8d000)
+[file-wfail] ml669 #6 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+[file-wfail] ml669 #9 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #10 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #11 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=1009 MB (peak 1009) internal=1007 MB compressed=0 MB external=145 MB reusable=6 MB (cycle=2)
+[footprint] rev=ml358 phys=1124 MB (peak 1124) internal=1122 MB compressed=0 MB external=149 MB reusable=6 MB (cycle=3)
+[file-wfail] ml669 #46 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #47 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=1139 MB (peak 1139) internal=1137 MB compressed=0 MB external=149 MB reusable=6 MB (cycle=4)
+[footprint] rev=ml358 phys=1129 MB (peak 1139) internal=1127 MB compressed=0 MB external=149 MB reusable=6 MB (cycle=5)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Sekiro\\sekiro.exe" t+  9.746s rev=ml526
+[session-log] Steam game sekiro.exe: logs/sekiro.exe-2026-10-23_19-26-21.txt
+[Wine child thread] calling wine_ios_child_main...
+ml985: map_image_view size=0x42d2000 base=0x140000000 info_base=0x140000000 map_addr=0 flags=0 charact=0x22 limits=0x10000..0x73fffeffff
+[nls-getptr] type=11 id=437 peb=0x117e70000
+[nls-getptr] type=11 id=20127 peb=0x117e70000
+[nls-getptr] type=11 id=1252 peb=0x117e70000
+[nls-getptr] type=11 id=437 peb=0x117e70000
+[copy-verify] winemetal.dll: OK, 2 .text pages executable (copy @0x15795a000)
+[file-wfail] ml669 #48 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[alloc-fail] ml814 #2 status=c0000018 hint=0x180000000 size=0x34000 type=0x2000 protect=0x4 tid=00ac | STAGE=fixed-map err=3 at 0x180000000+0x34000
+[nt-fail] #2 NtAllocateVirtualMemory status=c0000018 proc=sekiro.exe tid=00ac size=0x34000 type=0x2000 prot=0x4 hint=0x180000000 zb=0x0 hits=1 rev=ajan5-rockstar
+[free-delay] #5 release of 0x70329a0000+0x100000 held for 2000 ms (1 in flight)
+[copy-verify] steamclient64.dll: OK, 1102 .text pages executable (copy @0x15a3c7000)
+D AC Load module PSAPI.DLL (psapi.dll-d7e4f9fa39d6aaff): 71EF810000
+D AC Load module VERSION.dll (version.dll-f3f7d5759bd2c065): 71EF780000
+D AC Load module tier0_s64.dll (tier0_s64.dll-46fed3100444d04b): 71EF5E0000
+D AC Load module vstdlib_s64.dll (vstdlib_s64.dll-0805e0d24f89e963): 71EF510000
+D AC Load module MSWSOCK.dll (mswsock.dll-e1b26fc99ab81cd3): 71EF480000
+D AC Load module Secur32.dll (secur32.dll-f6ff7e0cf92170a6): 71EF3F0000
+[alloc-fail] ml814 #3 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00ac | STAGE=fixed-map err=3 at 0x73fff60000+0x90000
+[nt-fail] #3 NtAllocateVirtualMemory status=c000000d proc=sekiro.exe tid=00ac size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=1 rev=ajan5-rockstar
+[footprint] rev=ml358 phys=1444 MB (peak 1444) internal=1442 MB compressed=0 MB external=202 MB reusable=6 MB (cycle=6)
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[file-wfail] ml669 #49 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[free-delay] #6 release of 0x7032d00000+0x120000 held for 2000 ms (2 in flight)
+[footprint] rev=ml1060 fast phys=1445 MB compressed=0 MB
+[19:26:22.924] [INFO] [dock-report] launch-game-running=1
+[footprint] rev=ml1060 fast phys=1486 MB compressed=0 MB
+[nls-getptr] type=11 id=932 peb=0x117e70000
+[nls-getptr] type=11 id=932 peb=0x117e70000
+00ac:err:seh:call_seh_handlers [exc] ml811 code=e06d7363 addr=0000000156434110 flags=1 nparams=4 tid=00ac hit=1
+00ac:err:seh:call_seh_handlers [unwind-root] ml633 ACCEPTING terminal root frame 703b810000 (== stack hi) ControlPc=71f5662dd8 handler=00000071F5625388 — this is the unhandled-exception filter frame
+[store-noalias] #1 rev=ml348 addr=0x0 insn=0xf9400021 pc=0x16bff8574 NO pool/anon alias | region 0x102750000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=READ p1=0x0 hostpc=0x16bff8574 hinsn=0xf9400021 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x16bff8000 size=0x4000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x1423a6cc4 pc=0x16bff8574 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x16bff8574 addr=0x0 x18=0x0 type=1 lr=0x1423a6cbb sp=0x71f4d00000 x16=0x16bff8108 x17=0x1242a0000
+[guest-code] rev=ml333 pool_rip=0x153d9dcc4 (PE 0x1423a6cc4): 3f d2 72 c0 44 be 9a 72 f2 05 af 01 ec 2a c0 4a
+[av-args] rev=ajan3-dyinglight #1 NULL-class fault addr=0x0 at host pc=0x16bff8574; x86 registers that point at a module, an object with a vtable or text:
+[av-args]   R11=0x703b80e288 [R11]=NTC_win64_Master_Steam_WW_LTO.ex+0x23a6cbb
+[fault-host] 16bff8474: a9460f82 a9471784 a9485393 a9495b95 29426389 d53bd06b 927df16b f944856b
+[fault-host] 16bff8494: f94bc56b 3900057f d61f0140 d4400000 d4400000 d53b420a b9040b8a a9020388
+[fault-host] 16bff84b4: a9036f81 a9047797 a9056b99 a9060f82 a9071784 a9085393 a9095b95 29026389
+[fault-host] 16bff84d4: 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c d4400000 d53b420a b9040b8a
+[fault-host] 16bff84f4: a9020388 a9036f81 a9047797 a9056b99 a9060f82 a9071784 a9085393 a9095b95
+[fault-host] 16bff8514: 29026389 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c d4200000 d53b420a
+[mach_exc] insn_stream PC-12..PC+8: 4c9f2d48 4c9f2d4c 52800001 [f9400021] d53b420a b9040b8a a9020388
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fff00000 TEB=0x71fff00000 TEB[0x58]=0x702b399910 *(gs_cached+0x58)=0x702b399910
+[store-noalias] #2 rev=ml348 addr=0x0 insn=0xf9400021 pc=0x16bff8574 NO pool/anon alias | region 0x102750000+0x22a4000 prot=5 max=5 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=READ p1=0x0 hostpc=0x16bff8574 hinsn=0xf9400021 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x16bff8000 size=0x4000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x1423a6cc4 pc=0x16bff8574 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x16bff8574 addr=0x0 x18=0x0 type=1 lr=0x1423a6cbb sp=0x71f4d00000 x16=0x16bff8108 x17=0x1242a0000
+[guest-code] rev=ml333 pool_rip=0x153d9dcc4 (PE 0x1423a6cc4): 3f d2 72 c0 44 be 9a 72 f2 05 af 01 ec 2a c0 4a
+[fault-host] 16bff84d4: 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c d4400000 d53b420a b9040b8a
+[fault-host] 16bff84f4: a9020388 a9036f81 a9047797 a9056b99 a9060f82 a9071784 a9085393 a9095b95
+[fault-host] 16bff8514: 29026389 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c d4200000 d53b420a
+[fault-host] 16bff8534: b9040b8a a9020388 a9036f81 a9047797 a9056b99 a9060f82 a9071784 a9085393
+[fault-host] 16bff8554: a9095b95 29026389 9107038a 4c9f2d40 4c9f2d44 4c9f2d48 4c9f2d4c 52800001
+[fault-host] 16bff8574: f9400021 d53b420a b9040b8a a9020388 00000000 00000000 00000000 00000000
+[mach_exc] insn_stream PC-12..PC+8: 4c9f2d48 4c9f2d4c 52800001 [f9400021] d53b420a b9040b8a a9020388
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71fff00000 TEB=0x71fff00000 TEB[0x58]=0x702b399910 *(gs_cached+0x58)=0x702b399910
+00ac:err:seh:segv_handler   [guest-rip-sec] rip=0x1423a6cc4 in image 0x140000000: rva 0x23a6cc4, section #0 '.text' rva 0x1000+0x291bc47 chars 0x60000020 (R-X CODE), vprot=0x25
+00ac:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 RIP=0x16bff8574 RX from -32, 64 of 64 bytes: 95 5b 09 a9 89 63 02 29 8a 03 07 91 40 2d 9f 4c 44 2d 9f 4c 48 2d 9f 4c 4c 2d 9f 4c 01 00 80 52 21 00 40 f9 0a 42 3b d5 8a 0b 04 b9 88 03 02 a9 81 6f 03 a9 97 77 04 a9 99 6b 05 a9 82 0f 06 a9 
+00ac:err:seh:prepare_exception_arm64ec [guest-bytes] ml631 #1 no RW alias for 0x16bff8574 (not an anon-JIT page)
+00ac:err:seh:dispatch_exception [fast-fail] ml604 code=7 addr=00000001423A6CC4 — terminating this pseudo-process (fast-fail bypasses VEH/SEH on Windows; unwinding it stranded fls_section in ml603)
+00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000409) syscalls=0 unix_calls=9471
+[Wine ntdll/server] process_exit_wrapper(-1073740791): closing child fd_socket=436
+[Wine ntdll/server] process_exit_wrapper(-1073740791)
+[Wine child thread] child exited with code -1073740791
+[19:26:23.926] [INFO] [dock-game-end] sekiro.exe ended with status 0xc0000409; the session goes on for now (grace)
+[file-wfail] ml669 #50 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=1437 MB (peak 1444) internal=1435 MB compressed=0 MB external=202 MB reusable=6 MB (cycle=8)
+0050:err:module:load_dll [dll-missing] rev=ml336 #51 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #52 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #53 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #54 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[file-wfail] ml669 #51 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[hwinput] keyboard focus: program (responder)
+[footprint] rev=ml358 phys=1437 MB (peak 1444) internal=1435 MB compressed=0 MB external=203 MB reusable=6 MB (cycle=9)
+[free-delay] #7 release of 0x702fcf0000+0x120000 held for 2000 ms (1 in flight)
+[free-delay] #8 release of 0x7026610000+0x800000 held for 2000 ms (2 in flight)
+[19:26:30.083] [INFO] [dock-report] launch-game-ended=1
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=9850
+[footprint] rev=ml358 phys=1273 MB (peak 1444) internal=1271 MB compressed=0 MB external=199 MB reusable=6 MB (cycle=10)
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=9856
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=102
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=133
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0)
+[19:26:30.927] [INFO] [dock-report] probe-result=0
+[footprint] rev=ml358 phys=1261 MB (peak 1444) internal=1259 MB compressed=0 MB external=199 MB reusable=6 MB (cycle=11)
+[19:26:33.928] [INFO] [dock-game-end] sekiro.exe ended with status 0xc0000409 after 2 s, the host finished and nothing of the game runs: ending the session
+[WineProc] stopping wineserver...
+[19:26:34.429] [INFO] [exit-report] status=0xc0000409
+[frontend] returned to library
+[footprint] rev=ml358 phys=1279 MB (peak 1444) internal=1275 MB compressed=0 MB external=203 MB reusable=6 MB (cycle=12)
+[19:26:36.166] [INFO] Detaching debugger...
+[hwinput] keyboard focus: elsewhere (responder)
+[footprint] rev=ml358 phys=1275 MB (peak 1444) internal=1271 MB compressed=0 MB external=203 MB reusable=6 MB (cycle=13)

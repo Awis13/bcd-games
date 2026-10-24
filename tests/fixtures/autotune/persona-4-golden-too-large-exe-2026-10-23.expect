@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "exe-too-large-for-fixed-window"
+ ],
+ "next": [],
+ "note": "Persona 4 Golden (Steam 1113000, P4G.exe), build 592, iPhone14,3 (5.6 GB, full memory rights): the 888 MiB program with stripped relocations must load at 0x140000000; the free run there ends at the main thread's stack (697-763 MiB in nine of the ten logs) or at a malloc region (445 MiB, this one). Send Log 2AXZ1C, trimmed. Auto-tune says no setting helps (noFix).",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

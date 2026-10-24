@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "framegen-interpolator-assert"
+ ],
+ "next": [],
+ "note": "The driver variant of the same setup (build 592, iPhone18,3): a fault inside AGXMetalG18P (pc +0x50, address 0x248), then Metal's \"failed assertion commit command buffer with uncommitted encoder\" and BCD's abort 0x80000101, at the first present with the 5244x2412 drawable and the frame interpolator. Tester log AYMMDC, scrubbed.",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "known"
+}

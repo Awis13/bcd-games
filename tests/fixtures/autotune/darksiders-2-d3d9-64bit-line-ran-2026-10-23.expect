@@ -1,0 +1,14 @@
+{
+ "dialogs": [
+  "Could not initialize the graphics subsystem, probably because the resolution 1112 x 832 is not supported for fullscreen display."
+ ],
+ "end": {},
+ "matched": [
+  "d3d9-64bit-needs-opengl"
+ ],
+ "next": [],
+ "note": "Derived from darksiders-2-d3d9-64bit-2026-10-23 (Send Log 3F3TYX): the two lines a session with env.MADEIRA_D3D9_X64 = dxmt logs ([game-cfg] and the bridge's link line) are added, nothing else. Not a real log: what auto-tune says when the line is in force and the game still ends in Wine's Direct3D 9.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

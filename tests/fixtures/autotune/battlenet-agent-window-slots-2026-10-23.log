@@ -1,0 +1,89 @@
+[13:00:11.661] [INFO] [recs] in use: downloaded list v7 (2026-10-23), 78 rules, build 592
+[13:00:11.674] [INFO] [epic-install] start installed=0 refused=0
+[13:00:11.749] [INFO] [xinput] ml1920 physical controllers enabled=1
+[13:00:11.749] [INFO] [touch-xinput] ml1930 enabled=1
+[13:00:11.749] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[13:00:11.754] [INFO] [steam-library] start signed-in=1 cached=40
+[13:00:11.781] [INFO] [bcd-ui] shown games=44 downloads=0
+[13:00:11.781] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[13:00:11.781] [INFO] SIGTRAP handler installed (no debugger)
+[13:00:11.781] [INFO] Checking entitlements...
+[13:00:11.782] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[13:00:11.782] [OK]   increased-memory-limit: true
+[13:00:11.782] [OK]   extended-virtual-addressing: true
+[13:00:11.782] [OK]   increased-debugging-memory-limit: true
+[13:00:11.782] [INFO] [build] v0.1.592 (592)
+[13:00:11.782] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6637MB cores=6
+[13:00:11.782] [INFO] [device] address-map=[0x100fe0000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:00:11.783] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=355d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[13:00:11.783] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[13:00:11.802] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=+03:00 free-disk=112GB stikdebug-url=1
+[13:00:11.806] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[13:00:11.895] [INFO] [steam-games] installed=2 ready=2
+[13:00:11.927] [INFO] [epic-auth] start signed-in=1
+[13:00:11.927] [INFO] [epic-library] start cached=6 listed=4
+[13:00:11.927] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[13:00:11.936] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[13:00:14.832] [INFO] [bcd-ui] play desktop
+[13:00:14.833] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[13:00:14.833] [INFO] Requesting JIT with Built-in StikJIT...
+[13:00:14.886] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 10.7.1.1)
+[13:00:14.934] [INFO] [jit-helper] enable: started com.thebcd69.bcd.JITHelper as pid 33528
+[13:00:16.266] [OK] JIT enabled and debugger attached.
+[13:00:16.267] [OK] JIT enabled! Debugger attached.
+[13:00:16.268] [INFO] [jit-on-play] JIT is on: starting the game
+[13:00:16.272] [INFO] Session log: logs/explorer.exe-2026-10-23_13-00-16.txt
+[13:00:16.276] [INFO] [bcd] Desktop: its own settings file 52ec85264e0107b0.cfg
+[13:00:16.277] [INFO] [bcd] Desktop: section-backed GDI table for the 32-bit programs started here (MADEIRA_GDI_SHARED_SECTION=1; env.MADEIRA_GDI_SHARED_SECTION = 0 in its Game config turns it off)
+[13:00:16.289] [ERR] Session log: could not link logs/explorer.exe-2026-10-23_13-00-16.txt (“bcd-log.txt” couldn’t be linked to “logs” because an item with the same name already exists.)
+[13:00:16.291] [INFO] [bcd-ui] in-game=1
+[13:00:16.301] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+027c:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\ProgramData\\Battle.net\\Agent\\Agent.exe" cmdline=L"\"C:\\ProgramData\\Battle.net\\Agent\\Agent.exe\" --session=0"
+[phase] spawn:L"C:\\ProgramData\\Battle.net\\Agent\\Agent.exe" t+395.387s rev=ml526
+[runtime-info] ml663 parent-pre-serialise EMPTY (len=0) -> UCRT takes the GetStdHandle path
+[srv-own] receive_fd tid=027c pid=0250 client_fd=504 server_dup=505 kind=sock rev=ml586
+[srv-own] new_thread tid=06f8 pid=06f4 requester=027c request_unixfd=-1 rev=ml586
+027c:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\ProgramData\\Battle.net\\Agent\\Agent.exe\" --session=0" (fd=477, unixdir=489, dup_unixdir=515) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[Wine child thread] ENTRY: fd=506, argc=4, exe=wine
+[Wine child thread] calling wine_ios_child_main...
+[Wine child] wine_ios_child_main: argc=4 argv[1]=wine fd=506
+[x64-child] session: is_arm64ec=0 main_machine=0xaa64 current_machine=0xaa64 exe=wine
+[wow-window] B=0x7100000000 REJECTED: the 4GB range is not free (PARTIALLY OCCUPIED: free 0x7100000000..0x71f50a0000, then OCCUPIED 0x71f50a0000+0x10000 prot=1/3 shared=0 (0xaf60000 of the range is not free))
+[wow-window] B=0x7200000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7a00000000: window body after failed reservations (OCCUPIED 0x7a00000000+0x4000 prot=0/7 shared=0 (and the range continues past this region))
+[wow-window] B=0x7a00000000 REJECTED: 4GB+guard unavailable and the page at 0x7b00000000 is not an inaccessible neighbour (FREE: all 0x4000 bytes from 0x7b00000000 are free, next region 0x7c00000000 (+0xffffc000 past the end) <-- iOS REFUSED A FREE RANGE)
+[wow-window] B=0x7900000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7800000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7700000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[wow-window] B=0x7500000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[wow-window] B=0x7400000000 REJECTED: the 4GB range is not free (OCCUPIED 0x7400000000+0x4000 prot=0/7 shared=0 (and the range continues past this region))
+[Wine child] i386 image wine machine=0x14c window=0x0 reserve=0xc0000017
+no-teb:err:module:wine_ios_child_main [Wine child] i386 image wine machine=014c window=0x0 reserve=c0000017
+[Wine child] BOOT FAILED at stage 'guest-window-reserve': guest window reserve returned 0xc0000017 — a 32-bit child cannot start without one (the furniture band holds very few 4GB-aligned slots; see [wow-window] lines above)
+no-teb:err:module:wine_ios_child_main [Wine child] boot FAILED at stage 'guest-window-reserve' for wine: guest window reserve returned 0xc0000017 — a 32-bit child cannot start without one (the furniture band holds very few 4GB-aligned slots; see [wow-window] lines above)
+[Wine child thread] wine_ios_child_main returned unexpectedly!
+[child-boot-fail] boot failed at 'guest-window-reserve' before the server knew the process: closing its server socket so waiters see it exit
+[Wine child thread] thread exiting cleanly
+[srv-own] read_request EOF tid=06f8 pid=06f4 request_unixfd=504 -> kill_thread rev=ml586
+[srv-kill] kill_thread tid=06f8 pid=06f4 violent=0 rev=ml586
+[phase] spawn:L"C:\\ProgramData\\Battle.net\\Agent\\Agent.exe" t+472.982s rev=ml526
+[wow-window] B=0x7100000000 REJECTED: the 4GB range is not free (PARTIALLY OCCUPIED: free 0x7100000000..0x71f50a0000, then OCCUPIED 0x71f50a0000+0x10000 prot=1/3 shared=0 (0xaf60000 of the range is not free))
+[wow-window] B=0x7200000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7a00000000: window body after failed reservations (OCCUPIED 0x7a00000000+0x4000 prot=0/7 shared=0 (and the range continues past this region))
+[wow-window] B=0x7a00000000 REJECTED: 4GB+guard unavailable and the page at 0x7b00000000 is not an inaccessible neighbour (FREE: all 0x4000 bytes from 0x7b00000000 are free, next region 0x7c00000000 (+0xffffc000 past the end) <-- iOS REFUSED A FREE RANGE)
+[wow-window] B=0x7900000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7800000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7700000000 REJECTED: the slot is in use by a running 32-bit process
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[wow-window] B=0x7500000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[wow-window] B=0x7400000000 REJECTED: the 4GB range is not free (OCCUPIED 0x7400000000+0x4000 prot=0/7 shared=0 (and the range continues past this region))
+[Wine child] BOOT FAILED at stage 'guest-window-reserve': guest window reserve returned 0xc0000017 — a 32-bit child cannot start without one (the furniture band holds very few 4GB-aligned slots; see [wow-window] lines above)
+no-teb:err:module:wine_ios_child_main [Wine child] boot FAILED at stage 'guest-window-reserve' for wine: guest window reserve returned 0xc0000017 — a 32-bit child cannot start without one (the furniture band holds very few 4GB-aligned slots; see [wow-window] lines above)
+[redeliv] 2000 identical redeliveries pc=0x14f012360 addr=0x77065cf8f8 — unrecoverable host fault misdelivered to guest rev=ml461
+[redeliv-mem] x0=0x77065cf950: <unmapped>
+[redeliv-mem] x8=0x65cf900: <unmapped>
+[redeliv-mem] x9=0x77065cf950: <unmapped>
+[redeliv-mem] x16=0x1508cd0d4: d65f03c0d63f0200 0000000150928bc8 aa1e03e9d28004c8 f940021058000090 d65f03c0d63f0200 0000000150928bc8 aa1e03e9d28004e8 f940021058000090
+[redeliv-mem] x19=0x703d02dac0: 00000010c0000005 f7a7a36000000000 0000000100000002 00000070065cf8f8 0000000150906d00 0000000150906cb0 00000001508cf654 000100702c3c1410
+[redeliv] terminating process rev=ml465

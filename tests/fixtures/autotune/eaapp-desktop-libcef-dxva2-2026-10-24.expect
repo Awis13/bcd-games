@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "eaapp-desktop-libcef-dxva2",
+  "dxva2-dll-optin"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = msi,mspatcha,odbccp32,sxs,rstrtmgr,dxva2"
+ ],
+ "note": "The EA app's Launch (the owner's iPhone18,2, build 598): EADesktop.exe stopped at once with c0000135 and left the empty Wine desktop: its 64-bit libcef.dll imports dxva2.dll, which the 64-bit set ships only as dxva2-optin.dll. eaapp-desktop-libcef-dxva2 proposes the EA entry's whole DLL line with dxva2 (build 599's launcher entry carries it); the generic dxva2-dll-optin matches too but comes after it.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

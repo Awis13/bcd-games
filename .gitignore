@@ -175,6 +175,9 @@ app/Madeira/arm64ec-windows/kernelbase-fibertrace.dll
 # tools/build-wine-extra-dlls.sh output (the shipped setupapi.dll with a lock round its device node table,
 # env.MADEIRA_OPTIN_DLLS = setupapi), built in CI
 app/Madeira/arm64ec-windows/setupapi-optin.dll
+# tools/build-wine-extra-dlls.sh output (Wine's ntdll with the executable section views and two code-probe recoveries,
+# env.MADEIRA_NTDLL_XSEC = 1; thebcd69/bcd-games#4 by mckenna654), built in CI next to the shipped ntdll.dll
+app/Madeira/arm64ec-windows/ntdll-xsec.dll
 # tools/build-dxmt-nvapi.sh output, built in CI
 build/dxmt-nvapi/
 app/Madeira/arm64ec-windows/nvapi64.dll
@@ -184,6 +187,9 @@ app/Madeira/arm64ec-windows/dxgi-src.dll
 # tools/build-d3d11-dll.sh output (DXMT d3d11.dll from source, SwapDeviceContextState), built in CI
 build/dxmt-d3d11/
 app/Madeira/arm64ec-windows/d3d11-src.dll
+# DXMT's Direct3D 9 for 64-bit games (tools/build-d3d9-x64-dll.sh), opt-in with env.MADEIRA_D3D9_X64 = dxmt.
+build/dxmt-d3d9-x64/
+app/Madeira/arm64ec-windows/d3d9-dxmt.dll
 __pycache__/
 # The i386 farm (32-bit Wine + DXMT DLLs) is built from the pinned submodules by
 # build/wine-i386/build.sh (docs/WOW64.md section 9); it is not committed.
@@ -205,3 +211,6 @@ build-out/altsource/
 # BCD Host (Epic Games signed-in start): built from bcd-host/ by build/bcd-host/build.sh
 app/Madeira/arm64ec-windows/bcdhost.exe
 bcd-host/out/
+
+# BCD's Direct3D test programs: the offline shader compiler and what tools/build-dx-tests.sh builds
+build/dx-tests/

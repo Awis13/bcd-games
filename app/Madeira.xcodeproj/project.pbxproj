@@ -86,6 +86,12 @@
 		A1000F52 /* BCDEpic/BCDEpicCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F52 /* BCDEpicCredentials.swift */; };
 		A1000F53 /* BCDEpic/BCDEpicAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F53 /* BCDEpicAudit.swift */; };
 		A1000F54 /* BCDEpic/BCDEpicStart.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F54 /* BCDEpicStart.swift */; };
+		A1000FB5 /* BCDGeckoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FB5 /* BCDGeckoSection.swift */; };
+		A1000FB4 /* BCDGecko.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FB4 /* BCDGecko.swift */; };
+		A1000FB3 /* BCDLaunchersLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FB3 /* BCDLaunchersLive.swift */; };
+		A1000FB2 /* BCDLauncherDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FB2 /* BCDLauncherDownload.swift */; };
+		A1000FB1 /* BCDLauncherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FB1 /* BCDLauncherView.swift */; };
+		A1000FB0 /* BCDLaunchers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FB0 /* BCDLaunchers.swift */; };
 		A1000F55 /* BCDAsk.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F55 /* BCDAsk.swift */; };
 		A100060B /* SwiftSteam/Content/DepotManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200060B /* DepotManifest.swift */; };
 		A100060E /* SwiftSteam/Install/AppManifestWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200060E /* AppManifestWriter.swift */; };
@@ -239,6 +245,9 @@
 		A1000FE0 /* FeedbackUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FE0 /* FeedbackUpload.swift */; };
 		A1000FE1 /* FeedbackUploadCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000FE1 /* FeedbackUploadCore.swift */; };
 		A1000B01 /* BCDCab.c in Sources */ = {isa = PBXBuildFile; fileRef = A2000B01 /* BCDCab.c */; };
+		A10013C1 /* BCDStartMenu.c in Sources */ = {isa = PBXBuildFile; fileRef = A20013C1 /* BCDStartMenu.c */; };
+		A10013C3 /* BCDOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013C3 /* BCDOrientation.swift */; };
+		A10013C4 /* BCDOrientationLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013C4 /* BCDOrientationLive.swift */; };
 		A1000B03 /* VCRuntimeDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000B03 /* VCRuntimeDownload.swift */; };
 		A1000913 /* DockReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000913 /* DockReset.swift */; };
 		A1000F90 /* DockGameEnd.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000F90 /* DockGameEnd.swift */; };
@@ -385,6 +394,12 @@
 		A2000F52 /* BCDEpicCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BCDEpic/BCDEpicCredentials.swift"; sourceTree = "<group>"; };
 		A2000F53 /* BCDEpicAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BCDEpic/BCDEpicAudit.swift"; sourceTree = "<group>"; };
 		A2000F54 /* BCDEpicStart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BCDEpic/BCDEpicStart.swift"; sourceTree = "<group>"; };
+		A2000FB5 /* BCDGeckoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDGeckoSection.swift; sourceTree = "<group>"; };
+		A2000FB4 /* BCDGecko.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDGecko.swift; sourceTree = "<group>"; };
+		A2000FB3 /* BCDLaunchersLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLaunchersLive.swift; sourceTree = "<group>"; };
+		A2000FB2 /* BCDLauncherDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLauncherDownload.swift; sourceTree = "<group>"; };
+		A2000FB1 /* BCDLauncherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLauncherView.swift; sourceTree = "<group>"; };
+		A2000FB0 /* BCDLaunchers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDLaunchers.swift; sourceTree = "<group>"; };
 		A2000F55 /* BCDAsk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDAsk.swift; sourceTree = "<group>"; };
 		A200060B /* DepotManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftSteam/Content/DepotManifest.swift"; sourceTree = "<group>"; };
 		A200060E /* AppManifestWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftSteam/Install/AppManifestWriter.swift"; sourceTree = "<group>"; };
@@ -555,6 +570,10 @@
 		A2000FE1 /* FeedbackUploadCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackUploadCore.swift; sourceTree = "<group>"; };
 		A2000B01 /* BCDCab.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BCDCab.c; sourceTree = "<group>"; };
 		A2000B02 /* BCDCab.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BCDCab.h; sourceTree = "<group>"; };
+		A20013C1 /* BCDStartMenu.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BCDStartMenu.c; sourceTree = "<group>"; };
+		A20013C2 /* BCDStartMenu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BCDStartMenu.h; sourceTree = "<group>"; };
+		A20013C3 /* BCDOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDOrientation.swift; sourceTree = "<group>"; };
+		A20013C4 /* BCDOrientationLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BCDOrientationLive.swift; sourceTree = "<group>"; };
 		A2000B03 /* VCRuntimeDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VCRuntimeDownload.swift; sourceTree = "<group>"; };
 		A2000913 /* DockReset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockReset.swift; sourceTree = "<group>"; };
 		A2000F90 /* DockGameEnd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockGameEnd.swift; sourceTree = "<group>"; };
@@ -696,6 +715,10 @@
 				A2000B03 /* VCRuntimeDownload.swift */,
 				A2000B01 /* BCDCab.c */,
 				A2000B02 /* BCDCab.h */,
+				A20013C1 /* BCDStartMenu.c */,
+				A20013C2 /* BCDStartMenu.h */,
+				A20013C3 /* BCDOrientation.swift */,
+				A20013C4 /* BCDOrientationLive.swift */,
 				A2000602 /* SteamDownloadBackground.swift */,
 				A2000600 /* SteamInstall.swift */,
 				A2000609 /* ContentDecryptor.swift */,
@@ -737,6 +760,12 @@
 				A2000F52 /* BCDEpicCredentials.swift */,
 				A2000F53 /* BCDEpicAudit.swift */,
 				A2000F54 /* BCDEpicStart.swift */,
+				A2000FB5 /* BCDGeckoSection.swift */,
+				A2000FB4 /* BCDGecko.swift */,
+				A2000FB3 /* BCDLaunchersLive.swift */,
+				A2000FB2 /* BCDLauncherDownload.swift */,
+				A2000FB1 /* BCDLauncherView.swift */,
+				A2000FB0 /* BCDLaunchers.swift */,
 				A200060B /* DepotManifest.swift */,
 				A200060E /* AppManifestWriter.swift */,
 				A200060F /* chunk_zip.c */,
@@ -1173,6 +1202,9 @@
 				A1000711 /* WineMono.swift in Sources */,
 				A1000B03 /* VCRuntimeDownload.swift in Sources */,
 				A1000B01 /* BCDCab.c in Sources */,
+				A10013C1 /* BCDStartMenu.c in Sources */,
+				A10013C3 /* BCDOrientation.swift in Sources */,
+				A10013C4 /* BCDOrientationLive.swift in Sources */,
 				A1000602 /* SteamDownloadBackground.swift in Sources */,
 				A1000600 /* SteamInstall.swift in Sources */,
 				A1000609 /* SwiftSteam/Content/ContentDecryptor.swift in Sources */,
@@ -1214,6 +1246,12 @@
 				A1000F52 /* BCDEpic/BCDEpicCredentials.swift in Sources */,
 				A1000F53 /* BCDEpic/BCDEpicAudit.swift in Sources */,
 				A1000F54 /* BCDEpic/BCDEpicStart.swift in Sources */,
+				A1000FB5 /* BCDGeckoSection.swift in Sources */,
+				A1000FB4 /* BCDGecko.swift in Sources */,
+				A1000FB3 /* BCDLaunchersLive.swift in Sources */,
+				A1000FB2 /* BCDLauncherDownload.swift in Sources */,
+				A1000FB1 /* BCDLauncherView.swift in Sources */,
+				A1000FB0 /* BCDLaunchers.swift in Sources */,
 				A100060B /* SwiftSteam/Content/DepotManifest.swift in Sources */,
 				A100060E /* SwiftSteam/Install/AppManifestWriter.swift in Sources */,
 				A100060F /* SwiftSteam/chunk_zip.c in Sources */,

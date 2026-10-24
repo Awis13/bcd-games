@@ -1,0 +1,24 @@
+[13:44:24.669] [INFO] [recs] in use: downloaded list v7 (2026-10-23), 78 rules, build 592
+[13:44:24.792] [INFO] [build] v0.1.592 (592)
+[13:44:24.792] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8173MB cores=6
+[13:44:24.792] [INFO] [device] address-map=[0x104404000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:44:24.793] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=354d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[13:44:24.814] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[phase] wine-start             t+  0.593s rev=ml526
+[wow-window] slot 1 B=0x7200000000 bound to peb=0x7200310000
+[mach_exc] sym pc=/usr/lib/system/libsystem_platform.dylib`_platform_memmove+0x1bc lr=Madeira.app/Madeira`NtReadVirtualMemory+0xf4
+00b0:err:seh:bus_handler BUS #2: pc=0x1a596015c addr=0x7203a00000 x16=0x1a595ffa0 x17=0x2022fb2e0 x18=0x0 lr=0x1055c97d8 insn=0x38401426 branch@lr-4=0x94309634
+00b0:err:seh:bus_handler [bus-rgn] si_code=1 addr=0x7203a00000 pc=0x1a596015c pc_in_pool=0 readable=0
+00b0:err:seh:bus_handler [bus-rgn]   region=0x7203a00000+0x8000 prot=0 max=7 share_mode=2 user_tag=0
+00b0:err:seh:bus_handler [bus-rgn]   OWNER extpager=0 resident=0 swapped=0 dirtied=0 reusable=0 refcnt=1 shadow=0  purgeable=not-purgeable(0x0) rev=ml560
+00b0:err:seh:bus_handler [bus-rgn]   VERDICT <== ANONYMOUS, NEVER RESIDENT — never materialised rev=ml560
+00b0:err:seh:bus_handler [bus-rgn]   PROVENANCE NO file mapping covers this address (anonymous — EOF/backing story does NOT apply) rev=ml561
+00b0:err:seh:bus_handler [bus-rgn]   PAGE-CENSUS 16KB pages from 0x7203a00000: [XX]  ('.'=materialises 'X'=fails; fault is at +0x0) rev=ml561
+[fault-rgn] addr=0x7203a00000 page=0x7203a00000 vprot prev/this/next=23/00/33 region=unknown/foreign
+[fault-rgn]   IN WINE VIEW base=0x7203a00000 size=0x800000 protect=0x23 off=0x0 end=0x7204200000
+00b0:err:seh:bus_handler BUS->AV: unreadable target addr=0x7203a00000 pc=0x1a596015c rw=0 rev=ml420
+00b0:err:seh:bus_handler BUS at pc=0x1a596015c addr=0x7203a00000 exec=0 (#2, sampled) rev=ml345
+[exc-disp] raise tid=00b0 code=c0000005 flags=0 addr=0x1a596015c pc=1a596015c nparams=2 p0=0 p1=7203a00000
+00b0:err:seh:call_seh_handlers invalid frame 12527fbd0 (0000000127808000-0000000127FFFD20)
+00b0:err:seh:NtRaiseException Exception frame is not in stack limits => unable to dispatch exception.
+00b0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x2527fb40) syscalls=0 unix_calls=3869

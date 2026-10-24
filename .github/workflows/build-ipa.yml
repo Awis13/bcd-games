@@ -88,6 +88,33 @@ jobs:
       - name: Check auto-tune
         run: python3 tests/host/check-autotune.py --require-swift
 
+      # GTA V Legacy's GPU reset at the first scene frame (tester logs 574-592, the owner's build 546 start): auto-tune
+      # adds env.MADEIRA_DXMT_FAULT_INFO = 1, the one line the owner's build 547 start differed by, after that failure only.
+      - name: Check GTA V Legacy GPU reset rule
+        run: python3 tests/host/check-gta5l-gpu-reset.py
+
+      # The Wine desktop's Start menu (BCDStartMenu.c, WineProcessBridge.m): an Explorer entry and a test program for each of
+      # Direct3D 9, 10, 11 and 12, as shortcut files in the prefix's public Start Menu. The bytes are read back by a port
+      # of Wine's own shell link loader, by an independent [MS-SHLLINK] reader and by Wine's winedump; the install writes
+      # only when a file is missing or BCD's own and outdated, never over a person's file, and only in a desktop session.
+      - name: Check the Start menu entries
+        run: python3 tests/host/check-bcd-startmenu.py
+
+      # BCD's Direct3D 9, 10, 11 and 12 test programs (tests/dxtests, madeira-d3d12/tests/windows/cube_window.c): shaders
+      # (DXBC made offline from cube.hlsl), sources, window handling, the tracked binaries and where they ship.
+      - name: Check the DirectX test programs
+        run: python3 tests/host/check-dx-tests.py
+
+      # Opt-in screen orientation lock for a game's session (BCDOrientation.swift): Settings › Graphics and a game's page
+      # choose "follow the device" (the default, today's behaviour), landscape or a landscape side; the game's own choice wins.
+      # The rule is run on the host, the UIKit part is type-checked against the iOS SDK, and off is shown to change nothing.
+      - name: Check the screen orientation lock
+        run: python3 tests/host/check-bcd-orientation.py
+
+      # A Done button on the keyboard where config lines and long text are typed (BCDKeyboardDone): every editor has one.
+      - name: Check the keyboard's Done button
+        run: python3 tests/host/check-bcd-keyboard-done.py
+
       # What the classic interface did for a person, kept in BCD's (parity audit, 2026-10-18):
       # its alerts reach BCD's interface, background downloads, the Downloads tab's buttons,
       # links, no classic-only place in messages, no "Madeira" in what a person reads.
@@ -210,6 +237,49 @@ jobs:
       - name: Check BCD's library and Add a game
         run: python3 tests/host/check-bcd-library.py --require-swift
 
+      # The graphics API the library shows (Library.swift apiNames, the scanner's dynamicAPIs, and from 2026-10-24 folderAPIs:
+      # Unity's UnityPlayer.dll, the Agility SDK's D3D12Core.dll and the DXIL DLLs beside a program whose imports name none).
+      - name: Check the library's graphics API detection
+        run: python3 tests/host/check-library-api.py
+
+      # The EA app installer's MSI package (build 593, log 17:15:17): its first custom action ran in rundll32 and asked msiexec's
+      # custom action server over a pipe; the server's first answer reached a running thread, no waiting thread could take it and BCD's
+      # own Windows server dropped it (JunoInitializeSession 1603). env.MADEIRA_APC_BUSY_QUEUE = 1 keeps it on its thread: the real
+      # server functions next to the original ones (off: byte for byte the same), the EA entry's line, auto-tune's rule and fixture.
+      - name: Check an async I/O completion kept for a busy thread (EA app installer)
+        run: python3 tests/host/check-apc-busy-queue.py
+
+      # Control and Slay the Spire 2 (logs X49WBQ, GZFVM3): a crash in RtlRunOnceComplete's walk of an InitOnce's waiters, because a
+      # NULL keyed-event handle was the first pseudo-process's global in a child. env.MADEIRA_KEYED_EVENT_PER_PROCESS = 1 gives each
+      # child its own: the Wine fork's two calls, the header's table over every case (off: the session's handle), the child boot hook,
+      # auto-tune's rule and its two fixtures.
+      - name: Check a child process's own keyed event (Control, RunOnce)
+        run: python3 tests/host/check-keyed-event-per-process.py
+
+      # env.MADEIRA_ZERO_MITIGATION_POLICY (Glyphica: Typing Survival, ChakraCore's fail-fast over an unwritten CFG policy): the Wine fork's
+      # kernelbase GetProcessMitigationPolicy compiled on the host and run over every value of the switch (off: untouched; 1: zeroed, 1 to 16
+      # bytes), the game's list line (build 600), the list policy, auto-tune's rule and its fixture, the catalog.
+      - name: Check Wine's zeroed mitigation policy (Glyphica, ChakraCore)
+        run: python3 tests/host/check-zero-mitigation-policy.py
+
+      # PC launchers in the Library (Battle.net, EA app: BCDLaunchers.swift, BCDLauncherDownload.swift, BCDLaunchersLive.swift) and
+      # Wine Gecko for their installers (BCDGecko.swift): the installer addresses and hosts, the "installed" detection, the start
+      # on its own (no explorer), the download served from a URLProtocol, Gecko's SHA-256 values against addons.c.
+      # A game's session without BCD's fixed Steam identity (env.MADEIRA_STEAM_IDENTITY = none, WineProcessBridge.m): the bridge's
+      # real block compiled and run in every case, the list policy, the catalog, the auto-tune rule for Rockstar's launcher from Epic.
+      - name: Check the no-Steam-identity switch
+        run: python3 tests/host/check-steam-identity.py
+
+      - name: Check BCD's launchers and Wine Gecko
+        run: python3 tests/host/check-bcd-launchers.py --require-swift
+
+      # ajan32/ea-cef (2026-10-24): the EA app's Chromium (EADesktop.exe, CEF 109) in one process with its four 16 GB PartitionAlloc
+      # pools in the four slots of layout 2's band, only with env.MADEIRA_EA_CEF = 1 (the EA launcher entry's lines): the five gated hook
+      # lines in virtual_ios.c, the production routing compiled against a model of the band (restart, blocked slot, second browser),
+      # the soft-grant loop against the original (switch off = the old grants), the spawn gate and the command line.
+      - name: Check the EA app's Chromium
+        run: python3 tests/host/check-ea-cef.py
+
       # BCD's menus (BCDMenu.swift): a game's menu on a long press or X (Play or Install, Game
       # page, Uninstall or Remove after a question), the Library's sort menu, the controller layer.
       - name: Check BCD's menus
@@ -237,6 +307,14 @@ jobs:
       # for word, every catalog key, and the classic settings kept reachable.
       - name: Check BCD's Settings
         run: python3 tests/host/check-bcd-settings.py
+
+      # Games on a USB-C SSD (Settings > Storage > External SSD, C:\External; docs/EXTERNAL-STORAGE.md; based on
+      # thebcd69/bcd-games#12 by Pardoxum). Opt-in by use: until a folder is chosen restore() is one UserDefaults read
+      # and every hook in the library keeps its original test first (compiled against the original scanner on real
+      # folders); then the reconnect without the picker, stale and damaged bookmarks, containment, and that no user
+      # file is deleted or overwritten. Needs macOS Foundation and swift (bookmarks, links, real folders).
+      - name: Check games on an external SSD (opt-in by use, reconnect, safety)
+        run: python3 tests/host/check-external-storage.py --require-swift
 
       # BCD's controller hub (BCDControllerHub.swift, written clean-room from
       # docs/clean-room/controller-hub-spec.md): the mapping's sectors, keys, order, triggers and
@@ -563,6 +641,14 @@ jobs:
       - name: Patch wine with the guest file trace
         run: python3 tools/patch-wine-file-trace.py wine/dlls/ntdll/unix/file.c
 
+      # A file opened as \??\GLOBALROOT\??\C:\... (or \DosDevices\GLOBALROOT\??\C:\...) failed with "path not found"; the DOS path
+      # behind the wrapper now reaches the drive resolver. Only names that failed before change (iOS only).
+      # Based on thebcd69/bcd-games#16 by le0-VV.
+      - name: Check and patch GLOBALROOT DOS paths
+        run: |
+          python3 tests/host/check-globalroot.py
+          python3 tools/patch-wine-globalroot.py wine/dlls/ntdll/unix/file.c
+
       - name: Check and patch opt-in app-local DLL reads
         run: |
           python3 tests/host/check-app-local-dll.py
@@ -868,6 +954,21 @@ jobs:
       - name: Check the opt-in D3D12 pipeline library
         run: python3 tests/host/check-d3d12-pipeline-library.py
 
+      # madeira-bcd (round 2026-10-24): d3d12-pso-cached-blob = 1 (opt-in): ID3D12PipelineState::GetCachedBlob answers a
+      # 16-byte blob instead of E_NOTIMPL (Resident Evil Requiem's demo ends in its fatal-error dialog right after the call).
+      - name: Check the opt-in D3D12 pipeline cached blob
+        run: python3 tests/host/check-d3d12-pso-cached-blob.py
+
+      # madeira-bcd (round 2026-10-24): wow64win passes a class atom (CreateWindowEx's class, UNICODE_STRING.Buffer, CREATESTRUCT.lpszClass)
+      # through as an atom instead of adding the guest window base to it (Bioshock Remastered and LEGO Batman 2 died in their first window).
+      - name: Check that wow64win keeps a class atom an atom
+        run: python3 tests/host/check-wow64win-atoms.py
+
+      # madeira-bcd (round 2026-10-24): env.BCD_EPIC_HOST_START = 1 (opt-in): an Epic game's signed-in start keeps BCD Host as its first program
+      # (builds 590-597 set it and applyEnvironment's second configureLaunch put the game's own program back: the host never ran).
+      - name: Check the opt-in Epic host start
+        run: python3 tests/host/check-epic-host-hold.py
+
       # madeira-bcd (round 578): the runtime names a texture view Metal would refuse ([mip0-view]; Miles Morales'
       # level-1 UAV on a MipLevels 0 texture, builds 574/576); the fix itself is mip0-full = 1.
       - name: Check the mip0-view diagnostic
@@ -1027,6 +1128,21 @@ jobs:
       - name: Build d3d11-src.dll (DXMT d3d11 from source, SwapDeviceContextState)
         continue-on-error: true
         run: bash tools/build-d3d11-dll.sh
+
+      # madeira-bcd: DXMT's Direct3D 9 for 64-bit games (env.MADEIRA_D3D9_X64 = dxmt, off by default): the wiring, the opt-in
+      # gates, the list entry and the auto-tune rules, and (with the toolchain, as here) a compile and link of the arm64ec DLL
+      # into a scratch directory that proves the script writes d3d9-dxmt.dll and nothing else.
+      - name: Check the opt-in 64-bit Direct3D 9 (DXMT)
+        env:
+          MINGW: ${{ github.workspace }}/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin
+        run: python3 tests/host/check-d3d9-x64.py
+
+      # The 64-bit guest fault report of d3d9-dxmt.dll ("[fault-dump]", Darksiders II's crash after its intro video): the portable
+      # core against fake memory laid out like the crash, the glue for arm64ec, and that nothing but the ARM64EC d3d9 build compiles it.
+      - name: Check the 64-bit fault report (d3d9-dxmt.dll)
+        env:
+          MINGW: ${{ github.workspace }}/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin
+        run: python3 tests/host/check-d3d9-fault-dump.py
 
       # The Xcode project links 7 archives out of FEX/build-ios/ -- FEXCore,
       # FEXCore_Base, JemallocLibs plus the External deps. Nothing built them
@@ -1569,6 +1685,15 @@ jobs:
       - name: Patch airconv geometry shader input system values
         run: python3 tools/patch-airconv-gs-input-siv.py
 
+      # A geometry shader that declares its instance id (dcl_input vGSInstanceID, a Shader Model 5 [instance(N)] shader) aborted the game
+      # (assert in handle_signature_gs, exit 0x80000101): ROBOBEAT, about 8 s into its start. The converter already does the rest of
+      # geometry shader instancing; only the declaration is let through. Only shaders that aborted before change. Native only.
+      - name: Check airconv geometry shader instance id
+        run: python3 tests/host/check-airconv-gs-instance-id.py
+
+      - name: Patch airconv geometry shader instance id
+        run: python3 tools/patch-airconv-gs-instance-id.py
+
       # Same investigation, native winemetal, all OFF by default:
       # MADEIRA_GPU_TRACE=<s> (one frame's encoders + float-target values,
       # [gpu-trace] / [gpu-val] / [rb-src]), MADEIRA_RP_LOAD=1 (no DontCare
@@ -1681,6 +1806,37 @@ jobs:
       - name: Put back the files patched for the i386 farm only (x64 machine answer)
         if: always()
         run: git -C wine checkout -- dlls/ntdll/env.c dlls/kernelbase/process.c
+
+      # madeira-bcd: DXMT's Direct3D 9 frontend compiled for arm64ec (tools/build-d3d9-x64-dll.sh), shipped as
+      # arm64ec-windows/d3d9-dxmt.dll NEXT TO Wine's d3d9.dll, which stays the default: a 64-bit game gets it as its d3d9.dll only
+      # with env.MADEIRA_D3D9_X64 = dxmt (WineProcessBridge.m). Here, after every DXMT patch step and the i386 farm, so the
+      # sources are the tree d3d9-emulated.dll was built from; outside the i386 farm's cache key (no tools/patch-dxmt-*.py,
+      # tools/patch-wine-*.py or build/wine-i386/build.sh changed for it). Nothing that ships today may change: the step hashes the
+      # d3d9, d3d11, dxgi, d3d10core and winemetal DLLs of both farms before and after and fails if one differs. A failure only
+      # warns: nothing is shipped and Wine's d3d9.dll goes out alone, as before.
+      - name: Build d3d9-dxmt.dll (DXMT Direct3D 9 for 64-bit games, arm64ec)
+        continue-on-error: true
+        shell: bash
+        run: |
+          shipped() {
+            for f in app/Madeira/arm64ec-windows/{d3d9,d3d11,dxgi,d3d10core,winemetal}.dll \
+                     app/Madeira/i386-windows/{d3d9,d3d9shim,d3d9-emulated,d3d11,dxgi,d3d10core,winemetal}.dll; do
+              [ -f "$f" ] && shasum -a 256 "$f"
+            done
+            return 0
+          }
+          T="$(mktemp -d)"
+          shipped > "$T/before"
+          rc=0
+          bash tools/build-d3d9-x64-dll.sh || rc=$?
+          shipped > "$T/after"
+          if ! cmp -s "$T/before" "$T/after"; then
+            echo "::error::a shipped Direct3D / DXGI / winemetal DLL changed while d3d9-dxmt.dll was built:"
+            diff "$T/before" "$T/after" || true
+            exit 1
+          fi
+          echo "::notice::the $(wc -l < "$T/before" | tr -d ' ') shipped d3d9, d3d11, dxgi, d3d10core and winemetal DLLs are byte for byte what they were before d3d9-dxmt.dll was built"
+          exit "$rc"
 
       # madeira-bcd FORK-ONLY (owner's decision, 2026-10-11): never part of a pull request to
       # upstream. The D3D9 (i386, into the farm above, after its cache is saved) and D3D11
@@ -1840,6 +1996,9 @@ jobs:
       - name: Check the build 591 engine fixes
         run: |
           python3 tests/host/check-fault-guard-rate.py
+          python3 tests/host/check-fault-guard-guest-rip.py
+          python3 tests/host/check-recovery-log-sample.py
+          python3 tests/host/check-pool-split-retry.py
           python3 tests/host/check-user-va-gb.py
           python3 tests/host/check-create-view-conflict.py
           python3 tests/host/check-anon-cas-flush.py
@@ -1958,6 +2117,14 @@ jobs:
         run: |
           python3 tests/host/check-wow-null-diag.py
           python3 tests/host/check-tls-clear-process.py
+
+      # ajan11-wow64stack: a dead 32-bit thread's stack is released in ITS window (virtual_free_teb handed it to the next exiting
+      # thread, of another process, and the release landed on that process's live stack: Battle.net's network-service helper), and a
+      # storm in a child Windows process ends that process only, not the app (MADEIRA_REDELIV_CHILD_ONLY=0 = the old ending); a
+      # protection fault (SIGBUS) inside a system call's __TRY (the EA installer's ReadProcessMemory probe of its own stack) fails the call.
+      # Compiled runs against fakes (macOS/Linux); the four changed files are also compiled for iOS when the wine headers exist.
+      - name: Check the dead-thread stack release, the child-process storm ending and the system-call fault
+        run: python3 tests/host/check-wow-stack-storm.py
 
       # madeira-bcd: kernelbase-fibertrace.dll (env.MADEIRA_FIBER_TRACE): the fiber calls logged.
       - name: Check kernelbase fiber trace
@@ -2092,10 +2259,30 @@ jobs:
       - name: Check ntdll-sync
         run: python3 tests/host/check-ntdll-sync.py
 
+      # madeira-bcd, from thebcd69/bcd-games#4 and thebcd69/bcd-wine#1 by mckenna654 (Diablo II: Resurrected, build 598): five switches,
+      # all off unless the game's own file sets them: env.MADEIRA_SHARED_SECTION_EXEC (an executable view of a pagefile section keeps its
+      # shared memory), env.MADEIRA_NTDLL_XSEC (ntdll-xsec.dll, tools/patch-wine-ntdll-xsec.py: the emulator is told about it, and two
+      # code-probe recoveries, one gated by env.MADEIRA_D2R_PROBE_RECOVERY), env.MADEIRA_NTDLL_DATA_SYNC_RANGE (a sub-page protect of
+      # ntdll's .data copies only its bytes) and env.MADEIRA_FAULT_LOOP_GUEST_PROGRESS (breakpoints at different guest addresses are no
+      # stuck thread). tests/x64/shared-section-x64.c is the device program for the first two.
+      - name: Check the executable-section switches (D2R)
+        run: |
+          python3 tests/host/check-shared-section-exec.py
+          python3 tests/host/check-ntdll-data-sync-range.py
+          python3 tests/host/check-fault-loop-guest-progress.py
+          python3 tests/host/check-ntdll-xsec.py
+
       # madeira-bcd: the Mach handler repairs a TEB access whose base an ADD computed from a
       # zeroed x18, also when the ADD wrote its own index register (HZD build 500).
       - name: Check x18-derived base
         run: python3 tests/host/check-x18-derived-base.py
+
+      # madeira-bcd (round tur600): a page fault that has to wait for virtual_mutex says which fault it is before it waits ("[vm-fault-wait]",
+      # build/ntdll-unix/virtual_ios.c). Seven logs of four games (OMORI, Demons Roots, Saints Row IV, ONE PIECE Bounty Rush) stop with a thread
+      # parked in memset / memmove under NtFreeVirtualMemory or virtual_map_section and the Mach exception thread waiting for the mutex that
+      # thread holds; the log never named the fault. Nothing else changes; the helper is cut out of the source and run on the host.
+      - name: Check the vm-fault-wait line
+        run: python3 tests/host/check-vm-fault-wait.py
 
       # madeira-bcd: ... and also a sign-extending load (ldrsw x28, [x18, #0x180c]: FEX's WowTebOffset
       # read; Left 4 Dead 2 died of it after 200 s, FFXIV's WebView2 setup too, build 574).
@@ -2140,6 +2327,69 @@ jobs:
       # reached its batch; its command buffers retire on a second thread (Rift Apart, 556).
       - name: Check fence-early
         run: python3 tests/host/check-fence-early.py
+
+      # madeira-bcd: write-buffer-immediate and query-timestamps (both opt-in, build 593): Marvel's Spider-Man
+      # Remastered waits for a WriteBufferImmediate value; only its list and auto-tune rule turn them on.
+      - name: Check write-buffer-immediate
+        run: python3 tests/host/check-write-buffer-immediate.py
+
+      # madeira-bcd: wow-reap (build 593): a 32-bit process that would get no guest window ends the leftover
+      # threads of exited processes where they hold no host lock (Battle.net's Agent, build 592).
+      - name: Check wow-reap
+        run: python3 tests/host/check-wow-reap.py
+
+      # madeira-bcd: an async I/O completion in a 32-bit process stores its IO_STATUS_BLOCK32 only where it can land (build 596). Battle.net's
+      # Agent and AgentHelper (build 594), and cmd.exe children of Portal, Batman Arkham Asylum and LEGO Batman 2 (builds 579, 592): FEX's own
+      # WriteFile writes rpmalloc's first log lines to a live console with an uninitialised 64-bit status block, and ntdll took it for a guest
+      # one (0x10000). The decision compiled with counting probes, the real wrapper next to the original, the real probes on this Mac's
+      # mappings, the sources' links, the auto-tune rule and fixtures.
+      - name: Check the async I/O completion store into a 32-bit process
+        run: python3 tests/host/check-iosb-dead-target.py
+
+      # ajan18/bnet-cef: [int3-x86], an OPT-IN report for a 32-bit guest's int3 (env.MADEIRA_INT3_X86_DUMP = 1, Battle.net's launcher entry only):
+      # the stack, the code, the modules and libcef.dll's CodeView record, to name the CHECK that ends Battle.net's Chromium renderers. Source
+      # shape, "nothing changes when the switch is unset", compiled runs against a constructed 32-bit window (macOS), the launcher entry.
+      - name: Check the 32-bit int3 report
+        run: python3 tests/host/check-int3-x86-diag.py
+
+      # ajan21/loglar: [ill-guest], the guest bytes FEX could not decode ("Invalid instruction in entry block": Jetboard Joust, build 592, seven
+      # logs), printed with the same bytes through the JIT pool's alias when the dispatcher ends in SIGILL. Log only, no switch. Source shape,
+      # compiled runs over real pages (plain, agreeing alias, differing alias, a block at the start of a mapped range, the cap), the iOS compile.
+      - name: Check the ILL guest-bytes report
+        run: python3 tests/host/check-ill-guest-diag.py
+
+      # ajan21/loglar: [x86-fault], an OPT-IN report for a 32-bit guest's unhandled access violation or int3 (env.MADEIRA_X86_FAULT_DUMP = 1, the
+      # lists of Need for Speed: Most Wanted and Underground 2 only): the code, the stack, the modules and the objects the registers point at.
+      # Source shape, "nothing changes when the switch is unset", compiled runs against a constructed 32-bit window (macOS), the lists, the catalog.
+      - name: Check the 32-bit fault report
+        run: python3 tests/host/check-x86-fault-diag.py
+
+      # ajan18/bnet-cef: env.MADEIRA_PROTECT_WRITECOPY_AS_RW (Battle.net's launcher entry only): VirtualProtect on a 32-bit program's writable image
+      # data page, made read-only, reports PAGE_READWRITE (the value only), which V8's flag freeze checks (libcef.dll 108: Battle.net's renderers
+      # ended on that int3). The evidence from the public libcef's bytes, the truth table of the change, the four pieces in virtual_ios.c, the
+      # launcher entry, the auto-tune rule chromium-v8-flags-freeze-writecopy and its fixture.
+      - name: Check the PAGE_WRITECOPY old protection (V8 flag freeze)
+        run: python3 tests/host/check-wc-old-prot.py
+
+      # ajan28/ozellik (2026-10-24): BCD Dock's Steam launch option. The game page lists the launch entries of Steam's configuration that a Dock
+      # start can run and remembers the pick (LibraryEntry.steamLaunchOption); a game that never picked asks Valve's client for exactly the entry and
+      # logs the line it did before (SteamDirectStart.dockLaunch against a verbatim copy of the old two lines). Fallout 4's configuration is one entry.
+      - name: Check the Steam launch option of a Dock start
+        run: python3 tests/host/check-dock-launch-option.py
+
+      # ajan28/ozellik (2026-10-24): Fallout 4 (Steam 377160) through BCD Dock starts Fallout4.exe in place of its launcher: env.MADEIRA_SPAWN_SWAP
+      # (opt-in; ios_spawn_swap.h compiled and run, the one call in process_ios.c, Fallout 4's list line with minBuild 598, the policy, the auto-tune rule
+      # fallout-4-launcher-swap and its fixture).
+      - name: Check the spawn swap (Fallout 4's launcher)
+        run: python3 tests/host/check-spawn-swap.py
+
+      # ajan22/loglar (2026-10-24): the Unity stop that follows a garbage collection. 31 logs of eight Unity titles answer the collector's
+      # NtGetContextThread on its stopped threads with the Mach-O state and stop in a freed object's header a few dozen lines after the last burst
+      # ([ec-getctx] ml715, [badrip]). The Wine server's old opt-in switch MADEIRA_CTX_FRAME (ml716: a thread parked in a system call is reported
+      # by its saved call frame) is offered to that stop: No Rest for the Wicked's list from build 598, and the auto-tune rule
+      # unity-gc-stopped-thread-context. This holds the server's gate, the list policy (0 or 1), the list line, the rule and its fixture.
+      - name: Check the stopped-thread context switch for Unity's collector (MADEIRA_CTX_FRAME)
+        run: python3 tests/host/check-ctx-frame-line.py
 
       # madeira-bcd: env.MADEIRA_ECO_PRIO (opt-in): under eco, threads that raise
       # themselves to TIME_CRITICAL (madeira-d3d12's workers) keep the performance cores.
@@ -2208,6 +2458,12 @@ jobs:
         env:
           MAD_BUILD_ID: ipa ${{ steps.bn.outputs.n }}
         run: bash tools/build-madeira-d3d12-dll.sh
+
+      # BCD's Direct3D 9, 10 and 11 test programs for the Wine desktop's Start menu, next to the Direct3D 12 one the step above
+      # builds: plain C for x86-64 Windows, shaders as bytecode in the repository. A build that fails keeps the tracked program.
+      - name: Build the Direct3D 9, 10 and 11 test programs
+        continue-on-error: true
+        run: bash tools/build-dx-tests.sh
 
       # DXMT's NVAPI (dxmt/src/nvapi), which its DXMT build leaves
       # out; answers games that want a known vendor's driver version once the
@@ -2368,6 +2624,14 @@ jobs:
           else
             echo "::warning::ntdll-sync.dll missing: every game maps the shipped ntdll.dll"
           fi
+          # And ntdll-xsec.dll (thebcd69/bcd-games#4), mapped only by a game with env.MADEIRA_NTDLL_XSEC = 1
+          # (Diablo II: Resurrected): an ARM64EC image with the marker, the three log strings and the shipped ntdll.dll's exports.
+          if [ -f app/Madeira/arm64ec-windows/ntdll-xsec.dll ]; then
+            python3 tools/patch-wine-ntdll-xsec.py --verify app/Madeira/arm64ec-windows/ntdll-xsec.dll \
+              app/Madeira/arm64ec-windows/ntdll.dll
+          else
+            echo "::warning::ntdll-xsec.dll missing: Diablo II: Resurrected's env.MADEIRA_NTDLL_XSEC = 1 maps the shipped ntdll.dll"
+          fi
 
       # tools/fetch-vcruntime.md: the VC++ runtime DLLs (twelve, and since
       # 2026-10-09 MFC's mfc140.dll and mfc140u.dll from the same package:
@@ -2395,6 +2659,10 @@ jobs:
       # madeira-bcd (round 591): MFC for a game BCD Dock starts (env.MADEIRA_MFC_DOCK = 1), linked into sysx64.
       - name: Check MFC in a BCD Dock session
         run: python3 tests/host/check-mfc-dock.py
+
+      # madeira-bcd (2026-10-23): env.MADEIRA_FEX_AVX = 2, AVX reported without AVX2 (FEX CPUID; Bink 2 video in Spider-Man 2).
+      - name: Check AVX without AVX2
+        run: python3 tests/host/check-fex-avx-no-avx2.py
 
       - name: Fetch the VC++ runtime DLLs from Microsoft
         shell: bash

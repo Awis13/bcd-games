@@ -475,6 +475,13 @@ OVERLAY = {
                         "the saved form is 16 bytes). For an Unreal title that ends in a fatal error when the call "
                         "fails (Returnal); GTA V and Red Dead Redemption 2 call it and carry on without. Read once "
                         "per game start."},
+    "d3d12-pso-cached-blob": {"category": "Direct3D 12", "title": "Cached blob of a pipeline",
+                "kind": "bool", "default": "0",
+                "note": "Default off: ID3D12PipelineState::GetCachedBlob fails (E_NOTIMPL), as before. 1: it answers a "
+                        "16-byte blob, which the runtime already promises when it reports the single-pipeline shader "
+                        "cache. For an engine that treats the failure as fatal (Resident Evil Requiem's demo); GTA V, "
+                        "Red Dead Redemption 2 and the other Direct3D 12 games in the logs never call it. Creating a "
+                        "pipeline never reads a blob handed back. Read once per game start."},
     "d3d12-raw-typed-views": {"category": "Direct3D 12", "title": "Raw buffer views readable as typed",
                 "kind": "bool", "default": "0",
                 "note": "Default off. 1: raw and structured buffer views also carry a texture-buffer view (R32, or "
@@ -584,6 +591,14 @@ OVERLAY = {
                      "note": "The developer interface's Wine desktop size (ml1127); its Resolution menu writes it (ml1157). Madeira Dock sessions without a game's Resolution use it too. Unset: this screen's shape at 1280x720's pixel count (ml1172: 1408x648 on a 19.5:9 iPhone, 1152x800 on an 11-inch iPad). Applies at the next app start."},
     "d3d9": {"title": "Direct3D 9 frontend (32-bit)", "kind": "choice",
              "choices": [("", "Default (emulated)"), ("native", "Native ARM64 frontend")]},
+    "orientation-lock": {"category": "Windows, display & input", "title": "Screen orientation during a game", "kind": "choice",
+             "note": "Unset: the screen follows the way the device is held, as always. landscape keeps it in landscape however the "
+                     "device is held (lying down, say) while a game runs; landscape-camera-left and landscape-camera-right pick the "
+                     "side the front camera is on. It goes back to following the device when the game ends. A game's own page "
+                     "(Controls and screen) can choose for that game, and its choice comes first. Settings > Graphics has the row.",
+             "choices": [("", "Follow the device"), ("landscape", "Landscape, either side"),
+                         ("landscape-camera-left", "Landscape, camera on the left"),
+                         ("landscape-camera-right", "Landscape, camera on the right")]},
     "fence-chain": {"title": "D3D12 fence chain mode"},
     "async-submit": {"title": "D3D12 asynchronous submission"},
     "upload-swap": {"title": "D3D12 upload buffers on file-backed memory"},
@@ -762,6 +777,15 @@ OVERLAY = {
                         "second debugger region and both form one pool (about 880 MB instead of 560-630 MB). Costs "
                         "the second region's size in memory. Off by default; read at launch, the game's own file "
                         "wins."},
+    # ajan27 (log round 2026-10-24, thebcd69/bcd-games#16 by le0-VV): read in StikJITHelper.takeSecondRegion; Minecraft Dungeons II's list sets it.
+    "pool-split-retry": {"category": "Memory & JIT pool", "title": "Split JIT pool: ask again when the second region misses",
+                "kind": "bool", "default": "0",
+                "note": "With pool-split on: when the second debugger region lands outside the safe range (the debugger "
+                        "allocates first-fit and the free runs can change while it does), release it and ask again, up to"
+                        " three attempts, plugging the lower free runs afresh each time. Without the line there is one "
+                        "attempt and the pool stays one region after a miss. Costs one debugger round trip (about half a "
+                        "second) per extra attempt, and the second region's memory when it is placed. Off by default; "
+                        "read at launch, the game's own file wins. Restart BCD and enable JIT again after changing it."},
     "pool-page-fit": {"category": "Memory & JIT pool", "title": "Fit split pool regions to memory pages",
                 "kind": "bool", "default": "0",
                 "note": "With pool-split on: fit regions A/B to 16 KB pages instead of 16 MB steps, retaining small "
@@ -831,6 +855,24 @@ OVERLAY = {
                 "note": "Appended verbatim to SocialClubHelper.exe's command line while env.MADEIRA_SC_CEF is on, "
                         "e.g. --disable-gpu or --enable-logging=file --v=1. A --js-flags= in it gets --jitless as its "
                         "first flag (Chromium keeps only the last --js-flags=), unless MADEIRA_JITLESS = 0."},
+    # ajan32/ea-cef (2026-10-24): the EA app's Chromium.
+    "env.MADEIRA_EA_CEF": {"category": "Memory & JIT pool", "title": "The EA app's Chromium in one process",
+                "kind": "bool", "default": "0",
+                "note": "Off by default; the EA app's launcher entry sets it with env.MADEIRA_SC_PA_POOLS = 2. EADesktop.exe "
+                        "runs --single-process with PartitionAllocBackupRefPtr disabled and V8 --jitless (MADEIRA_JITLESS = 0 "
+                        "keeps V8's JIT), its --type= children (and EACefSubProcess.exe's) are refused, and its four 16 GB "
+                        "PartitionAlloc pools get the four 16 GB slots of the address band (layout 2's holds, 4 GB really "
+                        "reserved for three of them) instead of overlapping each other. No effect on any other program."},
+    "env.MADEIRA_EA_CEF_FLAGS": {"category": "Memory & JIT pool", "title": "Extra EADesktop.exe switches",
+                "kind": "text", "default": "",
+                "note": "Appended verbatim to EADesktop.exe's command line while env.MADEIRA_EA_CEF is on, e.g. --disable-gpu "
+                        "or --enable-logging=file --v=1. A --js-flags= in it gets --jitless as its first flag, unless "
+                        "MADEIRA_JITLESS = 0."},
+    "env.MADEIRA_EA_CEF_CMDLINE": {"category": "Memory & JIT pool", "title": "Leave EADesktop.exe's command line alone",
+                "kind": "bool", "default": "1",
+                "note": "0: while env.MADEIRA_EA_CEF is on, EADesktop.exe's command line is not rewritten (no --single-process "
+                        "and the other switches); its --type= children are still refused. For a test of whether the EA app "
+                        "takes a switch it does not know."},
     "env.MADEIRA_SC_PA_POOLS": {"category": "Memory & JIT pool", "title": "Room for Social Club's PartitionAlloc pools",
                 "kind": "choice", "default": "",
                 "choices": [("", "Off"), ("1", "Layout 1 (chrome_elf.dll only)"), ("2", "Layout 2 (chrome_elf, libcef, Oilpan)")],
@@ -886,6 +928,28 @@ OVERLAY = {
                         "committed d3d11.dll. Set it in the game's own file, not for every game; read at session start. "
                         "Since build 543 (the 2026-10-15 upstream merge) upstream's d3d11.dll has SwapDeviceContextState "
                         "itself, no d3d11-src.dll is built and this switch changes nothing."},
+    # madeira-bcd (2026-10-24): no Steam game identity for one game's session (WineProcessBridge.m).
+    "env.MADEIRA_STEAM_IDENTITY": {"category": "Steam & Dock", "title": "No Steam game identity for this game",
+                "kind": "choice", "default": "",
+                "choices": [("", "As before (Dock: none; a direct Steam start: the game's own; else a fixed one)"), ("none", "None")],
+                "sources": ["app/Madeira/WineProcessBridge.m"],
+                "note": "none: the session publishes no SteamAppId, SteamGameId or SteamAppPath. Outside a Dock session BCD otherwise "
+                        "publishes one fixed Steam identity to every program, which made Rockstar's launcher of the Epic GTA V and RDR2 "
+                        "believe it was the Steam version and stop with \"Steam failed to initialize\" (LAUNCHER_ERR_STEAM_FAILED, 113). "
+                        "Unset (default): exactly as before. Set it in the game's own file; auto-tune adds it after that error in an "
+                        "Epic session."},
+    # madeira-bcd: DXMT's Direct3D 9 frontend for 64-bit programs (tools/build-d3d9-x64-dll.sh, WineProcessBridge.m).
+    "env.MADEIRA_D3D9_X64": {"category": "Direct3D 9/10/11 (DXMT)", "title": "Direct3D 9 for 64-bit games",
+                "kind": "choice", "default": "",
+                "choices": [("", "Wine's (default; needs OpenGL, which BCD lacks)"), ("dxmt", "DXMT's Direct3D 9 (Metal)")],
+                "sources": ["app/Madeira/WineProcessBridge.m", "tools/build-d3d9-x64-dll.sh"],
+                "note": "dxmt: a 64-bit game's d3d9.dll is d3d9-dxmt.dll, DXMT's Direct3D 9 frontend compiled for ARM64EC (the frontend the "
+                        "32-bit games already use) instead of Wine's, which draws through wined3d's OpenGL backend: BCD has no "
+                        "OpenGL, so Direct3DCreate9 fails (\"wined3d_adapter_gl_init Failed to get a GL context\", \"d3d9_init FAILED\") "
+                        "and the game blames its resolution (Darksiders II Deathinitive Edition, PICO PARK). Unset (default): Wine's "
+                        "d3d9.dll, as before. Set it in the game's own file, not for every game; read at session start. A 32-bit "
+                        "game is not affected. On success the log shows the [WineProc] link line and DXMT's [d3d9-modes] lines; auto-tune adds "
+                        "the line after the OpenGL failure."},
     # madeira-bcd: the wineserver names an opened file with F_GETPATH (build/wineserver/fd_ios.c).
     "env.MADEIRA_SRV_FGETPATH": {"category": "Wine core (ntdll)", "title": "Name opened files with one call (server)",
                 "kind": "bool", "default": "0",
@@ -982,6 +1046,53 @@ OVERLAY = {
                         "critical-section calls a second). native keeps the 64-bit callers on the native lock code "
                         "(one switch out of the emulator per call, as before). Unset or 0: the shipped ntdll.dll. "
                         "Read at session start; a later game of the same app run does not inherit it."},
+    # madeira-bcd, from thebcd69/bcd-games#4 and thebcd69/bcd-wine#1 by mckenna654 (modified 2026-10-24): Diablo II: Resurrected's five
+    # executable-section switches (build 598). All off unless the game's own file sets them.
+    "env.MADEIRA_NTDLL_XSEC": {"category": "Wine core (ntdll)", "title": "Executable section views for the emulator (ntdll-xsec.dll)",
+                "kind": "bool", "default": "0",
+                "sources": ["build/ntdll-unix/loader_ios.c", "app/Madeira/WineProcessBridge.m", "tools/patch-wine-ntdll-xsec.py"],
+                "note": "Default off. 1: a 64-bit game runs ntdll-xsec.dll instead of ntdll.dll: Wine's ntdll from the same source (the build "
+                        "checks that it rebuilds the shipped ntdll.dll byte for byte) that tells the emulator about the executable views of "
+                        "memory-only sections, so it runs code a program wrote through another view of the same section (use it with "
+                        "env.MADEIRA_SHARED_SECTION_EXEC = 1), and that lets the emulator's check of a call target recover when the target "
+                        "page cannot be read, so the program gets the fault at its own address and not at BCD's. Without ntdll-xsec.dll in "
+                        "the build the shipped ntdll.dll is mapped. Wins over env.MADEIRA_NTDLL_SYNC. Logged as [ntdll-xsec], "
+                        "[section-notify] and [ec-probe-fallback]. Set it in the game's own file; read at session start."},
+    "env.MADEIRA_SHARED_SECTION_EXEC": {"category": "Memory & JIT pool", "title": "Executable section views keep their shared memory",
+                "kind": "bool", "default": "0",
+                "sources": ["build/ntdll-unix/virtual_ios.c"],
+                "note": "Default off. 1: in a 64-bit game, a view of a memory-only section (a file mapping without a file) that the game makes "
+                        "executable stays the shared memory it is instead of being copied into the JIT pool, which cut it off from the other "
+                        "views of the section. A game that maps one section twice, writes its code through one view and runs the other "
+                        "(Diablo II: Resurrected's loader) then runs what it wrote. Execute permission stays in Wine's tables; the emulator "
+                        "is told about the view by ntdll-xsec.dll (env.MADEIRA_NTDLL_XSEC = 1). Images, file-backed sections, native "
+                        "ARM64EC allocations and 32-bit programs keep the pool path. Logged as [guest-section]. Set it in the game's own "
+                        "file; read once per session."},
+    "env.MADEIRA_NTDLL_DATA_SYNC_RANGE": {"category": "Memory & JIT pool", "title": "ntdll data patches copy only the bytes asked for",
+                "kind": "bool", "default": "0",
+                "sources": ["build/ntdll-unix/virtual_ios.c"],
+                "note": "Default off. 1: when a 64-bit game changes the protection of a few bytes of ntdll's own writable data "
+                        "(Diablo II: Resurrected does so for one pointer slot), only those bytes are copied from the loaded image to the copy "
+                        "ntdll runs from. Before, the whole page was copied, which also wrote zeros over live callbacks stored next to the "
+                        "slot in the running copy. Everything outside ntdll's .data is synced as before. Logged as [ntdll-data-sync]. "
+                        "Set it in the game's own file; read once per session."},
+    "env.MADEIRA_FAULT_LOOP_GUEST_PROGRESS": {"category": "Exceptions & threads", "title": "A run of breakpoints at different addresses is not a stuck thread",
+                "kind": "bool", "default": "0",
+                "sources": ["build/ntdll-unix/signal_arm64_ios.c"],
+                "note": "Default off. 1: the loop breaker (50 faults at one place with no progress end the thread: \"[fault-stuck] BREAKING "
+                        "LOOP\") no longer counts breakpoint traps (int3) of a game that run at different addresses of its own code as one "
+                        "stuck fault, because the emulator raises all of them from the same host instruction. A trap at the same game "
+                        "address again, a fault outside the emulator's frame and every memory fault count as before. Logged as "
+                        "[fault-progress]. Set it in the game's own file; read once per session."},
+    "env.MADEIRA_D2R_PROBE_RECOVERY": {"category": "Wine core (ntdll)", "title": "Emulator call-target check recovers from an unreadable page (experimental)",
+                "kind": "bool", "default": "0",
+                "sources": ["tools/patch-wine-ntdll-xsec.py"],
+                "note": "Default off; used with env.MADEIRA_NTDLL_XSEC = 1. 1: when the emulator's own check of a call target (it reads the "
+                        "first bytes of the target to recognise a jump sequence) cannot read the target page, the call continues at the "
+                        "emulator's ordinary entry with the page left protected, so the game gets the fault at its own address. Only for the "
+                        "emulator build whose first instructions are exactly the ones this was written for. Experimental: it does not "
+                        "establish that any game runs. Logged as [ec-emulator-probe-fallback]. Set it in the game's own file; "
+                        "read at session start."},
     # madeira-bcd: ucrtbase-x64math.dll (tools/patch-wine-ucrtbase-x64-math.py, linked by WineProcessBridge.m).
     "env.MADEIRA_UCRT_X64_MATH": {"category": "Wine core (ntdll)", "title": "floor and sqrt as x64 code (ucrtbase)",
                 "kind": "bool", "default": "0",
@@ -1040,7 +1151,10 @@ OVERLAY = {
                         "env.MADEIRA_WG_64BIT = 1 as well, which gives a 64-bit game BCD's decoders. "
                         "oledlg, fwpuclnt and sensapi are three small system DLLs the 64-bit set lacked (the 32-bit set has them): a program "
                         "that imports oledlg.dll (Digimon Story Cyber Sleuth), fwpuclnt.dll (FINAL FANTASY XV) or SensApi.dll (Borderlands 3's voice "
-                        "library, whose missing import raised UE4's delay-load exception) ended at once with c0000135. An earlier session's links are removed when a name is gone. "
+                        "library, whose missing import raised UE4's delay-load exception) ended at once with c0000135. ddraw is Wine's DirectDraw for a 64-bit "
+                        "program that imports it (Dying Light's renderer, rd3d11_x64_rwdi.dll: \"Cannot initialize renderer\"). msi, mspatcha, odbccp32, sxs and "
+                        "rstrtmgr are what the EA app's 64-bit background service imports (msi.dll and RstrtMgr.dll, msi.dll the other three); "
+                        "without them the service never starts and the MSI rolls back with 1627. An earlier session's links are removed when a name is gone. "
                         "Set it in the game's own file; read at session start. Auto-tune adds dxva2, xpsprint, oledlg, fwpuclnt, sensapi, "
                         "setupapi and (with env.MADEIRA_WG_64BIT = 1) mfasfsrcsnk,wmvdecod,wmadmod after their failures."},
     "env.MADEIRA_WINTYPES": {"category": "Wine libraries", "title": "Give the game Wine's wintypes.dll",
@@ -1151,6 +1265,17 @@ OVERLAY = {
                         "voltage and current (the whole device while unplugged), each source named unavailable once "
                         "when the system gives nothing; and [power-t], the threads that used the most energy. Off "
                         "(default): nothing is read. Needs the [xp] sampler. Read at session start."},
+    # ajan27 (log round 2026-10-24, thebcd69/bcd-games#16 by le0-VV): the sampler is ios_recovery_log_admit (loader_ios.c), the ILL one ios_ill_diag_admit.
+    "env.MADEIRA_RECOVERY_LOG_SAMPLE": {"category": "Debugging / logs", "title": "Sample routine instruction recovery logs",
+                "kind": "bool", "default": "0",
+                "sources": ["build/ntdll-unix/loader_ios.c", "build/ntdll-unix/signal_arm64_ios.c"],
+                "note": "Default off: recovery diagnostics are unchanged. 1 keeps the first 16 and every 1024th of FEX's "
+                        "five debug records about each recovered invalid instruction (exception C000001D, \"Reconstructing"
+                        " context\", \"pc:\", \"Rethrowing onto guest stack\", \"Passing through exception\"), and the first 8 "
+                        "and every 1024th ILL report at its shared trap. Other exceptions, access violations and unknown "
+                        "records stay. Only log output changes, nothing is delivered differently; for a game that "
+                        "recovers thousands of them a second (Minecraft Dungeons II). Read before guest threads start. "
+                        "Restart BCD after changing it."},
     # madeira-bcd: the frame-cap power governor (build/ntdll-unix/server_ios.c ios_fps_gov_step,
     # madeira-d3d12 Present, tools/patch-winemetal-fps-cap.py).
     "env.MADEIRA_FPS_CAP": {"category": "Windows, display & input", "title": "Fixed frame cap (fps)",
@@ -1288,6 +1413,123 @@ OVERLAY = {
                         "Mono, died on an empty thread slot; not proven to be this). Every slot cleared in another program "
                         "while it held a value is logged as [tls-cross-clear], with or without this line. Read once per session.",
                 "sources": ["build/ntdll-unix/ios_tls_clear.h", "build/ntdll-unix/virtual_ios.c"]},
+    # ajan11-wow64stack (2026-10-23): read through build/ntdll-unix/ios_wow_stack_free.h by virtual_free_teb; auto-tune's rule
+    # wow-stack-freed-by-other-process says the crash it prevents is fixed in 593.
+    "env.MADEIRA_WOW_STACK_FREE_OWN_WINDOW": {"category": "Windows, display & input", "title": "32-bit stacks of dead threads go back to their own program",
+                "kind": "text", "default": "",
+                "note": "Empty (default): when a thread of one 32-bit program exits, the stack of the previous exiting thread (which may belong to "
+                        "another 32-bit program) is released in ITS program's memory window if releasing it where the old code aimed would "
+                        "delete a live memory block of the other program (Battle.net's helpers: this ended the app); every other release "
+                        "is aimed as before. 1: every dead thread's stack is released in its own program's window, which also gives "
+                        "back the address space the default leaves to the window's end. 0: exactly the old behaviour. One capped "
+                        "[wow-stack-free] line says what was decided. Read when a thread's data is freed.",
+                "sources": ["build/ntdll-unix/ios_wow_stack_free.h", "build/ntdll-unix/virtual_ios.c"]},
+    # ajan11-wow64stack (2026-10-23): read through build/ntdll-unix/ios_storm_end.h by the redelivery guard in signal_arm64_ios.c.
+    "env.MADEIRA_REDELIV_CHILD_ONLY": {"category": "Exceptions & threads", "title": "A fault storm in a helper program ends only that program",
+                "kind": "bool", "default": "1",
+                "note": "Default on. When the fault-storm guard gives up on a thread of a program the session started (a launcher's helper, "
+                        "a child process), it ends that program and that thread and the app keeps running; the first program of the "
+                        "session keeps the old ending (the whole app). 0: the whole app ends for every storm, as before build 593. One "
+                        "line names the program that was ended. Read when a storm is given up on.",
+                "sources": ["build/ntdll-unix/ios_storm_end.h", "build/ntdll-unix/signal_arm64_ios.c"]},
+    # ajan14/ea-mono (2026-10-23): read in the Windows server's thread.c (ios_apc_busy_queue_enabled); the EA app's launcher entry sets it and
+    # auto-tune's rule eaapp-installer-msi-pipe-answer-lost adds it.
+    "env.MADEIRA_APC_BUSY_QUEUE": {"category": "Exceptions & threads", "title": "An answer waiting for a busy thread is kept",
+                "kind": "bool", "default": "0",
+                "note": "Default off. BCD cannot interrupt a thread that is running, so when an overlapped read or write finishes for a thread that "
+                        "is not waiting, the finished request is handed to another thread of the program that is waiting; if there is none it "
+                        "is dropped and the read ends with no data (log: [apc-requeue] ... dropped, no waiting thread). 1: it stays with its "
+                        "thread, which takes it at its next wait (within about 2 ms); not done in a session that uses the in-process sync engine "
+                        "(madsync). Off (or anything but 1) changes nothing. The EA app's installer needs it: its MSI package runs its custom "
+                        "actions in a helper that asks Windows Installer for everything over a pipe, and the first answer was dropped "
+                        "(JunoInitializeSession returned 1603, build 593). Read at the first handover of a session.",
+                "sources": ["wine/server/thread.c"]},
+    # ajan16/bnet-apc (build 596): read through build/ntdll-unix/ios_iosb_dead.h by server_ios.c (invoke_system_apc); auto-tune's rule
+    # wow64-native-iosb-completion-store says the crash it prevents is fixed in 596.
+    "env.MADEIRA_IOSB_DEAD_TARGET": {"category": "Exceptions & threads", "title": "A finished read or write never stores into memory that is not there",
+                "kind": "bool", "default": "1",
+                "note": "Default on. When an overlapped read or write finishes in a 32-bit program, BCD stores the result into the program's "
+                        "status block; if the pointer to it is not memory at all (a console program's start-up writes from native code "
+                        "inside the 32-bit program carry a status block of the wrong kind: Battle.net's Agent and AgentHelper, cmd.exe "
+                        "of Portal, Batman: Arkham Asylum and LEGO Batman 2) that store is skipped instead of faulting 5 to 10 times. "
+                        "0: it is stored as before build 596. A skipped store is logged as [iosb-dead]. Read once per session.",
+                "sources": ["build/ntdll-unix/ios_iosb_dead.h", "build/ntdll-unix/server_ios.c"]},
+    # ajan19 (log round 2026-10-24): read through build/ntdll-unix/ios_keyed_event.h by loader_ios.c (wine_ios_child_main, ios_keyed_event) and
+    # the Wine fork's dlls/ntdll/unix/sync.c (a NULL handle in NtWaitForKeyedEvent / NtReleaseKeyedEvent); auto-tune's rule
+    # runonce-stale-waiter-keyed-event adds it and Control's list sets it.
+    "env.MADEIRA_KEYED_EVENT_PER_PROCESS": {"category": "Exceptions & threads", "title": "Every program gets its own keyed event",
+                "kind": "bool", "default": "0",
+                "note": "Default off. Windows keeps one keyed event per program for the waits of an InitOnce (the second thread to ask for a "
+                        "one-time initialisation sleeps on it until the first has finished). BCD runs every program of a session inside one "
+                        "process and gave a program started by another one the first program's handle, which is no keyed event there: the "
+                        "sleeping thread never slept, and the thread that finished the initialisation woke nobody and then read the memory "
+                        "the other thread's stack frame had held (Control, Slay the Spire 2: a crash in RtlRunOnceComplete, ntdll.dll+0x68008). "
+                        "1: each program started by another one makes its own keyed event when it boots (log: [keyed-event]). Off (or anything "
+                        "but 1) changes nothing. Read once per session.",
+                "sources": ["build/ntdll-unix/ios_keyed_event.h", "build/ntdll-unix/loader_ios.c"]},
+    # ajan38 (round tur600, build 600): read by the Wine fork's dlls/kernelbase/process.c (GetProcessMitigationPolicy); auto-tune's rule
+    # chakracore-cfg-policy-failfast adds it and Glyphica: Typing Survival's list sets it.
+    "env.MADEIRA_ZERO_MITIGATION_POLICY": {"category": "Wine libraries", "title": "Windows' security-feature answers start empty",
+                "kind": "bool", "default": "0",
+                "note": "Default off. A program can ask Windows which security features (Control Flow Guard, dynamic-code limits ...) are on "
+                        "for it. BCD's Wine answers yes without filling in the answer, so the program reads whatever its memory held; ChakraCore, "
+                        "the script engine of the Sphere engine games (Glyphica: Typing Survival), read a Control Flow Guard bit that was set "
+                        "by chance, asked for a function Wine does not have and stopped the game with exit c0000602 within a second. 1: the "
+                        "answer is filled with zeros (no feature is on). Off (or anything but 1) changes nothing. Read once per program.",
+                "sources": ["wine/dlls/kernelbase/process.c"]},
+    # ajan18/bnet-cef (build 597): read through build/ntdll-unix/ios_wc_old_prot.h by NtProtectVirtualMemory (virtual_ios.c); auto-tune's rule
+    # chromium-v8-flags-freeze-writecopy adds it. Only Battle.net's launcher entry (app/Madeira/BCDLaunchers.swift) sets it.
+    "env.MADEIRA_PROTECT_WRITECOPY_AS_RW": {"category": "Memory & JIT pool", "title": "A written data page reports PAGE_READWRITE when write-protected",
+                "kind": "bool", "default": "0",
+                "note": "Default off. When a 32-bit program makes a page of a DLL's writable data read-only with VirtualProtect, the old "
+                        "protection it is told is PAGE_READWRITE instead of PAGE_WRITECOPY, as on Windows for a page the program has written "
+                        "(BCD records PAGE_WRITECOPY for such a page for ever, whether or not it was written). Chromium's JavaScript engine "
+                        "freezes its flags this way at start-up and ends the process, with an int3, unless it is told PAGE_READWRITE: "
+                        "Battle.net's browser renderers (libcef.dll 108). Only the reported value changes; the protection and every other "
+                        "call stay as they are, and a 64-bit program is not affected. Read once per session; the log shows [wc-old].",
+                "sources": ["build/ntdll-unix/ios_wc_old_prot.h", "build/ntdll-unix/virtual_ios.c"]},
+    # ajan18/bnet-cef (build 597): a diagnostic, read through build/ntdll-unix/ios_int3_x86_diag.h by signal_arm64_ios.c's [int3-guest]
+    # block. Only Battle.net's launcher entry (app/Madeira/BCDLaunchers.swift) sets it; nothing reads it for a 64-bit process.
+    "env.MADEIRA_INT3_X86_DUMP": {"category": "Exceptions & threads", "title": "Report a 32-bit program's int3 in full",
+                "kind": "bool", "default": "0",
+                "note": "Default off. When a 32-bit program executes an int3 (Chromium's way of ending a process whose internal check failed, "
+                        "such as Battle.net's browser renderers), BCD prints up to three [int3-x86] reports: the registers, the program's "
+                        "modules, the PE identity of the module with the int3 (libcef.dll's CodeView record names its exact symbol file), 96 "
+                        "words of stack, the chain of return addresses and the code around the int3 and before each return address. Log "
+                        "only: it reads the program's memory and writes nothing. Battle.net's launcher entry turns it on. Read once per session.",
+                "sources": ["build/ntdll-unix/ios_int3_x86_diag.h", "build/ntdll-unix/signal_arm64_ios.c"]},
+    # ajan21/loglar (build 598): Need for Speed Most Wanted (speed.exe) and Underground 2 (SPEED2.EXE) lists; nothing else sets it.
+    "env.MADEIRA_X86_FAULT_DUMP": {"category": "Exceptions & threads", "title": "Report a 32-bit program's crash in full",
+                "kind": "bool", "default": "0",
+                "note": "Default off. When a 32-bit program ends on an access violation (a read or write through a bad pointer) or an int3, "
+                        "BCD prints up to three [x86-fault] reports: the faulting address and the block it is in, the registers and the fault "
+                        "address minus each of them, the program's modules and its PE identity (build stamp and checksum), 96 words of stack, "
+                        "the chain of return addresses, the code around the block (256 bytes before and 160 after) and before each return "
+                        "address, and 96 bytes at every register that points into the stack or the heap. Log only: it reads the program's memory "
+                        "and writes nothing. The lists of Need for Speed: Most Wanted and Underground 2 turn it on. Read once per session.",
+                "sources": ["build/ntdll-unix/ios_x86_fault_diag.h", "build/ntdll-unix/signal_arm64_ios.c"]},
+    # ajan27 (log round 2026-10-24, thebcd69/bcd-games#16 by le0-VV): read in build/ntdll-unix/signal_arm64_ios.c; set by Minecraft Dungeons II's list.
+    "env.MADEIRA_FAULT_GUARD_GUEST_RIP": {"category": "Exceptions & threads", "title": "Fault guards tell FEX's invalid instructions apart",
+                "kind": "bool", "default": "0",
+                "note": "Default off. BCD's fault-storm guards end a game that takes the same fault 2000 times in a row "
+                        "(the whole app, or a child program) and divert a thread that takes 50 faults at one page and "
+                        "instruction. FEX raises every invalid x86 instruction through one shared host instruction, so a "
+                        "program that steps over a long run of them in its own handler (Minecraft Dungeons II) looked like "
+                        "one stationary fault and was ended while it advanced. 1: such a delivery is also told apart by the"
+                        " guest instruction FEX saved (the same guest instruction 2000 times still ends it; any other fault"
+                        " keeps its old key), and the 50-fault page breaker counts memory faults only, not instruction "
+                        "traps. Logged as [redeliv] guest_rip. Off: the guards as before. Read once per session.",
+                "sources": ["build/ntdll-unix/signal_arm64_ios.c"]},
+    # ajan28/ozellik (build 598): Fallout 4's list (Steam 377160) and auto-tune's rule fallout-4-launcher-swap; nothing else sets it.
+    "env.MADEIRA_SPAWN_SWAP": {"category": "Wine core (ntdll)", "title": "Start another program of the folder in place of one",
+                "kind": "text", "default": "",
+                "note": "Empty by default. <from.exe>=<to.exe>, several separated by ';': when a program named <from.exe> is about to start, "
+                        "the program <to.exe> of the same folder starts instead, if it is there (Fallout 4's Steam entry is its launcher alone, "
+                        "which cannot run here; Fallout4Launcher.exe=Fallout4.exe starts the game). Its image name and the first word of its "
+                        "command line change; nothing on disk does, and the program has its own name, as on Windows. A program that is not "
+                        "listed, or a folder without <to.exe>, starts as asked. Logged as [spawn-swap]. Set it in the game's own file; "
+                        "Fallout 4's list does.",
+                "sources": ["build/ntdll-unix/ios_spawn_swap.h", "build/ntdll-unix/process_ios.c"]},
     # ajan10/motor (build 591): read in build/ntdll-unix (signal_arm64_ios.c, virtual_ios.c); auto-tune's rules fault-guard-rate-redeliv,
     # fault-guard-rate-segv, user-va-cap-reserve-256gb and anon-cas-flush add them.
     "env.MADEIRA_FAULT_GUARD_RATE": {"category": "Exceptions & threads", "title": "Fault-storm guards end only a real storm",

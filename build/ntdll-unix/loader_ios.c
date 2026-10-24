@@ -309,6 +309,11 @@ static const char *get_so_dir( WORD machine )
  * is_arm64ec/main_image_info consumer lives in forked files; unforked
  * wine unix files have zero users. */
 #include "ios_mixed.h"
+#include "ios_keyed_event.h"
+
+/* madeira-bcd (2026-10-24): the records of ios_keyed_event() below; ios_proc_ident_release drops one. */
+static struct ios_keyed_event_slot ios_keyed_event_slots[IOS_KEYED_EVENT_SLOTS];
+static int ios_keyed_event_next;
 
 #define IOS_MAX_PROC_IDENTS 64
 struct ios_proc_ident
@@ -385,6 +390,7 @@ void ios_proc_ident_release( void *peb_id )
     int i, n = ios_proc_ident_count;
 
     if (!peb_id) return;
+    ios_keyed_event_drop( ios_keyed_event_slots, IOS_KEYED_EVENT_SLOTS, peb_id );    /* the PEB address is about to be reused */
     for (i = 0; i < n; i++)
     {
         if (ios_proc_idents[i].peb != peb_id) continue;
@@ -397,6 +403,36 @@ void ios_proc_ident_release( void *peb_id )
         return;
     }
     dprintf(2, "[proc-ident] release: peb=%p was not registered\n", peb_id);
+}
+
+/* madeira-bcd (2026-10-24, ajan19): the keyed event a NULL handle means, one per child pseudo-process (OPT-IN: env.MADEIRA_KEYED_EVENT_PER_PROCESS = 1;
+ * build/ntdll-unix/ios_keyed_event.h has the story: RtlRunOnceComplete walked a stale waiter node in Control and Slay the Spire 2 because the
+ * global keyed_event is the FIRST pseudo-process's handle). NtWaitForKeyedEvent / NtReleaseKeyedEvent (Wine's sync.c) call this for a NULL handle.
+ * Without the switch, for the session's first process and for a process with no record it returns the global: the old behaviour, byte for byte. */
+HANDLE ios_keyed_event( void );
+HANDLE ios_keyed_event( void )
+{
+    if (!ios_keyed_event_enabled()) return keyed_event;
+    return ios_keyed_event_pick( ios_keyed_event_slots, IOS_KEYED_EVENT_SLOTS, ios_jit_current_peb(), keyed_event, 1 );
+}
+
+/* wine_ios_child_main, on the child's boot thread right after init_thread_stack (where start_main_thread creates the process's keyed event). */
+static void ios_keyed_event_child_boot( void *child_peb )
+{
+    HANDLE h = NULL;
+    NTSTATUS st;
+    int slot;
+
+    if (!ios_keyed_event_enabled()) return;
+    st = NtCreateKeyedEvent( &h, GENERIC_READ | GENERIC_WRITE, NULL, 0 );
+    if (st || !h)
+    {
+        dprintf( 2, "[keyed-event] ml2200: peb=%p own keyed event FAILED st=%08x -- this process keeps the session's handle %p\n",
+                 child_peb, (unsigned)st, keyed_event );
+        return;
+    }
+    slot = ios_keyed_event_store( ios_keyed_event_slots, IOS_KEYED_EVENT_SLOTS, &ios_keyed_event_next, child_peb, h );
+    dprintf( 2, "[keyed-event] ml2200: peb=%p own keyed event %p (slot %d); the session's global is %p\n", child_peb, h, slot, keyed_event );
 }
 
 /* X3c: attach a private ntdll image + entry points to a registered ident. */
@@ -1402,6 +1438,75 @@ extern NTSTATUS unixcall_ios_get_fex_arena(void *args);          /* ml800, virtu
 
 static NTSTATUS ios_wrap_0(void *a) { return ios_wrap_unix_call(0, a, load_so_dll); }
 static NTSTATUS ios_wrap_1(void *a) { return ios_wrap_unix_call(1, a, unwind_builtin_dll); }
+/* madeira-bcd, ported from thebcd69/bcd-games#16 by le0-VV (modified 2026-10-24): env.MADEIRA_RECOVERY_LOG_SAMPLE = 1 (OPT-IN, LOG ONLY).
+ *
+ * A program that recovers from invalid instructions (Minecraft Dungeons II: thousands a second) makes FEX write a five-line report
+ * of each one through the debug channel ("D <tid> Exception: Code: C000001D Address: ...", "Reconstructing context", "pc: ...",
+ * "Rethrowing onto guest stack: ...", "Passing through exception"); at that rate the writes alone slow the game and fill the log.
+ * With the switch only those five records of a C000001D exception are sampled: the first 16 of each and every 1024th after that
+ * (one note, "[recovery-log] kind=..."). Every other record stays: other exception codes, an access violation, loader errors, a
+ * record that is not a whole single line, a thread or tag the filter does not know. Nothing is delivered differently and no guard
+ * is relaxed; the RTCS cap below is independent. Off (default): every line is written as before. Set before any guest thread runs. */
+int ios_recovery_log_sampling;
+
+static int ios_recovery_log_option( void )
+{
+    const char *e = getenv( "MADEIRA_RECOVERY_LOG_SAMPLE" );
+    return e && !strcmp( e, "1" );
+}
+
+/* Sample known instruction-recovery records; retain other exceptions and mixed writes. */
+static int ios_recovery_log_admit( const char *str, unsigned int len )
+{
+    static const char *tags[] = {
+        "Exception: Code: C000001D Address:", "Reconstructing context", "pc: ",
+        "Rethrowing onto guest stack: ", "Passing through exception"
+    };
+    static unsigned long long context[64], seen[5];
+    unsigned int i = 2, digits = 0, tid = 0, slot, kind;
+    unsigned long long key, n;
+
+    if (!__atomic_load_n( &ios_recovery_log_sampling, __ATOMIC_RELAXED )) return 1;
+    if (!str || len < 4 || str[0] != 'D' || str[1] != ' ') return 1;
+    while (i < len && digits < 8)
+    {
+        unsigned int c = (unsigned char)str[i], v;
+        if (c >= '0' && c <= '9') v = c - '0';
+        else if (c >= 'a' && c <= 'f') v = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F') v = c - 'A' + 10;
+        else break;
+        tid = (tid << 4) | v;
+        i++; digits++;
+    }
+    if (!digits || !tid || i >= len || str[i++] != ' ') return 1;
+    slot = (tid >> 2) & 63;
+    key = (unsigned long long)tid << 1;
+    if (str[len - 1] != '\n' || memchr( str, '\n', len - 1 ))
+    {
+        __atomic_store_n( &context[slot], key, __ATOMIC_RELAXED );
+        return 1;
+    }
+    if (len - i >= 17 && !memcmp( str + i, "Exception: Code: ", 17 ))
+    {
+        size_t prefix = strlen( tags[0] );
+        __atomic_store_n( &context[slot], key |
+                         (len - i >= prefix && !memcmp( str + i, tags[0], prefix )), __ATOMIC_RELAXED );
+    }
+    if (__atomic_load_n( &context[slot], __ATOMIC_RELAXED ) != (key | 1)) return 1;
+    for (kind = 0; kind < 5; kind++)
+    {
+        size_t size = strlen( tags[kind] );
+        if (len - i < size || memcmp( str + i, tags[kind], size )) continue;
+        if ((kind == 1 || kind == 4) && len - i != size + 1) continue;
+        n = __atomic_add_fetch( &seen[kind], 1, __ATOMIC_RELAXED );
+        if (n <= 16) return 1;
+        if (n == 17 || !(n % 1024))
+            dprintf( 2, "[recovery-log] kind=%u seen=%llu; keeping first 16 and every 1024th instruction-recovery record\n", kind, n );
+        return !(n % 1024);
+    }
+    return 1;
+}
+
 /* madeira-bcd: rtcs-cap v1. The PE ntdll (upstream's tracked binary) prints
  * "[rtcs] pre:" for every exception prepare_exception_arm64ec sees; its
  * 40-line cap (signal_arm64ec.c) only covers the block before the ERR. A
@@ -1491,6 +1596,11 @@ static NTSTATUS ios_wrap_2(void *a)
     {
         g_wine_unix_call_count++;
         return p->len;  /* what write() returns for the whole line */
+    }
+    if (!ios_recovery_log_admit( p->str, p->len ))   /* madeira-bcd: MADEIRA_RECOVERY_LOG_SAMPLE */
+    {
+        g_wine_unix_call_count++;
+        return p->len;
     }
     return ios_wrap_unix_call(2, a, unixcall_wine_dbg_write);
 }
@@ -2146,12 +2256,41 @@ static int ios_ntdll_sync_mode( void )
     return 0;
 }
 
+/* madeira-bcd, ported from thebcd69/bcd-games#4 and thebcd69/bcd-wine#1 by mckenna654 (modified 2026-10-24): ntdll-xsec.dll, another
+ * opt-in ARM64EC ntdll. tools/build-wine-extra-dlls.sh builds it next to the shipped ntdll.dll from the same wine source with
+ * tools/patch-wine-ntdll-xsec.py, after the same byte-for-byte check as ntdll-sync.dll: the emulator is told about the executable
+ * views of non-image sections (a pagefile section mapped twice, one view written and one run), and the emulator's optional code
+ * probes recover from an unreadable target instead of leaking a native pc to the guest's exception handler.
+ *   env.MADEIRA_NTDLL_XSEC 1           ntdll-xsec.dll (when the bundle has it; wins over MADEIRA_NTDLL_SYNC)
+ *                          unset or 0  as before
+ * Set by the game's list (Diablo II: Resurrected); no other game maps it. app/Madeira/WineProcessBridge.m links system32\ntdll.dll
+ * to the same file. */
+static int ios_ntdll_xsec_on( void )
+{
+    const char *e = getenv( "MADEIRA_NTDLL_XSEC" );
+    return e && e[0] == '1' && !e[1];
+}
+
 static char *ios_ec_ntdll_name( const char *dir, const char *pe_dir )
 {
     static int said;
     char *name = NULL;
     int mode = ios_ntdll_sync_mode();
 
+    if (ios_ntdll_xsec_on() && !strcmp( pe_dir, "/arm64ec-windows" ))
+    {
+        static int xsec_said;
+        if (asprintf( &name, "%s%s/ntdll-xsec.dll", dir, pe_dir ) < 0) name = NULL;
+        if (name && !access( name, R_OK ))
+        {
+            if (!xsec_said++)
+                dprintf( 2, "[ntdll-xsec] %s (opt-in, env.MADEIRA_NTDLL_XSEC = 1; unset maps the shipped ntdll.dll)\n", name );
+            return name;
+        }
+        if (!xsec_said++) dprintf( 2, "[ntdll-xsec] this build has no ntdll-xsec.dll -- the shipped ntdll.dll is mapped\n" );
+        free( name );
+        name = NULL;
+    }
     if (mode && !strcmp( pe_dir, "/arm64ec-windows" ))
     {
         if (asprintf( &name, "%s%s/ntdll-sync.dll", dir, pe_dir ) < 0) name = NULL;
@@ -4016,6 +4155,10 @@ DECLSPEC_EXPORT void wine_ios_child_main( int argc, char *argv[], int child_fd_s
                              (unsigned)status, (void *)ios_wow_base(),
                              (void *)user_space_wow_limit );
 
+        /* madeira-bcd (2026-10-24): env.MADEIRA_KEYED_EVENT_PER_PROCESS = 1 gives this process its own keyed event, as start_main_thread does for the
+         * session's first one; without the switch this returns at once. */
+        ios_keyed_event_child_boot( child_peb );
+
         /* a 32-bit child needs its own i386 ntdll mapped
          * (and LdrSystemDllInitBlock filled with GUEST addresses) exactly as
          * start_main_thread does for the session's main process.  The child
@@ -4155,6 +4298,7 @@ DECLSPEC_EXPORT void wine_ios_child_main( int argc, char *argv[], int child_fd_s
  */
 DECLSPEC_EXPORT void __wine_main( int argc, char *argv[] )
 {
+    __atomic_store_n( &ios_recovery_log_sampling, ios_recovery_log_option(), __ATOMIC_RELAXED );   /* madeira-bcd: before any guest thread */
     main_argc = argc;
     main_argv = argv;
 

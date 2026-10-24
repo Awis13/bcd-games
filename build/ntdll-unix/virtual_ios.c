@@ -118,6 +118,7 @@ extern kern_return_t vm_protect(mach_port_t target_task, vm_address_t address,
 #include "wine/rbtree.h"
 #include "unix_private.h"
 #include "ios_wow.h"
+#include "ios_mixed.h"   /* madeira-bcd: ios_cur_ntdll_funcs (MADEIRA_NTDLL_DATA_SYNC_RANGE, thebcd69/bcd-games#4 by mckenna654) */
 #include "wine/debug.h"
 
 /* ml648: the Mono-bridge alias table is defined further down, but the anon-alias
@@ -6487,6 +6488,98 @@ void ios_jit_sync_write(void *addr, size_t size)
     }
 }
 
+/* madeira-bcd, ported from thebcd69/bcd-games#4 by mckenna654 (modified 2026-10-24): env.MADEIRA_NTDLL_DATA_SYNC_RANGE = 1 (OPT-IN).
+ *
+ * A sub-page protect is not a write to every byte on the rounded page. ntdll's ARM64EC code updates its globals in the pool copy, while
+ * a guest patches the original PE copy. Diablo II: Resurrected protects the 8-byte pWow64PrepareForException slot; the IAT sync of
+ * NtProtectVirtualMemory then copies the whole rounded page from the PE copy over the pool copy, which also zeroes the live
+ * pResetToConsistentState and notification callbacks beside it (they are written in the pool copy only). With the switch, the writable
+ * non-executable `.data` of the CURRENT process's registered ntdll gets only the bytes the caller asked for (a request under 4 KB; a bulk
+ * protect keeps the full sync): complete aligned 8-byte
+ * slots whose value changed are rebound to the owner's pool copy exactly as the full sync does, everything else is copied as bytes,
+ * and the neighbours keep their live values. Any other image, a request outside `.data` or one that cannot be placed returns 0 and the
+ * caller's full sync runs as before. Off (default): the helper is not called, byte for byte as before. */
+static int ios_ntdll_data_sync_range_enabled( void )
+{
+    static int cached = -1;
+    if (cached < 0)
+    {
+        const char *s = getenv( "MADEIRA_NTDLL_DATA_SYNC_RANGE" );   /* env.MADEIRA_NTDLL_DATA_SYNC_RANGE = 1 */
+        cached = (s && s[0] == '1' && !s[1]) ? 1 : 0;
+    }
+    return cached;
+}
+
+static int ios_sync_ntdll_data_patch( const void *image, size_t image_size,
+                                     const void *requested, size_t length,
+                                     const void *page, size_t page_size,
+                                     void *pool_page, void *owner, const void *ntdll_entry )
+{
+    const IMAGE_DOS_HEADER *dos = image;
+    const IMAGE_NT_HEADERS64 *nt;
+    const IMAGE_SECTION_HEADER *sec;
+    uintptr_t req = (uintptr_t)requested, pe = (uintptr_t)image, pg = (uintptr_t)page;
+    size_t off, section_offset, i, pos;
+    unsigned char *dst;
+    const unsigned char *src = requested;
+    /* Identify the current ntdll through the loader's dispatcher registry,
+     * before reading headers: another module may have protected its headers.
+     * Only a SUB-PAGE request (under 4 KB) takes this path: a bulk protect of ntdll's data (the loader's own, which restores a whole
+     * section after writing dispatcher slots) keeps the full sync with its relocation and pointer passes. */
+    if (!ntdll_entry || (uintptr_t)ntdll_entry < pe ||
+        (uintptr_t)ntdll_entry - pe >= image_size || !length || length >= 0x1000) return 0;
+    if (req < pe || req - pe >= image_size || length > image_size - (req - pe)) return 0;
+    if (req < pg || req - pg >= page_size || length > page_size - (req - pg)) return 0;
+    if (image_size < sizeof(*dos) || dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew < 0)
+        return 0;
+    off = dos->e_lfanew;
+    if (off > image_size || sizeof(*nt) > image_size - off) return 0;
+    nt = (const IMAGE_NT_HEADERS64 *)((const char *)image + off);
+    if (nt->Signature != IMAGE_NT_SIGNATURE || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+        return 0;
+    section_offset = off + FIELD_OFFSET( IMAGE_NT_HEADERS64, OptionalHeader );
+    if (nt->FileHeader.SizeOfOptionalHeader > image_size - section_offset) return 0;
+    section_offset += nt->FileHeader.SizeOfOptionalHeader;
+    if (nt->FileHeader.NumberOfSections > (image_size - section_offset) / sizeof(*sec)) return 0;
+    sec = (const IMAGE_SECTION_HEADER *)((const char *)image + section_offset);
+    off = req - pe;
+    for (i = 0; i < nt->FileHeader.NumberOfSections; i++)
+    {
+        size_t lo = sec[i].VirtualAddress, n = sec[i].Misc.VirtualSize;
+        if (memcmp( sec[i].Name, ".data\0\0\0", IMAGE_SIZEOF_SHORT_NAME ) ||
+            !(sec[i].Characteristics & IMAGE_SCN_MEM_WRITE) ||
+            (sec[i].Characteristics & IMAGE_SCN_MEM_EXECUTE) || off < lo || off - lo >= n ||
+            length > n - (off - lo)) continue;
+
+        dst = (unsigned char *)pool_page + (req - pg);
+        /* Translate complete, aligned pointer slots only. A byte patch must
+         * not overwrite/translate neighbouring bytes of a live variable. */
+        for (pos = 0; pos < length;)
+        {
+            size_t part = min( sizeof(uint64_t) - ((req + pos) & 7), length - pos );
+            uint64_t before, value;
+            if (part == sizeof(value))
+            {
+                memcpy( &before, dst + pos, sizeof(before) );
+                memcpy( &value, src + pos, sizeof(value) );
+                if (value != before && value && !ios_va_is_x86_code( value ))
+                    value = (uintptr_t)ios_jit_translate_addr_for_owner( (void *)(uintptr_t)value, owner );
+                memcpy( dst + pos, &value, sizeof(value) );
+            }
+            else memcpy( dst + pos, src + pos, part );
+            pos += part;
+        }
+        {
+            static unsigned reports;
+            if (__atomic_fetch_add( &reports, 1, __ATOMIC_RELAXED ) < 24)
+                dprintf( 2, "[ntdll-data-sync] requested %p+0x%lx of page %p+0x%lx; neighbouring live globals preserved (owner=%p)\n",
+                         requested, (unsigned long)length, page, (unsigned long)page_size, owner );
+        }
+        return 1;
+    }
+    return 0;
+}
+
 /* madeira-bcd: RtlPcToFileHeader must know JIT-pool aliases.
  *
  * ARM64EC builtins run from their pool copy, so every address they compute
@@ -11514,7 +11607,58 @@ static void ios_wow_reclaim_dead_windows(void)
  * ios_wow_map_allows_window) or, on a small map, when the maximum number of
  * concurrent windows is already alive.
  */
+static NTSTATUS ios_wow_window_reserve_once(void);
+
+/* madeira-bcd (lead, 2026-10-23): LAST RESORT before a 32-bit process is refused its window. Dead windows that the
+ * live-thread guard keeps (an exited process's threads still exist, see ios_wow_reclaim_dead_windows) have those threads
+ * ended where that is safe (ios_thread_registry_end_dead_range, signal_arm64_ios.c), then they are reclaimed and the
+ * reservation is tried once more. Battle.net, build 592: its Agent could not start for 80 s ("guest window reserve
+ * returned 0xc0000017", every 3 s) while two windows were held by threads of exited helpers. Only the path that fails
+ * today runs it; MADEIRA_WOW_REAP_DEAD=0 turns it off. Returns how many threads were ended. */
+static int ios_wow_reap_dead_windows(void)
+{
+    extern int ios_thread_registry_end_dead_range( uintptr_t base, uintptr_t size, void *dead_peb, int *kept );
+    const char *env = getenv( "MADEIRA_WOW_REAP_DEAD" );
+    unsigned i;
+    int ended = 0;
+
+    if (env && !strcmp( env, "0" )) return 0;
+    for (i = 0; i < IOS_WOW_MAX_WINDOWS; i++)
+    {
+        ULONG_PTR base;
+        void *dead_peb;
+        int n, kept = 0;
+
+        pthread_mutex_lock( &ios_wow_mutex );
+        if (!ios_wow_windows[i].base || ios_wow_windows[i].dead != 1)
+        {
+            pthread_mutex_unlock( &ios_wow_mutex );
+            continue;
+        }
+        base     = ios_wow_windows[i].base;
+        dead_peb = ios_wow_windows[i].dead_peb;
+        pthread_mutex_unlock( &ios_wow_mutex );
+        n = ios_thread_registry_end_dead_range( (uintptr_t)base, IOS_WOW_WINDOW_SIZE, dead_peb, &kept );
+        dprintf( 2, "[wow-reap] B=%p of exited peb=%p: %d leftover thread(s) ended, %d kept\n", (void *)base, dead_peb, n, kept );
+        ended += n;
+    }
+    return ended;
+}
+
 NTSTATUS ios_wow_window_reserve(void)
+{
+    NTSTATUS status = ios_wow_window_reserve_once();
+
+    if (status == STATUS_NO_MEMORY && ios_wow_reap_dead_windows() > 0)
+    {
+        status = ios_wow_window_reserve_once();   /* its first step reclaims the windows just freed of their threads */
+        dprintf( 2, "[wow-reap] second reservation after ending leftover threads: %s\n",
+                 status == STATUS_SUCCESS ? "a window was found" : "still no window" );
+    }
+    return status;
+}
+
+static NTSTATUS ios_wow_window_reserve_once(void)
 {
     struct ios_wow_window *slot = NULL;
     unsigned guard_owned = 0, held = 0;
@@ -12785,6 +12929,7 @@ static void clear_arm64ec_range( const void *addr, size_t size );
  * aliases (FEX CodeBuffers) in freed ranges are cleared; EC bitmap bits
  * are cleared so a reused range starts with a clean call-routing slate. */
 static void ios_sc_grants_owner_died( void *peb );
+static void ios_ea_grants_owner_died( void *peb );
 
 void ios_jit_reclaim_process( void *peb )
 {
@@ -12795,6 +12940,7 @@ void ios_jit_reclaim_process( void *peb )
 
     /* madeira-bcd: its Social Club reservations go when the next helper asks */
     ios_sc_grants_owner_died( peb );
+    ios_ea_grants_owner_died( peb );   /* the EA app's, the same way; nothing unless env.MADEIRA_EA_CEF = 1 gave one */
     if (!peb || !rx_base) return;
 
     /* madeira-bcd: the alias-push callback lives in the emulator of the LAST
@@ -17312,6 +17458,44 @@ static int ios_exec_in_place_split( const void *base, size_t size, int unix_prot
 }
 #endif /* WINE_IOS */
 
+/* madeira-bcd, ported from thebcd69/bcd-games#4 by mckenna654 (modified 2026-10-24): env.MADEIRA_SHARED_SECTION_EXEC = 1 (OPT-IN).
+ *
+ * A pagefile-backed section view in an x64 process keeps its shared backing when the guest makes it executable. Diablo II:
+ * Resurrected's loader maps ONE section twice (a write view and a run view), writes its code through one and jumps into the other.
+ * Without the switch the executable view is copied into the JIT pool (the anonymous-RWX alias path below: "[jit-copy] ml634 PRE-REMAP"),
+ * which cuts it off from its sibling: the code written through the sibling never reaches it and the jump lands in zero bytes.
+ * Guest execute permission stays in Wine's page table (the view keeps VPROT_EXEC); the host never runs x86 bytes, it only has to read
+ * them, so the exec bit is dropped before the pool path (the ml1030 contract). FEX still has to be told that the range is executable:
+ * the companion ntdll-xsec.dll (env.MADEIRA_NTDLL_XSEC = 1, tools/patch-wine-ntdll-xsec.py) notifies the emulator of non-image
+ * section views. Native EC allocations (ios_alloc_ec_code, VPROT_ARM64EC), system views, images, file-backed sections and views in a
+ * 32-bit guest window keep the pool path. Off (default): never called, byte for byte as before. */
+static int ios_shared_section_exec_enabled( void )
+{
+    static int cached = -1;
+    if (cached < 0)
+    {
+        const char *s = getenv( "MADEIRA_SHARED_SECTION_EXEC" );   /* env.MADEIRA_SHARED_SECTION_EXEC = 1 */
+        cached = (s && s[0] == '1' && !s[1]) ? 1 : 0;
+    }
+    return cached;
+}
+
+static int ios_guest_section_is_host_data( const void *base, size_t size )
+{
+#ifdef WINE_IOS
+    struct file_view *view;
+
+    if (!ios_shared_section_exec_enabled()) return 0;
+    if (!arm64ec_view || ios_alloc_ec_code || ios_wow_in_window( base )) return 0;
+    if (!(view = find_view( base, 0 ))) return 0;
+    if (!(view->protect & (SEC_COMMIT | SEC_RESERVE))) return 0;
+    if (view->protect & (SEC_FILE | SEC_IMAGE | VPROT_ARM64EC | VPROT_SYSTEM)) return 0;
+    return ios_x64_image_view_covers( (uintptr_t)view->base, view->size, (uintptr_t)base, size );
+#else
+    return 0;
+#endif
+}
+
 static inline int mprotect_exec( void *base, size_t size, int unix_prot )
 {
 #ifdef WINE_IOS
@@ -17418,6 +17602,18 @@ static inline int mprotect_exec( void *base, size_t size, int unix_prot )
         mprotect( base, size, PROT_READ );
         errno = ENOMEM;
         return -1;
+    }
+
+    /* madeira-bcd: see ios_guest_section_is_host_data (MADEIRA_SHARED_SECTION_EXEC, thebcd69/bcd-games#4 by mckenna654).
+     * The view keeps VPROT_EXEC in Wine's tables and its shared backing; no pool copy, no alias. */
+    if ((unix_prot & PROT_EXEC) && ios_guest_section_is_host_data( base, size ))
+    {
+        static unsigned int section_n;
+        if (section_n++ < 24 && !ios_in_mach_exc)
+            dprintf( 2, "[guest-section] %p+0x%lx: preserving shared backing for translated code\n",
+                     base, (unsigned long)size );
+        unix_prot &= ~PROT_EXEC;
+        if (!unix_prot) unix_prot = PROT_READ;
     }
 
 #endif
@@ -26226,6 +26422,85 @@ static void ios_stack_release( void *base )
     }
 }
 
+#ifdef WINE_IOS
+#include "ios_wow_stack_free.h"
+
+/* ajan11-wow64stack: the base of the guest window that holds `addr` (the dead thread's TEB), in any state. *live is 1 when a
+ * running process still owns that window: the slot is bound to `peb` (the dead TEB's own PEB), so a slot that was torn down and
+ * handed to another process in the meantime is not "live" for this TEB. 0 when no window holds the address. No lock: the
+ * registry is read the way ios_wow_addr_in_any_window() reads it. */
+static ULONG_PTR ios_wow_window_base_of_addr( const void *addr, const void *peb, int *live )
+{
+    ULONG_PTR a = (ULONG_PTR)addr;
+    unsigned i, n = ios_wow_window_count;
+
+    *live = 0;
+    for (i = 0; i < n; i++)
+    {
+        ULONG_PTR b = ios_wow_windows[i].base;
+
+        if (!b || a < b || a >= b + IOS_WOW_WINDOW_SIZE) continue;
+        *live = !ios_wow_windows[i].leaked && !ios_wow_windows[i].dead &&
+                ios_wow_windows[i].peb && ios_wow_windows[i].peb == peb;
+        return b;
+    }
+    for (i = 0; i < ios_wow_placeholder_count; i++)
+    {
+        ULONG_PTR b = ios_wow_placeholders[i].base;
+
+        if (b && a >= b && a < b + IOS_WOW_WINDOW_SIZE) return b;
+    }
+    return 0;
+}
+
+/* Is there a view that starts exactly at `ptr` and that NtFreeVirtualMemory( MEM_RELEASE, size 0 ) would release?  Under the
+ * view lock, the same test NtFreeVirtualMemory makes before it deletes. */
+static int ios_wow_stack_old_target_hits_view( void *ptr )
+{
+    struct file_view *view;
+    sigset_t sigset;
+    int hit;
+
+    server_enter_uninterrupted_section( &virtual_mutex, &sigset );
+    view = find_view( ptr, 0 );
+    hit = view && view->base == ptr && is_view_valloc( view );
+    server_leave_uninterrupted_section( &virtual_mutex, &sigset );
+    return hit;
+}
+
+/* Where to aim the release of the dead thread `dead`'s 32-bit stack (guest address `guest`); NULL: do not release.  See
+ * ios_wow_stack_free.h.  The caller is the thread that is freeing the TEB, which may belong to another process. */
+static void *ios_wow_stack_free_target( TEB *dead, void *guest )
+{
+    static LONG cross_n;
+    ULONG_PTR caller_base = ios_wow_base(), dead_base;
+    char *old_ptr = (char *)guest + caller_base;
+    int mode = ios_wsf_mode(), live = 0, hits = 0, act;
+
+    if (mode == IOS_WSF_MODE_OFF) return old_ptr;
+    dead_base = ios_wow_window_base_of_addr( dead, dead->Peb, &live );
+    if (dead_base && dead_base != caller_base && mode == IOS_WSF_MODE_DEFAULT)
+        hits = ios_wow_stack_old_target_hits_view( old_ptr );
+    act = ios_wsf_decide( mode, caller_base, dead_base, live, hits );
+    if (dead_base && dead_base != caller_base)
+    {
+        LONG n = InterlockedIncrement( &cross_n );
+
+        if (n <= 8 || !(n & (n - 1)))
+            dprintf( 2, "[wow-stack-free] #%d the dead thread %04x's 32-bit stack (guest %p) is in window %p (%s), the thread freeing "
+                        "its TEB is in window %p: the old address %p %s a live view -> %s rev=ajan11\n",
+                     (int)n, (unsigned)HandleToULong( dead->ClientId.UniqueThread ), guest, (void *)dead_base,
+                     live ? "live" : "gone", (void *)caller_base, (void *)old_ptr,
+                     mode == IOS_WSF_MODE_DEFAULT ? (hits ? "IS" : "is not") : "was not tested for",
+                     act == IOS_WSF_OWN ? "released in its own window" :
+                     act == IOS_WSF_SKIP ? "not released (its window is gone)" : "released at the old address (as before)" );
+    }
+    if (act == IOS_WSF_OWN) return (char *)guest + dead_base;
+    if (act == IOS_WSF_SKIP) return NULL;
+    return old_ptr;
+}
+#endif
+
 void virtual_free_teb( TEB *teb )
 {
     struct ntdll_thread_data *thread_data = (struct ntdll_thread_data *)&teb->GdiTebBatch;
@@ -26254,10 +26529,14 @@ void virtual_free_teb( TEB *teb )
 #ifdef WINE_IOS
         /* guest -> host: a WoW thread's 32-bit stack pointer is a guest
          * address.  Outside a window ios_wow_base() is 0 and this is the
-         * classic identity. */
-        ptr = (char *)ptr + ios_wow_base();
+         * classic identity.
+         * ajan11-wow64stack: ios_wow_base() is the window of the thread that is FREEING this TEB, which exit_thread()'s
+         * hand-off makes a thread of another process half of the time; ios_wow_stack_free_target() tells the two apart
+         * (ios_wow_stack_free.h) and aims the release at the dead thread's own stack where the old address would have
+         * deleted a live view of the other process. */
+        ptr = ios_wow_stack_free_target( teb, ptr );   /* NULL: the dead thread's window is gone, nothing to release */
 #endif
-        NtFreeVirtualMemory( GetCurrentProcess(), &ptr, &size, MEM_RELEASE );
+        if (ptr) NtFreeVirtualMemory( GetCurrentProcess(), &ptr, &size, MEM_RELEASE );
     }
     ios_vh_why = NULL;
 
@@ -27435,6 +27714,35 @@ static NTSTATUS grow_thread_stack_teb( char *page, struct thread_stack_info *sta
     return ret;
 }
 
+/* madeira-bcd (round tur600): [vm-fault-wait] -- say which fault waits for virtual_mutex, BEFORE it waits.
+ *
+ * ios_virtual_handle_fault_for_thread runs on the one Mach exception-server thread that serves the page faults of every guest thread, and takes
+ * virtual_mutex. A thread that faults while it holds that mutex itself (a memset in decommit_pages under NtFreeVirtualMemory, a memmove under
+ * virtual_map_section) is then stopped for good: its fault waits for the lock it holds, and every thread that needs the mutex waits behind them.
+ * Seven logs of four games show it (OMORI N87QMH, Demons Roots 4ZA68R, Saints Row IV ZZ2S3X, ONE PIECE Bounty Rush 13FT14/2HJEVX/NJ989H/WCSJBK): the
+ * stack dump names the stuck thread and the waiting exception thread, but never the fault. When the mutex is busy at this point, the first 16
+ * times the line below prints the address, the kind of fault and the faulting thread, and then the thread waits exactly as it did. An idle mutex
+ * is taken by the trylock; nothing else changes (same lock, same order; mutex_lock does not lock while the process exits, nor does this).
+ * Only the exception thread calls it, so the counter needs no atomics; dprintf, never a Wine log macro, as the other entry point below.
+ * tests/host/check-vm-fault-wait.py. */
+/* ios-vm-fault-wait begin */
+static void ios_vm_fault_lock( const void *addr, ULONG_PTR err, const TEB *teb )
+{
+    static unsigned wait_logs;
+
+    if (process_exiting) return;
+    if (!pthread_mutex_trylock( &virtual_mutex )) return;
+    if (wait_logs < 16)
+    {
+        wait_logs++;
+        dprintf( 2, "[vm-fault-wait] #%u a %s fault at %p of tid=%04x teb=%p waits for virtual_mutex\n", wait_logs,
+                 err == EXCEPTION_WRITE_FAULT ? "write" : err == EXCEPTION_READ_FAULT ? "read" : "other", addr,
+                 teb ? (unsigned)(ULONG_PTR)teb->ClientId.UniqueThread : 0, (const void *)teb );
+    }
+    pthread_mutex_lock( &virtual_mutex );
+}
+/* ios-vm-fault-wait end */
+
 /* ml374: the two entry points below run ON the Mach exception-server thread.
  * They raise ios_in_mach_exc for their whole extent so shared helpers (notably
  * mprotect_exec, reached via mprotect_range) skip wine log macros — see the
@@ -27447,7 +27755,7 @@ NTSTATUS ios_virtual_handle_fault_for_thread( EXCEPTION_RECORD *rec, TEB *teb )
     char *page = ROUND_ADDR( addr, host_page_mask );
     BYTE vprot;
 
-    mutex_lock( &virtual_mutex );
+    ios_vm_fault_lock( addr, err, teb );   /* madeira-bcd tur600: mutex_lock, naming a fault that has to wait */
     vprot = get_host_page_vprot( page );
 
     if (err == EXCEPTION_READ_FAULT && (get_unix_prot( vprot ) & PROT_READ))
@@ -28969,6 +29277,344 @@ static int ios_sc2_route( void *hint, SIZE_T size, ULONG type, ULONG protect, vo
     return 1;
 }
 
+/***********************************************************************
+ *           the EA app's Chromium                        (madeira-bcd, 2026-10-24)
+ *
+ * env.MADEIRA_EA_CEF = 1, set only by the EA app's launcher entry (BCDLauncherSpec.eaApp), with
+ * env.MADEIRA_SC_PA_POOLS = 2 beside it: Social Club's layout 2 boots the band (the slots held,
+ * the JIT pool's RW alias at 0x7900000000, the FEX arena at 0x7d00000000) and this block gives the
+ * EA app's PartitionAlloc pools the slots Social Club's 32 GB asks do not use. Off, none of it runs:
+ * every entry point below starts with ios_ea_cef_app() == 0 or a count that only a grant raises.
+ *
+ * What EADesktop.exe (CEF 109, "Chrome/109.0.5414.120" in its user agent, libcef.dll 198 MB) asks for
+ * (build 598, log 13:54): PartitionAlloc's Init runs in two copies (chrome_elf.dll's and libcef.dll's)
+ * and each asks twice, a plain 16 GB reservation on a 16 GB boundary (the regular pool) and a 16 GB +
+ * 64 KB one whose base is a boundary minus 64 KB (the BackupRefPtr pool and its forbidden zone):
+ * jumbo#1 plain, #2 guard, #3 plain, #4 guard. The band holds four such slots, 0x7000000000,
+ * 0x7400000000, 0x7800000000 and 0x7c00000000, and the old path gave #1 and #2 real 16 GB views at
+ * 0x7800000000 and 0x73ffff0000, #3 a soft grant inside #2's view (0x7400000000) and #4 a soft grant
+ * on #1's view (0x7800000000): the second copy's BackupRefPtr pool and the first copy's regular pool
+ * were the same pages, both root sets committed metadata there (0x7800201000.. by the one,
+ * 0x7800001000.. by the other), and a commit came out with size 0 ([nt-fail] c000000d at
+ * 0x780020d000, VirtualAlloc error 87) -> PartitionAlloc's out-of-memory int3. EACefSubProcess.exe
+ * (the GPU process) then found no slot at all for its own four pools (jumbo#5-9, c0000018 / c0000017).
+ * A process of its own needs four slots; the band has four. So the EA app's CEF runs in ONE process
+ * (--single-process, process_ios.c) and its four pools get the four slots, each with the real part a
+ * pool uses, as Social Club's layout 2 gives its blocks 4 GB:
+ *   R1  first plain ask   [0x7800000000, +4 GB)       layout 2's chrome_elf.dll slot, given as 16 GB
+ *   B1  first guard ask   [0x73ffff0000, 0x7800000000) both metadata slots and the 64 KB below them:
+ *                         all 16 GB, as before (the 4 GB cppgc cage's soft slots lie in it)
+ *   R2  second plain ask  [0x7000000000, +4 GB)       layout 2's libcef.dll slot, given as 16 GB
+ *   B2  second guard ask  [0x7bffff0000, 0x7d00000000) 64 KB below Oilpan's slot, and its 4 GB
+ * The 64 KB below B2 is the end of the cage holdback's gap (it stops 64 KB short, IOS_CAGE_REAL_SIZE).
+ * Anything else the EA process asks for (the V8 cage, the cppgc cage, a kernel pick) takes the same
+ * path as any CEF's. A pool that grows past its real part (R1 would run into the RW alias, R2 into the
+ * furniture) fails its commit with STATUS_NOT_MAPPED_VIEW; [nt-fail] names it.
+ * Dead EA processes' views go back to the holds when the next EA browser asks (ios_ea_reap_dead),
+ * as for SocialClubHelper.exe, because an EA update restarts EADesktop.exe. */
+#define IOS_EA_GUARD      0x10000ULL           /* PartitionAlloc's forbidden zone before a BackupRefPtr pool */
+#define IOS_EA_PLAIN_ASK  0x400000000ULL       /* 16 GB, a regular pool */
+#define IOS_EA_GUARD_ASK  0x400010000ULL       /* 16 GB + the forbidden zone, a BackupRefPtr pool */
+#define IOS_EA_POOL_MASK  0x3ffffffffULL       /* offset in a 16 GB slot */
+
+enum { IOS_EA_R1, IOS_EA_R2, IOS_EA_B1, IOS_EA_B2, IOS_EA_N };
+#define IOS_EA_NONE   (-1)
+#define IOS_EA_REFUSE (-2)
+
+#define IOS_EA_GRANT_MAX 8
+static struct { uint64_t view; void *peb; int piece, dead; } ios_ea_grants[IOS_EA_GRANT_MAX];
+static int ios_ea_grant_n, ios_ea_grant_dead_n;
+static pthread_mutex_t ios_ea_lock = PTHREAD_MUTEX_INITIALIZER;         /* the table above */
+static pthread_mutex_t ios_ea_route_lock = PTHREAD_MUTEX_INITIALIZER;   /* one EA ask at a time */
+/* The last ios_ea_route on this thread refused its ask: the soft grant loop, which runs on after a decided request, gives it nothing either. */
+static _Thread_local int ios_ea_refused_now;
+
+/* env.MADEIRA_EA_CEF = 1 (the EA app's launcher entry sets it; off for everything else). */
+static int ios_ea_cef_enabled(void)
+{
+    static int on = -1;
+    if (on < 0)
+    {
+        const char *e = getenv( "MADEIRA_EA_CEF" );
+        on = e && e[0] == '1' && !e[1];
+    }
+    return on;
+}
+
+/* 1 when the last component of `path` (after '\' or '/') is `want` (lower case ASCII), any case. */
+static int ios_ea_path_is( const WCHAR *path, size_t len, const char *want )
+{
+    size_t base = 0, k, n = strlen( want );
+
+    if (!path) return 0;
+    for (k = 0; k < len; k++) if (path[k] == '\\' || path[k] == '/') base = k + 1;
+    if (len - base != n) return 0;
+    for (k = 0; k < n; k++)
+    {
+        WCHAR c = path[base + k];
+        if (c >= 'A' && c <= 'Z') c += 32;
+        if (c != (WCHAR)want[k]) return 0;
+    }
+    return 1;
+}
+
+static int ios_ea_current_image_is( const char *want )
+{
+    PEB *peb = ios_jit_current_peb();
+    RTL_USER_PROCESS_PARAMETERS *pp = peb ? peb->ProcessParameters : NULL;
+
+    if (!pp || !pp->ImagePathName.Buffer) return 0;
+    return ios_ea_path_is( pp->ImagePathName.Buffer, pp->ImagePathName.Length / sizeof(WCHAR), want );
+}
+
+/* 0: not an EA CEF process, or env.MADEIRA_EA_CEF is not 1 (nothing else is looked at then);
+ * 1: EADesktop.exe, the browser; 2: EACefSubProcess.exe. */
+static int ios_ea_cef_app(void)
+{
+    if (!ios_ea_cef_enabled()) return 0;
+    if (ios_ea_current_image_is( "eadesktop.exe" )) return 1;
+    if (ios_ea_current_image_is( "eacefsubprocess.exe" )) return 2;
+    return 0;
+}
+
+/* Which piece an EA browser's reserve gets. `held` has bit k for each layout 2 slot still held,
+ * `mine` bit p for each piece this process already has. NONE leaves the request to the generic jumbo
+ * path; REFUSE fails it with nothing else tried (a fifth pool, or one whose slot is taken). */
+static int ios_ea_classify( uint64_t size, uint64_t hint, unsigned held, unsigned mine )
+{
+    unsigned b1 = (1u << IOS_SC2_J2) | (1u << IOS_SC2_J2L);
+    unsigned all = (1u << IOS_SC2_E) | (1u << IOS_SC2_L) | b1 | (1u << IOS_SC2_OILPAN);
+    int plain = size == IOS_EA_PLAIN_ASK && !(hint & IOS_EA_POOL_MASK);
+    int guard = size == IOS_EA_GUARD_ASK && (hint & IOS_EA_POOL_MASK) == (IOS_EA_POOL_MASK & ~(IOS_EA_GUARD - 1));
+
+    if (!hint) return IOS_EA_NONE;   /* PartitionAlloc's unhinted over-reserve retry (32 GB - 64 KB) is not a pool ask */
+    if (!plain && !guard) return IOS_EA_NONE;
+    /* A browser starts only when all four slots are free: another browser's pools, or a half-reaped layout, leave it none
+     * (it would take two slots and fail on the third, and the first browser could not be restarted). */
+    if (!mine && (held & all) != all) return IOS_EA_REFUSE;
+    if (plain)
+    {
+        if ((held & (1u << IOS_SC2_E)) && !(mine & (1u << IOS_EA_R1))) return IOS_EA_R1;
+        if ((held & (1u << IOS_SC2_L)) && !(mine & (1u << IOS_EA_R2))) return IOS_EA_R2;
+        return IOS_EA_REFUSE;
+    }
+    if ((held & b1) == b1 && !(mine & (1u << IOS_EA_B1))) return IOS_EA_B1;
+    if ((held & (1u << IOS_SC2_OILPAN)) && !(mine & (1u << IOS_EA_B2))) return IOS_EA_B2;
+    return IOS_EA_REFUSE;
+}
+
+/* The real view of piece p and the layout 2 slots it takes over. */
+static void ios_ea_piece( int p, uint64_t *view, uint64_t *real, unsigned *slots )
+{
+    switch (p)
+    {
+    case IOS_EA_R1:
+        *view = ios_sc2_slots[IOS_SC2_E].base; *real = ios_sc2_slots[IOS_SC2_E].size; *slots = 1u << IOS_SC2_E;
+        break;
+    case IOS_EA_R2:
+        *view = ios_sc2_slots[IOS_SC2_L].base; *real = ios_sc2_slots[IOS_SC2_L].size; *slots = 1u << IOS_SC2_L;
+        break;
+    case IOS_EA_B1:
+        *view = ios_sc2_slots[IOS_SC2_J2].base - IOS_EA_GUARD;
+        *real = IOS_EA_GUARD + ios_sc2_slots[IOS_SC2_J2].size + ios_sc2_slots[IOS_SC2_J2L].size;
+        *slots = (1u << IOS_SC2_J2) | (1u << IOS_SC2_J2L);
+        break;
+    default:
+        *view = ios_sc2_slots[IOS_SC2_OILPAN].base - IOS_EA_GUARD;
+        *real = IOS_EA_GUARD + ios_sc2_slots[IOS_SC2_OILPAN].size;
+        *slots = 1u << IOS_SC2_OILPAN;
+        break;
+    }
+}
+
+static const char *ios_ea_piece_what( int p )
+{
+    return p == IOS_EA_R1 ? "first regular pool" : p == IOS_EA_R2 ? "second regular pool"
+         : p == IOS_EA_B1 ? "first BackupRefPtr pool" : "second BackupRefPtr pool";
+}
+
+static unsigned ios_ea_mine( void *peb )
+{
+    unsigned m = 0;
+    int i;
+
+    pthread_mutex_lock( &ios_ea_lock );
+    for (i = 0; i < ios_ea_grant_n; i++)
+        if (ios_ea_grants[i].peb == peb && !ios_ea_grants[i].dead) m |= 1u << ios_ea_grants[i].piece;
+    pthread_mutex_unlock( &ios_ea_lock );
+    return m;
+}
+
+static void ios_ea_hold_slots( unsigned slots )
+{
+    int s;
+    for (s = 0; s < 32; s++) if (slots & (1u << s)) ios_sc2_hold( s );
+}
+
+/* ios_jit_reclaim_process: this pseudo-process has exited. Its views are released when the next EA
+ * browser asks (a restarted EADesktop.exe finds the layout it booted with). */
+static void ios_ea_grants_owner_died( void *peb )
+{
+    int i, n = 0;
+
+    if (!peb || !ios_ea_grant_n) return;
+    pthread_mutex_lock( &ios_ea_lock );
+    for (i = 0; i < ios_ea_grant_n; i++)
+        if (ios_ea_grants[i].peb == peb && !ios_ea_grants[i].dead) { ios_ea_grants[i].dead = 1; n++; }
+    ios_ea_grant_dead_n += n;
+    pthread_mutex_unlock( &ios_ea_lock );
+    if (n)
+        dprintf( 2, "[ea-cef] EADesktop.exe (peb=%p) exited holding %d PartitionAlloc pool view(s); they are released when "
+                    "the next EA browser asks\n", peb, n );
+}
+
+/* Release the views of EA browsers that have exited and hold their slots again. */
+static void ios_ea_reap_dead( void )
+{
+    for (;;)
+    {
+        uint64_t view = 0, real = 0;
+        unsigned slots = 0;
+        void *peb = NULL;
+        int i, piece = 0, found = 0;
+        MEMORY_BASIC_INFORMATION mbi;
+        NTSTATUS st = STATUS_MEMORY_NOT_ALLOCATED;
+
+        pthread_mutex_lock( &ios_ea_lock );
+        for (i = 0; i < ios_ea_grant_n; i++)
+        {
+            if (!ios_ea_grants[i].dead) continue;
+            view = ios_ea_grants[i].view;
+            peb = ios_ea_grants[i].peb;
+            piece = ios_ea_grants[i].piece;
+            ios_ea_grants[i] = ios_ea_grants[--ios_ea_grant_n];
+            ios_ea_grant_dead_n--;
+            found = 1;
+            break;
+        }
+        pthread_mutex_unlock( &ios_ea_lock );
+        if (!found) return;
+
+        ios_ea_piece( piece, &view, &real, &slots );
+        if (!NtQueryVirtualMemory( NtCurrentProcess(), (void *)(ULONG_PTR)view, MemoryBasicInformation,
+                                   &mbi, sizeof(mbi), NULL )
+            && (uint64_t)(ULONG_PTR)mbi.AllocationBase == view && mbi.State != MEM_FREE)
+        {
+            void *b = (void *)(ULONG_PTR)view;
+            SIZE_T s = 0;
+            st = NtFreeVirtualMemory( NtCurrentProcess(), &b, &s, MEM_RELEASE );
+        }
+        if (!st) ios_ea_hold_slots( slots );
+        dprintf( 2, "[ea-cef] reclaimed a dead EADesktop.exe's %s (peb=%p): view 0x%llx %s\n", ios_ea_piece_what( piece ), peb,
+                 (unsigned long long)view, st ? "was already gone" : "released and held again" );
+    }
+}
+
+/* Serve an EADesktop.exe jumbo request from its piece. Returns 0 when the request is not one of the
+ * pools' (the generic path takes it), 1 with *st (and *pick / *sz on success) when it was decided here. */
+static int ios_ea_route( void *hint, SIZE_T size, ULONG type, ULONG protect, void **pick, SIZE_T *sz, NTSTATUS *st )
+{
+    void *peb = ios_jit_current_peb();
+    uint64_t view, real;
+    unsigned slots, mine;
+    int k;
+    void *p;
+    SIZE_T s;
+
+    if (ios_sc_layout_mode != 2 || ios_sc2_rdr2)
+    {
+        static int said;
+        if (!said++)
+            dprintf( 2, "[ea-cef] EADesktop.exe asks for PartitionAlloc's pools, but layout 2 is not up (it needs "
+                        "env.MADEIRA_SC_PA_POOLS = 2 and the JIT pool's RW alias at 0x%llx): the pools stay unplaced, "
+                        "as without env.MADEIRA_EA_CEF\n", IOS_SC2_RW_ALIAS );
+        return 0;
+    }
+    ios_ea_refused_now = 0;
+    pthread_mutex_lock( &ios_ea_route_lock );
+    if (ios_ea_grant_dead_n) ios_ea_reap_dead();
+    mine = ios_ea_mine( peb );
+    k = ios_ea_classify( size, (uint64_t)(ULONG_PTR)hint, ios_sc2_held, mine );
+    if (k == IOS_EA_NONE)
+    {
+        pthread_mutex_unlock( &ios_ea_route_lock );
+        return 0;
+    }
+    if (k == IOS_EA_REFUSE)
+    {
+        static unsigned refused;
+        if (refused++ < 8)
+            dprintf( 2, "[ea-cef] EADesktop.exe's reserve 0x%lx (hint %p, slots held 0x%x, pieces it has 0x%x) refused: "
+                        "all four PartitionAlloc pools are given, or the slot of this one is taken by another process\n",
+                     (unsigned long)size, hint, ios_sc2_held, mine );
+        *st = STATUS_NO_MEMORY;
+        ios_ea_refused_now = 1;
+        pthread_mutex_unlock( &ios_ea_route_lock );
+        return 1;
+    }
+    ios_ea_piece( k, &view, &real, &slots );
+    {
+        int sl;
+        for (sl = 0; sl < 32; sl++) if (slots & (1u << sl)) ios_sc2_unhold( sl );
+    }
+    p = (void *)(ULONG_PTR)view;
+    s = real;
+    *st = allocate_virtual_memory( &p, &s, type, protect, 0, 0, 0, 0 );
+    if (*st || (uint64_t)(ULONG_PTR)p != view)
+    {
+        if (!*st) { SIZE_T fs = 0; NtFreeVirtualMemory( NtCurrentProcess(), &p, &fs, MEM_RELEASE ); }
+        ios_ea_hold_slots( slots );
+        dprintf( 2, "[ea-cef] %s: [0x%llx,0x%llx) could not be reserved (st=0x%x)\n", ios_ea_piece_what( k ),
+                 (unsigned long long)view, (unsigned long long)(view + real), (unsigned)*st );
+        if (!*st) *st = STATUS_NO_MEMORY;
+        pthread_mutex_unlock( &ios_ea_route_lock );
+        return 1;
+    }
+    pthread_mutex_lock( &ios_ea_lock );
+    if (ios_ea_grant_n < IOS_EA_GRANT_MAX)
+    {
+        ios_ea_grants[ios_ea_grant_n].view = view;
+        ios_ea_grants[ios_ea_grant_n].peb = peb;
+        ios_ea_grants[ios_ea_grant_n].piece = k;
+        ios_ea_grants[ios_ea_grant_n].dead = 0;
+        ios_ea_grant_n++;
+    }
+    pthread_mutex_unlock( &ios_ea_lock );
+    *pick = (void *)(ULONG_PTR)view;
+    *sz = size;
+    dprintf( 2, "[ea-cef] %s for EADesktop.exe: 0x%llx (0x%lx asked), [0x%llx,0x%llx) reserved\n", ios_ea_piece_what( k ),
+             (unsigned long long)view, (unsigned long)size, (unsigned long long)view, (unsigned long long)(view + real) );
+    pthread_mutex_unlock( &ios_ea_route_lock );
+    return 1;
+}
+
+/* 1 when anything is mapped in [lo, hi): a real view or a native hold. */
+static int ios_ea_mapped( uint64_t lo, uint64_t hi )
+{
+    mach_vm_address_t a = lo;
+    mach_vm_size_t rs = 0;
+    vm_region_basic_info_data_64_t inf;
+    mach_msg_type_number_t cnt = VM_REGION_BASIC_INFO_COUNT_64;
+    mach_port_t obj = MACH_PORT_NULL;
+
+    if (mach_vm_region( mach_task_self(), &a, &rs, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&inf, &cnt, &obj )
+        != KERN_SUCCESS) return 0;   /* nothing at or above lo */
+    return a < hi;
+}
+
+/* The soft grant loop's extra test for an EA process (ml151, "skip a slot that already holds a REAL
+ * pool", which the loop never did): the 64 KB at the base the guest would be given and at the slot
+ * itself. A slot with a view, a hold or the arena in it is not a free pool slot; two live pools on the
+ * same pages corrupted PartitionAlloc's metadata (see above). `off` is the hint's offset in its 16 GB
+ * boundary, as in the loop: the base is slot + off - 16 GB for a guard-style ask. */
+static int ios_ea_slot_busy( uint64_t slot, uint64_t off )
+{
+    uint64_t lo = off ? slot + off - 0x400000000ULL : slot;
+
+    if (ios_ea_refused_now) return 1;   /* the route refused this very ask: no soft slot for it either */
+    return ios_ea_mapped( lo, slot + 0x10000ULL );
+}
+
 /* ml433 (#72): map the boot cage holdback for an 8 GB ask -- see IOS_CAGE_BASE.
  * Shared by NtAllocateVirtualMemory's hinted-failure branch and, for
  * SocialClubHelper.exe's V8 sandbox in layout 2, NtAllocateVirtualMemoryEx
@@ -30171,7 +30817,12 @@ static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirt
                  * freeing the soft 0x7400000000). */
                 int sc_helper = ios_sc_cef_enabled() && ios_sc_current_is_helper();
                 int sc2 = sc_helper && ios_sc_layout_mode == 2;
+                /* madeira-bcd (EA app, 2026-10-24): 0 for every process but EADesktop.exe (1) and EACefSubProcess.exe (2)
+                 * with env.MADEIRA_EA_CEF = 1, and nothing but that environment switch is read to find out. */
+                int ea = ios_ea_cef_app();
                 if (sc2 && ios_sc2_route( hint, *size_ptr, type, protect, &pick, &sz, &st2 ))
+                    goto sc_decided;
+                if (ea == 1 && ios_ea_route( hint, *size_ptr, type, protect, &pick, &sz, &st2 ))
                     goto sc_decided;
                 if (!sc2 && sc_helper && *size_ptr == 0x800000000ULL && !((ULONG_PTR)hint & (0x800000000ULL - 1)))
                     st2 = ios_sc_glued_pools( &pick, &sz, type, protect );
@@ -30294,6 +30945,8 @@ static inline __attribute__((always_inline)) NTSTATUS ios_nt_impl_NtAllocateVirt
                          * ios_steer_slot) -- granting it as a pool is what caused
                          * the 43 collisions and cost us the 4th pool. */
                         if (slot == ios_steer_slot) continue;
+                        /* madeira-bcd (EA app): a slot that already holds a real view, a hold or the arena is no soft slot */
+                        if (ea && ios_ea_slot_busy( slot, off )) continue;
                         /* ml213: never hand PA a slot that OVERLAPS THE FURNITURE WINDOW.
                          *
                          * The window starts at 0x7038000000, which is INSIDE
@@ -32639,6 +33292,13 @@ static void ios_ec_hook_report( int idx, const unsigned char *pe, const unsigned
 #endif
 
 
+#ifdef WINE_IOS
+/* ajan18-bnet-cef (build 597): env.MADEIRA_PROTECT_WRITECOPY_AS_RW = 1 (Battle.net's launcher entry only): a 32-bit program that write-protects
+ * an image data page it has written (V8's flag freeze, Battle.net's Chromium renderers) is told the old protection was PAGE_READWRITE, as on
+ * Windows, not the recorded PAGE_WRITECOPY. See ios_wc_old_prot.h. */
+#include "ios_wc_old_prot.h"
+#endif
+
 /***********************************************************************
  *             NtProtectVirtualMemory   (NTDLL.@)
  *             ZwProtectVirtualMemory   (NTDLL.@)
@@ -32654,6 +33314,9 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T 
     SIZE_T size = *size_ptr;
     LPVOID addr = *addr_ptr;
     DWORD old;
+#ifdef WINE_IOS
+    int ios_wc_image = 0;   /* ajan18: the range is in an image view (set under the virtual mutex) */
+#endif
 
 #ifdef WINE_IOS
     LPVOID ios_patch_requested = addr;
@@ -32775,6 +33438,9 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T 
         if (get_committed_size( view, base, size, &vprot, VPROT_COMMITTED ) >= size && (vprot & VPROT_COMMITTED))
         {
             old = get_win32_prot( vprot, view->protect );
+#ifdef WINE_IOS
+            ios_wc_image = (view->protect & SEC_IMAGE) != 0;
+#endif
             status = set_protection( view, base, size, new_prot );
         }
         else status = STATUS_NOT_COMMITTED;
@@ -32865,6 +33531,27 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T 
         *addr_ptr = base;
         *size_ptr = size;
         *old_prot = old;
+
+#ifdef WINE_IOS
+        /* ajan18-bnet-cef (build 597): the value handed back, nothing else (ios_wc_old_prot.h). Off unless
+         * env.MADEIRA_PROTECT_WRITECOPY_AS_RW = 1. */
+        if (ios_wc_old_prot_enabled())
+        {
+            int wc_changed = 0;
+
+            *old_prot = ios_wc_old_prot_report( old, new_prot, ios_wc_image, ios_wow_base() != 0, 1, &wc_changed );
+            if (wc_changed || (new_prot == PAGE_READONLY && ios_wc_image && ios_wow_base()))
+            {
+                static int wc_n;
+
+                if (wc_n++ < 8)
+                    dprintf( 2, "[wc-old] ajan18 #%d a 32-bit program write-protects image data at %p+0x%lx (PAGE_READONLY): the recorded old protection "
+                                "is 0x%x, VirtualProtect reports 0x%x (PAGE_READWRITE for a recorded PAGE_WRITECOPY, as Windows does for a page "
+                                "that has been written; env.MADEIRA_PROTECT_WRITECOPY_AS_RW=1; V8's flag freeze checks for it)\n",
+                             wc_n, base, (unsigned long)size, (unsigned)old, (unsigned)*old_prot );
+            }
+        }
+#endif
 
 #ifdef WINE_IOS
         /* (Previously: also called mprotect_exec on the JIT-pool RX side
@@ -32963,6 +33650,15 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T 
                     uintptr_t pool_offset = (uintptr_t)ios_jit_mappings[idx].jit_base
                                           - (uintptr_t)ios_jit_rx_base_global;
                     char *jit_rw_dest = (char *)ios_jit_rw_base_global + pool_offset + off;
+                    /* madeira-bcd: MADEIRA_NTDLL_DATA_SYNC_RANGE (thebcd69/bcd-games#4 by mckenna654): off, never reached. */
+                    if (ios_ntdll_data_sync_range_enabled())
+                    {
+                        const struct ios_ntdll_funcs *funcs = ios_cur_ntdll_funcs();
+                        const void *entry = funcs ? funcs->KiUserExceptionDispatcher : pKiUserExceptionDispatcher;
+                        if (ios_sync_ntdll_data_patch( (const void *)pe_start, pe_end - pe_start,
+                                ios_jit_reverse_translate_addr( ios_patch_requested ), ios_patch_length,
+                                base, size, jit_rw_dest, sync_peb, ios_jit_reverse_translate_addr( entry ) )) break;
+                    }
                     /* iOS-Madeira ml1199: words the pointer translation below must leave alone.
                      *
                      * That translation rewrites every 8-byte word whose value lies inside ANY
@@ -34545,6 +35241,21 @@ void ios_retire_own_fixed_base_image( void *dying_peb )
     dprintf( 2, "ml988: gen %u's image retired; %p+%#lx HELD PROT_NONE (no-overwrite) "
              "-- RETIRING -> HELD_NOT_READY, not claimable until the old generation's pool "
              "mappings are reclaimed\n", gen, base, (unsigned long)size );
+}
+
+
+/* ajan11-wow64stack: does this pseudo-process own the fixed-base main image (OWNED)?  The storm guard ends a child process from a
+ * worker thread (server_ios.c, ios_end_child_process_async), which cannot do the retire above, so it leaves such a process to
+ * the old whole-app ending. */
+int ios_exe_win_owned_by( void *peb )
+{
+    int owned;
+
+    if (!peb) return 0;
+    pthread_mutex_lock( &ios_exewin_lock );
+    owned = ios_exewin_st == IOS_EXEWIN_OWNED && peb == ios_exe_win_img_peb;
+    pthread_mutex_unlock( &ios_exewin_lock );
+    return owned;
 }
 
 

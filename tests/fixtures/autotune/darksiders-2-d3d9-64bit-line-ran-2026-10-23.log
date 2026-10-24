@@ -1,0 +1,496 @@
+[16:58:42.005] [INFO] [recs] in use: downloaded list v7 (2026-10-23), 78 rules, build 592
+[16:58:42.028] [INFO] [epic-install] start installed=0 refused=0
+[16:58:42.091] [INFO] [xinput] ml1920 physical controllers enabled=1
+[16:58:42.091] [INFO] [touch-xinput] ml1930 enabled=1
+[16:58:42.092] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[16:58:42.097] [INFO] [steam-library] start signed-in=1 cached=16
+[16:58:42.111] [INFO] [bcd-ui] shown games=21 downloads=0
+[16:58:42.111] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[16:58:42.111] [INFO] SIGTRAP handler installed (no debugger)
+[16:58:42.112] [INFO] Checking entitlements...
+[16:58:42.112] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[16:58:42.112] [OK]   increased-memory-limit: true
+[16:58:42.112] [OK]   extended-virtual-addressing: true
+[16:58:42.112] [DBG]   increased-debugging-memory-limit: false
+[16:58:42.112] [INFO] [build] v0.1.592 (592)
+[16:58:42.112] [INFO] [device] model=iPad16,5 idiom=pad os=iPadOS Version 27.2 (Build 24B5089g) ram=15416MB available=16365MB cores=10
+[16:58:42.113] [INFO] [device] address-map=[0x102f5c000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[16:58:42.113] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=364d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[16:58:42.113] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[16:58:42.121] [INFO] [device] settings: low-power=0 thermal=nominal screen=2064x2752@1.72x max-fps=120 utc-offset=+02:00 free-disk=90GB stikdebug-url=1
+[16:58:42.124] [INFO] [device] gpu="Apple M4 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[16:58:42.185] [INFO] [steam-games] installed=8 ready=8
+[16:58:42.202] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[16:58:42.202] [INFO] [epic-auth] start signed-in=0
+[16:58:42.203] [INFO] [epic-library] start cached=0 listed=0
+[16:58:42.216] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[16:58:42.235] [OK] [controllers] connected: DUALSHOCK 4 Wireless Controller
+[16:58:45.052] [INFO] [steam-playtime] apps=10
+[16:58:45.054] [INFO] [steam-cloud] sync games=8 automatic=1
+[16:58:46.018] [INFO] [steam-cloud] app=200260 cloud-change=2 cloud-files=2 same=2 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:47.116] [INFO] [steam-cloud] app=208650 cloud-change=1 cloud-files=2 same=2 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:48.004] [INFO] [steam-cloud] app=209000 cloud-change=5 cloud-files=3 same=3 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:48.948] [INFO] [steam-cloud] app=388410 cloud-change=0 cloud-files=0 same=0 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:49.814] [INFO] [steam-cloud] app=1817190 cloud-change=1 cloud-files=2 same=2 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=1 roots=WinMyDocuments overrides=0 | plan download=0 upload=0 ask=0
+[16:58:50.893] [INFO] [steam-cloud] app=3470630 cloud-change=0 cloud-files=0 same=0 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:51.842] [INFO] [steam-cloud] app=4003800 cloud-change=0 cloud-files=0 same=0 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:52.747] [INFO] [steam-cloud] app=203160 cloud-change=6 cloud-files=3 same=3 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[16:58:54.556] [INFO] [steam-dlc] lookup app=388410 start
+[16:58:55.765] [INFO] [steam-dlc] lookup app=388410 owned=0 no-download=0 not-owned=0 own-depots=0 ms=1208
+[16:58:56.820] [INFO] [bcd-ui] play app=388410
+[16:58:56.824] [INFO] [steam-games] play app=388410
+[16:58:56.827] [INFO] [bcd] library launch Darksiders II Deathinitive Edition: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[16:58:56.827] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[16:58:56.828] [INFO] Requesting JIT with Built-in StikJIT...
+[16:58:56.843] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun6 <ip>)
+[16:58:56.875] [INFO] [jit-helper] enable: started com.thebcd69.bcd.MK8WWA3A36.JITHelper as pid 1887
+[16:58:58.124] [OK] JIT enabled and debugger attached.
+[16:58:58.125] [OK] JIT enabled! Debugger attached.
+[16:58:58.126] [INFO] [jit-on-play] JIT is on: starting the game
+[16:58:58.172] [INFO] [madeira-dock] launch option 0
+[16:58:58.172] [INFO] [steam-depot] paused for a game session count=0
+[16:58:58.185] [INFO] [steam-library] connection closed for BCD Dock
+[16:58:58.187] [INFO] [dock-handoff] protected-file-ready=1
+[16:58:58.187] [INFO] [dock-launch] image-retire=1
+[16:58:58.188] [INFO] [dock-launch] image-map-guard=1
+[16:58:58.188] [INFO] [dock-offline] enabled=1 network=up request=0 account-saved=1 game-started-online=1
+[16:58:58.193] [INFO] [dock-installers] app=388410 scripts=0 programs=0
+[16:58:58.194] [INFO] [madeira-dock] starting the host for app 388410; Valve's client authenticates and authorizes the launch
+[16:58:58.196] [INFO] [bcd-ui] in-game=1
+[16:58:58.201] [INFO] [steam-launch-view] hold app=388410 auto-reveal=1
+[16:58:58.201] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[16:58:58.202] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[16:58:58.202] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[16:58:58.202] [INFO] bcd.cfg: (empty)
+[16:58:58.202] [INFO] Running full Wine sequence...
+[16:58:58.203] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102f5c000,0x8000000000) 512GB available=16353MB low-power=0 thermal=nominal
+[16:58:58.203] [INFO] [game-cfg] env.MADEIRA_EC_HOOK_TRACE=0
+[16:58:58.203] [INFO] [game-cfg] env.MADEIRA_D3D9_X64=dxmt
+[16:58:58.203] [INFO] [display-shape] resolution=1112x832 mode=fit
+[16:58:58.204] [INFO] [launch-route] library profile applied
+[16:58:58.205] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[16:58:58.205] [INFO] Allocating 896MB JIT pool via debugger...
+[16:58:58.205] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[16:58:58.205] [INFO] [jit-debugger] attached=1 at the pool request
+[16:58:58.206] [INFO] JIT-pool frontier already at 0x122520000 — no pin needed
+[16:58:58.206] [OK] ml1040: executable window [0x140000000,+128MB) held since image load
+[16:58:58.206] [INFO] ml1040: released the early pool placeholder 0x148000000+576MB for the debugger
+[16:58:58.206] [INFO] ml1135: the placeholder ended at the mapping 0x16cda4000+0MB (VM tag 30, prot 0), already there at image load
+[16:58:58.206] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x122520000+474MB 0x148000000+589MB 0x16d5c0000+298MB
+[16:58:58.207] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 576MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[16:58:58.863] [INFO] RX pool at 0x148000000
+[16:58:58.869] [OK] ml977: RX=[0x148000000,0x16c000000) RW=[0x7000000000,0x7024000000) offset=0x6eb8000000 windowHeld=true rwOverlap=false
+[16:58:58.870] [INFO] RW mapping at 0x7000000000
+[16:58:58.871] [INFO] [no-footprint] pool-RW-alias: [plain/TASK_NULL] entry covers only 16384 of 603979776 bytes (partial)
+[16:58:58.871] [INFO] [no-footprint] pool-RW-alias: [plain/TASK_NULL] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[16:58:58.871] [INFO] [no-footprint] pool-RW-alias: [plain/self] entry covers only 16384 of 603979776 bytes (partial)
+[16:58:58.871] [INFO] [no-footprint] pool-RW-alias: [plain/self] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[16:58:58.874] [INFO] [no-footprint] pool-RW-alias: [share/self] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[16:58:58.875] [INFO] [touch-xinput] connected=0 accepting=0 controls=0
+[16:58:58.875] [INFO] [touch] layout="none" kind=none keys-path=n/a pad=n/a controls=0
+[16:58:58.877] [INFO] [no-footprint] pool-RW-alias: [share/TASK_NULL] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[16:58:58.877] [INFO] [no-footprint] pool-RW-alias: ALL 4 variants refused — pool stays jetsam-counted rev=ml458
+[16:58:58.877] [ERR] [no-footprint] pool applied=false
+[16:58:58.877] [OK] JIT pool ready (debugger still attached).
+[16:58:58.877] [INFO] BRK suspension lasted 0.67s
+[16:58:58.877] [DBG] madeira-d3d12: gate off (bcd.cfg d3d12 unset)
+[16:58:58.878] [OK] JIT pool: RX=0x148000000, RW=0x7000000000, size=576MB
+[16:58:58.878] [INFO] Detaching debugger...
+[16:58:58.882] [OK] Debugger detached.
+[16:58:58.884] [OK] [early-detach] rev=ml524 took 6 ms
+[16:58:58.893] [OK] MetalLayer registered with DXMT shim (window-hosted singleton)
+[16:58:58.897] [INFO] Starting wineserver...
+nished success=1
+[16:58:58.898] [OK] [jit-built-in] BCD detached cleanly from its built-in JIT helper.
+[16:58:58.898] [INFO] Wine prefix: <container>/Documents/wine
+[16:58:58.898] [OK] Wineserver thread launched successfully
+[16:58:58.898] [wineserver-bridge] ws_log test - log file set up OK
+[16:58:58.898] [Wine] Wineserver thread started
+[16:58:58.898] [Wine] WINEPREFIX=<container>/Documents/wine
+[16:58:58.898] [Wine] NLS dir=/private/var/containers/Bundle/Application/<uuid>/App.app/nls
+[16:58:58.898] [Wine] Calling wineserver_main...
+[16:58:58.898] [wineserver] starting init...
+[16:58:58.898] [wineserver] master_socket_timeout set to INFINITE (9223372036854775807)
+[16:58:58.898] [wineserver] init_limits...
+[16:58:58.898] [wineserver] sock_init...
+[16:58:58.898] [wineserver] open_master_socket...
+[16:58:58.898] [wineserver] acquire_lock: listening on fd=21 (NONBLOCK), server_dir=<container>/Documents/wine/.wineserver/server-100000c-2d6c9d
+[madsync] ml1058 in-process synchronisation disabled (bcd.cfg inproc-sync = 1 enables; fastsync is the default)
+[madsync] config inproc-sync=unset cfg=present dir=env (MADEIRA_CFG_EARLY_DOCS=0 restores the old lookup)
+[16:58:58.899] [wineserver-fd] init_epoll: SKIPPING kqueue on iOS, using poll()
+[16:58:58.899] [wineserver-fd] add_poll_user: user=0 unix_fd=-1 active_users=1
+[16:58:58.899] [wineserver] acquire_lock: master_socket->fd unix_fd=21
+[16:58:58.899] [wineserver] init_signals...
+[16:58:58.899] [wineserver-fd] add_poll_user: user=1 unix_fd=-1 active_users=2
+[16:58:58.899] [wineserver-fd] add_poll_user: user=2 unix_fd=-1 active_users=3
+[16:58:58.899] [wineserver-fd] add_poll_user: user=3 unix_fd=-1 active_users=4
+[16:58:58.899] [wineserver-fd] add_poll_user: user=4 unix_fd=-1 active_users=5
+[16:58:58.899] [wineserver-fd] add_poll_user: user=5 unix_fd=-1 active_users=6
+[16:58:58.899] [wineserver] init_memory...
+[16:58:58.899] [wineserver] load_intl_file + init_directories...
+[16:58:58.899] [wineserver] get_nls_dir: using bridge path '/private/var/containers/Bundle/Application/<uuid>/App.app/nls'
+[16:58:58.899] [wineserver] load_intl_file: trying path[0]='/private/var/containers/Bundle/Application/<uuid>/App.app/nls/l_intl.nls' (access=0)
+[16:58:58.899] [wineserver-fd] add_poll_user: user=6 unix_fd=-1 active_users=7
+[16:58:58.899] [wineserver] load_intl_file: SUCCESS with path='/private/var/containers/Bundle/Application/<uuid>/App.app/nls/l_intl.nls'
+[16:58:58.899] [wineserver-fd] add_poll_user: user=7 unix_fd=-1 active_users=8
+[16:58:58.899] [usd-map] ml731c create alias=0x10eb48000 region=0x10eb48000+0x4000 prot=3/3 shared=0
+[16:58:58.899] [usd-map] ml731c create store test: plain=OK release=OK (size=4096)
+[16:58:58.899] [wineserver-fd] add_poll_user: user=8 unix_fd=-1 active_users=9
+[16:58:58.899] [wineserver] init_threading...
+[16:58:58.899] [wineserver] init_registry...
+[storage-device] v1 prefix disk bytes=999929536512 bus=virtual serial=unavailable metadata-only PhysicalDrive0=ready
+[16:58:58.918] [wineserver] entering main_loop!
+[16:58:58.918] [wineserver-fd] main_loop_epoll: kqueue_fd=-1 active_users=9
+[16:58:58.918] [wineserver-fd] main_loop_epoll: kqueue_fd=-1, falling back to poll
+[16:58:58.918] [wineserver-fd] main_loop: blocked all signals on wineserver thread
+[16:58:58.918] [wineserver-fd] main_loop: stack=0x16d2fee80 (wineserver thread stack location)
+[16:58:58.918] [wineserver-fd] main_loop: iOS poll workaround active. active_users=9 master_fd=21
+[16:58:58.918] [wineserver-fd] iOS poll loop: master_fd=21 nb_users=9 active=9
+[16:58:58.918] [wineserver-fd] coalesced request wake: on (MADEIRA_SRV_WAKE_COALESCE=0 disables)
+[16:58:58.918] [wineserver-fd] request doorbell: on, read of every client fd every 10 ms (MADEIRA_SRV_DOORBELL=0 disables, MADEIRA_SRV_FULLSCAN_MS)
+[16:58:58.918] [wineserver-fd] request-wake semaphore: kr=0 sem=0xb653
+[srv-queues] ---- 0 threads ----
+[16:58:58.918] [srv-poll] MADEIRA_SRV_NOSEM=0 (default semaphore wake path)
+[16:58:58.923] [INFO] [launch] wineserver ready after 24 ms
+[phase] wine-start             t+  0.718s rev=ml526
+[16:58:58.923] [INFO] Starting Wine process...
+[16:58:58.923] [wineserver] inject_client_fd: fd=34
+[main-qos] madeira-bcd guest main thread: set USER_INTERACTIVE rc=0, class now 0x21
+[16:58:58.923] [OK] Wine process thread launched
+[16:58:58.923] [INFO] Waiting for Wine to finish PE loading...
+[16:58:58.923] [wineserver-fd] INJECTED client fd=34 at iter=6 client_start=9 — calling master_socket_handle_client
+[16:58:58.923] [wineserver] master_socket_handle_client: fd=34
+[16:58:58.923] [wineserver] calling create_process...
+[16:58:58.923] [wineserver-fd] add_poll_user: user=9 unix_fd=-1 active_users=10
+[16:58:58.923] [wineserver] create_process returned 0x118e72300
+[16:58:58.923] [wineserver] calling create_thread...
+[16:58:58.923] [wineserver] send_client_fd: fd=37 handle=0x3a2 msg_fd_unix=34 proc=0020 tid=0000
+[16:58:58.923] [wineserver] send_client_fd: sendmsg returned 4 (expected 4) errno=38
+[16:58:58.923] [wineserver-fd] add_poll_user: user=10 unix_fd=-1 active_users=11
+[16:58:58.923] [wineserver] create_thread done, releasing...
+[16:58:58.923] [wineserver] client fully connected!
+[16:58:58.923] [wineserver-fd] master_socket_handle_client returned, nb_users=11
+[16:58:58.923] [wineserver-fd]   POST-INJECT [0] fd=21 ev=0x1 bytes=0
+[16:58:58.923] [wineserver-fd]   POST-INJECT [1] fd=17 ev=0x1 bytes=0
+[16:58:58.923] [wineserver-fd]   POST-INJECT [2] fd=23 ev=0x1 bytes=0
+[16:58:58.923] [wineserver-fd]   POST-INJECT [3] fd=25 ev=0x1 bytes=0
+[16:58:58.924] [wineserver-fd]   POST-INJECT [4] fd=27 ev=0x1 bytes=0
+[16:58:58.924] [wineserver-fd]   POST-INJECT [5] fd=29 ev=0x1 bytes=0
+[16:58:58.924] [wineserver-fd]   POST-INJECT [6] fd=-1 ev=0x0 bytes=-1
+[16:58:58.924] [wineserver-fd]   POST-INJECT [7] fd=-1 ev=0x0 bytes=-1
+[16:58:58.924] [wineserver-fd]   POST-INJECT [8] fd=-1 ev=0x0 bytes=-1
+[16:58:58.924] [wineserver-fd]   POST-INJECT [9] fd=34 ev=0x1 bytes=0
+[16:58:58.924] [wineserver-fd]   POST-INJECT [10] fd=36 ev=0x1 bytes=0
+[16:58:58.925] [wineserver-fd] POST iter=6 act=11 nb=11 ef=1
+[16:58:58.926] [wineserver-fd] POST iter=7 act=11 nb=11 ef=1
+[16:58:58.927] [wineserver-fd] POST iter=8 act=11 nb=11 ef=1
+[16:58:58.928] [wineserver-fd] POST iter=9 act=11 nb=11 ef=1
+[steam-env] BCD Dock session: no fixed Steam game identity published
+[config-dir] early MADEIRA_DOCS_DIR=set; native bcd.cfg readers that run before this point (wineserver start: madsync inproc-sync) use it (MADEIRA_CFG_EARLY_DOCS=0 disables)
+[freeze] detector started gen=1 (sleep=0.25s gap>2.0s) rev=ml525
+[game-cfg] <container>/Library/Application Support/GameConfigs/578e5c45ebb5481f.cfg (read)
+[madeira-env] game MADEIRA_EC_HOOK_TRACE=0
+[WineProc] PE probe: machine=0x0
+[WineProc] Target exe: explorer.exe (bundle=aarch64-windows)
+[16:58:58.929] [wineserver-fd] POST iter=10 act=11 nb=11 ef=3
+[16:58:58.930] [wineserver-fd] POST iter=11 act=11 nb=11 ef=3
+[16:58:58.932] [wineserver-fd] POST iter=12 act=11 nb=11 ef=3
+[16:58:58.933] [wineserver-fd] POST iter=13 act=11 nb=11 ef=3
+[16:58:58.934] [wineserver-fd] POST iter=14 act=11 nb=11 ef=3
+[16:58:58.935] [wineserver-fd] POST iter=15 act=11 nb=11 ef=3
+[16:58:58.936] [wineserver-fd] POST iter=16 act=11 nb=11 ef=3
+[16:58:58.937] [wineserver-fd] POST iter=17 act=11 nb=11 ef=3
+[16:58:58.938] [wineserver-fd] POST iter=18 act=11 nb=11 ef=3
+[16:58:58.939] [wineserver-fd] POST iter=19 act=11 nb=11 ef=5
+[16:58:58.941] [wineserver-fd] POST iter=20 act=11 nb=11 ef=5
+[16:58:58.942] [wineserver-fd] POST iter=21 act=11 nb=11 ef=5
+[16:58:58.943] [wineserver-fd] POST iter=22 act=11 nb=11 ef=5
+[16:58:58.944] [wineserver-fd] POST iter=23 act=11 nb=11 ef=5
+[16:58:58.945] [wineserver-fd] POST iter=24 act=11 nb=11 ef=5
+[16:58:58.946] [wineserver-fd] POST iter=25 act=11 nb=11 ef=5
+[WineProc] system32\wbem: 0/5 links
+[WineProc] Symlinked 135 DLLs from aarch64-windows -> sys32
+[WineProc] Cross-linked 0 non-colliding files from arm64ec-windows -> sys32
+[hwinput] keyboard focus: program (poll)
+[WineProc] Farm sysx64: 288 links -> arm64ec-windows
+[WineProc] Farm sysaa64: 135 links -> aarch64-windows
+[WineProc] Farm syswow64: 726 links -> i386-windows
+[WineProc] syswow64\wbem: 5/5 links
+[WineProc] winsxs: 10/10 x86 assemblies seeded, 0 skipped
+[WineProc] MADEIRA_D3D9_X64=dxmt: d3d9.dll -> d3d9-dxmt.dll (DXMT's Direct3D 9 for 64-bit programs; sysx64 only)
+[wine-mono] ml1275 C:\windows\mono\mono-2.0 -> downloaded wine-mono
+[shell-dir] ml719 0 repaired, 6 already good
+[shell-dir] user folders for madeira, mobile: 0 created
+[WineProc] argv[1] = C:\windows\system32\explorer.exe
+[WineProc] argv[2] = /desktop=madeira,1112x832
+[WineProc] argv[3] = C:\windows\system32\dockhost.exe
+[WineProc] FEX host feature probe: AFP=1,FLAGM=1,FLAGM2=1,FCMA=1,RCPC=1,LRCPC2=1,AES=1,PMULL=1,SHA=1,CRC=1,ATOMICS=1,LSE2=1,LRCPC3=?,FRINTTS=1,RPRES=1,CSSC=0,MOPS=?,ECV=1,WFXT=1
+ml989: running image /private/var/containers/Bundle/Application/<uuid>/App.app/Madeira base=0x102f5c000 pid=1886 LC_UUID=<uuid>
+[va-limit] ml749 walk=0x8000000000 kernel_max=0x8000000000 -> keeping walk
+ml990: virtual_init user_space_limit 0x7fffffff0000 -> 0x8000000000 -- refusing to advertise address space this device cannot map (HighestUserAddress / ullTotalVirtual / lpMaximumApplicationAddress all derive from it)
+[va-profile] ml749 post-limit TASK_VM_INFO.max_address=0x8000000000 (512.0 GB)
+[va-profile] ml749 post-limit host_addr_space_limit=0x8000000000 address_space_limit=0x7fffffff0000 user_space_limit=0x8000000000
+[va-profile] ml749 post-limit fixed 16KB @ 0x880000000 (32-40GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0x900000000 (32-40GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0xa00000000 (40-48GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0xb00000000 (40-48GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0xc00000000 (48-56GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0xd00000000 (48-56GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0xe00000000 (56-63GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0xf00000000 (56-63GB               ) -> refused (kr=3)
+[va-profile] ml749 post-limit fixed 16KB @ 0x7c00000000 (496GB (preferred FEX) ) -> MAPPABLE (kr=0)
+[layerkit-range] rev=ml898 post-limit: 128 x 256MB tag-51 chunks before kr=0; span 0x124234000..0x7804000000 (486909 MB) -- guest views must stay OUT of this
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+[layerkit-range] SKIP scan over CoreAnimation's range at 0x7038000000 (0x124234000..0x7804000000)
+[layerkit-range] ml901 exclusion DROPPED: no free area of 0x4000 outside 0x124234000..0x7804000000; guest views may now enter CoreAnimation's range
+ml977: executable window [0x140000000,0x148000000) is reserved; will be released to the first fixed map of >=64MB that fits inside it
+[valloc] ml959 # base=0x7038000000 size=0x1000 type=0x3000 prot=0x2 tid=0000 | req_hint=0x0 zero_bits=0x0 limit=0x0
+ml968: low-address allocation experiment OFF by default -- see ml968 rationale (range [0x30000000,0x38000000), cap 16)
+ml969: low-alias experiment ENABLED (default) -- returned pointers are UNCHANGED, only the narrowed form gains a name
+[subfloor] ml938 window #0: guest [0x7ffe0000,0x7ffe1000) -> real 0x7038000000 (4 KB) owner 0x0
+ml952: KUSER_SHARED_DATA window guest 0x7ffe0000+0x1000 -> real 0x7038000000
+[va-scan] SLOW window=0x7038000000..0x73ffff0000 size=0x200000 align=0x10000 top-down tries=64 skips=64 | seen=0x7038001000..0x73ffff0000 views=0 maxgap=0x200000 tailgap=0x200000 stop=no-views-in-range | firstfail=0x73ffdf0000 errno=17(File exists) OCCUPIED 0x73f8000000+0x7ff0000 prot=0/7 shared=0
+[valloc] ml959 # base=0x71ffe00000 size=0x200000 type=0x102000 prot=0x4 tid=0000 | req_hint=0x0 zero_bits=0x0 limit=0x0
+[commit-zero] #1 GUEST OK base=0x71fffe0000 size=0x20000 protect=0x4 (zero) checked=1/0 stale=0/0 recommit=0 rev=ml546
+[valloc] ml959 # base=0x71fffe0000 size=0x20000 type=0x1000 prot=0x4 tid=0000 | req_hint=0x71fffe0000 zero_bits=0x0 limit=0x0
+[teb-tsd] key=290 offset=0x910 verified=1 tsd_base=0x16d6470e0 teb=0x71fffe0000
+[Wine connect] fd_socket=35, receiving version fd...
+[16:58:59.116] [Wine connect] fd_socket=35, receiving version fd...
+[Wine init_process] waiting for request_fd from wineserver...
+[16:58:59.116] [Wine init_process] waiting for request_fd from wineserver...
+[fd-recv] sock=35 peb=0x71ffff0000 ret=4 fd=39 handle=3a2 msg_flags=0
+[Wine init_process] got request_fd=39, version=930 (expected 930)
+[16:58:59.116] [Wine init_process] got request_fd=39, version=930 (expected 930)
+[fdtrace] pipes tid=0000 peb=0x71ffff0000 master=35 reply=40/41 wait=42/43 rev=ml586
+[16:58:59.116] [fdtrace] pipes tid=0000 peb=0x71ffff0000 master=35 reply=40/41 wait=42/43 rev=ml586
+[Wine init_process] reply_pipe=41, sending init_first_thread...
+[16:58:59.116] [Wine init_process] reply_pipe=41, sending init_first_thread...
+[srv-own] receive_fd tid=0024 pid=0020 client_fd=41 server_dup=44 kind=fifo rev=ml586
+[srv-own] receive_fd tid=0024 pid=0020 client_fd=43 server_dup=45 kind=fifo rev=ml586
+[srv-own] init_thread tid=0024 pid=0020 reply=41->srv44 wait=43->srv45 rev=ml586
+[16:58:59.116] [wineserver-fd] add_poll_user: user=11 unix_fd=-1 active_users=12
+[16:58:59.116] [wineserver-fd] add_poll_user: user=12 unix_fd=-1 active_users=13
+[thread-prio] madeira-bcd tid=0024 base=0 effective=9 -> kept at pthread QoS
+[Wine init_process] init_first_thread ret=0, pid=32, tid=36
+[16:58:59.116] [Wine init_process] init_first_thread ret=0, pid=32, tid=36
+[fd-cache] rev=ml571 new PEB-keyed cache slot=0 peb=0x71ffff0000
+[drives] published 1/1 DOS drive(s) in \DosDevices rev=ml587
+[16:58:59.116] [drives] published 1/1 DOS drive(s) in \DosDevices rev=ml587
+[16:58:59.116] [map-name] #1 open "\KernelObjects\__wine_user_shared_data" err=00000000 pid=0020 tid=0024 handle=0004 hits=1
+
+[usd-clock] ml1001 guest KUSER_SHARED_DATA at 0x7038000000: GetTickCount64()=81147485 ms (TickCountMultiplier=0x0) — ticking
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+0024:fixme:ntdll:get_core_id_regs_arm64 stub
+[hw-registry] madeira-bcd: HKLM\HARDWARE\DESCRIPTION\System (volatile): 10/10 CentralProcessor + 10 FloatingPointProcessor "Intel64 Family 6 Model 166 Stepping 1" GenuineIntel "Unknown ARM CPU" ~MHz 1000 FeatureSet 0x2379ffff; BIOS "The Wine project" "iPad16,5" (SMBIOS, 3 Wine default(s)); MADEIRA_HW_REGISTRY=0 turns it off
+[16:58:59.118] [hw-registry] madeira-bcd: HKLM\HARDWARE\DESCRIPTION\System (volatile): 10/10 CentralProcessor + 10 FloatingPointProcessor "Intel64 Family 6 Model 166 Stepping 1" GenuineIntel "Unknown ARM CPU" ~MHz 1000 FeatureSet 0x2379ffff; BIOS "The Wine project" "iPad16,5" (SMBIOS, 3 Wine default(s)); MADEIRA_HW_REGISTRY=0 turns it off
+[iOS env] processing: FNA3D_FORCE_DRIVER=D3D11
+[iOS env] INCLUDED: FNA3D_FORCE_DRIVER=D3D11
+[iOS env] processing: MONO_LOG_LEVEL=warning
+[iOS env] INCLUDED: MONO_LOG_LEVEL=warning
+[16:58:59.120] [map-name] #2 open "\KernelObjects\__wine_user_shared_data" err=00000000 pid=0020 tid=0024 handle=0004 hits=2
+
+ml993: memorystatus_control(GET_MEMLIMIT_PROPERTIES) unavailable (errno=1)
+ml992: os_proc_available_memory=15760 MB + phys_footprint=623 MB = 16384 MB (hw.memsize says 15416 MB)
+ml993: REJECTED 16384 MB -- larger than hw.memsize (15416 MB), so it is a sentinel, not a limit
+ml993: no usable memory limit from any source -- reporting hw.memsize (15416 MB) unchanged
+ml991: SystemBasicInformation wow=0 PageSize=4096 AllocGranularity=65536 MmNumberOfPhysicalPages=3946599 LowestUserAddress=0x10000 HighestUserAddress=0x7fffffffff
+ml991: => ullTotalPhys=16165269504 (15416 MB)  ullTotalVirtual=549755748352 (524287 MB)  [the 28GB reserve is 0x700000000 = 7 x 4096MB]
+[16:58:59.120] [wineserver-fd] add_poll_user: user=13 unix_fd=-1 active_users=14
+[16:58:59.121] [wineserver-fd] add_poll_user: user=14 unix_fd=-1 active_users=15
+[main-exe] open_dll_file('<container>/Documents/wine/dosdevices/c:/windows/system32/explorer.exe') = 0x0
+ml977: NOT releasing the window for 0x140000000+0x70000 (under the 64MB floor) -- a relocatable image sharing the default ImageBase must not starve the fixed-base one
+ml985: preferred base 0x140000000+0x70000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x70000 rev=ajan5-motor
+[va-scan] SLOW window=0x100010000..0x73ffff0000 size=0x70000 align=0x10000 bottom-up tries=808 skips=47 | seen=0x100010000..0x73ffff0000 views=1 maxgap=0x6f37ff0000 tailgap=0x0 stop=walked-all-views | firstfail=0x100010000 errno=12(Cannot allocate memory) FREE hole, next region 0x102f5c000 (+0x2f4c000 away) <-- iOS REFUSED A FREE ADDRESS
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[pool-head] code-buffer budget targets 48 MB of image headroom (region C and recycled buffers unchanged)
+[va-gaps] ==== map walk (jit pool init) ====
+[va-gaps] FREE 0x0..0x102f5c000 = 4143 MB
+[va-gaps] FREE 0x7038004000..0x71ffe00000 = 7293 MB
+[va-gaps] FREE 0x73ffff0000..0x8000000000 = 49152 MB (top tail)
+[va-gaps] ==== end: 60588 MB (59 GB) usable outside the carveout ====
+[pool-warmer] cycle=1 touched=2 pages (head=0x4000 tail=0x0)
+[jit-pool] bump-probe off=0x4000 size=0x74000 cur=0x5 max=0x7 execable=1 (VIRGIN control)
+[jit-pool] image 0x111780000+0x70000 (?) → pool 0x148004000 used=0x78000/0x24000000 tramp+0x4000
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[loopback] OK ipv4 <ip>:55021 connect+accept+1-byte roundtrip rev=ml469
+[teb-tsd] retarget pass armed, offset=0x910
+[x18-patch] ml1005 text=0x148014000+0xe424 (rw=0x7000014000) patched=34 skipped=0 tramp=0x148074000+0x4000 used=680
+[x18-tramp] .text 0x148014000: 34 patched -- 27 via dest reg, 7 via x18, 0 MOV-direct; 0 use the stack (was: all of them, and x86 hands us an 8-mod-16 SP)
+[main-exe] virtual_map_module = 0x40000003 Machine=0xaa64 chars=0x22
+[loopback] ipv6 [::1]:55023 connect ret=0 errno=0 rev=ml469
+[main-exe] load_main_exe = 0x40000003 Machine=0xaa64 chars=0x22
+[main-exe] NOT_AT_BASE (relocated) — continuing normally
+[valloc] ml959 # base=0x7024000000 size=0x3000 type=0x1000 prot=0x4 tid=0024 | req_hint=0x0 zero_bits=0x0 limit=0x0
+[init-peb] thread_peb=0x71ffff0000 global_peb=0x71ffff0000 params=0x7024000000 module=0x111780000
+ml990: large-address-space user_space_limit 0x7fffffff0000 -> 0x8000000000 -- refusing to advertise address space this device cannot map (HighestUserAddress / ullTotalVirtual / lpMaximumApplicationAddress all derive from it)
+[va-scan] SLOW window=0x100000000..0x73ffff0000 size=0x100000 align=0x10000 bottom-up tries=935 skips=93 | seen=0x100000000..0x73ffff0000 views=2 maxgap=0x6f12810000 tailgap=0x0 stop=walked-all-views | firstfail=0x100000000 errno=12(Cannot allocate memory) FREE hole, next region 0x102f5c000 (+0x2f5c000 away) <-- iOS REFUSED A FREE ADDRESS
+0024:err:thread:init_thread_stack iOS arm64ec: NOT setting cpu_area (owner machine=0xaa64 session is_arm64ec=0)
+[stack-floor] rev=ml424 #1 thread stack reserve 0x100000 -> 0x800000
+0024:err:thread:init_thread_stack iOS native stack: TEB 0x71fffe0000 StackBase=0x7024810000 StackLimit=0x7024018000 DeallocStack=0x7024010000 (reserve=0x0 commit=0x0)
+[fex-arena] ml801 hardware high band 16GB: kernel placed the range at 0x7c00000000, outside the requested window [0x7c00000000,0x7fffffffff] but entirely below the task ceiling 0x8000000000 -- KEEPING it; the window is a hint and the emulator is told the real address
+[fex-arena] ml793 PUBLISHED [0x7c00000000,0x8000000000) size=0x400000000 version=1 -- the emulator must CONSUME this range; it must not run its own selector
+[fex-arena] ml799 RESERVED hardware high band 16GB base=0x7c00000000 size=0x400000000 -- held natively as PROT_NONE for the process lifetime and registered FEX_ONLY; generic placement cannot allocate here
+ml985: preferred base 0x6fffffee0000+0x110000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x2022 map_addr=0x6fffffee0000 info_base=0x180000000 | STAGE=none err=1 at 0x100000000+0x100000 rev=ajan5-motor
+[va-scan] SLOW window=0x100000000..0x73ffff0000 size=0x110000 align=0x10000 top-down tries=64 skips=64 | seen=0x100000000..0x73ffff0000 views=2 maxgap=0x1ffff0000 tailgap=0x0 stop=walked-all-views | firstfail=0x73ffee0000 errno=17(File exists) OCCUPIED 0x73f8000000+0x7ff0000 prot=0/7 shared=0
+[valloc] ml959 # base=0x7c435e1000 size=0xf000 type=0x1000 prot=0x4 tid=00a4 | req_hint=0x7c435e1000 zero_bits=0x0 limit=0x0
+[vfree] ml842 # base=0x7c435e1000 size=0xf000 type=0x4000 tid=00a4
+[valloc] ml959 # base=0x7c435e1000 size=0xf000 type=0x1000 prot=0x4 tid=00a4 | req_hint=0x7c435e1000 zero_bits=0x0 limit=0x0
+[valloc] ml959 # base=0x7c43600000 size=0x10000 type=0x1000 prot=0x4 tid=00a4 | req_hint=0x7c43600000 zero_bits=0x0 limit=0x0
+00a4:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Darksiders II Deathinitive Edition\\Darksiders2.exe" cmdline=L"\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Darksiders II Deathinitive Edition\\Darksiders2.exe\""
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Darksiders II Deathinitive Edition\\Darksiders2.exe" t+ 10.829s rev=ml526
+[session-log] Steam game Darksiders2.exe: logs/Darksiders2.exe-2026-10-23_16-59-09.txt
+[runtime-info] ml663 parent-pre-serialise EMPTY (len=0) -> UCRT takes the GetStdHandle path
+[srv-own] receive_fd tid=00a4 pid=0034 client_fd=367 server_dup=368 kind=sock rev=ml586
+[srv-own] new_thread tid=00ac pid=00a8 requester=00a4 request_unixfd=-1 rev=ml586
+00a4:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Darksiders II Deathinitive Edition\\Darksiders2.exe\"" (fd=365, unixdir=366, dup_unixdir=449) cwd=L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Darksiders II Deathinitive Edition"
+[Wine child thread] ENTRY: fd=444, argc=3, exe=wine
+[Wine child thread] calling wine_ios_child_main...
+E AC [img-map] ml710 #23 intervals-only windowscodecs.dll base=0x71f2900000
+00ac:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #24 base=00000071F3520000 peb=00000001116D4000
+E AC [iOS-xins] tracker=0x154070bc8 d3dx11_43.dll sec=0x71f3530000-0x71f35402e6
+E AC [iOS-xins] tracker=0x154070bc8 d3dx11_43.dll sec=0x71f3550000-0x71f35502d0
+E AC [img-map] ml710 #24 intervals-only d3dx11_43.dll base=0x71f3520000
+00ac:err:module:find_dll_file mixed-arch fallback: L"d3d9.dll" -> L"\\??\\C:\\windows\\sysx64\\d3d9.dll"
+[jit-pool] image 0x71f2680000+0xb0000 (d3d9.dll) → pool 0x156bb4000 used=0xec68000/0x24000000 tramp+0x4000
+[x18-patch] ml1005 text=0x156bc4000+0x1ecd6 (rw=0x700ebc4000) patched=19 skipped=0 tramp=0x156c64000+0x4000 used=380
+[x18-tramp] .text 0x156bc4000: 19 patched -- 12 via dest reg, 7 via x18, 0 MOV-direct; 0 use the stack (was: all of them, and x86 hands us an 8-mod-16 SP)
+00ac:err:seh:ios_map_gate_probe [map-gate] ml709 NtMapViewOfSection handle=0000000000000030 process=FFFFFFFFFFFFFFFF status=40000003 ok=1 cur=1 area=0000000125440000 insc_before=0 entered=1 base=00000071F2680000 size=00000000000B0000
+00ac:err:seh:notify_map_view_of_section [map-notify] addr=00000071F2680000 size=00000000000B0000 alloc=0 prot=20 pfn=1 aup=0000007037E30EF8
+E AC [iOS-xins] tracker=0x154070bc8 d3d9.dll sec=0x71f2690000-0x71f26aecd6
+E AC [iOS-xins] tracker=0x154070bc8 d3d9.dll sec=0x71f26b0000-0x71f26b0100
+D AC Load module d3d9.dll (d3d9.dll-23c2a01a8eade245): 71F2680000
+00ac:err:seh:arm64ec_update_hybrid_metadata arm64ec_update_hybrid_metadata: module=00000071F2680000 dispatch_call_rva=600f8 check_call=0000000153BC6330
+00ac:err:seh:arm64ec_notify_image_map [ldr-image] ml710 MAP #25 base=00000071F2680000 peb=00000001116D4000
+E AC [iOS-xins] tracker=0x154070bc8 d3d9.dll sec=0x71f2690000-0x71f26aecd6
+E AC [iOS-xins] tracker=0x154070bc8 d3d9.dll sec=0x71f26b0000-0x71f26b0100
+E AC [img-map] ml710 #25 intervals-only d3d9.dll base=0x71f2680000
+[jit-pool] image 0x71f2570000+0x110000 (d3dx9_43.dll) → pool 0x156c68000 used=0xed7c000/0x24000000 tramp+0x4000
+[sock-tl] fd=351 gen=5 port=80 open->CH=-1.0 CH->flight=-1.0 flight->fin=-1.0 fin->tail=-1.0 tail->post=-1.0 total=40.4ms tx=1/225B rx=1/391B alerts=0 post=NONE fate=idle rev=ml591
+[dib-blit] StretchDIBits #37 dst=0,0 16x16  src=0,0 16x16 rev=ml507
+[dib-blit] StretchDIBits #38 dst=0,0 16x16  src=0,0 16x16 rev=ml507
+[dib-blit] StretchDIBits #39 dst=0,0 16x16  src=0,0 16x16 rev=ml507
+[vfree] ml842 # base=0x7037fd0000 size=0x0 type=0x8000 tid=00ac
+[winios] layer created for hwnd=0x20066 (16 layers)
+[win-pos] #36 hwnd=0x20066 after=0x0 flags=0000003c vis={0,0,1,1} surface=0x10534b828 rev=ml505 style=84000000 visible=0 parent=0x10020
+[win-pos] #37 hwnd=0x20066 after=0x0 flags=00000018 vis={0,0,1,1} surface=0x10534b828 rev=ml505 style=84000000 visible=0 parent=0x10020
+[win-pos] #38 hwnd=0x20066 after=0x2005a flags=0000181b vis={0,0,1,1} surface=0x10534b828 rev=ml505 style=84000000 visible=0 parent=0x10020
+[vfree] ml842 # base=0x7c478c1000 size=0xf000 type=0x4000 tid=00ac
+[vmode] synthesized EnumDisplayDevices adapter idx=0 flags=0 cb=840 id=PCI\VEN_106B&DEV_0001&SUBSYS_00000000&REV_00 key=\Registry\Machine\System\CurrentControlSet\Control\Video\{<uuid>}\0000
+[vmode] ml1006 no GPU registered; allocated a SOFTWARE virtual adapter luid 00000000000003f1 (not a hardware identity)
+[vkmt] tid=00ac OpenAdapterFromLuid luid=00000000:000003f1 -> 0 hAdapter=0x40000040
+[vmode] ml1006 opened virtual adapter: hAdapter=0x40000040 luid=00000000000003f1 VidPnSourceId=1
+[vkmt] tid=00ac CloseAdapter hAdapter=0x40000040 -> 0
+[vkmt] tid=00ac OpenAdapterFromLuid luid=00000000:000003f1 -> 0 hAdapter=0x40000080
+[vmode] synthesized EnumDisplayDevices adapter idx=0 flags=0 cb=840 id=PCI\VEN_106B&DEV_0001&SUBSYS_00000000&REV_00 key=\Registry\Machine\System\CurrentControlSet\Control\Video\{<uuid>}\0000
+[vkmt] tid=00ac OpenAdapterFromLuid luid=00000000:000003f1 -> 0 hAdapter=0x400000c0
+[vmode] ml1006 opened virtual adapter: hAdapter=0x400000c0 luid=00000000000003f1 VidPnSourceId=1
+[vkmt] tid=00ac CloseAdapter hAdapter=0x400000c0 -> 0
+[vkmt] tid=00ac CreateDevice hAdapter=0x40000080 -> 0 hDevice=0x40000100
+[winios] layer created for hwnd=0x1006a (17 layers)
+[win-pos] #39 hwnd=0x1006a after=0x0 flags=4000003c vis={10,10,142,48} surface=0x10534b828 rev=ml505 style=04cf0000 visible=0 parent=0x10020
+[win-pos] #40 hwnd=0x1006a after=0x0 flags=40000018 vis={10,10,142,48} surface=0x10534b828 rev=ml505 style=04cf0000 visible=0 parent=0x10020
+[win-name] #40 hwnd=0x1006a class='' text="WineD3D fake window" rev=ml853
+[win-create] hwnd=0x1006a style=04cf0000 ex=00000100 requested={10,10,20,20} (10x10) actual={10,10,142,48} (132x38) grown to the minimum window size tid=00ac
+00ac:err:d3d:wined3d_caps_gl_ctx_create Failed to find a suitable pixel format.
+00ac:err:d3d:wined3d_adapter_gl_init Failed to get a GL context for adapter 00000070802B6FB0.
+00ac:err:d3d9:d3d9_ios_probe [d3d9-probe] rev=ml700 Direct3DCreate9 called -> d3d9_init FAILED
+[nls-getptr] type=11 id=10000 peb=0x1116d4000
+[win-pos] #41 hwnd=0x2006a after=0x0 flags=0000003c vis={147,101,477,406} surface=0x10534b828 rev=ml505 style=84c801c4 visible=0 parent=0x10020
+[winios] layer created for hwnd=0x2006a (17 layers)
+[win-pos] #42 hwnd=0x2006a after=0x0 flags=00000018 vis={147,101,477,406} surface=0x10534b828 rev=ml505 style=84c801c4 visible=0 parent=0x10020
+[winios] layer created for hwnd=0x10070 (18 layers)
+[win-frame] #1 hwnd=0x10070 valid=1 local={12,33,36,59} screen={162,163,186,189} rev=sc-screen
+[win-pos] #43 hwnd=0x10070 after=0x0 flags=00000014 vis={12,33,36,59} surface=0x0 rev=ml505 style=40000003 visible=0 parent=0x2006a
+[win-frame] #2 hwnd=0x10070 valid=1 local={12,33,36,59} screen={162,163,186,189} rev=sc-screen
+[win-pos] #44 hwnd=0x10070 after=0x1 flags=00000010 vis={12,33,36,59} surface=0x0 rev=ml505 style=40000003 visible=0 parent=0x2006a
+[win-frame] #3 hwnd=0x10070 valid=1 local={12,33,36,59} screen={162,163,186,189} rev=sc-screen
+[winios] inherited frame hwnd=0x1007a screen=(767,475 75x23)
+[winios] inherited frame hwnd=0x10086 screen=(443,391 264x78)
+[win-frame] #38 hwnd=0x10070 valid=1 local={12,11,44,43} screen={407,395,439,427} rev=sc-screen
+[win-pos] #103 hwnd=0x10070 after=0x0 flags=0000081d vis={12,11,44,43} surface=0x0 rev=ml505 style=50000003 visible=0 parent=0x2006a
+[win-frame] #39 hwnd=0x10086 valid=1 local={56,8,310,47} screen={451,392,705,431} rev=sc-screen
+[win-pos] #104 hwnd=0x10086 after=0x0 flags=0000001c vis={56,8,310,47} surface=0x0 rev=ml505 style=50020080 visible=0 parent=0x2006a
+[win-name] #104 hwnd=0x10086 class='' text="Could not initialize the graphics subsystem, probably because the resolution 1112 x 832 is not supported for fullscreen display." rev=ml853
+[win-frame] #40 hwnd=0x1007a valid=1 local={138,55,190,81} screen={533,439,585,465} rev=sc-screen
+[win-pos] #105 hwnd=0x1007a after=0x0 flags=0000001c vis={138,55,190,81} surface=0x0 rev=ml505 style=50030001 visible=0 parent=0x2006a
+[win-name] #105 hwnd=0x1007a class='' text="Ok" rev=ml853
+[surf-create] #3 hwnd=0x2006a rect={0,0,384,128} layered=0 prev=0x10534b828 -> 0x123a070c0  (RECREATED — old content dropped) rev=ml505
+[vfree] ml842 # base=0x7c34401000 size=0x3ff000 type=0x4000 tid=0050
+[xp] 16:59:10.868 +11.72 dt=296 cpu=171 (thr 152) P=168 E=2 run=183 pgw=0.0 GHz P=3.70 E=2.58 Minst=2435 IPC=3.87 mJ=806 pin=1125 rdKB=0 fpMB=1621
+[xp-t] 16:59:10.868 -00ac:95/0:3.9/1.3:1562 m490172:23/0:3.1/1.7:268 -0050:10/0:4.0/0.0:117 m490218:9/0:3.3/0.9:113 m490219:6/0:3.0/0.0:106 m489959:3/0:3.7/0.0:40
+[stale-heal] 0x71f5655690 -> 0x153bc5690, rewrote 0 slot(s) (each copy translated for the process that maps it)
+[16:59:10.888] [INFO] [dock-offline] Valve's client can log this account on offline: saved
+[sock-big] send ERROR fd=398 errno=65 rev=ml464
+[sock-big] send ERROR fd=398 errno=65 rev=ml464
+[sock-big] send ERROR fd=398 errno=65 rev=ml464
+[vfree] ml842 # base=0x7c18ab1000 size=0xf000 type=0x4000 tid=0050
+[vfree] ml842 # base=0x7c30401000 size=0x3ff000 type=0x4000 tid=0050
+[Wine WATCHDOG 2s] thread alive=0 (0=yes)
+[Wine WATCHDOG 2s] PC=0x244d1eee8 LR=0x1040a674c SP=0x12543e930 FP=0x12543e970
+[Wine WATCHDOG 2s] x0=0x1c3 x1=0x12543e940 x2=0x10 x3=0x1dd62ff0fb38238
+[Wine WATCHDOG 2s] x8=0x16d6d30e0 x16=0x3 x17=0x123a41000 x18=0x0
+[Wine WATCHDOG 2s] disp: entry_x18=0xdeaddead dcnt=0 | ret: x18=0x707f9e0000 pc=0x153bcb748 rcnt=234789
+[Wine WATCHDOG 2s] mach: msgs=8762 x18_fixes=6755
+[Wine WATCHDOG 2s] x18=0 but frame->x[18]=0x71fff00000 (frame=0x12543fcd0)
+[guest-stk] pc 0x15563a2e0 = win32u.dll+0x122e0
+[guest-stk] lr 0x155334080 = user32.dll+0x2c080
+[guest-stk] fp#0 0x1409e2171 = ?+0x0
+[guest-stk] fp#1 0x0 = ?+0x0
+[guest-stk] fp#2 0x2 = ?+0x0
+[xp] 16:59:11.190 +12.04 dt=321 cpu=43 (thr 42) P=29 E=15 run=50 pgw=0.0 GHz P=2.76 E=1.25 Minst=407 IPC=4.19 mJ=61 pin=0 rdKB=0 fpMB=1622
+[xp-t] 16:59:11.190 m490219:15/0:3.4/1.6:300 m490172:6/7:1.5/1.1:33 m489971:1/3:1.7/1.7:17 -0050:2/1:2.3/1.5:12 m489959:3/0:3.4/0.0:34
+[16:59:11.206] [INFO] [steam-launch-view] scene=game shown=2 window=328x121 owner=other pid=a8 t=13s
+[16:59:11.206] [INFO] [steam-launch-view] end reason=game-window scene=game revealed=0 t=13s
+[window-census] off
+[launch-view] dismissed reason=game-window logs=0
+[ui-log-idle] display parsing suspended=1; file capture unchanged
+[16:59:11.210] [INFO] [touch-xinput] connected=0 accepting=1 controls=0
+[alert-ring] pos=166 (+79 since last) last8: 00d8->00ac 00d8->00ac 00cc->00d0 00c8->00cc 00d4->00c8 00d4->00d0 00c0->00cc 00cc->00d4 rev=ml439
+[evt-before]
+[evt-entry]
+[evt-life] obj=0x10ef1a840 create=1 SET=2 reset=0 pulse=0 | wait begin=0 end=0 timeout=0 success=0 | last_set tid=0024 seq=15 | last_reset tid=0000 seq=0
+[evt-life]   seq=9 tid=0024 create status=00000000
+[evt-life]   seq=11 tid=0024 SET status=00000000
+[evt-life]   seq=15 tid=0024 SET status=00000000
+[evt-hist] obj=0x10ef1a840: no recorded operations in the GLOBAL ring (1024 entries, WRAPPED). The ring WRAPPED, so this does NOT mean the producer never ran -- older operations were overwritten and this verdict is UNSAFE
+[evt-after] matched=0
+[srv-stuck]   h[1]=000000e0 obj=0x10ef19c00 type=Event raw_obj=0x10ef19c00 raw_waiters=0 sync_obj=0x1239d45f0 sync_waiters=1 thread_wait=0x118f49860 state=LINKED Event manual=1 signaled=0 cell=11
+[evt-before]
+[evt-entry]
+[evt-life] obj=0x10ef19c00 create=1 SET=0 reset=1 pulse=0 | wait begin=0 end=0 timeout=0 success=0 | last_set tid=0000 seq=0 | last_reset tid=003c seq=13   <-- NEVER SET BY ANYONE, for the whole life of this object
+[evt-life]   seq=12 tid=003c create status=00000000
+[evt-life]   seq=13 tid=003c reset status=00000000
+[evt-hist] obj=0x10ef19c00: no recorded operations in the GLOBAL ring (1024 entries, WRAPPED). The ring WRAPPED, so this does NOT mean the producer never ran -- older operations were overwritten and this verdict is UNSAFE
+[evt-after] matched=0
+[srv-stuck] tid=0030 teb=0x71fffb0000 age=18791ms op=1 flags=00000002 timeout=9223372036854775807 alertable=0 nhandles=2 caller=0x1040e481c
+[srv-stuck]   tid=0030 suspend=0 rev=ml714
+[srv-stuck]   h[0]=000000c0 obj=0x10ef196c0 type=Event raw_obj=0x10ef196c0 raw_waiters=0 sync_obj=0x118ca5ae0 sync_waiters=1 thread_wait=0x118f4a8a0 state=LINKED Event manual=0 signaled=0 cell=7
+[evt-before]
+[evt-entry]
+[evt-life] obj=0x10ef196c0 create=1 SET=0 reset=1 pulse=0 | wait begin=0 end=0 timeout=0 success=0 | last_set tid=0000 seq=0 | last_reset tid=0030 seq=7   <-- NEVER SET BY ANYONE, for the whole life of this object
+[evt-life]   seq=5 tid=0030 create status=00000000
+[evt-life]   seq=7 tid=0030 reset status=00000000
+[evt-hist] obj=0x10ef196c0: no recorded operations in the GLOBAL ring (1024 entries, WRAPPED). The ring WRAPPED, so this does NOT mean the producer never ran -- older operations were overwritten and this verdict is UNSAFE
+[evt-after] matched=0
+[srv-stuck]   h[1]=000000c4 obj=0x10ef19880 type=Event raw_obj=0x10ef19880 raw_waiters=0 sync_obj=0x118dd6a30 sync_waiters=1 thread_wait=0x118f4a8a0 state=LINKED Event manual=0 signaled=0 cell=8
+[evt-before]
+[evt-entry]
+[evt-life] obj=0x10ef19880 create=1 SET=0 reset=1 pulse=0 | wait begin=0 end=0 timeout=0 success=0 | last_set tid=0000 seq=0 | last_reset tid=0030 seq=8   <-- NEVER SET BY ANYONE, for the whole life of this object
+[evt-life]   seq=6 tid=0030 create status=00000000
+[evt-life]   seq=8 tid=0030 reset status=00000000
+[evt-hist] obj=0x10ef19880: no recorded operations in the GLOBAL ring (1024 entries, WRAPPED). The ring WRAPPED, so this does NOT mean the producer never ran -- older operations were overwritten and this verdict is UNSAFE
+[evt-after] matched=0
+[xp] 16:59:18.164 +19.01 dt=310 cpu=23 (thr 22) P=0 E=22 run=28 pgw=0.0 GHz P=1.22 E=0.97 Minst=40 IPC=1.80 mJ=2 pin=0 rdKB=0 fpMB=1472
+[xp-t] 16:59:18.164 m490172:0/16:1.2/0.9:32
+[xp] 16:59:18.422 +19.27 dt=258 cpu=19 (thr 19) P=0 E=19 run=26 pgw=0.0 GHz P=0.00 E=1.58 Minst=60 IPC=1.95 mJ=3 pin=0 rdKB=0 fpMB=1472
+[xp-t] 16:59:18.422 m490172:0/8:0.0/1.5:20 m489959:0/6:0.0/1.7:34
+.27 dt=258 cpu=19 (thr 19) P=0 E=19 run=26 pgw=0.0 GHz P=0.00 E=1.58 Minst=60 IPC=1.95 mJ=3 pin=0 rdKB=0 fpMB=1472
+[16:59:18.422] [xp-t] 16:59:18.422 m490172:0/8:0.0/1.5:20 m489959:0/6:0.0/1.7:34

@@ -1,0 +1,15 @@
+{
+ "dialogs": [
+  "Error",
+  "Runtime error!??Program: C:\\Program Files (x86)\\Subnautica 2\\Subnautica2\\Binaries\\Win64\\Subnautica2-Win64-Shipping.exe?Error: R6025??Press OK to exit the program, or Cancel to start the Wine debugger"
+ ],
+ "end": {},
+ "matched": [
+  "subnautica-2-steam-client-missing"
+ ],
+ "next": [],
+ "note": "Subnautica 2 started as a library program without Valve's Steam client (Send Log 0F0JDZ, build 592, iPhone16,2): the game's Steam module fails to initialise and the game thread reads the NULL SteamUtils() interface. No setting helps; auto-tune says so.",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "known"
+}

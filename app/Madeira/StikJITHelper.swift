@@ -1419,27 +1419,48 @@ enum StikJITHelper {
                 + "; the pool stays one region", level: .error)
             return nil
         }
-        var plugs: [(vm_address_t, vm_size_t)] = []
-        for h in freeRuns(0x100000000, best.base, minSize: size) {
-            var a = h.base
-            if vm_allocate(mach_task_self_, &a, vm_size_t(h.size), 0 /* VM_FLAGS_FIXED */) == KERN_SUCCESS {
-                if a == h.base { plugs.append((a, vm_size_t(h.size))) } else { vm_deallocate(mach_task_self_, a, vm_size_t(h.size)) }
+        // madeira-bcd pool-split-retry (OPT-IN; thebcd69/bcd-games#16 by le0-VV, Minecraft Dungeons II, modified 2026-10-24): the debugger
+        // allocates first-fit, and the free runs can change while it does (another thread frees a block below). With
+        // `pool-split-retry = 1` a second region that lands outside the safe range is released and requested again, up to three times in
+        // all, every lower run plugged afresh each time; the other outcomes (no region, a failed release) and the last miss end as
+        // before, with the pool in one region. Without the line there is one attempt: the code and the log lines of before.
+        let retryText = (MadeiraConfig.gameValue("pool-split-retry") ?? MadeiraConfig.get("pool-split-retry") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let attempts = ["1", "on", "true", "yes"].contains(retryText) ? 3 : 1
+        var placed: UnsafeMutableRawPointer?
+        for attempt in 0..<attempts {
+            var plugs: [(vm_address_t, vm_size_t)] = []
+            for h in freeRuns(0x100000000, best.base, minSize: size) {
+                var a = h.base
+                if vm_allocate(mach_task_self_, &a, vm_size_t(h.size), 0 /* VM_FLAGS_FIXED */) == KERN_SUCCESS {
+                    if a == h.base { plugs.append((a, vm_size_t(h.size))) } else { vm_deallocate(mach_task_self_, a, vm_size_t(h.size)) }
+                }
             }
+            let got = requestRegion(Int(size))
+            for (a, sz) in plugs { vm_deallocate(mach_task_self_, a, sz) }
+            guard let p = got, p != UnsafeMutableRawPointer(bitPattern: 0) else {
+                LogStore.shared.log("[pool-split] the debugger did not allocate the second region (\(size >> 20)MB) — the pool "
+                    + "stays one region", level: .error)
+                return nil
+            }
+            let b = vm_address_t(bitPattern: p)
+            if b < aEnd || b + size > ceiling || (aEnd < exeWindow.base + exeWindow.size && b > exeWindow.base) {
+                let dkr = vm_deallocate(mach_task_self_, b, vm_size_t(size))
+                if dkr == KERN_SUCCESS && attempt + 1 < attempts {
+                    LogStore.shared.log(String(format: "[pool-split] attempt %d: the second region landed at 0x%lx, not in the run at 0x%lx — "
+                        + "released; checking the lower free runs again (pool-split-retry = 1)", attempt + 1, Int(b), Int(best.base)),
+                        level: .error)
+                    continue
+                }
+                LogStore.shared.log(String(format: "[pool-split] the second region landed at 0x%lx, not in the run at 0x%lx — "
+                    + "released (kr=%d); the pool stays one region", Int(b), Int(best.base), dkr), level: .error)
+                return nil
+            }
+            placed = p
+            break
         }
-        let got = requestRegion(Int(size))
-        for (a, sz) in plugs { vm_deallocate(mach_task_self_, a, sz) }
-        guard let p = got, p != UnsafeMutableRawPointer(bitPattern: 0) else {
-            LogStore.shared.log("[pool-split] the debugger did not allocate the second region (\(size >> 20)MB) — the pool "
-                + "stays one region", level: .error)
-            return nil
-        }
+        guard let p = placed else { return nil }
         let b = vm_address_t(bitPattern: p)
-        if b < aEnd || b + size > ceiling || (aEnd < exeWindow.base + exeWindow.size && b > exeWindow.base) {
-            let dkr = vm_deallocate(mach_task_self_, b, vm_size_t(size))
-            LogStore.shared.log(String(format: "[pool-split] the second region landed at 0x%lx, not in the run at 0x%lx — "
-                + "released (kr=%d); the pool stays one region", Int(b), Int(best.base), dkr), level: .error)
-            return nil
-        }
         // madeira-bcd pool-mid: the largest free run between the regions, when the
         // budget leaves 64MB for it, as a third debugger region M (see poolHole2).
         // Placed first-fit like B, every lower run that could take it plugged.

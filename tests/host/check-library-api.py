@@ -39,7 +39,7 @@ def type_body(name):
     return s[p:b]
 
 
-source = 'import Foundation\nstruct LibraryModel { static ' + function('apiNames') + '}\n'
+source = 'import Foundation\nstruct LibraryModel { static ' + function('apiNames') + '\n static ' + function('importNames') + '\n static ' + function('folderAPIs') + '}\n'
 source += 'struct Scanner { ' + function('dynamicAPIs') + '}\n'
 source += r'''
 let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -64,6 +64,28 @@ assert(tail.0 == ["OpenGL"] && tail.1 == 24 * 1024 * 1024)
 assert(try! scan(large, budget: 2).0.isEmpty)
 assert(try! scan(large, budget: 0).1 == 0)
 print("PASS: dynamic renderer detection, ASCII/UTF16/case folding, terminated names, tail lookup, read budget")
+// 2026-10-24 (the idea from MaPC's GraphicsProbe): the API from what lies beside a program whose imports name none.
+func game(_ files: [String]) -> URL {
+ let dir = folder.appendingPathComponent(UUID().uuidString)
+ try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+ for f in files {
+  let url = dir.appendingPathComponent(f)
+  try! FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+  try! Data("MZ".utf8).write(to: url)
+ }
+ return dir.appendingPathComponent("Game.exe")
+}
+let fakeImports: (URL) -> Set<String> = { $0.lastPathComponent.lowercased() == "unityplayer.dll" ? ["D3D11"] : [] }
+assert(LibraryModel.folderAPIs(game(["Game.exe", "UnityPlayer.dll"]), imports: fakeImports) == ["D3D11"])
+assert(LibraryModel.folderAPIs(game(["Game.exe", "unityplayer.DLL"]), imports: fakeImports) == ["D3D11"])
+assert(LibraryModel.folderAPIs(game(["Game.exe", "D3D12/D3D12Core.dll"]), imports: fakeImports) == ["D3D12"])
+assert(LibraryModel.folderAPIs(game(["Game.exe", "d3d12/d3d12core.dll"]), imports: fakeImports) == ["D3D12"])
+assert(LibraryModel.folderAPIs(game(["Game.exe", "dxil.dll"]), imports: fakeImports) == ["D3D12"])
+assert(LibraryModel.folderAPIs(game(["Game.exe", "dxilconv7.dll"]), imports: fakeImports) == ["D3D12"])
+assert(LibraryModel.folderAPIs(game(["Game.exe", "D3D12/readme.txt", "dxil.txt"]), imports: fakeImports).isEmpty)
+assert(LibraryModel.folderAPIs(game(["Game.exe", "data.pak"]), imports: fakeImports).isEmpty)
+assert(LibraryModel.folderAPIs(game(["Game.exe", "UnityPlayer.dll"]), imports: { _ in [] }).isEmpty)
+print("PASS: the API from beside the program: Unity's UnityPlayer.dll, the Agility SDK's D3D12Core.dll, the DXIL DLLs; nothing else counts")
 '''
 with tempfile.TemporaryDirectory() as tmp:
     p = Path(tmp) / 'library-api.swift'

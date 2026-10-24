@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "eaapp-background-service-msi-dll"
+ ],
+ "next": [
+  "env.MADEIRA_OPTIN_DLLS = msi,mspatcha,odbccp32,sxs,rstrtmgr"
+ ],
+ "note": "The EA app's installer (launcher entry, build 594, the owner's device): past JunoInitializeSession the MSI copied the app, then StartServices started the 64-bit EABackgroundService.exe, which imports msi.dll and RstrtMgr.dll; neither is in the 64-bit set (c0000135), services.exe answered 1053 and the package rolled back with 1627. Trimmed and scrubbed.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

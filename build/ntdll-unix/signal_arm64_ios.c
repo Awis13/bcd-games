@@ -797,6 +797,7 @@ int ios_thread_registry_purge_range( uintptr_t base, uintptr_t size )
  * unexpected query failure counts as alive (keep the memory). */
 int ios_thread_registry_range_busy( uintptr_t base, uintptr_t size )
 {
+    extern int ios_peb_is_dead( const void *peb );
     int count = ios_thread_registry_count(), i;
 
     for (i = 0; i < count; i++)
@@ -806,10 +807,21 @@ int ios_thread_registry_range_busy( uintptr_t base, uintptr_t size )
         struct thread_basic_info info;
         mach_msg_type_number_t length = THREAD_BASIC_INFO_COUNT;
         kern_return_t kr;
+        void *peb = NULL;
+        vm_size_t got = sizeof(peb);
 
         if (!port || !teb || teb < base || teb - base >= size) continue;
         kr = thread_info( port, THREAD_BASIC_INFO, (thread_info_t)&info, &length );
-        if (kr != KERN_INVALID_ARGUMENT && kr != MACH_SEND_INVALID_DEST && kr != KERN_TERMINATED) return 1;
+        if (kr == KERN_INVALID_ARGUMENT || kr == MACH_SEND_INVALID_DEST || kr == KERN_TERMINATED) continue;
+        /* madeira-bcd (lead, 2026-10-23): a thread of an EXITED process that is held suspended (the [zombie] rule's or
+         * ios_thread_registry_end_dead_range's fallback when thread_terminate is refused) never runs again, so it cannot
+         * touch the window: it does not hold it. Battle.net, build 593 (log 16:23): two such threads kept two windows,
+         * the Agent found no window for a minute and the session went down. Its TEB is read before the window goes. */
+        if (kr == KERN_SUCCESS && info.suspend_count > 0 &&
+            vm_read_overwrite( mach_task_self(), (vm_address_t)(teb + offsetof(TEB, Peb)), sizeof(peb),
+                               (vm_address_t)&peb, &got ) == KERN_SUCCESS && got == sizeof(peb) && ios_peb_is_dead( peb ))
+            continue;
+        return 1;
     }
     return 0;
 }
@@ -1771,6 +1783,18 @@ done:
 /* ajan7-arkham: [wow-null32], a 32-bit guest's use of the NULL page: registers, stack and the thread's TLS cells with module+RVA
  * (see ios_wow_null_diag.h). Failure path only, capped. Uses the helpers of ios_av_args_diag.h. */
 #include "ios_wow_null_diag.h"
+/* ajan18-bnet-cef (build 597): [int3-x86], an OPT-IN report for a 32-bit guest's int3 (env.MADEIRA_INT3_X86_DUMP = 1, set by Battle.net's launcher
+ * entry only): the stack, the code, the module list and libcef.dll's CodeView record, to name the CHECK that kills Battle.net's Chromium renderers
+ * (see ios_int3_x86_diag.h). Uses ios_av_args_read and the module helpers of ios_wow_null_diag.h. */
+#include "ios_int3_x86_diag.h"
+/* ajan21-loglar (build 598): [ill-guest], the guest bytes FEX could not decode when the dispatcher ends in an illegal instruction ("Invalid
+ * instruction in entry block": Jetboard Joust, Yakuza), with the same bytes through the JIT pool's alias (see ios_ill_guest_diag.h). Log only,
+ * on the SIGILL path that ends the process; uses ios_av_args_read. */
+#include "ios_ill_guest_diag.h"
+/* ajan21-loglar (build 598): [x86-fault], an OPT-IN report for a 32-bit guest's unhandled access violation or int3 (env.MADEIRA_X86_FAULT_DUMP = 1, set
+ * by a game's recommended list: Need for Speed Most Wanted and Underground 2): the code, the stack, the modules and the objects the registers point
+ * at (see ios_x86_fault_diag.h). Uses the helpers of ios_av_args_diag.h, ios_wow_null_diag.h and build 597's 32-bit report above. */
+#include "ios_x86_fault_diag.h"
 
 /* build 580 (NFS Underground 2 7F9ZRF): a 32-byte STP Q that crosses a 16 KB page boundary is stored page by page
  * (see ios_store_split.h). The two callbacks below are the production lookups; the host test compiles the header
@@ -1851,6 +1875,150 @@ static void ios_stp_split_readback( const ios_store_part *sp, int sn, const uint
     if (g_ok && g_diff >= 0)
         dprintf( STDERR_FILENO, "[stp-split]   first byte that differs through the guest address: %d (parts: %u@%s + %u@%s)\n", g_diff,
                  sp[0].len, sp[0].direct ? "direct" : "alias", sn > 1 ? sp[1].len : 0u, sn > 1 ? (sp[1].direct ? "direct" : "alias") : "-" );
+}
+
+/* madeira-bcd (lead, 2026-10-23): END THE LEFTOVER THREADS OF AN EXITED 32-BIT PROCESS, LAST RESORT.
+ *
+ * Battle.net, build 592 (the owner's install, log explorer.exe 13:00:16): Battle.net.exe starts its Agent every 3 s from
+ * t+395 s and every start fails at "guest window reserve returned 0xc0000017". Four 4 GB windows held running 32-bit
+ * processes, two were "still held by an exited process whose teardown did not complete": a worker thread of an exited
+ * Battle.net.exe helper (wine_threadpool_worker, 99 % of a core in JIT code) kept its TEB inside the window, so the
+ * live-thread guard (ios_wow_reclaim_dead_windows) never let the window go. Windows ends every thread of a process at
+ * ExitProcess; here a thread that is busy in translated code never notices.
+ *
+ * Called only by ios_wow_window_reserve when a 32-bit process could not get a window (that boot fails today), for a
+ * dead window still held by threads. A thread is ended only when all of these hold:
+ *   - its TEB lies in the window and its Peb (read with vm_read_overwrite, the window is still mapped) is the dead
+ *     process's, which is on the dead-PEB list;
+ *   - after thread_suspend, its pc is in guest code (the window itself), in the JIT pool / region C (FEX's translated
+ *     code and thunks), or in libsystem_kernel (blocked in a system call). There it holds none of the app's own host
+ *     locks. Anywhere else (malloc, FEX's compiler, a Wine unix call) it is resumed and kept, and the window stays held,
+ *     as today.
+ * thread_terminate, as the [zombie] rule does; when iOS refuses it the thread stays suspended for good (parked), which
+ * ios_thread_registry_range_busy accepts. Returns how many threads were ended or parked; *kept counts those resumed. */
+static int ios_ajan2_pc_is_jit( uint64_t pc );
+int ios_thread_registry_end_dead_range( uintptr_t base, uintptr_t size, void *dead_peb, int *kept )
+{
+    extern int ios_peb_is_dead( const void *peb );
+    int count = ios_thread_registry_count(), i, ended = 0;
+    thread_t self = pthread_mach_thread_np( pthread_self() );
+    static int said;
+
+    if (kept) *kept = 0;
+    if (!dead_peb || !ios_peb_is_dead( dead_peb )) return 0;
+    for (i = 0; i < count; i++)
+    {
+        uintptr_t teb = ios_thread_registry[i].teb;
+        thread_t port = ios_thread_registry[i].mach_thread;
+        void *peb = NULL;
+        vm_size_t got = sizeof(peb);
+        arm_thread_state64_t st;
+        mach_msg_type_number_t n = ARM_THREAD_STATE64_COUNT;
+        const char *where = NULL;
+        Dl_info di;
+        uint64_t pc;
+        kern_return_t kr;
+
+        if (!port || port == self || !teb || teb < base || teb - base >= size) continue;
+        if (vm_read_overwrite( mach_task_self(), (vm_address_t)(teb + offsetof(TEB, Peb)), sizeof(peb),
+                               (vm_address_t)&peb, &got ) != KERN_SUCCESS || got != sizeof(peb) || peb != dead_peb)
+        {
+            if (kept) (*kept)++;
+            continue;
+        }
+        kr = thread_suspend( port );
+        if (kr == KERN_INVALID_ARGUMENT || kr == MACH_SEND_INVALID_DEST || kr == KERN_TERMINATED) continue;   /* already gone */
+        if (kr != KERN_SUCCESS) { if (kept) (*kept)++; continue; }
+        if (thread_get_state( port, ARM_THREAD_STATE64, (thread_state_t)&st, &n ) != KERN_SUCCESS)
+        {
+            thread_resume( port );
+            if (kept) (*kept)++;
+            continue;
+        }
+        pc = (uint64_t)__darwin_arm_thread_state64_get_pc( st );
+        if (pc >= base && pc - base < size) where = "guest code";
+        else if (ios_ajan2_pc_is_jit( pc )) where = "translated code";
+        else if (dladdr( (const void *)(uintptr_t)pc, &di ) && di.dli_fname && strstr( di.dli_fname, "libsystem_kernel" ))
+            where = "a system call";
+        if (!where)
+        {
+            thread_resume( port );
+            if (kept) (*kept)++;
+            if (said++ < 16)
+                dprintf( 2, "[wow-reap] teb=%p of exited peb=%p kept: pc=0x%llx (%s) is host code that may hold a lock\n",
+                         (void *)teb, dead_peb, (unsigned long long)pc,
+                         dladdr( (const void *)(uintptr_t)pc, &di ) && di.dli_fname ? di.dli_fname : "?" );
+            continue;
+        }
+        kr = thread_terminate( port );
+        /* a refused terminate (iOS 27 refuses it for these threads: build 593, log 16:23) leaves the thread suspended:
+         * it never runs again, and ios_thread_registry_range_busy no longer counts it, so the window can go too */
+        ended++;
+        if (said++ < 16)
+            dprintf( 2, "[wow-reap] teb=%p of exited peb=%p in %s (pc=0x%llx): %s (kr=%d)\n", (void *)teb, dead_peb, where,
+                     (unsigned long long)pc, kr == KERN_SUCCESS ? "ended" : "parked, suspended for good", (int)kr );
+    }
+    return ended;
+}
+
+static int ios_ajan2_read( uint64_t addr, void *buf, size_t len );   /* defined in the ajan2 block below */
+
+/* madeira-bcd, ported from thebcd69/bcd-games#16 by le0-VV (modified 2026-10-24): env.MADEIRA_FAULT_GUARD_GUEST_RIP = 1 (OPT-IN).
+ *
+ * FEX shares ONE host thunk (`hlt #0`) for every guest instruction it cannot run: the Mach exception it raises there has the same
+ * host pc and the same fault address for each of them, so a program that recovers from a long run of invalid instructions (Minecraft
+ * Dungeons II: its own handler steps over each one) looks like a single stationary fault to the redelivery guard below and was ended
+ * at 2000 deliveries although it advanced through the code. With the switch:
+ *   - the redelivery guard also keys such a delivery on the guest RIP FEX saved in its CpuStateFrame (read through the fault-safe
+ *     reader; a native fault, a pc that is not the thunk or an unreadable frame keeps the key it always had), so a new guest
+ *     instruction starts a new run; a stationary guest fault still reaches the 2000 limit;
+ *   - the page-fault loop breaker (the [fault-stuck] one) counts memory faults only: an instruction trap carries its opcode, not
+ *     an address, and no page is stuck.
+ * Off (default): neither runs, byte for byte as before. Read once. Set by the game's list; no game runs it without that line. */
+static int ios_fault_guard_guest = -1;
+
+static int ios_fault_guard_guest_on( void )
+{
+    int v = __atomic_load_n( &ios_fault_guard_guest, __ATOMIC_RELAXED );
+
+    if (v < 0)
+    {
+        const char *e = getenv( "MADEIRA_FAULT_GUARD_GUEST_RIP" );   /* env.MADEIRA_FAULT_GUARD_GUEST_RIP = 1 */
+        v = (e && e[0] && e[0] != '0') ? 1 : 0;
+        __atomic_store_n( &ios_fault_guard_guest, v, __ATOMIC_RELAXED );
+    }
+    return v;
+}
+
+/* The guest RIP FEX saved for the `hlt #0` it raises its SIGILL with, or 0 when this is anything else: the pc must be generated code,
+ * x28 a plausible CpuStateFrame, the instruction at pc `hlt #0` and the saved RIP readable. Every read is fault-safe. */
+static uint64_t ios_fault_guest_rip( const arm_thread_state64_t *state, uint64_t pc )
+{
+    uint64_t frame = state->__x[28], rip = 0;
+    uint32_t insn = 0;
+
+    if (!ios_ajan2_pc_is_jit( pc ) || frame < 0x100000 || frame >= 0x800000000000ULL ||
+        !ios_ajan2_read( pc, &insn, sizeof(insn) ) || insn != 0xd4400000 ||
+        !ios_ajan2_read( frame + 0x18, &rip, sizeof(rip) )) return 0;
+    return rip;
+}
+
+extern int ios_recovery_log_sampling;   /* loader_ios.c: set by __wine_main from MADEIRA_RECOVERY_LOG_SAMPLE before any guest thread runs */
+
+/* madeira-bcd, ported from thebcd69/bcd-games#16 by le0-VV (modified 2026-10-24), LOG ONLY: with env.MADEIRA_RECOVERY_LOG_SAMPLE = 1 the
+ * "ILL at pc" report of ill_handler below is kept for the first 8 SIGILLs at FEX's shared `hlt #0` thunk and every 1024th after that
+ * (a note, "[ill-log]", at the 9th and then every 1024th); any other SIGILL, and every SIGILL with the switch off, is reported in full. */
+static int ios_ill_diag_admit( const arm_thread_state64_t *state, uint64_t pc )
+{
+    static unsigned long long seen;
+    unsigned long long n;
+
+    if (!__atomic_load_n( &ios_recovery_log_sampling, __ATOMIC_RELAXED ) ||
+        !ios_fault_guest_rip( state, pc )) return 1;
+    n = __atomic_add_fetch( &seen, 1, __ATOMIC_RELAXED );
+    if (n == 9 || !(n % 1024))
+        dprintf( 2, "[ill-log] shared JIT instruction traps=%llu; keeping first 8 and every 1024th diagnostic bundle\n", n );
+    return n <= 8 || !(n % 1024);
 }
 
 /* ajan2-tani (2026-10-21): FAILURE-PATH DIAGNOSTICS for guest control flow that dies in the JIT.
@@ -2260,6 +2428,54 @@ static void ios_ajan2_fault_diag( const arm_thread_state64_t *st, uintptr_t teb,
     }
     ios_ajan2_badrip( st );
 }
+
+/* madeira-bcd, ported from thebcd69/bcd-games#4 by mckenna654 (modified 2026-10-24): env.MADEIRA_FAULT_LOOP_GUEST_PROGRESS = 1 (OPT-IN).
+ *
+ * FEX uses ONE host trap stub for many distinct guest breakpoints (int3): every such Mach breakpoint has the same host pc, so the
+ * page-fault loop breaker below ("[fault-stuck] BREAKING LOOP": 50 faults at one page and pc divert the thread to abort_thread)
+ * saw one stationary fault in a program that steps through hundreds of breakpoints of its own (Diablo II: Resurrected's loader, 96+
+ * distinct guest RIPs, then the main thread was ended). With the switch a Mach breakpoint trap that comes from a VERIFIED registered
+ * FEX frame (x28 is the frame the thread's CPU area registered, the saved guest RIP is non-zero) belongs to a run keyed by
+ * (thread, frame, guest RIP): when that key differs from the previous verified trap's, the breaker's run restarts and nothing is diverted;
+ * only the same guest RIP again, on the same thread, counts. A native fault, an unregistered or mismatched frame, any other exception type
+ * and an access violation (the NULL page included) end exactly as before. Off (default): the helper is not called, byte for byte as before. */
+struct ios_fault_progress
+{
+    uintptr_t thread;
+    uint64_t frame, rip;
+};
+
+static int ios_fault_loop_guest_progress_on( void )
+{
+    static int cached = -1;
+    if (cached < 0)
+    {
+        const char *s = getenv( "MADEIRA_FAULT_LOOP_GUEST_PROGRESS" );   /* env.MADEIRA_FAULT_LOOP_GUEST_PROGRESS = 1 */
+        cached = (s && s[0] == '1' && !s[1]) ? 1 : 0;
+    }
+    return cached;
+}
+
+/* 1 when the breaker's run must restart because this verified breakpoint trap is not the previous one again; *previous gets the guest RIP of
+ * the verified trap before it (0 when that was another thread's or none). The caller (the one Mach exception thread) serializes the calls. */
+static int ios_fault_loop_guest_progress( struct ios_fault_progress *last, uintptr_t thread, unsigned exception,
+                                          uintptr_t frame, uintptr_t x28, uint64_t guest_rip, uint64_t *previous )
+{
+    uint64_t verified = (exception == EXC_BREAKPOINT && frame && frame == x28 && guest_rip) ? frame : 0;
+    int restart;
+
+    *previous = last->thread == thread && last->frame == verified ? last->rip : 0;
+    if (!verified)
+    {
+        *last = (struct ios_fault_progress){ 0 };
+        return 0;
+    }
+    restart = last->thread != thread || last->frame != verified || last->rip != guest_rip;
+    *last = (struct ios_fault_progress){ .thread = thread, .frame = verified, .rip = guest_rip };
+    return restart;
+}
+
+static struct ios_fault_progress ios_fault_progress_last;
 
 static void *ios_mach_exception_thread( void *arg )
 {
@@ -2753,6 +2969,28 @@ static void *ios_mach_exception_thread( void *arg )
                                         NtCurrentTeb() ? (unsigned)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueProcess : 0,
                                         NtCurrentTeb() ? (unsigned)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread : 0);
                             }
+                        }
+
+                        /* ajan18-bnet-cef (build 597): the opt-in 32-bit report (ios_int3_x86_diag.h). Off unless env.MADEIRA_INT3_X86_DUMP = 1;
+                         * log only, a fault-safe Mach read per piece of guest memory, nothing written or stopped. */
+                        if (ios_int3_x86_enabled())
+                        {
+                            uintptr_t i3x_teb = 0;
+                            void *i3x_tramp = NULL;
+
+                            ios_lookup_thread( thread, &i3x_teb, &i3x_tramp );
+                            ios_int3_x86_diag( &bs, i3x_teb, gregs, grip );
+                        }
+
+                        /* ajan21-loglar (build 598): the same evidence for a game's own int3 (Need for Speed Underground 2, SPEED2.EXE+0x405A9),
+                         * behind its own switch, env.MADEIRA_X86_FAULT_DUMP = 1; log only (ios_x86_fault_diag.h). */
+                        if (ios_x86_fault_enabled())
+                        {
+                            uintptr_t xf_teb = 0;
+                            void *xf_tramp = NULL;
+
+                            ios_lookup_thread( thread, &xf_teb, &xf_tramp );
+                            ios_x86_fault_int3( &bs, xf_teb, gregs, grip );
                         }
                     }
                 }
@@ -5802,6 +6040,8 @@ skip_reclaim_band: ;
                      * This does NOT fix the missing commit -- it stops one page from
                      * eating an entire run, and dumps the region layout around it so the
                      * owner can be identified and the real fix aimed correctly. */
+                    /* madeira-bcd: MADEIRA_FAULT_GUARD_GUEST_RIP counts memory faults only (thebcd69/bcd-games#16 by le0-VV) */
+                    if (req->exception == EXC_BAD_ACCESS || !ios_fault_guard_guest_on())
                     {
                         static volatile uint64_t stuck_page;
                         static volatile uint64_t stuck_pc;
@@ -5827,6 +6067,25 @@ skip_reclaim_band: ;
                          * (StikDebug's 8-stop kill was the only breaker, and it
                          * had detached). */
                         if (!fpage) fpage = 1;
+
+                        /* madeira-bcd: MADEIRA_FAULT_LOOP_GUEST_PROGRESS (thebcd69/bcd-games#4 by mckenna654): a breakpoint trap of
+                         * a verified FEX frame whose guest RIP moved is progress; forgetting the run makes the tests below take
+                         * their "new run" branch (counters at 0, nothing diverted). Off: never evaluated. */
+                        if (ios_fault_loop_guest_progress_on())
+                        {
+                            uint64_t previous_rip = 0;
+                            if (ios_fault_loop_guest_progress( &ios_fault_progress_last, thread_teb, req->exception,
+                                                               (uintptr_t)fex_state_q, state.__x[28], state_rip_q, &previous_rip ))
+                            {
+                                static unsigned progress_reports;
+                                if (previous_rip && progress_reports++ < 16)
+                                    dprintf( STDERR_FILENO,
+                                        "[fault-progress] host pc=0x%llx guest RIP 0x%llx -> 0x%llx; the repeat count restarts\n",
+                                        (unsigned long long)fault_pc_check, (unsigned long long)previous_rip,
+                                        (unsigned long long)state_rip_q );
+                                stuck_page = 0;
+                            }
+                        }
 
                         if (fpage == stuck_page && fault_pc_check == stuck_pc &&
                             (uint64_t)fault_addr != stuck_addr)
@@ -6200,6 +6459,17 @@ skip_reclaim_band: ;
                                          code[8],code[9],code[10],code[11],code[12],code[13],code[14],code[15] );
                             else
                                 dprintf( STDERR_FILENO, "[rsp-trunc]   x86 @rip UNREADABLE\n" );
+
+                            /* ajan21-loglar (build 598): the opt-in report for a 32-bit guest's access violation (Need for Speed Most Wanted,
+                             * speed.exe+0x1ab7a): env.MADEIRA_X86_FAULT_DUMP = 1; log only, JIT code only (ios_x86_fault_diag.h). */
+                            if (ios_x86_fault_enabled() && req->exception == EXC_BAD_ACCESS && ios_av_args_pc_is_jit( __darwin_arm_thread_state64_get_pc( state ) ))
+                            {
+                                uintptr_t xf_teb = 0;
+                                void *xf_tramp = NULL;
+
+                                ios_lookup_thread( thread, &xf_teb, &xf_tramp );
+                                ios_x86_fault_av( &state, xf_teb, cs[0], (uint64_t)fault_addr, -1 );
+                            }
 
                             /* iOS-Madeira ml333: is the guest code we EXECUTE the guest code that was
                              * LOADED?
@@ -8525,6 +8795,51 @@ static int ios_emulate_unaligned_guest_access(ucontext_t *ctx, uint32_t insn, ui
 static int ios_native_unaligned_emulate( ucontext_t *ctx, uint32_t insn, uintptr_t addr, uint64_t pc );
 static uint64_t ios_app_text_lo, ios_app_text_hi;
 
+/* ajan11-wow64stack: the redelivery guard's terminal for a storm in a CHILD Windows process (ios_storm_end.h). Called from the
+ * Mach exception thread with the storming thread held in its exception. 1: the storm was dealt with here (the thread is ended and,
+ * for a live child, a worker thread releases the process the way an exit does) and the app goes on; 0: nothing was done and the
+ * guard ends the app as it always did. Everything that reads the thread goes through vm_read_overwrite: this thread has no
+ * handler of its own. */
+#include "ios_storm_end.h"
+static int ios_storm_end_child_only( thread_t thread, uintptr_t thread_teb, uint64_t pc )
+{
+    extern void *ios_jit_rx_base_global;
+    extern size_t ios_jit_pool_size_global;
+    extern int ios_peb_is_dead( const void *peb );
+    extern int ios_peb_is_live_child( const void *peb );
+    extern int ios_exe_win_owned_by( void *peb );
+    extern int ios_end_child_process_async( void *peb, int status );
+    static volatile int ended;
+    uintptr_t rxb = (uintptr_t)ios_jit_rx_base_global;
+    void *peb = NULL;
+    vm_size_t got = sizeof(peb);
+    int in_guest, act, enabled = ios_storm_child_only_enabled();
+    kern_return_t kr;
+
+    if (!enabled || !thread_teb || ended >= 32) return 0;   /* 32 endings in one session: something else is wrong, keep the old ending */
+    if (vm_read_overwrite( mach_task_self(), (vm_address_t)(thread_teb + offsetof(TEB, Peb)), sizeof(peb), (vm_address_t)&peb, &got )
+        != KERN_SUCCESS || got != sizeof(peb)) peb = NULL;
+    in_guest = (rxb && pc >= rxb && pc < rxb + ios_jit_pool_size_global) || ios_jit_low_contains( (uintptr_t)pc );
+    act = ios_storm_action( enabled, peb != NULL, peb && ios_peb_is_dead( peb ), peb && ios_peb_is_live_child( peb ),
+                            peb && ios_exe_win_owned_by( peb ), in_guest );
+    if (act == IOS_STORM_WHOLE_APP) return 0;
+    if (act == IOS_STORM_END_PROCESS)
+    {
+        dprintf( 2, "[redeliv] the storm is in a child Windows process (peb=%p, thread teb=0x%llx), not the session's first one: "
+                    "ending that process and that thread only, the app keeps running rev=ajan11\n",
+                 peb, (unsigned long long)thread_teb );
+        if (!ios_end_child_process_async( peb, (int)STATUS_ACCESS_VIOLATION )) return 0;   /* could not start: the old ending */
+    }
+    else
+        dprintf( 2, "[redeliv] the storm is in a thread of a child process that has already ended (peb=%p, teb=0x%llx): "
+                    "ending that thread only rev=ajan11\n", peb, (unsigned long long)thread_teb );
+    kr = thread_terminate( thread );
+    if (kr != KERN_SUCCESS) kr = thread_suspend( thread );
+    __sync_fetch_and_add( &ended, 1 );
+    dprintf( 2, "[redeliv] the storming thread is ended (kr=%d) rev=ajan11\n", (int)kr );
+    return 1;
+}
+
 static int ios_mach_deliver_guest_exception_inner( thread_t thread, arm_thread_state64_t *state,
                                                    arm_neon_state64_t *neon, int have_neon,
                                                    int exception, uintptr_t fault_addr,
@@ -8539,6 +8854,7 @@ static int ios_mach_deliver_guest_exception_inner( thread_t thread, arm_thread_s
     extern uint64_t ios_jit_reverse_translate( uint64_t addr, uint64_t *module_base );
 
     uint64_t pc = arm_thread_state64_get_pc( *state );
+    uint64_t redeliv_guest_rip = 0;   /* madeira-bcd: MADEIRA_FAULT_GUARD_GUEST_RIP; 0 unless the switch is on and this is FEX's SIGILL thunk */
     uintptr_t rxb = (uintptr_t)ios_jit_rx_base_global;
     TEB *teb = NULL;
     void *dispatcher;
@@ -9153,6 +9469,9 @@ dispatch:
     PC_sig(&uc) = (ULONG_PTR)dispatcher;
     REGn_sig(18, &uc) = thread_teb;
 
+    /* madeira-bcd: the fault's guest identity, read before state becomes the dispatcher context (MADEIRA_FAULT_GUARD_GUEST_RIP). */
+    if (rec.ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION && ios_fault_guard_guest_on())
+        redeliv_guest_rip = ios_fault_guest_rip( state, pc );
     *state = mc.__ss;
 
     if (deliver_logs < 24 || (deliver_logs % 100) == 0)
@@ -9198,13 +9517,16 @@ dispatch:
          * same instruction back to back on one thread, so the slot is chosen by
          * thread and any other fault on that thread restarts the run. */
         static struct { uint64_t thread, key; uint32_t n; uint64_t t0, p0; } redeliv[16];   /* t0, p0: MADEIRA_FAULT_GUARD_RATE */
+        static uint64_t redeliv_rip[16];   /* madeira-bcd: MADEIRA_FAULT_GUARD_GUEST_RIP: the run's guest RIP at FEX's SIGILL thunk; 0 when off */
         static volatile int ios_redeliv_terminating;
         uint64_t rkey = ((uint64_t)thread << 48) ^ pc ^ ((uint64_t)fault_addr << 1);
         int rslot = (int)(((uint64_t)thread * 0x9E3779B97F4A7C15ull) >> 60);
-        if (redeliv[rslot].thread != (uint64_t)thread || redeliv[rslot].key != rkey)
+        /* A different guest instruction at the shared thunk starts a new run (always equal, 0 = 0, with the switch off). */
+        if (redeliv[rslot].thread != (uint64_t)thread || redeliv[rslot].key != rkey || redeliv_rip[rslot] != redeliv_guest_rip)
         {
             redeliv[rslot].thread = (uint64_t)thread;
             redeliv[rslot].key = rkey;
+            redeliv_rip[rslot] = redeliv_guest_rip;
             redeliv[rslot].n = 1;
             if (ios_fault_guard_rate_on()) ios_fgr_run_begin( &redeliv[rslot].t0, &redeliv[rslot].p0 );   /* madeira-bcd: MADEIRA_FAULT_GUARD_RATE */
         }
@@ -9213,6 +9535,9 @@ dispatch:
             if (!ios_fault_guard_rate_on() || ios_fgr_say_256())
                 dprintf( 2, "[redeliv] 256 identical redeliveries pc=0x%llx addr=0x%llx — storm forming rev=ml461\n",
                          (unsigned long long)pc, (unsigned long long)fault_addr );
+            if (redeliv_guest_rip)   /* MADEIRA_FAULT_GUARD_GUEST_RIP */
+                dprintf( 2, "[redeliv] guest_rip=0x%llx at FEX's SIGILL thunk: MADEIRA_FAULT_GUARD_GUEST_RIP counts the same guest instruction only\n",
+                         (unsigned long long)redeliv_guest_rip );
             ios_smc_loop_diag( thread, pc, fault_addr, rec.ExceptionCode );   /* madeira-bcd (build 591): one-shot [smc-loop], log only */
         }
         else if (redeliv[rslot].n >= 2000 && !ios_redeliv_terminating &&
@@ -9236,6 +9561,8 @@ dispatch:
             unsigned fi;
             dprintf( 2, "[redeliv] 2000 identical redeliveries pc=0x%llx addr=0x%llx — unrecoverable host fault misdelivered to guest rev=ml461\n",
                      (unsigned long long)pc, (unsigned long long)fault_addr );
+            if (redeliv_guest_rip)   /* MADEIRA_FAULT_GUARD_GUEST_RIP */
+                dprintf( 2, "[redeliv] guest_rip=0x%llx: the same guest instruction 2000 times\n", (unsigned long long)redeliv_guest_rip );
             for (fi = 0; fi < sizeof(fregs) / sizeof(fregs[0]); fi++)
             {
                 uint64_t rv = state->__x[fregs[fi]];
@@ -9254,6 +9581,14 @@ dispatch:
                          (unsigned long long)words[2], (unsigned long long)words[3],
                          (unsigned long long)words[4], (unsigned long long)words[5],
                          (unsigned long long)words[6], (unsigned long long)words[7] );
+            }
+            /* ajan11-wow64stack: a storm in a CHILD Windows process ends that process, not the app (ios_storm_end.h). */
+            if (ios_storm_end_child_only( thread, thread_teb, pc ))
+            {
+                redeliv[rslot].thread = 0;   /* a new run starts from 1 on whatever thread comes next */
+                redeliv[rslot].n = 0;
+                ios_redeliv_terminating = 0;
+                return 1;   /* the thread is gone: the caller's thread_set_state on it is harmless, as for [zombie] */
             }
             dprintf( 2, "[redeliv] terminating process rev=ml465\n" );
             task_terminate( mach_task_self() );
@@ -9770,6 +10105,35 @@ static inline void ios_track_signal( int sig, ucontext_t *context )
         ios_signal_in_pe++;
 }
 
+#endif
+
+
+#ifdef WINE_IOS
+/* ajan11-wow64stack: A FAULT INSIDE A SYSTEM CALL THAT ASKED TO CATCH IT.
+ *
+ * Darwin reports a PROTECTION fault (a page that is mapped but PROT_NONE, which is what a reserved, never-committed page of a
+ * Wine view is) as SIGBUS, and bus_handler turned it into a guest exception even when the faulting code was a unix-side system
+ * call with a __TRY around it; only segv_handler asks handle_syscall_fault() for the jmp_buf. The guest exception is dispatched on
+ * the thread's kernel stack, no guest frame is in the stack limits and the process ends ("Exception frame is not in stack limits").
+ * The EA app installer probes memory with ReadProcessMemory( GetCurrentProcess(), the lowest page of its own thread stack, ... ),
+ * the way IsBadReadPtr does, and expects the call to FAIL (ERROR_PARTIAL_COPY); NtReadVirtualMemory's __TRY/__EXCEPT is exactly
+ * that, but the SIGBUS never reached it (build 592, 1e4ec50f: two installer processes ended, the UI stayed on "downloading").
+ *
+ * Only when a __TRY is active (the thread's jmp_buf is set) and the fault is inside a system call (the stack pointer is on the
+ * thread's kernel stack): the handler returns to the __EXCEPT block, as segv_handler does. A fault with no __TRY, or outside a
+ * system call, goes on exactly as before (what this replaces ended the process). One capped line says it happened. */
+static int ios_bus_syscall_fault( ucontext_t *ctx, EXCEPTION_RECORD *rec )
+{
+    static volatile int said;
+    uintptr_t pc = (uintptr_t)PC_sig(ctx), lr = (uintptr_t)LR_sig(ctx);
+
+    if (!NtCurrentTeb() || !ntdll_get_thread_data()->jmp_buf) return 0;
+    if (!handle_syscall_fault( ctx, rec )) return 0;
+    if (said < 16 && __sync_add_and_fetch( &said, 1 ) <= 16)
+        dprintf( 2, "[syscall-fault] a protection fault (SIGBUS) at %p inside a system call with a __TRY: the call fails (pc=%p lr=%p) "
+                    "instead of the process ending rev=ajan11\n", (void *)(uintptr_t)rec->ExceptionInformation[1], (void *)pc, (void *)lr );
+    return 1;
+}
 #endif
 
 
@@ -11825,8 +12189,10 @@ static void ill_handler( int signal, siginfo_t *siginfo, void *sigcontext )
 #ifdef WINE_IOS
     const int ill_dbg_ok = ios_make_wine_logging_safe();  /* ml375: before any ERR */
     ios_track_signal( signal, context );
-    if (ill_dbg_ok) ERR("ILL at pc=%p\n", (void*)PC_sig(context));
-    else dprintf( 2, "ILL at pc=%p (no TEB — wine logging unsafe)\n", (void*)PC_sig(context) );
+    const int ill_report = ios_ill_diag_admit( &context->uc_mcontext->__ss, PC_sig(context) );   /* madeira-bcd: MADEIRA_RECOVERY_LOG_SAMPLE */
+    if (ill_report && ill_dbg_ok) ERR("ILL at pc=%p\n", (void*)PC_sig(context));
+    else if (ill_report) dprintf( 2, "ILL at pc=%p (no TEB — wine logging unsafe)\n", (void*)PC_sig(context) );
+    if (ill_report)
     {
         /* iOS-Madeira diagnostic: when we ILL on a zero/empty page, dump full
          * register state + walk back FP chain to find who BR'd here. */
@@ -11914,6 +12280,8 @@ static void ill_handler( int signal, siginfo_t *siginfo, void *sigcontext )
                         ERR("ILL diag: L1 entry: host=0x%llx guest=0x%llx (guest==x6? %d host==pc? %d)\n",
                             (unsigned long long)entry[0], (unsigned long long)entry[1],
                             entry[1] == x6, entry[0] == pc);
+                    /* ajan21-loglar (build 598): what the guest has at that address (log only; ios_ill_guest_diag.h) */
+                    if (l1pair[0] && entry[1] == x6) ios_ill_guest_bytes( x6, pc );
                 }
             }
             if (x28 >= 0x100000000ULL && x28 < 0x800000000ULL)
@@ -12551,6 +12919,53 @@ static uintptr_t ios_subfloor_translate( uint64_t addr, void *peb )
         if (!peb) any = (uintptr_t)(re + (addr - lo));
     }
     return any;
+}
+
+/* madeira-bcd (ajan16, build 596): the two questions ios_iosb_dead.h asks before an async I/O completion stores an IO_STATUS_BLOCK32
+ * into a 32-bit process (server_ios.c, ios_set_async_iosb). Neither dereferences the address.
+ *
+ * ios_iosb_probe_mapped: is [addr, addr + len) inside the task's mappings, with ANY protection? Only a hole counts as "not mapped": a
+ * page with the wrong protection may be healed by the fault path, and then the store happens as it always did. Mach region queries only,
+ * the recurse form (no port is handed back per call). A failure other than "no region" answers "mapped": in doubt the store is left alone. */
+int ios_iosb_probe_mapped( unsigned long long addr, unsigned long long len );
+int ios_iosb_probe_mapped( unsigned long long addr, unsigned long long len )
+{
+    const unsigned long long end = addr + len;
+    unsigned long long p = addr;
+
+    if (end < addr) return 0;
+    while (p < end)
+    {
+        mach_vm_address_t rb = (mach_vm_address_t)p;
+        mach_vm_size_t    rs = 0;
+        natural_t         depth = 0;
+        vm_region_submap_short_info_data_64_t info;
+        mach_msg_type_number_t cnt = VM_REGION_SUBMAP_SHORT_INFO_COUNT_64;
+        kern_return_t kr;
+
+        memset( &info, 0, sizeof(info) );
+        kr = mach_vm_region_recurse( mach_task_self(), &rb, &rs, &depth, (vm_region_recurse_info_t)&info, &cnt );
+        if (kr == KERN_INVALID_ADDRESS) return 0;               /* nothing at or above p: a hole to the end of the address space */
+        if (kr != KERN_SUCCESS || !rs) return 1;                /* cannot tell: leave the store alone */
+        if (rb > (mach_vm_address_t)p) return 0;                /* the region starts past p: p is in a hole */
+        p = rb + rs;
+    }
+    return 1;
+}
+
+/* ios_iosb_probe_served_low: below the iOS floor nothing can be mapped; an access there is only ever answered by the fault path's own
+ * registries, a sub-floor image window (ml938) or a low allocation / alias (ml966, ml969). Ask them as the fault path does, for any
+ * owner (a NULL peb), so a hit anywhere keeps the store. */
+int ios_iosb_probe_served_low( unsigned long long addr, unsigned long long len );
+int ios_iosb_probe_served_low( unsigned long long addr, unsigned long long len )
+{
+    extern int ios_lowalloc_translate( unsigned long long addr, unsigned long long len,
+                                       unsigned long long *real_out, void **owner_out );
+    unsigned long long real = 0;
+    void *owner = NULL;
+
+    if (ios_subfloor_translate( addr, NULL ) || ios_subfloor_translate( addr + (len ? len - 1 : 0), NULL )) return 1;
+    return ios_lowalloc_translate( addr, len, &real, &owner );
 }
 
 /* Read `size` bytes at `a` with the opc-implied extension. memcpy, not a cast
@@ -13685,6 +14100,14 @@ static void bus_handler( int signal, siginfo_t *siginfo, void *sigcontext )
                 return;
             }
 
+            /* ajan11-wow64stack: the page cannot be repaired. If a system call is reading or writing it inside a __TRY (a
+             * ReadProcessMemory probe of the process's own memory), that call fails; it must not become a guest exception. */
+            if (ios_bus_syscall_fault( bus_ctx, &vrec ))
+            {
+                ios_fixup_x18_for_return( bus_ctx );
+                return;
+            }
+
             rd_kr = mach_vm_read_overwrite( mach_task_self(),
                                             (mach_vm_address_t)(uintptr_t)siginfo->si_addr & ~7ULL,
                                             8, (mach_vm_address_t)(uintptr_t)&rd_buf, &rd_out );
@@ -14091,6 +14514,14 @@ static void bus_handler( int signal, siginfo_t *siginfo, void *sigcontext )
                 if ((ec == 0x24 || ec == 0x25) && (esr & 0x3f) != 0x21)
                 {
                     static unsigned protection_av_logs;
+                    /* ajan11-wow64stack: a permission fault of a system call's __TRY (a write probe of a read-only buffer, a read
+                     * of a page that lost READ) fails the call, as above; guest code never reaches this (its stack pointer is not
+                     * on the kernel stack and it has no jmp_buf). */
+                    if (ios_bus_syscall_fault( bus_ctx, &vrec ))
+                    {
+                        ios_fixup_x18_for_return( bus_ctx );
+                        return;
+                    }
                     if (protection_av_logs++ < 16)
                         dprintf( 2, "[bus-data-av] pc=%p addr=%p esr=%08x rw=%lu\n",
                                  pc, siginfo->si_addr, esr,

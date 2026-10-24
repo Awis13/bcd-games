@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "wow-stack-freed-by-other-process"
+ ],
+ "next": [],
+ "note": "Battle.net through the Wine desktop (build 592, iPhone18,2): a worker exit in one 32-bit Chromium helper deleted the live 8 MB stack of the network-service helper's IO thread (virtual_free_teb used the freeing thread's window; the delayed-release ring deleted it 2 s later), 2000 identical faults, the whole app ended. Fixed in code in 593 (own-window release, child-only storm ending); no setting changes it",
+ "outcome": "crashed",
+ "stage": 1,
+ "status": "known"
+}

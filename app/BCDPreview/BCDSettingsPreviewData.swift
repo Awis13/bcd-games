@@ -14,7 +14,7 @@ extension BCDSettingsBackends {
         BCDSettingsBackends(memory: BCDPreviewMemory(), graphics: BCDPreviewGraphics(), controls: BCDPreviewControls(),
                             storage: BCDPreviewStorage(), dotNet: BCDPreviewDotNet(), logs: BCDPreviewLogs(), feedback: BCDPreviewFeedback(),
                             allSettings: BCDPreviewAllSettings(), about: BCDPreviewAbout(), developer: BCDPreviewDeveloper(),
-                            vcRuntime: BCDPreviewVCRuntime())
+                            vcRuntime: BCDPreviewVCRuntime(), gecko: BCDPreviewGecko())
     }
 }
 
@@ -62,6 +62,7 @@ extension BCDSettingsBackends {
     @Published private(set) var holdMaximumRate = false
     @Published private(set) var metalFX = ""
     @Published private(set) var direct3D9 = ""
+    @Published private(set) var orientation = ""
     @Published private(set) var restartNeeded = false
     var displayRate: Int { 120 }
     var displaySwitchesShown: Bool { true }
@@ -70,6 +71,7 @@ extension BCDSettingsBackends {
     func setHoldMaximumRate(_ on: Bool) { holdMaximumRate = on }
     func setMetalFX(_ value: String) { metalFX = value }
     func setDirect3D9(_ value: String) { direct3D9 = value }
+    func setOrientation(_ value: String) { orientation = value }
 }
 
 @MainActor final class BCDPreviewControls: BCDControlsBackend {
@@ -192,6 +194,47 @@ extension BCDSettingsBackends {
     func refresh() {}
 }
 
+/// Not downloaded; Download walks through both files. -BCDSection gecko+downloading|installed|failed starts in that state.
+@MainActor final class BCDPreviewGecko: BCDGeckoBackend {
+    @Published private(set) var state = BCDGeckoState.missing
+    @Published private(set) var lastError: String?
+    private var timer: Timer?
+
+    init() {
+        switch UserDefaults.standard.string(forKey: "BCDSection")?.split(separator: "+").dropFirst().first {
+        case "downloading": state = .downloading(received: 71_000_000, total: BCDGeckoPin.totalBytes, arch: "x86_64")
+        case "installed": state = .installed
+        case "failed": lastError = "WineHQ's download server answered 503. Try again in a little while."
+        default: break
+        }
+    }
+
+    func install() {
+        lastError = nil
+        state = .downloading(received: 0, total: BCDGeckoPin.totalBytes, arch: "x86")
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+    }
+
+    private func tick() {
+        guard case .downloading(let received, let total, _) = state else { timer?.invalidate(); return }
+        let next = received + 6_000_000
+        if next >= total { timer?.invalidate(); state = .installed }
+        else { state = .downloading(received: next, total: total, arch: next > BCDGeckoPin.x86.bytes ? "x86_64" : "x86") }
+    }
+
+    func cancel() {
+        timer?.invalidate()
+        state = .missing
+        lastError = "Cancelled."
+    }
+
+    func remove() { state = .missing }
+    func refresh() {}
+}
+
 @MainActor final class BCDPreviewStorage: BCDStorageBackend {
     @Published private(set) var items = [
         BCDStorageItem(id: "capture", name: "Frame captures", bytes: 121_000_000, clearable: true),
@@ -258,7 +301,7 @@ extension BCDSettingsBackends {
     @Published private(set) var crashTuning = true
     var crashTuningRunning: Bool { true }
     var restartNeeded: Bool { false }
-    func send(_ log: BCDLogFile) { sendStatus = "Sent. Code: P3MV-77KD (sample)" }
+    func send(_ log: BCDLogFile, comment: String) { sendStatus = "Sent. Code: P3MV-77KD (sample)" + (comment.isEmpty ? "" : ", with your comment") }
     func copy(_ code: String) {}
     func exportable() -> [URL] { [] }
     func setExtendedLogging(_ on: Bool) { extendedLogging = on }

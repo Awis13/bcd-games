@@ -31,6 +31,7 @@ import UIKit
     var about: any BCDAboutBackend
     var developer: any BCDDeveloperBackend
     var vcRuntime: any BCDVCRuntimeBackend
+    var gecko: any BCDGeckoBackend
     /// Sections built elsewhere (Accounts, JIT, BCD Dock, Visual C++ runtime), wired in here:
     /// each draws its whole page beside the list (scrolling and title included). Controls
     /// that use `.bcdSettingsControl` are walked row by row; plain `.bcdFocusable` ones by the
@@ -779,6 +780,7 @@ struct BCDSettingsDetail: View {
         switch section {
         case .accounts, .jit, .dock: BCDSettingsPlaceholder(section: section)
         case .vcruntime: Self.vcRuntime(model.backends.vcRuntime)
+        case .gecko: Self.gecko(model.backends.gecko)
         case .memory: Self.memory(model.backends.memory)
         case .graphics: Self.graphics(model.backends.graphics)
         case .controls: Self.controls(model.backends.controls)
@@ -805,6 +807,7 @@ struct BCDSettingsDetail: View {
     private static func about(_ backend: some BCDAboutBackend) -> AnyView { AnyView(BCDAboutSettings(backend: backend)) }
     private static func developer(_ backend: some BCDDeveloperBackend) -> AnyView { AnyView(BCDDeveloperSettings(backend: backend)) }
     private static func vcRuntime(_ backend: some BCDVCRuntimeBackend) -> AnyView { AnyView(BCDVCRuntimeSettings(backend: backend)) }
+    private static func gecko(_ backend: some BCDGeckoBackend) -> AnyView { AnyView(BCDGeckoSettings(backend: backend)) }
 }
 
 // MARK: - Rows

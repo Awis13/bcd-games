@@ -120,9 +120,9 @@ struct BCDLiveFrontEnd: View {
                 Button("OK", role: .cancel) { update.message = nil }
             } message: { Text(update.message ?? "") }
             // First-run setup (Onboarding.swift).
-            .fullScreenCover(isPresented: $onboarding.presented) { OnboardingView() }
-            .sheet(item: sheetShown) { sheet in screen(sheet) }
-            .fullScreenCover(item: pageShown) { page in pageScreen(page) }
+            .fullScreenCover(isPresented: $onboarding.presented, onDismiss: BCDPresentation.didClose) { OnboardingView() }
+            .sheet(item: sheetShown, onDismiss: BCDPresentation.didClose) { sheet in screen(sheet) }
+            .fullScreenCover(item: pageShown, onDismiss: BCDPresentation.didClose) { page in pageScreen(page) }
             // A start waiting for its Steam Cloud saves.
             .overlay(alignment: .bottom) { cloudWaitNote }
     }

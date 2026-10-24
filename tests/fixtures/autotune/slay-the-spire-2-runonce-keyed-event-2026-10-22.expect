@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "runonce-stale-waiter-keyed-event"
+ ],
+ "next": [
+  "env.MADEIRA_KEYED_EVENT_PER_PROCESS = 1"
+ ],
+ "note": "Slay the Spire 2 (Steam 2868840, Godot), build 579, iPhone19,2 (11.5 GB): the thread 00c8 (a _beginthreadex worker) dies two seconds after it starts on a read of 0xe9010000000887c6 at the ARM64EC ntdll's +0x68008 (RtlRunOnceComplete; x0 = c00000ef from the release of the second node), exit c0000005 (L13455). Tester log GZFVM3, scrubbed.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "virtual-mutex-fault-self-deadlock"
+ ],
+ "next": [],
+ "note": "ONE PIECE Bounty Rush, build 592, iPhone16,2: presents=0 for 120 s, a thread parked in memmove (x8 = 0x7000000000, the pool's RW alias) under virtual_map_section and the exception thread waiting for virtual_mutex. Three more logs (13FT14 on 580, 2HJEVX, NJ989H) show the same stop",
+ "outcome": "hung",
+ "stage": 2,
+ "status": "known"
+}

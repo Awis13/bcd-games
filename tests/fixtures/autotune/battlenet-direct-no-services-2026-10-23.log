@@ -1,0 +1,78 @@
+[16:12:03.394] [INFO] [recs] the kept download was not used: older than the list in use: marvels-spider-man-remastered v1 is older than v2
+[16:12:03.395] [INFO] [recs] in use: built-in list v7 (2026-10-23), 79 rules, build 593
+[16:12:03.407] [INFO] [epic-install] start installed=0 refused=0
+[16:12:03.475] [INFO] [xinput] ml1920 physical controllers enabled=1
+[16:12:03.475] [INFO] [touch-xinput] ml1930 enabled=1
+[16:12:03.476] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[16:12:03.481] [INFO] [steam-library] start signed-in=1 cached=40
+[16:12:03.498] [INFO] [bcd-ui] shown games=45 downloads=0
+[16:12:03.499] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[16:12:03.499] [INFO] SIGTRAP handler installed (no debugger)
+[16:12:03.499] [INFO] Checking entitlements...
+[16:12:03.499] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[16:12:03.499] [OK]   increased-memory-limit: true
+[16:12:03.500] [OK]   extended-virtual-addressing: true
+[16:12:03.500] [OK]   increased-debugging-memory-limit: true
+[16:12:03.500] [INFO] [build] v0.1.593 (593)
+[16:12:03.500] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8172MB cores=6
+[16:12:03.500] [INFO] [device] address-map=[0x100c7c000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[16:12:03.501] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=354d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[16:12:03.501] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[16:12:03.510] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=+03:00 free-disk=108GB stikdebug-url=1
+[16:12:03.514] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[16:12:03.568] [INFO] [steam-games] installed=2 ready=2
+[16:12:03.588] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[16:12:03.589] [INFO] [epic-auth] start signed-in=1
+[16:12:03.589] [INFO] [epic-library] start cached=6 listed=4
+[16:12:03.598] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[16:12:08.472] [INFO] [launcher] battlenet open bits=32 own-entry=1 desktop=0 services=0
+[16:12:08.473] [INFO] [bcd-ui] play launcher
+[16:12:08.473] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[16:12:08.473] [INFO] Requesting JIT with Built-in StikJIT...
+[16:12:08.509] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 10.7.1.1)
+[16:12:08.547] [INFO] [jit-helper] enable: started com.thebcd69.bcd.JITHelper as pid 34324
+[16:12:09.890] [OK] JIT enabled and debugger attached.
+[16:12:09.891] [OK] JIT enabled! Debugger attached.
+[16:12:09.892] [INFO] [jit-on-play] JIT is on: starting the game
+[16:12:09.901] [INFO] [bcd] library launch Battle.net.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=0 metalfx=off
+[16:12:09.903] [INFO] Session log: logs/Battle.net.exe-2026-10-23_16-12-09.txt
+[16:12:09.912] [INFO] [bcd-ui] in-game=1
+[16:12:09.923] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[16:12:09.924] [INFO] [steam-depot] paused for a game session count=0
+[16:12:09.925] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[16:12:09.925] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[16:12:09.926] [INFO] bcd.cfg: absent
+[16:12:09.926] [INFO] Running full Wine sequence...
+[16:12:09.927] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x100c7c000,0x8000000000) 512GB available=8157MB low-power=0 thermal=nominal
+[16:12:09.929] [INFO] [game-cfg] env.MADEIRA_GDI_SHARED_SECTION=1 env.MADEIRA_MSIEXEC_SYSTEM32=1
+[16:12:09.930] [INFO] [display-shape] resolution=1408x648 mode=fit
+[16:12:09.930] [INFO] [launch-route] library profile applied
+[16:12:09.933] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[16:12:09.933] [INFO] Allocating 896MB JIT pool via debugger...
+[16:12:09.934] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[16:12:09.934] [INFO] [jit-debugger] attached=1 at the pool request
+[16:12:09.935] [INFO] JIT-pool frontier already at 0x11dc90000 — no pin needed
+[16:12:09.935] [OK] ml1040: executable window [0x140000000,+128MB) held since image load
+[16:12:09.936] [INFO] ml1040: released the early pool placeholder 0x148000000+624MB for the debugger
+[16:12:09.936] [INFO] ml1135: the placeholder ended at the mapping 0x16f084000+0MB (VM tag 30, prot 0), already there at image load
+[16:12:09.936] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x11dc90000+480MB 0x148000000+624MB 0x16f5e4000+266MB
+[16:12:09.937] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 624MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[16:12:10.711] [INFO] RX pool at 0x148000000
+[phase] wine-start             t+  0.831s rev=ml526
+D 24 Load module Battle.net.exe (battle.net.exe-5fc016bca34b3b3e): 7100400000
+[file-wfail] ml669 #4 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #6 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+024c:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\ProgramData\\Battle.net\\Agent\\AgentHelper.exe" cmdline=L"\"C:\\ProgramData\\Battle.net\\Agent\\AgentHelper.exe\" --install --target=C:/ProgramData/Battle.net_components/battlenet_helpersvc/AgentHelper.exe"
+0254:err:seh:segv_handler SEGV LOOP FATAL: pc=0x101def1b0 addr=0x10004 after 5 repeats, forcing thread exit
+[file-wfail] ml669 #83 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #85 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[16:12:40.858] [INFO] detach-wait: presents=0 running=1 elapsed=30s
+[16:13:10.948] [INFO] detach-wait: presents=0 running=1 elapsed=60s
+[16:13:41.090] [INFO] detach-wait: presents=0 running=1 elapsed=90s
+[16:14:11.197] [INFO] detach-wait: presents=0 running=1 elapsed=120s
+[waiters]  tid=0160 addr=0x713e4676e0 age=176s INF w0=00000000 w1=3e4676bc
+[waiters]  tid=01ac addr=0x72016ed3f0 age=175s INF w0=00000001 w1=00000000
+[waiters]  tid=01a8 addr=0x72016ed3e8 age=175s INF w0=00000001 w1=00000000
+[waiters]  tid=01b8 addr=0x720168bea4 age=175s INF w0=00000000 w1=00000000
+[waiters]  tid=01b4 addr=0x720168bea4 age=175s INF w0=00000000 w1=00000000
+[footprint] rev=ml358 phys=3013 MB (peak 3238) internal=3004 MB compressed=0 MB external=138 MB reusable=5 MB (cycle=93)

@@ -1,0 +1,20 @@
+{
+ "dialogs": [
+  "Send error report"
+ ],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [
+  "eaapp-installer-msi-pipe-answer-lost",
+  "mono-child-tls-null"
+ ],
+ "next": [
+  "env.MADEIRA_APC_BUSY_QUEUE = 1"
+ ],
+ "note": "EA app installer in the owner's Windows desktop (build 593, 17:15:17, English locale, msiexec in system32): the bundle reached its MSI package and the package stopped at its first custom action, JunoInitializeSession (1603, INST-14-1603). The action runs in rundll32.exe (WiX SfxCA out of process), which asks msiexec's custom action server over an overlapped pipe; the server's first answer was dropped by BCD's own Windows server ([apc-requeue] #4 ... dropped, no waiting thread), SfxCA closed the pipe, and every later MSI call read its answer through a NULL pointer. eaapp-installer-msi-pipe-answer-lost proposes env.MADEIRA_APC_BUSY_QUEUE = 1; build 594's launcher card sets it for the EA app itself.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

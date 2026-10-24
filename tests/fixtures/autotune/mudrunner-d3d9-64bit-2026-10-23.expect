@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "d3d9-64bit-dxmt-crash"
+ ],
+ "next": [
+  "env.MADEIRA_D3D9_X64 = dxmt"
+ ],
+ "note": "MudRunner (Steam 675010, 64-bit Direct3D 9), build 580, iPhone15,5, Send Log 96X0F0: Wine's d3d9 finds no OpenGL (d3d9_init FAILED), the game reads its NULL Direct3D object (MudRunner.exe+0x7e1d24) and ends c0000005. UNPROVEN: env.MADEIRA_D3D9_X64 = dxmt gives it BCD's 64-bit Direct3D 9 (Darksiders II plays on it).",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

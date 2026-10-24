@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "closed-by-itself"
+ },
+ "matched": [
+  "wow-storm-end-worker-teb",
+  "wow-window-held-by-unterminable-threads"
+ ],
+ "next": [],
+ "note": "Battle.net in the Wine desktop with Windows services (build 593, the owner's iPhone18,2, 16:23): [wow-reap] could not end two leftover threads of exited 32-bit processes (iOS refused thread_terminate: 'left suspended'), their windows stayed held and 32-bit starts failed at 'guest-window-reserve'; then a helper's storm took the child-only path and its worker ended the app in ios_fdt_note_close (no TEB). Both fixed in code in 594.",
+ "outcome": "killed",
+ "stage": 2,
+ "status": "known"
+}

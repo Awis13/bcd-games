@@ -1,9 +1,15 @@
 import Foundation
 import SwiftUI
+import UIKit
 
 @main
 struct MadeiraApp: App {
+    /// madeira-bcd: the screen orientation lock for a game's session (BCDOrientation.swift). The delegate answers which
+    /// orientations a window may take: the three Info.plist declares until a session turns the lock on.
+    @UIApplicationDelegateAdaptor(BCDOrientationDelegate.self) private var orientationDelegate
+
     init() {
+        ExternalGameStorage.shared.restore()
         // madeira-bcd: the Metal Performance HUD's performance insights (the
         // notes that stack up left of its panel: shader compiles, similar render
         // passes, blit encoders) cover the game. Off unless bcd.cfg says

@@ -21,7 +21,7 @@ extension BCDSettingsBackends {
         BCDSettingsBackends(memory: BCDMemoryLive(), graphics: BCDGraphicsLive(), controls: BCDControlsLive(),
                             storage: BCDStorageLive(), dotNet: BCDDotNetLive(), logs: BCDLogsLive(), feedback: BCDFeedbackLive(),
                             allSettings: BCDAllSettingsLive(), about: BCDAboutLive(), developer: BCDDeveloperLive(),
-                            vcRuntime: BCDVCRuntimeLive(),
+                            vcRuntime: BCDVCRuntimeLive(), gecko: BCDGeckoLive(),
                             // Accounts, JIT and BCD Dock (BCDAccountsLive, BCDJITLive, BCDDockLive): each
                             // draws its whole page; B asks its own pages first (BCDSettingsSectionBack).
                             custom: [
@@ -47,6 +47,7 @@ private enum BCDLiveKey {
     static let promote = "env.MADEIRA_PROMOTE"
     static let metalFX = "metalfx-upscale"
     static let direct3D9 = "d3d9"
+    static let orientation = BCDOrientationLive.key              // "orientation-lock": a BCDOrientationChoice word
     static let xinput = "MADEIRA_XINPUT"                      // MadeiraConfig.flag name, written as env.MADEIRA_XINPUT
     static let padMode = "env.MADEIRA_PAD_MODE"
     static let padOutput = "env.MADEIRA_PAD_OUTPUT"
@@ -190,6 +191,7 @@ private enum BCDLiveKey {
     @Published private(set) var holdMaximumRate = false
     @Published private(set) var metalFX = ""
     @Published private(set) var direct3D9 = ""
+    @Published private(set) var orientation = ""
     let resolutions: [BCDResolution]
     let defaultResolution = ResolutionChoices.defaultValue
     let displayRate = ProMotionIntent.panelMaxFPS
@@ -220,6 +222,7 @@ private enum BCDLiveKey {
         holdMaximumRate = ProMotionIntent.holdMaximum
         metalFX = values[BCDLiveKey.metalFX] ?? ""
         direct3D9 = values[BCDLiveKey.direct3D9] ?? ""
+        orientation = BCDOrientationChoice(setting: values[BCDLiveKey.orientation]).setting ?? ""
     }
 
     private func write(_ key: String, _ value: String?) {
@@ -232,6 +235,8 @@ private enum BCDLiveKey {
     func setFrameCap(_ fps: Int?) { write(BCDLiveKey.frameCap, fps.map(String.init)) }
     func setMetalFX(_ value: String) { write(BCDLiveKey.metalFX, value) }
     func setDirect3D9(_ value: String) { write(BCDLiveKey.direct3D9, value) }
+    /// Only a word BCDOrientationChoice knows is written, and "off" is the key removed (it is what no key means).
+    func setOrientation(_ value: String) { write(BCDLiveKey.orientation, BCDOrientationChoice(setting: value).setting) }
 
     func setHoldMaximumRate(_ on: Bool) {
         MadeiraConfig.set(BCDLiveKey.promote, on ? "1" : nil)
@@ -447,6 +452,78 @@ struct BCDTouchEditorHost: View {
 // MARK: - Storage
 
 @MainActor final class BCDStorageLive: BCDStorageBackend {
+    // External SSD (thebcd69/bcd-games#12 by Pardoxum; ExternalGameStorage in StorageModel.swift). Nothing here touches
+    // the disk until the player taps one of its buttons; the folder work runs off the main thread.
+    let supportsExternalGames = true
+    @Published private(set) var externalGamesMessage: String? = ExternalGameStorage.shared.message
+    @Published private(set) var externalGamesFree: Int64?
+    @Published private var externalGamesBusy = false
+    private var pickerOpenedAt: Date?
+    private var pickerAnswered = false
+
+    var externalGamesSavedFolder: String? { ExternalGameStorage.shared.savedFolderName }
+
+    var canConnectExternalGames: Bool {
+        !externalGamesBusy && wine_process_is_running() == 0 && LibraryModel.shared.current == nil && !savesBusy && !addingGames && !model.busy
+    }
+
+    func connectExternalGames(_ url: URL) {
+        guard beginExternalWork() else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Swift.Result { try ExternalGameStorage.shared.connect(url) }
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                externalGamesBusy = false
+                switch result {
+                case .success: externalGamesMessage = ExternalGameStorage.shared.message
+                case .failure(let error):
+                    externalGamesMessage = error.localizedDescription
+                    LogStore.shared.log("[ext-storage] folder refused: \((error as NSError).domain) \((error as NSError).code)")
+                }
+                refresh()
+            }
+        }
+    }
+
+    func reconnectExternalGames(chooseAgain: @escaping () -> Void) {
+        guard beginExternalWork() else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let outcome = ExternalGameStorage.shared.reconnect()
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                externalGamesBusy = false
+                externalGamesMessage = ExternalGameStorage.shared.message
+                refresh()
+                // The saved bookmark did not open (or none is saved): the picker, with the message above in the row.
+                switch outcome {
+                case .chooseAgain, .noSavedFolder: chooseAgain()
+                case .connected, .refused: break
+                }
+            }
+        }
+    }
+
+    func noteExternalPicker(_ what: String) {
+        if what.hasPrefix("opened") { pickerOpenedAt = Date(); pickerAnswered = false }
+        if what == "answered" { pickerAnswered = true }
+        let seconds = pickerOpenedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        if what == "closed" {
+            // Open did nothing, or Cancel: the log cannot tell which, but the time can.
+            LogStore.shared.log("[ext-storage] picker closed \(pickerAnswered ? "after an answer" : "without an answer") after \(seconds) s")
+        } else {
+            LogStore.shared.log("[ext-storage] picker \(what)\(what == "answered" ? " after \(seconds) s" : "")")
+        }
+    }
+
+    private func beginExternalWork() -> Bool {
+        guard canConnectExternalGames else {
+            externalGamesMessage = "Quit the game and wait for storage tasks to finish before connecting a folder."
+            return false
+        }
+        externalGamesBusy = true
+        return true
+    }
+
     private let model = StorageModel()
     private var bag = Set<AnyCancellable>()
     @Published private(set) var deviceFree: Int64?
@@ -473,6 +550,12 @@ struct BCDTouchEditorHost: View {
 
     func refresh() {
         model.refresh()
+        if ExternalGameStorage.shared.isConnected {
+            DispatchQueue.global(qos: .utility).async {
+                let free = ExternalGameStorage.shared.freeBytes
+                DispatchQueue.main.async { [weak self] in self?.externalGamesFree = free }
+            }
+        }
         let keys: Set<URLResourceKey> = [.volumeAvailableCapacityForImportantUsageKey, .volumeTotalCapacityKey]
         if let values = try? URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: keys) {
             deviceFree = values.volumeAvailableCapacityForImportantUsage
@@ -638,6 +721,32 @@ struct BCDTouchEditorHost: View {
     func refresh() { if !runtime.isBusy { runtime.refresh() } }
 }
 
+// MARK: - HTML engine for installers (Wine Gecko)
+
+/// BCDGeckoModel.shared (BCDGecko.swift): the download from WineHQ, its checks and the two files on the device. The session's
+/// cache folder points at them from the next start (BCDGeckoFiles.exportEnvironment, ContentView).
+@MainActor final class BCDGeckoLive: BCDGeckoBackend {
+    private let gecko = BCDGeckoModel.shared
+    private var bag = Set<AnyCancellable>()
+
+    init() {
+        gecko.log = { LogStore.shared.log($0) }
+        gecko.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &bag)
+    }
+
+    var state: BCDGeckoState { gecko.state }
+    var lastError: String? { gecko.lastError }
+
+    func install() {
+        LogStore.shared.log("[bcd-settings] Wine Gecko download")
+        gecko.install()
+    }
+
+    func cancel() { gecko.cancel() }
+    func remove() { gecko.remove() }
+    func refresh() { gecko.refresh() }
+}
+
 // MARK: - Logs
 
 /// Auto-tune's switch for BCD's Settings (check-autotune.py registers the one line that names it).
@@ -674,11 +783,11 @@ struct BCDLiveSwitch {
         sent = LogUpload.history.map { BCDSentLog(code: $0.code, name: $0.name, date: $0.date) }
     }
 
-    func send(_ log: BCDLogFile) {
+    func send(_ log: BCDLogFile, comment: String) {
         guard !sending, let url = files[log.id] else { return }
         sending = true
         sendStatus = "Getting it ready…"
-        LogUpload.send(url, game: LogUpload.game(of: url), progress: { [weak self] text in self?.sendStatus = text }) { [weak self] result in
+        LogUpload.send(url, game: LogUpload.game(of: url), comment: comment, progress: { [weak self] text in self?.sendStatus = text }) { [weak self] result in
             guard let self else { return }
             sending = false
             switch result {

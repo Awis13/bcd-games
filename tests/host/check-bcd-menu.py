@@ -103,7 +103,7 @@ check("the hint follows the ring", ".onChange(of: focus.focused) { _, _ in insta
 check("the shell's buttons are not set over a page, a menu or Settings",
       "guard !focus.layerOpen, !showSettings else { return }" in shell and "var layerOpen: Bool { !layers.isEmpty }" in focus)
 check("the shell's buttons come back when Settings closes (it clears them as it goes)",
-      "onDismiss: { installButtons() }" in shell)
+      "onDismiss: { installButtons(); BCDPresentation.didClose() }" in shell)
 check("a control's registration belongs to the latest view of its id: a turn of the device builds the new view before the old one goes, and the old one's going leaves the new one's action, frame and ring alone",
       "if let owner, let latest = owners[id], latest != owner { return }" in focus
       and "func setAction(_ id: String, _ action: @escaping () -> Void, owner: UUID? = nil)" in focus

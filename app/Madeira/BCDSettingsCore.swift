@@ -11,7 +11,7 @@ import Foundation
 
 /// Settings' sections, in the order the list shows them.
 enum BCDSettingsSection: String, CaseIterable, Identifiable {
-    case accounts, jit, dock, memory, graphics, controls, storage, dotnet, vcruntime, logs, feedback, all, developer, updates, about
+    case accounts, jit, dock, memory, graphics, controls, storage, dotnet, vcruntime, gecko, logs, feedback, all, developer, updates, about
 
     var id: String { rawValue }
 
@@ -26,6 +26,7 @@ enum BCDSettingsSection: String, CaseIterable, Identifiable {
         case .storage: return "Storage"
         case .dotnet: return ".NET Framework"
         case .vcruntime: return "Visual C++ runtime"
+        case .gecko: return "HTML engine for installers"
         case .logs: return "Logs"
         case .feedback: return "Feedback"
         case .all: return "All settings"
@@ -47,6 +48,7 @@ enum BCDSettingsSection: String, CaseIterable, Identifiable {
         case .storage: return "What BCD keeps on this device"
         case .dotnet: return "Wine Mono for games made with .NET"
         case .vcruntime: return "Microsoft's runtime for Windows games"
+        case .gecko: return "Wine Gecko, for installers that show web pages"
         case .logs: return "Send a log, export it, diagnostics"
         case .feedback: return "Say what is broken or could be better"
         case .all: return "Every option, searchable"
@@ -67,6 +69,7 @@ enum BCDSettingsSection: String, CaseIterable, Identifiable {
         case .storage: return "internaldrive.fill"
         case .dotnet: return "cube.fill"
         case .vcruntime: return "puzzlepiece.extension.fill"
+        case .gecko: return "globe"
         case .logs: return "doc.text.fill"
         case .feedback: return "text.bubble.fill"
         case .all: return "slider.horizontal.3"

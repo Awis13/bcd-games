@@ -1,0 +1,50 @@
+[13:00:11.661] [INFO] [recs] in use: downloaded list v7 (2026-10-23), 78 rules, build 592
+[13:00:11.782] [INFO] [build] v0.1.592 (592)
+[13:00:11.782] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6637MB cores=6
+[13:00:11.782] [INFO] [device] address-map=[0x100fe0000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[13:00:11.783] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=355d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[13:00:11.806] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[13:00:16.277] [INFO] [bcd] Desktop: section-backed GDI table for the 32-bit programs started here (MADEIRA_GDI_SHARED_SECTION=1; env.MADEIRA_GDI_SHARED_SECTION = 0 in its Game config turns it off)
+[13:00:16.302] [INFO] [steam-depot] paused for a game session count=0
+[13:00:16.303] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[13:00:16.303] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[phase] wine-start             t+  0.593s rev=ml526
+[wow-window] B=0x7700000000: reserved exactly 4GB; guard BORROWED from the pre-existing PROT_NONE region at 0x7800000000
+[wow-window] band full: spilled into the Chromium pool range B=0x7700000000..0x7800000000 (MADEIRA_WOW_SPILL_CEF=0 disables)
+[wow-window] reserved B=0x7700000000..0x7800000000 (slot 4) guard=borrowed
+[Wine child] i386 image wine machine=0x14c window=0x7700000000 reserve=0x0
+no-teb:err:module:wine_ios_child_main [Wine child] i386 image wine machine=014c window=0x7700000000 reserve=0
+[Wine child] cloning PEB from initial 0x71ffff0000 (global peb=0x7800310000)
+[Wine child] dbg-channel table copied: 2 entries, default flags=0x3
+[wow-window] slot 4 B=0x7700000000 bound to peb=0x7700310000
+0354:err:thread:RtlExitUserThread [thr-exit] ml806 RtlExitUserThread tid=0354 status=00000000 caller=7BEF40C8
+[srv-own] read_request EOF tid=0354 pid=0310 request_unixfd=990 -> kill_thread rev=ml586
+[srv-kill] kill_thread tid=0354 pid=0310 violent=0 rev=ml586
+037c:err:thread:RtlExitUserThread [thr-exit] ml806 RtlExitUserThread tid=037c status=00000000 caller=7BEF40C8
+[srv-own] read_request EOF tid=037c pid=0328 request_unixfd=1099 -> kill_thread rev=ml586
+[fault_rip] cnt=30 rip=0x0 pc=0x16d0c3d00 addr=0x77065cfc38 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7705dd0000+0x800000 rev=ml555
+[fault_rip] cnt=31 rip=0x0 pc=0x16d0c3d00 addr=0x77065cfc38 kr=2(PROTECTION_FAILURE) entryprot=0 nowprot=0 region=0x7705dd0000+0x800000 rev=ml555
+0390:err:seh:bus_handler [bus-rgn] si_code=1 addr=0x77065cfc38 pc=0x16d0c3d00 pc_in_pool=1 readable=0
+0390:err:seh:bus_handler [bus-rgn]   region=0x7705dd0000+0x800000 prot=0 max=7 share_mode=2 user_tag=0
+0390:err:seh:bus_handler [bus-rgn]   OWNER extpager=0 resident=0 swapped=0 dirtied=0 reusable=0 refcnt=1 shadow=0  purgeable=not-purgeable(0x0) rev=ml560
+0390:err:seh:bus_handler [bus-rgn]   VERDICT <== ANONYMOUS, NEVER RESIDENT — never materialised rev=ml560
+0390:err:seh:bus_handler [bus-rgn]   PROVENANCE NO file mapping covers this address (anonymous — EOF/backing story does NOT apply) rev=ml561
+0390:err:seh:bus_handler [bus-rgn]   PAGE-CENSUS 16KB pages from 0x7705dd0000: [XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]  ('.'=materialises 'X'=fails; fault is at +0x7ffc38) rev=ml561
+0390:err:seh:bus_handler [fill-args] registers are NOT consistent with the fill32 ABI (r10=0x102 vs addr=0x77065cfc38, width=8064 stride=4294951048 height=0) — NOT interpreting, no verdict rev=ml563
+[fault-rgn] addr=0x77065cfc38 page=0x77065cc000 vprot prev/this/next=00/00/00 region=unknown/foreign
+[fault-rgn]   NO wine view — Wine doesn't own this addr (FEX/foreign mmap)
+[fault-rgn]   VIEW BELOW: none holds the byte before the fault
+[fault-rgn]   VIEW ABOVE: base=0x77065d0000 size=0x800000 protect=0x23 (VirtualAlloc), 0x3c8 above the fault
+[fault-rgn]   history: view 0x7705dd0000+0x800000 protect=0x23 DELETED by tid 027c 6828 ms ago
+[free-origin] view=0x7705dd0000 native-return=0x1021a0a0c state-rip=0 ec-ctx-rip=0 ec-ctx-rsp=0 main-image=0x7200400000 candidates=0 (stack scan, not unwind)
+[fault-rgn]   history: view 0x7705dd0000+0x800000 protect=0x23 CREATED by tid 032c 75190 ms ago
+[redeliv] 256 identical redeliveries pc=0x14f012360 addr=0x77065cf8f8 — storm forming rev=ml461
+[smc-loop] build591 mach thread 0x2a823: 256 identical deliveries of code c0000005, host pc 0x14f012360 (insn 0xb90002e8, in the JIT pool), address 0x77065cf8f8; page: see next line; anonymous RWX alias: no
+[smc-loop]   host region 0x7705dd0000+0x800000 prot=0 max=7 shared=0 (no alias: this page is written directly or not at all)
+[redeliv] 2000 identical redeliveries pc=0x14f012360 addr=0x77065cf8f8 — unrecoverable host fault misdelivered to guest rev=ml461
+[redeliv-mem] x0=0x77065cf950: <unmapped>
+[redeliv-mem] x8=0x65cf900: <unmapped>
+[redeliv-mem] x9=0x77065cf950: <unmapped>
+[redeliv-mem] x16=0x1508cd0d4: d65f03c0d63f0200 0000000150928bc8 aa1e03e9d28004c8 f940021058000090 d65f03c0d63f0200 0000000150928bc8 aa1e03e9d28004e8 f940021058000090
+[redeliv-mem] x19=0x703d02dac0: 00000010c0000005 f7a7a36000000000 0000000100000002 00000070065cf8f8 0000000150906d00 0000000150906cb0 00000001508cf654 000100702c3c1410
+[redeliv] terminating process rev=ml465

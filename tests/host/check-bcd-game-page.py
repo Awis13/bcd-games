@@ -120,7 +120,7 @@ check("Library opens a game's page full screen",
       '.bcdGamePage($opened, from: "Library")' in library and ".sheet(item: $opened)" not in library)
 check("the first-version game sheet is gone", not any("BCDGameSheet" in p.read_text() for p in APP.glob("*.swift")))
 check("the page opens as a full-screen cover with the store and the focus",
-      "content.fullScreenCover(item: $game) { opened in" in page and ".environmentObject(store)" in page
+      "content.fullScreenCover(item: $game, onDismiss: BCDPresentation.didClose) { opened in" in page and ".environmentObject(store)" in page
       and ".environmentObject(focus)" in page)
 check("BCDGameDetailSource finds the live backend by its Objective-C name",
       'NSClassFromString("BCDGamePageLive")' in page and "@objc(BCDGamePageLive)" in live
@@ -199,7 +199,7 @@ for what, needle in [
     ("Add to Home Screen is the existing shortcut link", "ShortcutRouter.link(for: $0.windowsPath)"),
     ("saves back up through SaveBackup", "try SaveBackup.backup()"),
     ("saves restore through SaveBackup", "try SaveBackup.restore(from: file)"),
-    ("Report a problem is Send Log", "LogUpload.send(log.file, game: LogUpload.game(of: log.file), progress: progress)"),
+    ("Report a problem is Send Log, with the sender's comment", "LogUpload.send(log.file, game: LogUpload.game(of: log.file), comment: comment, progress: progress)"),
     ("only the newest logs Send Log offers are looked at", "LogUpload.recentLogs()"),
     ("the sections are built only while Options is open", "if settings {\n            d.groups = [display(entry, profile)"),
     ("nothing of a closed page stays in the backend", "programs.removeAll()"),

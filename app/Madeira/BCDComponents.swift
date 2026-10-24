@@ -397,3 +397,125 @@ struct BCDStatusChip: View {
         .overlay(Capsule().strokeBorder(BCDStyle.stroke, lineWidth: 1))
     }
 }
+
+// MARK: - Send Log's comment
+
+/// Before a log is sent by hand (Settings › Send Log, a game's page, auto-tune's Send Log), the sender may say in a few words what
+/// the log cannot show: low FPS and where, a stutter, what was on screen (the owner, 2026-10-24). A system alert with one text
+/// field, over whatever is on screen (a sheet, a page, nothing), so it works from every place the same way. Send sends with the
+/// text (empty is fine); Cancel sends nothing. The text goes first in the sent log as "[user-comment]" lines (LogUploadCore).
+enum BCDLogComment {
+    static func ask(_ send: @escaping (String) -> Void, cancelled: (() -> Void)? = nil) {
+        // A moment later: the button that asked may be closing its own alert or menu.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            guard let top = topController() else { return send("") }
+            let alert = UIAlertController(title: "Add a comment",
+                                          message: "Add a comment if you like: what happened, what the log can't show (low FPS and "
+                                                   + "where, a stutter, what was on screen). Please don't write personal details.",
+                                          preferredStyle: .alert)
+            alert.addTextField { field in
+                field.placeholder = "Comment (optional)"
+                field.autocapitalizationType = .sentences
+                field.returnKeyType = .send
+                field.accessibilityIdentifier = "log.comment"
+            }
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in cancelled?() })
+            let sendAction = UIAlertAction(title: "Send", style: .default) { [weak alert] _ in
+                send(alert?.textFields?.first?.text ?? "")
+            }
+            alert.addAction(sendAction)
+            alert.preferredAction = sendAction
+            top.present(alert, animated: true)
+        }
+    }
+
+    private static func topController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        var top = scene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed { top = presented }
+        return top
+    }
+}
+
+// MARK: - A page or sheet closed
+
+/// A page, sheet or cover of BCD's interface closed (the game page, Settings, first-run setup, the library's sheets). Whoever
+/// waits for the app's root screen to be free looks again then: auto-tune's question after a session (AutoTuneAlertGate), which
+/// iOS would otherwise show by taking the open page down (2026-10-24). Nothing runs in between; the look comes a moment after
+/// the close so that the page is gone from UIKit's presentation chain.
+enum BCDPresentation {
+    static var closed: (() -> Void)?
+    static func didClose() {
+        guard let closed else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { closed() }
+    }
+}
+
+// MARK: - A Done button on the keyboard
+
+/// The keyboard closes through its Done button where a person types config lines or long text (a game's config, a
+/// setting typed as text, the lines of All settings, the feedback message): the text is kept, and a field that saves
+/// when it loses focus saves. Tapping outside the field works as before. Attach it once to the screen that holds the
+/// fields (the keyboard's bar collects the buttons of every view in it, so one for each field would show several).
+struct BCDKeyboardDone: ViewModifier {
+    /// Ends the screen's own focus state (`typing = false`), when it has one; the keyboard is closed either way.
+    var closing: (() -> Void)? = nil
+
+    func body(content: Content) -> some View {
+        content.toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    closing?()
+                    // Whichever field has the keyboard lets go of it.
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .accessibilityIdentifier("keyboard.done")
+            }
+        }
+        .onAppear { BCDKeyboardDoneBar.install() }
+    }
+}
+
+/// madeira-bcd (2026-10-24, the owner: "klavyeye Bitti butonu da eklememişsin hala"): SwiftUI's keyboard bar above does not show in a
+/// screen that is not inside a navigation stack, and BCD's game page (a full-screen cover) and its Game config (a sheet) are not: on
+/// iOS 27 the config editor's keyboard had no Done. So a multi-line editor (a UITextView: TextEditor, TextField with axis .vertical)
+/// that starts editing without a bar of its own gets one here, with the same Done: the editor lets go of the keyboard, the text stays,
+/// and a screen's focus state follows (it tracks the first responder). Where SwiftUI's bar does show, the editor already has it and
+/// nothing is added. Single-line fields keep their return key. The game's own keyboard input (MetalBackedView, LibraryKeyInput: views
+/// with UIKeyInput, not text views) and web pages never post this notification.
+enum BCDKeyboardDoneBar {
+    private static var observer: NSObjectProtocol?
+
+    static func install() {
+        guard observer == nil else { return }
+        observer = NotificationCenter.default.addObserver(forName: UITextView.textDidBeginEditingNotification, object: nil,
+                                                          queue: .main) { note in
+            guard let editor = note.object as? UITextView else { return }
+            // A turn later: SwiftUI puts its own bar on first, where it shows one.
+            DispatchQueue.main.async {
+                guard editor.isFirstResponder, editor.isEditable, editor.inputAccessoryView == nil else { return }
+                editor.inputAccessoryView = bar()
+                editor.reloadInputViews()
+            }
+        }
+    }
+
+    private static func bar() -> UIToolbar {
+        let bar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
+        let done = UIBarButtonItem(title: "Done", primaryAction: UIAction { _ in
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        })
+        done.style = .done
+        done.accessibilityIdentifier = "keyboard.done"
+        bar.items = [UIBarButtonItem(systemItem: .flexibleSpace), done]
+        bar.sizeToFit()
+        return bar
+    }
+}
+
+extension View {
+    /// A Done button on the keyboard while this screen's fields are being typed into (BCDKeyboardDone).
+    func bcdKeyboardDone(_ closing: (() -> Void)? = nil) -> some View { modifier(BCDKeyboardDone(closing: closing)) }
+}

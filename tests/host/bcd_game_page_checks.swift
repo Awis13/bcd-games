@@ -55,7 +55,8 @@ import SwiftUI
     }
     func restoreSaves(from file: URL) async throws -> Int { calls.append("restore"); return 3 }
     func lastLog(of game: BCDGame) async -> BCDGameLog? { log }
-    func send(_ log: BCDGameLog, of game: BCDGame, progress: @escaping (String) -> Void) async throws -> String {
+    func logComment() async -> String? { "" }
+    func send(_ log: BCDGameLog, of game: BCDGame, comment: String, progress: @escaping (String) -> Void) async throws -> String {
         calls.append("send \(log.name)"); progress("Sending…"); return "K7Q2XM"
     }
     var config = "fence-chain = 6\n"

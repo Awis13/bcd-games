@@ -1,0 +1,72 @@
+[17:27:33.581] [INFO] [recs] the kept download was not used: older than the list in use: marvels-spider-man-remastered v1 is older than v2
+[17:27:33.582] [INFO] [recs] in use: built-in list v7 (2026-10-23), 79 rules, build 593
+[17:27:33.596] [INFO] [epic-install] start installed=0 refused=0
+[17:27:33.678] [INFO] [xinput] ml1920 physical controllers enabled=1
+[17:27:33.678] [INFO] [touch-xinput] ml1930 enabled=1
+[17:27:33.678] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[17:27:33.685] [INFO] [steam-library] start signed-in=1 cached=40
+[17:27:33.712] [INFO] [bcd-ui] shown games=45 downloads=0
+[17:27:33.713] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[17:27:33.713] [INFO] SIGTRAP handler installed (no debugger)
+[17:27:33.713] [INFO] Checking entitlements...
+[17:27:33.713] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[17:27:33.713] [OK]   increased-memory-limit: true
+[17:27:33.713] [OK]   extended-virtual-addressing: true
+[17:27:33.714] [OK]   increased-debugging-memory-limit: true
+[17:27:33.714] [INFO] [build] v0.1.593 (593)
+[17:27:33.714] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8172MB cores=6
+[17:27:33.714] [INFO] [device] address-map=[0x102b58000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[17:27:33.715] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=354d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[17:27:33.715] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[17:27:33.734] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=+03:00 free-disk=107GB stikdebug-url=1
+[17:27:33.737] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[17:27:33.823] [INFO] [steam-games] installed=2 ready=2
+[17:27:33.852] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[17:27:33.857] [INFO] [epic-auth] start signed-in=1
+[17:27:33.858] [INFO] [epic-library] start cached=6 listed=4
+[17:27:33.864] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[17:27:35.547] [INFO] [bcd-ui] play app=239140
+[17:27:35.553] [INFO] [steam-games] play app=239140
+[17:27:35.557] [INFO] [bcd] library launch Dying Light: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[17:27:35.558] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[17:27:35.558] [INFO] Requesting JIT with Built-in StikJIT...
+[17:27:35.600] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 10.7.1.1)
+[17:27:35.640] [INFO] [jit-helper] enable: started com.thebcd69.bcd.JITHelper as pid 34612
+[17:27:37.103] [OK] JIT enabled and debugger attached.
+[17:27:37.105] [OK] JIT enabled! Debugger attached.
+[17:27:37.106] [INFO] [jit-on-play] JIT is on: starting the game
+[17:27:41.204] [INFO] [epic-auth] verify status=200 ms=7345
+[17:27:42.883] [INFO] [steam-playtime] apps=30
+[17:27:42.886] [INFO] [steam-cloud] sync games=2 automatic=1
+[17:27:44.146] [INFO] [steam-cloud] app=239140 cloud-change=1 cloud-files=2 same=2 differ=0 missing-local=0 local-only=0 unmapped=0 patterns=0 roots=- overrides=0 | plan download=0 upload=0 ask=0
+[17:27:44.148] [INFO] [steam-cloud] app=239140 before-play sync result=clear
+[17:27:44.160] [INFO] [madeira-dock] launch option 0
+[17:27:44.161] [INFO] [steam-depot] paused for a game session count=0
+[17:27:44.161] [INFO] [steam-cloud] app=432940 failed reason=SteamError
+[17:27:44.166] [INFO] [steam-library] connection closed for BCD Dock
+[17:27:44.170] [INFO] [dock-handoff] protected-file-ready=1
+[17:27:44.170] [INFO] [dock-launch] image-retire=1
+[17:27:44.170] [INFO] [dock-launch] image-map-guard=1
+[17:27:44.171] [INFO] [dock-offline] enabled=1 network=up request=0 account-saved=1 game-started-online=1
+[17:27:44.180] [INFO] [dock-installers] app=239140 scripts=0 programs=0
+[17:27:44.181] [INFO] [madeira-dock] starting the host for app 239140; Valve's client authenticates and authorizes the launch
+[17:27:44.182] [INFO] [bcd-ui] in-game=1
+[17:27:44.188] [INFO] [steam-launch-view] hold app=239140 auto-reveal=1
+[17:27:44.188] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[17:27:44.189] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[17:27:44.189] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[17:27:44.189] [INFO] bcd.cfg: absent
+[17:27:44.190] [INFO] Running full Wine sequence...
+[17:27:44.190] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102b58000,0x8000000000) 512GB available=8162MB low-power=0 thermal=nominal
+[phase] wine-start             t+  0.688s rev=ml526
+D AC Load module rd3d11_x64_rwdi.dll (rd3d11_x64_rwdi.dll-b1911219e4ab65a3): 71EA6E0000
+00ac:err:module:load_dll [dll-missing] rev=ml336 #8 L"DDRAW.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00ac:err:module:import_dll Library DDRAW.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Dying Light\\rd3d11_x64_rwdi.dll") not found
+[guest-log] #11 tid=00ac {14:28:02.513} ERRR: [ERRR]       > Cannot load 'rd3d11_x64_rwdi.dll'
+[guest-log] #12 tid=00ac {14:28:02.513} FATL: [EXIT]       > FATAL ERROR Cannot initialize renderer
+[win-name] #112 hwnd=0x10088 class='' text="FATAL ERROR Cannot initialize renderer?" rev=ml853
+[xp-t] 17:28:46.415 m7490590:5/32:1.6/1.4:122 m7490817:1/8:1.0/1.2:16 m7490891:0/7:1.4/1.3:12 -0050:0/2:1.4/1.5:2
+[xp] 17:28:46.739 +61.60 dt=325 cpu=36 (thr 36) P=2 E=34 run=119 pgw=0.0 GHz P=1.62 E=1.65 Minst=91 IPC=1.54 mJ=5 pin=0 rdKB=0 fpMB=1542
+[xp-t] 17:28:46.739 m7490590:0/14:0.0/1.7:55 m7490817:1/10:1.6/1.5:21 m7490626:0/4:0.0/1.7:7 -0050:0/2:1.6/1.8:2
+.739] [xp] 17:28:46.739 +61.60 dt=325 cpu=36 (thr 36) P=2 E=34 run=119 pgw=0.0 GHz P=1.62 E=1.65 Minst=91 IPC=1.54 mJ=5 pin=0 rdKB=0 fpMB=1542
+[17:28:46.739] [xp-t] 17:28:46.739 m7490590:0/14:0.0/1.7:55 m7490817:1/10:1.6/1.5:21 m7490626:0/4:0.0/1.7:7 -0050:0/2:1.6/1.8:2

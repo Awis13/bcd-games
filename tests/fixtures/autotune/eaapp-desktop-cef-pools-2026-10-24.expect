@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "eaapp-desktop-cef-pools",
+  "lock-orphan-stamped"
+ ],
+ "next": [
+  "env.MADEIRA_SC_PA_POOLS = 2",
+  "env.MADEIRA_EA_CEF = 1"
+ ],
+ "note": "The EA app (EADesktop.exe, CEF 109) on the owner's iPhone18,2, build 598, Launch with dxva2: PartitionAlloc's four 16 GB pools, two of them soft grants on the first two pools' views, a commit of size 0, int3.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

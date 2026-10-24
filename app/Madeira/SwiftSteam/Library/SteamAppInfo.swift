@@ -2,6 +2,7 @@
 // Copyright 2026 Jfishin, 125hz
 // Madeira Converter Exception: see LICENSE-EXCEPTION.md
 // Modified by BCD (thebcd69), 2026-10-22: Steam DLC support (BCDSteamDLC/): `dlcList`, the app's `extended.listofdlc`.
+// Modified by BCD (thebcd69), 2026-10-24: a launch entry keeps its `description`, for the Steam launch option choice (SteamDirectStart.dockOptions).
 //
 // Derived from Jfishin's Madeira Steam client, used in Madeira with the
 // author's permission (see docs/STEAM_SIGNIN.md, "Provenance"). Adapted for
@@ -406,6 +407,9 @@ struct SteamLaunchOption: Codable, Hashable, Sendable {
     var oslist = ""
     var osarch = ""
     var betaKey = ""
+    /// The entry's `description` ("Launch", "Play (DirectX 11)"): only the label of the Steam launch option choice. Optional, so
+    /// a cache written before it existed still decodes.
+    var description: String? = nil
 
     /// Entries in Steam's order (numeric keys), without those that name no
     /// program or carry oversized text; at most 32.
@@ -429,7 +433,8 @@ struct SteamLaunchOption: Codable, Hashable, Sendable {
                   let betaKey = text(config["betakey"]), let requiredDLC = text(config["ownsdlc"]) else { continue }
             options.append(SteamLaunchOption(executable: executable, index: index, requiredDLC: requiredDLC,
                                              arguments: arguments, workingDir: workingDir,
-                                             type: type, oslist: oslist, osarch: osarch, betaKey: betaKey))
+                                             type: type, oslist: oslist, osarch: osarch, betaKey: betaKey,
+                                             description: (entry["description"] as? String).flatMap { $0.utf8.count <= 256 ? $0 : nil }))
         }
         return options
     }

@@ -1,0 +1,195 @@
+[11:46:02.878] [INFO] Checking entitlements...
+[11:46:02.878] [INFO] [build] v0.1.592 (592)
+[11:46:02.879] [INFO] [device] model=iPhone17,4 idiom=phone os=iOS Version 27.0.1 (Build 24A446) ram=7655MB available=6123MB cores=6
+[11:46:02.879] [INFO] [device] address-map=[0x102ad8000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[11:46:02.895] [INFO] [device] gpu="Apple A18 GPU" family=apple9 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[11:46:08.695] [INFO] [bcd] library launch Indivisible: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[11:46:08.695] [INFO] Requesting JIT with Built-in StikJIT...
+[11:46:10.134] [INFO] [dock-launch] image-retire=1
+[11:46:10.135] [INFO] [dock-launch] image-map-guard=1
+[11:46:10.140] [INFO] [dock-installers] app=421170 scripts=0 programs=0
+[11:46:10.141] [INFO] [madeira-dock] starting the host for app 421170; Valve's client authenticates and authorizes the launch
+[11:46:10.150] [INFO] Running full Wine sequence...
+[11:46:10.150] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102ad8000,0x8000000000) 512GB available=6107MB low-power=0 thermal=nominal
+[11:46:10.153] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[11:46:10.153] [INFO] Allocating 896MB JIT pool via debugger...
+[11:46:10.153] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[11:46:10.154] [INFO] [jit-debugger] attached=1 at the pool request
+[11:46:10.155] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 512MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[11:46:10.806] [INFO] RX pool at 0x11fea8000
+[11:46:10.823] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.714s rev=ml526
+[WineProc] MADEIRA_OPTIN_DLLS: dxva2.dll -> dxva2-optin.dll (Wine's dxva2.dll for this game)
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=5580 MB + phys_footprint=563 MB = 6144 MB (hw.memsize says 7655 MB)
+ml985: preferred base 0x140000000+0x70000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x70000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x11feac000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x11ff20000)
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x120038000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x1200e0000)
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[footprint] rev=ml358 phys=567 MB (peak 567) internal=564 MB compressed=0 MB external=66 MB reusable=10 MB (cycle=1)
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x120260000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x120334000)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+[gdi-shared] session table 0x7020f50000 (1572864 bytes, section-backed, name=L"\\KernelObjects\\__wine_ios_gdi_shared")
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="madeira - Wine Desktop" rev=ml853
+[win-name] #7 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #11 hwnd=0x1003e class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\dockhost.exe" t+  1.162s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] actxprxy.dll: OK, 1 .text pages executable (copy @0x1218b4000)
+[copy-verify] libarm64ecfex.dll: OK, 131 .text pages executable (copy @0x12194a000)
+[file-wfail] ml669 #2 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.244s rev=ml526
+[Wine child thread] calling wine_ios_child_main...
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x122d18000)
+D 38 Load module dockhost.exe (dockhost.exe-09dbbefb7c42a67b): 119680000
+D 38 Load module ntdll.dll (ntdll.dll-391ab96a83e82f14): 71FE610000
+[nls-getptr] type=11 id=437 peb=0x1097f8000
+D 38 Load module ADVAPI32.dll (advapi32.dll-e40c14e1190b1df2): 71FC190000
+D 38 Load module sechost.dll (sechost.dll-b36ef44c04b21a0b): 71FC110000
+D 38 Load module msvcrt.dll (msvcrt.dll-237acf236e8130e9): 71FC000000
+D 38 Load module rsaenh.dll (rsaenh.dll-6cd5b371ff05d55f): 71FBF40000
+[free-delay] #1 release of 0x7025650000+0x100000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x7025750000+0x200000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x7025950000+0x400000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x7025d50000+0x800000 held for 2000 ms (4 in flight)
+[file-wfail] ml669 #3 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[alloc-fail] ml814 #1 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=0038 | STAGE=none err=3 at 0x73fff60000+0x90000
+[nt-fail] #1 NtAllocateVirtualMemory status=c000000d proc=dockhost.exe tid=0038 size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=1 rev=ajan5-rockstar
+[file-wfail] ml669 #4 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[copy-verify] dxgi.dll: OK, 50 .text pages executable (copy @0x126d35000)
+[file-wfail] ml669 #6 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:seh:ios_exc_dump_str [exc] ml812   OutputDebugStringW: ".......................l"
+[file-wfail] ml669 #9 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #10 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavcodec-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavfilter-11.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavformat-62.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libavutil-60.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswresample-6.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+0050:err:module:import_dll Library libswscale-9.dll (which is needed by L"C:\\Program Files (x86)\\Steam\\video64.dll") not found
+[footprint] rev=ml358 phys=927 MB (peak 927) internal=923 MB compressed=0 MB external=144 MB reusable=10 MB (cycle=2)
+[footprint] rev=ml358 phys=1030 MB (peak 1030) internal=1026 MB compressed=0 MB external=148 MB reusable=10 MB (cycle=3)
+[file-wfail] ml669 #72 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[file-wfail] ml669 #73 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[footprint] rev=ml358 phys=1035 MB (peak 1035) internal=1031 MB compressed=0 MB external=148 MB reusable=10 MB (cycle=4)
+[phase] spawn:L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Indivisible\\Indivisible.exe" t+  8.864s rev=ml526
+[session-log] Steam game Indivisible.exe: logs/Indivisible.exe-2026-10-23_11-46-19.txt
+[Wine child thread] calling wine_ios_child_main...
+[nls-getptr] type=11 id=1252 peb=0x1193ac000
+[nls-getptr] type=11 id=437 peb=0x1193ac000
+[nls-getptr] type=11 id=20127 peb=0x1193ac000
+[nls-getptr] type=11 id=1252 peb=0x1193ac000
+[nls-getptr] type=11 id=437 peb=0x1193ac000
+[copy-verify] ole32.dll: OK, 23 .text pages executable (copy @0x12c240000)
+[footprint] rev=ml358 phys=1122 MB (peak 1122) internal=1118 MB compressed=0 MB external=168 MB reusable=10 MB (cycle=5)
+[file-wfail] ml669 #74 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[alloc-fail] ml814 #2 status=c0000018 hint=0x180000000 size=0x34000 type=0x2000 protect=0x4 tid=00a4 | STAGE=fixed-map err=3 at 0x180000000+0x34000
+[nt-fail] #2 NtAllocateVirtualMemory status=c0000018 proc=indivisible.exe tid=00a4 size=0x34000 type=0x2000 prot=0x4 hint=0x180000000 zb=0x0 hits=1 rev=ajan5-rockstar
+[free-delay] #5 release of 0x7034fd0000+0x100000 held for 2000 ms (1 in flight)
+[free-delay] #6 release of 0x70350d0000+0x800000 held for 2000 ms (2 in flight)
+D A4 Load module tier0_s64.dll (tier0_s64.dll-46fed3100444d04b): 71F0540000
+D A4 Load module vstdlib_s64.dll (vstdlib_s64.dll-0805e0d24f89e963): 71F0470000
+D A4 Load module MSWSOCK.dll (mswsock.dll-e1b26fc99ab81cd3): 71F03E0000
+[copy-verify] secur32.dll: OK, 5 .text pages executable (copy @0x12ffe8000)
+D A4 Load module Secur32.dll (secur32.dll-f6ff7e0cf92170a6): 71F0350000
+[alloc-fail] ml814 #3 status=c000000d hint=0xffeeffeeffeeffee size=0x1 type=0x2000 protect=0x1 tid=00a4 | STAGE=none err=3 at 0x73fff60000+0x90000
+[nt-fail] #3 NtAllocateVirtualMemory status=c000000d proc=indivisible.exe tid=00a4 size=0x1 type=0x2000 prot=0x1 hint=0xffeeffeeffeeffee zb=0x0 hits=1 rev=ajan5-rockstar
+0050:err:module:load_dll [dll-missing] rev=ml336 #45 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #46 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[file-wfail] ml669 #75 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[11:46:20.650] [INFO] [dock-report] launch-game-running=1
+[free-delay] #7 release of 0x7037ad0000+0x120000 held for 2000 ms (3 in flight)
+[free-delay] #8 release of 0x7038010000+0x490000 held for 2000 ms (4 in flight)
+D A4 Load module dwmapi.dll (dwmapi.dll-760d02687737907f): 71F02C0000
+[win-name] #31 hwnd=0x10064 class='' text="Default IME" rev=ml853
+[win-name] #32 hwnd=0x10060 class='' text="Indivisible" rev=ml853
+[win-name] #33 hwnd=0x10060 class='' text="Indivisible" rev=ml853
+D A4 Load module gameoverlayrenderer64.dll (gameoverlayrenderer64.dll-662268bc678e11f2): 71F01A0000
+[alloc-fail] ml814 #4 status=c0000018 hint=0x71f5672000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[nt-fail] #4 NtAllocateVirtualMemory status=c0000018 proc=indivisible.exe tid=00a4 size=0x1000 type=0x3000 prot=0x40 hint=0x71f5672000 zb=0x0 hits=1 rev=ajan5-rockstar
+[alloc-fail] ml814 #5 status=c0000018 hint=0x71f5673000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[nt-fail] #5 NtAllocateVirtualMemory status=c0000018 proc=indivisible.exe tid=00a4 size=0x1000 type=0x3000 prot=0x40 hint=0x71f5673000 zb=0x0 hits=2 rev=ajan5-rockstar
+[alloc-fail] ml814 #6 status=c0000018 hint=0x71f5674000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[nt-fail] #6 NtAllocateVirtualMemory status=c0000018 proc=indivisible.exe tid=00a4 size=0x1000 type=0x3000 prot=0x40 hint=0x71f5674000 zb=0x0 hits=3 rev=ajan5-rockstar
+[alloc-fail] ml814 #7 status=c0000018 hint=0x71f5675000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[nt-fail] #7 NtAllocateVirtualMemory status=c0000018 proc=indivisible.exe tid=00a4 size=0x1000 type=0x3000 prot=0x40 hint=0x71f5675000 zb=0x0 hits=4 rev=ajan5-rockstar
+[alloc-fail] ml814 #8 status=c0000018 hint=0x71f5676000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #9 status=c0000018 hint=0x71f5677000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #10 status=c0000018 hint=0x71f5678000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #11 status=c0000018 hint=0x71f5679000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[nt-fail] #8 NtAllocateVirtualMemory status=c0000018 proc=indivisible.exe tid=00a4 size=0x1000 type=0x3000 prot=0x40 hint=0x71f5679000 zb=0x0 hits=8 rev=ajan5-rockstar
+[alloc-fail] ml814 #12 status=c0000018 hint=0x71f567a000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #13 status=c0000018 hint=0x71f567b000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #14 status=c0000018 hint=0x71f567c000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #15 status=c0000018 hint=0x71f567d000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #16 status=c0000018 hint=0x71f567e000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[alloc-fail] ml814 #17 status=c0000018 hint=0x71f567f000 size=0x1000 type=0x3000 protect=0x40 tid=00a4 | STAGE=none err=3 at 0x73ffe40000+0x1ac000
+[win-name] #40 hwnd=0x1006e class='' text="WineD3D fake window" rev=ml853
+00a4:err:d3d:wined3d_adapter_gl_init Failed to get a GL context for adapter 000000703B8099A0.
+00a4:err:d3d9:d3d9_ios_probe [d3d9-probe] rev=ml700 Direct3DCreate9 called -> d3d9_init FAILED
+[av-detail] ml613 #1 p0=EXECUTE p1=0x0 hostpc=0x0 hinsn=0x00000000 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x14a41c429 pc=0x0 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) [first] rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x0 addr=0x0 x18=0x71ffe90000 type=1 lr=0x13e3f048c sp=0x71f01a0000 x16=0x13eea0108 x17=0x149a00000
+[guest-code] rev=ml333 pool_rip=0x129bbb429 (PE 0x14a41c429): e5 7a 05 9e 3d 4f 6b 23 d0 9e 90 fd c8 8e 66 f3
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71ffe90000 TEB=0x71ffe90000 TEB[0x58]=0x7035920a00 *(gs_cached+0x58)=0x7035920a00
+[av-detail] ml613 #2 p0=EXECUTE p1=0x0 hostpc=0x0 hinsn=0x00000000 rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=none regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x14a41c429 pc=0x0 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x0 addr=0x0 x18=0x71ffe90000 type=1 lr=0x13e3f048c sp=0x71f01a0000 x16=0x13eea0108 x17=0x149a00000
+[guest-code] rev=ml333 pool_rip=0x129bbb429 (PE 0x14a41c429): e5 7a 05 9e 3d 4f 6b 23 d0 9e 90 fd c8 8e 66 f3
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x71ffe90000 TEB=0x71ffe90000 TEB[0x58]=0x7035920a00 *(gs_cached+0x58)=0x7035920a00
+00ac:err:seh:segv_handler   [guest-rip-sec] rip=0x14a41c429 in image 0x14a100000: rva 0x31c429, section #0 '.text' rva 0x1000+0x48ed88 chars 0x60000020 (R-X CODE), vprot=0x25
+00ac:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x0
+00ac:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=9895
+[Wine ntdll/server] process_exit_wrapper(-1073741819): closing child fd_socket=422
+[Wine ntdll/server] process_exit_wrapper(-1073741819)
+[footprint] rev=ml358 phys=1331 MB (peak 1331) internal=1327 MB compressed=0 MB external=212 MB reusable=10 MB (cycle=6)
+[11:46:21.654] [INFO] [dock-game-end] indivisible.exe ended with status 0xc0000005; the session goes on for now (grace)
+[file-wfail] ml669 #77 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+0050:err:module:load_dll [dll-missing] rev=ml336 #47 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #48 L"C:\\Program Files (x86)\\Steam\\bin\\steamservice.dll" status=c000007b -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #49 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0050:err:module:load_dll [dll-missing] rev=ml336 #50 L"steamservice.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[file-wfail] ml669 #78 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[11:46:27.823] [INFO] [dock-report] launch-game-ended=1
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=10348
+[11:46:28.152] [INFO] [dock-report] probe-result=0
+0038:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=10356
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=102
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=133
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0)
+[11:46:31.653] [INFO] [dock-game-end] indivisible.exe ended with status 0xc0000005 after 2 s, the host finished and nothing of the game runs: ending the session
+[WineProc] stopping wineserver...
+[11:46:32.156] [INFO] [exit-report] status=0xc0000005
+[frontend] returned to library
+[hwinput] keyboard focus: elsewhere (poll)
+[11:46:33.870] [INFO] Detaching debugger...
+[footprint] rev=ml358 phys=1173 MB (peak 1331) internal=1171 MB compressed=0 MB external=212 MB reusable=9 MB (cycle=13)
+[footprint] rev=ml358 phys=1173 MB (peak 1331) internal=1171 MB compressed=0 MB external=212 MB reusable=9 MB (cycle=14)
+[footprint] rev=ml358 phys=1173 MB (peak 1331) internal=1171 MB compressed=0 MB external=212 MB reusable=9 MB (cycle=15)
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=28 resident=1394MB dbg=DEBUGGED rev=ml525
+[footprint] rev=ml358 phys=1173 MB (peak 1331) internal=1171 MB compressed=0 MB external=212 MB reusable=9 MB (cycle=16)
+[footprint] rev=ml358 phys=1173 MB (peak 1331) internal=1171 MB compressed=0 MB external=212 MB reusable=9 MB (cycle=17)
+[footprint] rev=ml358 phys=1173 MB (peak 1331) internal=1171 MB compressed=0 MB external=212 MB reusable=9 MB (cycle=18)

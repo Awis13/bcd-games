@@ -26,6 +26,11 @@ struct BCDLibraryView: View {
 
     private var filter: BCDLibraryFilter { BCDLibraryFilter.allCases.first { $0.rawValue == filterKey } ?? .all }
     private var sort: BCDLibrarySort { BCDLibrarySort(rawValue: sortKey) ?? (sortByName ? .name : .played) }
+    /// The launcher whose chip is chosen (BCDLaunchers.swift); nil for every other filter.
+    private var launcher: BCDLauncherSpec? {
+        if case .launcher(let id) = filter { return BCDLauncherSpec.spec(id) }
+        return nil
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -33,6 +38,7 @@ struct BCDLibraryView: View {
             if searching { searchField }
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
+                    if let launcher { BCDLauncherPanel(spec: launcher) }   // a launcher's chip (Battle.net, EA app): its Install / Open card, no games
                     notices
                     savesNotice
                     LazyVGrid(columns: columns, alignment: .leading, spacing: layout == .pad ? 26 : 20) {
@@ -79,23 +85,29 @@ struct BCDLibraryView: View {
     }
 
     private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(availableFilters) { item in
-                    Button { filterKey = item.rawValue } label: {
-                        Text("\(item.title) · \(count(item))")
-                            .font(BCDStyle.label(14))
-                            .padding(.horizontal, 14).padding(.vertical, 8)
-                            .foregroundStyle(filter == item ? BCDStyle.text : BCDStyle.textSoft)
-                            .background(filter == item ? BCDStyle.surfaceRaised : Color.clear, in: Capsule())
-                            .overlay(Capsule().strokeBorder(filter == item ? AnyShapeStyle(BCDStyle.glow) : AnyShapeStyle(BCDStyle.stroke),
-                                                            lineWidth: filter == item ? 2 : 1))
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(availableFilters) { item in
+                        Button { filterKey = item.rawValue } label: {
+                            Text(item.isLauncher ? item.title : "\(item.title) · \(count(item))")
+                                .font(BCDStyle.label(14))
+                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .foregroundStyle(filter == item ? BCDStyle.text : BCDStyle.textSoft)
+                                .background(filter == item ? BCDStyle.surfaceRaised : Color.clear, in: Capsule())
+                                .overlay(Capsule().strokeBorder(filter == item ? AnyShapeStyle(BCDStyle.glow) : AnyShapeStyle(BCDStyle.stroke),
+                                                                lineWidth: filter == item ? 2 : 1))
+                        }
+                        .buttonStyle(.plain)
+                        .bcdFocusable("library.filter.\(item.rawValue)", cornerRadius: 18) { filterKey = item.rawValue }
+                        .id(item.rawValue)
                     }
-                    .buttonStyle(.plain)
-                    .bcdFocusable("library.filter.\(item.rawValue)", cornerRadius: 18) { filterKey = item.rawValue }
                 }
+                .padding(.leading, layout.gutter).padding(.trailing, 4).padding(.vertical, 6)
             }
-            .padding(.leading, layout.gutter).padding(.trailing, 4).padding(.vertical, 6)
+            // The launchers' chips sit at the end of a row that scrolls: a chosen one is brought into view (the other chips stay where they were).
+            .onAppear { if filter.isLauncher { proxy.scrollTo(filter.rawValue, anchor: .center) } }
+            .onChange(of: filterKey) { _, _ in if filter.isLauncher { proxy.scrollTo(filter.rawValue, anchor: .center) } }
         }
     }
 
@@ -259,6 +271,7 @@ struct BCDLibraryView: View {
             switch item {
             case .all, .installed: return true
             case .store(let s): return store.count(s) > 0 || store.accounts.contains { $0.store == s && $0.available }
+            case .launcher: return BCDLauncherModel.shared.available
             }
         }
     }
@@ -268,6 +281,7 @@ struct BCDLibraryView: View {
         case .all: return store.games.count
         case .installed: return store.installedCount
         case .store(let s): return store.count(s)
+        case .launcher: return 0
         }
     }
 
@@ -277,6 +291,7 @@ struct BCDLibraryView: View {
             case .all: return true
             case .installed: return game.state.isInstalled
             case .store(let s): return game.store == s
+            case .launcher: return false   // a launcher's chip shows its card, not games
             }
         }
         let words = query.trimmingCharacters(in: .whitespaces)
@@ -344,14 +359,18 @@ enum BCDLibrarySort: String, CaseIterable, Identifiable {
 }
 
 enum BCDLibraryFilter: Identifiable, Hashable, CaseIterable {
-    case all, installed, store(BCDStoreFront)
-    static var allCases: [BCDLibraryFilter] { [.all, .installed] + BCDStoreFront.allCases.map { .store($0) } }
+    case all, installed, store(BCDStoreFront), launcher(String)
+    /// The stores' chips, then one chip per launcher (BCDLauncherSpec.shown: Battle.net, EA app; none while they are hidden, build 600).
+    static var allCases: [BCDLibraryFilter] {
+        [.all, .installed] + BCDStoreFront.allCases.map { .store($0) } + BCDLauncherSpec.shown.map { .launcher($0.id) }
+    }
     var id: String { rawValue }
     var rawValue: String {
         switch self {
         case .all: return "all"
         case .installed: return "installed"
         case .store(let s): return s.rawValue
+        case .launcher(let id): return "launcher." + id
         }
     }
     var title: String {
@@ -359,6 +378,11 @@ enum BCDLibraryFilter: Identifiable, Hashable, CaseIterable {
         case .all: return "All"
         case .installed: return "Installed"
         case .store(let s): return s.title
+        case .launcher(let id): return BCDLauncherSpec.spec(id)?.title ?? id
         }
+    }
+    var isLauncher: Bool {
+        if case .launcher = self { return true }
+        return false
     }
 }

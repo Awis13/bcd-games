@@ -1,0 +1,15 @@
+{
+ "dialogs": [
+  "Unable to create OpenGL window",
+  "This program requires a graphics card and video drivers which support OpenGL 2.1 or OpenGL ES 2.??SDL window creation error: Could not initialize OpenGL / GLES library"
+ ],
+ "end": {},
+ "matched": [
+  "opengl-only-no-context"
+ ],
+ "next": [],
+ "note": "OpenGL-only game on BCD's GL-absent opengl32 stub (Send Log HESXRX, build 592): the game cannot make its window. No setting helps; auto-tune says so.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

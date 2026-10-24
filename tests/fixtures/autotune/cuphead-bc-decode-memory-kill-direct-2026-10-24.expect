@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "cuphead-bc-decode-memory-kill-direct",
+  "swap-8gb-memory-kill",
+  "swap-8gb-more"
+ ],
+ "next": [],
+ "note": "Cuphead, the same tester and phone, started from the game's own program (no Steam client): 49 s, presented at 60 fps for more than 20 s, closed by iOS at 4068 MB during the next scene's texture load. A noFix verdict that names the cause",
+ "outcome": "killed",
+ "stage": 4,
+ "status": "known"
+}

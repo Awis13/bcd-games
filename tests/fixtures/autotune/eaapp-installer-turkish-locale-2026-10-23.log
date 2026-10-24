@@ -1,0 +1,88 @@
+[17:09:49.639] [INFO] [recs] the kept download was not used: older than the list in use: marvels-spider-man-remastered v1 is older than v2
+[17:09:49.640] [INFO] [recs] in use: built-in list v7 (2026-10-23), 79 rules, build 593
+[17:09:49.652] [INFO] [epic-install] start installed=0 refused=0
+[17:09:49.721] [INFO] [xinput] ml1920 physical controllers enabled=1
+[17:09:49.721] [INFO] [touch-xinput] ml1930 enabled=1
+[17:09:49.721] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[17:09:49.726] [INFO] [steam-library] start signed-in=1 cached=40
+[17:09:49.744] [INFO] [bcd-ui] shown games=45 downloads=0
+[17:09:49.744] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[17:09:49.744] [INFO] SIGTRAP handler installed (no debugger)
+[17:09:49.745] [INFO] Checking entitlements...
+[17:09:49.745] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[17:09:49.745] [OK]   increased-memory-limit: true
+[17:09:49.745] [OK]   extended-virtual-addressing: true
+[17:09:49.745] [OK]   increased-debugging-memory-limit: true
+[17:09:49.745] [INFO] [build] v0.1.593 (593)
+[17:09:49.746] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=8172MB cores=6
+[17:09:49.746] [INFO] [device] address-map=[0x102ff8000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[17:09:49.746] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=365d left=354d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=1
+[17:09:49.747] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[17:09:49.755] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=+03:00 free-disk=107GB stikdebug-url=1
+[17:09:49.759] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[17:09:49.814] [INFO] [steam-games] installed=2 ready=2
+[17:09:49.832] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[17:09:49.833] [INFO] [epic-auth] start signed-in=1
+[17:09:49.833] [INFO] [epic-library] start cached=6 listed=4
+[17:09:49.843] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[17:09:51.281] [INFO] [bcd-ui] play desktop
+[17:09:51.282] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[17:09:51.283] [INFO] Requesting JIT with Built-in StikJIT...
+[17:09:51.317] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 10.7.1.1)
+[17:09:51.358] [INFO] [jit-helper] enable: started com.thebcd69.bcd.JITHelper as pid 34496
+[17:09:52.674] [OK] JIT enabled and debugger attached.
+[17:09:52.677] [OK] JIT enabled! Debugger attached.
+[17:09:52.678] [INFO] [jit-on-play] JIT is on: starting the game
+[17:09:52.682] [INFO] Session log: logs/explorer.exe-2026-10-23_17-09-52.txt
+[17:09:52.689] [INFO] [bcd] Desktop: its own settings file 52ec85264e0107b0.cfg
+[17:09:52.690] [INFO] [bcd] Desktop: section-backed GDI table for the 32-bit programs started here (MADEIRA_GDI_SHARED_SECTION=1; env.MADEIRA_GDI_SHARED_SECTION = 0 in its Game config turns it off)
+[17:09:52.699] [ERR] Session log: could not link logs/explorer.exe-2026-10-23_17-09-52.txt (“bcd-log.txt” couldn’t be linked to “logs” because an item with the same name already exists.)
+[17:09:52.703] [INFO] [bcd-ui] in-game=1
+[17:09:52.713] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[17:09:52.714] [INFO] [steam-depot] paused for a game session count=0
+[17:09:52.715] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[17:09:52.715] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[17:09:52.716] [INFO] bcd.cfg: absent
+[17:09:52.716] [INFO] Running full Wine sequence...
+[17:09:52.716] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102ff8000,0x8000000000) 512GB available=8161MB low-power=0 thermal=nominal
+[17:09:52.718] [INFO] [game-cfg] env.MADEIRA_GDI_SHARED_SECTION=1 env.MADEIRA_GUEST_LOG=all env.MADEIRA_GUEST_LOG_LIMIT=1500 env.MADEIRA_MSIEXEC_SYSTEM32=1 env.WINEDEBUG=err+all,fixme-all,+wbemprox
+[17:09:52.718] [INFO] [display-shape] resolution=1408x648 mode=fit
+[17:09:52.718] [INFO] [launch-route] library profile applied
+[17:09:52.719] [INFO] [msiexec64] Windows desktop: msiexec in system32 for this session
+[17:09:52.720] [INFO] [gecko] downloaded Wine Gecko 2.47.4 is this session's cache (XDG_CACHE_HOME)
+[17:09:52.722] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[17:09:52.722] [INFO] Allocating 896MB JIT pool via debugger...
+[17:09:52.722] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[17:09:52.723] [INFO] [jit-debugger] attached=1 at the pool request
+[17:09:52.723] [INFO] JIT-pool frontier already at 0x121c60000 — no pin needed
+[17:09:52.723] [OK] ml1040: executable window [0x140000000,+128MB) held since image load
+[17:09:52.724] [INFO] ml1040: released the early pool placeholder 0x148000000+576MB for the debugger
+[17:09:52.724] [INFO] ml1135: the placeholder ended at the mapping 0x16cd08000+0MB (VM tag 30, prot 0), already there at image load
+[phase] wine-start             t+  0.762s rev=ml526
+D A4 Load module EAappInstaller.exe (eaappinstaller.exe-1bcb93de362f2082): 7900400000
+[phase] spawn:L"C:\\bcd-launchers\\EAappInstaller.exe" t+ 15.996s rev=ml526
+00b0:trace:wbemprox:EnumWbemClassObject_create returning iface 10789C88
+00b0:trace:wbemprox:enum_class_object_Next 10789C88, -1, 1, 00C8F218, 00C8F21C
+00b0:trace:wbemprox:create_class_object L"Win32_LogicalDisk", 00C8F218
+00b0:trace:wbemprox:create_class_object returning iface 106E05D8
+00b0:trace:wbemprox:class_object_Get 106E05D8, L"deviceId", 0, 00C8F104, 00000000, 00000000
+00b0:trace:wbemprox:class_object_Get 106E05D8, L"volumeName", 0, 00C8F104, 00000000, 00000000
+[guest-log] #133 tid=00b0 [00AC:00B0][2026-10-23T14:10:14]i000: EAXBA* INFO  (SystemInfoProvider::getLogicalDiskIds::<lambda_c20b3add591643a0f1e745ed9c7b6f0d>::operator ():253) Logical disk deviceId = C:, volumeName =
+00b0:trace:wbemprox:class_object_Release destroying 106E05D8
+00b0:trace:wbemprox:enum_class_object_Next 10789C88, -1, 1, 00C8F218, 00C8F21C
+00b0:trace:wbemprox:enum_class_object_Release destroying 10789C88
+00b0:trace:wbemprox:free_table destroying 04AADDC8
+[guest-log] #134 tid=00b0 [00AC:00B0][2026-10-23T14:10:14]i000: EAXBA* INFO  (BootstrapperApplication::installTelemetry:2434) Install Root: C:
+[nls-getptr] type=11 id=1254 peb=0x7200310000
+00b0:err:seh:ios_cxx_throw_diag [cxx-type] build591 32-bit throw at 0x727bc52f79: thrown .?AVCAtlException@ATL@@; also catchable as: nothing (1 catchable type(s), ThrowInfo 0x7a24d700 attributes 0, object 0xc8f1d4, magic 0x19930520)
+00b0:err:seh:ios_cxx_throw_diag [cxx-type]   exception parameters (3): p0=0x19930520 p1=0xc8f1d4 p2=0x7a24d700 p3=0
+[exc-disp] dispatch tid=00b0 code=e06d7363 flags=1 addr=0x727bc52f79 pc=14d155be8 nparams=3 p0=19930520 p1=c8f1d4
+00b0:err:virtual:mprotect_exec mprotect_exec(0x7c12400000, 0x400000, rw-)
+00b0:err:virtual:mprotect_exec mprotect_exec(0x7c12400000, 0x400000, rw-)
+00b0:err:virtual:mprotect_exec mprotect_exec(0x7c12400000, 0x400000, rw-)
+00b0:err:virtual:mprotect_exec mprotect_exec(0x7c0e580000, 0x10000, rw-)
+[guest-log] #135 tid=00b0 [00AC:00B0][2026-10-23T14:10:14]e000: EAXBA* ERROR (eax::services::exception::ExceptionHandlerClient::Notify:24) Whoops!
+00b0:err:dialog:madeira_msgbox_origin [msgbox-origin] box L"Bir terslik oldu" / L"EA app bir hatayla kar\015f\0131la\015ft\0131 ve y\00fcklemeyi tamamlayamad\0131 (hata kodu: C7-2F79)": main exe base 00400000 size 0x90000
+[win-name] #835 hwnd=0x1016a class='' text="EA app bir hatayla kar??la?t? ve y?klemeyi tamamlayamad? (hata kodu: C7-2F79)" rev=ml853
+00a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xffffffff) syscalls=0 unix_calls=4082
+00a4:err:process:NtTerminateProcess NtTerminateProcess: process_exiting=1, forcing exit_process(-1)

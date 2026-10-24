@@ -58,7 +58,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     RECT r = { 0, 0, (LONG)W, (LONG)H };
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
     HWND hwnd = CreateWindowExA(0, wc.lpszClassName,
-                                "Madeira D3D12 textured cube  [DXIL converted at runtime]",
+                                "BCD DirectX 12 test",   /* the Start menu's entry is "DirectX 12 test" (BCDStartMenu.c) */
                                 WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
                                 r.right - r.left, r.bottom - r.top, NULL, NULL, inst, NULL);
     if (!hwnd) { printf("cube: no window\n"); return 1; }

@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "epic-host-start-lost"
+ ],
+ "next": [
+  "env.BCD_EPIC_HOST_START = 1"
+ ],
+ "note": "BioShock Infinite: Complete Edition (Epic, EOSSDK-Win32-Shipping.dll), build 592, iPhone18,3: ExitProcess(1) 1.5 s after the start; BCD chose BCD Host but the game was started directly (argv[1] is the game, bcd-host: no report). Send Log 4Q0RNC, trimmed. From build 598 auto-tune proposes env.BCD_EPIC_HOST_START = 1.",
+ "outcome": "exited-early",
+ "stage": 2,
+ "status": "trying"
+}

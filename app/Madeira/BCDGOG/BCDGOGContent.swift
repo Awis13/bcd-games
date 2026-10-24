@@ -66,6 +66,22 @@ enum BCDGOGContent {
         return URL(string: "https://\(host)/content-system/v2/meta/\(hash.prefix(2))/\(hash.dropFirst(2).prefix(2))/\(hash)")!
     }
 
+    /// A build link on a CDN outside GOG's own hosts, read from GOG's cdn.gog.com instead (nil when it is not a
+    /// manifest link). GOG's build list names the CDN it picks for the player, and in some regions that is not a gog.com
+    /// host (2026-10-24: gog-cdn.gcdn.co; BioShock 2, Cult of the Lamb and RollerCoaster Tycoon Deluxe stopped with "GOG's
+    /// reply wasn't what BCD expects"). A manifest is a file named by the MD5 of its bytes under
+    /// /content-system/v2/meta/<c0c1>/<c2c3>/<md5>, and every GOG CDN serves the same file under that path, so only a link
+    /// of exactly that form moves to cdn.gog.com (the host depotURL already falls back to). A link on a gog.com host is
+    /// used as before.
+    static func gogHostLink(_ link: URL) -> URL? {
+        guard link.scheme == "https", link.user == nil, link.query == nil, link.fragment == nil else { return nil }
+        let parts = link.path.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 7, parts[0].isEmpty, parts[1] == "content-system", parts[2] == "v2", parts[3] == "meta" else { return nil }
+        let hash = String(parts[6])
+        guard validHash(hash), parts[4] == hash.prefix(2), parts[5] == hash.dropFirst(2).prefix(2) else { return nil }
+        return URL(string: "https://cdn.gog.com/content-system/v2/meta/\(parts[4])/\(parts[5])/\(hash)")
+    }
+
     /// The newest public generation-2 build (the list is newest first).
     static func newestBuild(_ object: [String: Any]) throws -> BCDGOGBuild {
         guard let items = object["items"] as? [[String: Any]] else {
@@ -79,8 +95,9 @@ enum BCDGOGContent {
             if generation == 1 { older = true; continue }
             guard generation == 2 else { continue }
             let id = (item["build_id"] as? String) ?? (item["build_id"] as? NSNumber)?.stringValue ?? ""
-            guard BCDGOGCatalog.validID(id), let text = item["link"] as? String, let link = URL(string: text),
-                  BCDGOGAPI.trusted(link) else {
+            let given = (item["link"] as? String).flatMap(URL.init(string:))
+            let moved = given.flatMap { BCDGOGAPI.trusted($0) ? nil : gogHostLink($0) }
+            guard BCDGOGCatalog.validID(id), let given, let link = BCDGOGAPI.trusted(given) ? given : moved else {
                 // The host of the link is GOG's own to say, so it is the one thing named: BCD follows only gog.com
                 // and gog-statics.com hosts. The build's id is a number of GOG's, not the player's.
                 let where_: String
@@ -92,6 +109,9 @@ enum BCDGOGContent {
                 BCDContentLog.write("[gog-content] build entry: id=\(BCDGOGCatalog.validID(id) ? "ok" : "bad") target=\(where_) "
                                     + BCDGOGAPI.shape(item, lists: []))
                 throw BCDGOGError.badReply("build")
+            }
+            if moved != nil {
+                BCDContentLog.write("[gog-content] build manifest read from cdn.gog.com (the list named a CDN outside gog.com)")
             }
             let version = ((item["version_name"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return BCDGOGBuild(id: id, version: String(version.prefix(80)), link: link)

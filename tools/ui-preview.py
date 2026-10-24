@@ -57,9 +57,17 @@ ART_SOURCES = ["https://cdn.cloudflare.steamstatic.com/steam/apps/{app}/{name}",
 # Settings › Accounts, JIT and BCD Dock on the engine (their views: BCDAccounts/JIT/Dock.swift).
 ENGINE_BOUND |= {"BCDAccountsLive.swift", "BCDJITLive.swift", "BCDDockLive.swift"}
 
+# The screen orientation lock (BCDOrientation.swift: the choice, the rule and the UIKit lock, built into the preview; its
+# engine side BCDOrientationLive.swift, which names LibraryEntry and MadeiraConfig, stays out).
+ENGINE_BOUND |= {"BCDOrientationLive.swift"}
+
 # The in-game layer (BCDSession.swift and its views): its engine side stays out; its screens are
 # -BCDTab ingame-menu|starting|overlay, with variants (app/BCDPreview/BCDPreviewSession.swift).
 ENGINE_BOUND |= {"BCDSessionLive.swift"}
+
+# PC launchers (Battle.net, EA app: BCDLaunchers.swift, BCDLauncherView.swift): their engine side stays out; the screens are
+# -BCDTab library -BCDSection launcher-battlenet[+installed|downloading|failed|starting] (app/BCDPreview/BCDLauncherSample.swift).
+ENGINE_BOUND |= {"BCDLaunchersLive.swift"}
 SCREENS += ["ingame-menu", "starting", "overlay"]
 
 

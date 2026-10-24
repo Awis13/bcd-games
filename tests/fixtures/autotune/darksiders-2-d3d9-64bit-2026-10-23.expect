@@ -1,0 +1,16 @@
+{
+ "dialogs": [
+  "Could not initialize the graphics subsystem, probably because the resolution 1112 x 832 is not supported for fullscreen display."
+ ],
+ "end": {},
+ "matched": [
+  "d3d9-64bit-dxmt"
+ ],
+ "next": [
+  "env.MADEIRA_D3D9_X64 = dxmt"
+ ],
+ "note": "Darksiders II Deathinitive Edition (Steam 388410, 64-bit Direct3D 9), build 592, iPad16,5: Wine's 64-bit d3d9 (wined3d) finds no OpenGL, Direct3DCreate9 fails and the game shows its resolution guess. Discord tester's Send Log 3F3TYX, trimmed. From build 595 auto-tune proposes env.MADEIRA_D3D9_X64 = dxmt.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

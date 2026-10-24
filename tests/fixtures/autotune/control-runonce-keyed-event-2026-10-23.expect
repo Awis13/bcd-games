@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "runonce-stale-waiter-keyed-event"
+ ],
+ "next": [
+  "env.MADEIRA_KEYED_EVENT_PER_PROCESS = 1"
+ ],
+ "note": "Control (Steam 870780, Dock), build 592, iPhone16,2 (7.6 GB), development profile: 220 s of the log; the engine's audio thread (Wwise AK::EventManager, tid 013c) loads mmdevapi.dll and dies on a read of 0xa90453f3d10183ff at the ARM64EC ntdll's +0x68008 (RtlRunOnceComplete's walk of the InitOnce waiters; L15822, x0 = c0000024 from the release just before), the game's process exits c0000005 (L16035). The same crash in QJAQK3, P0DERY and 6AG46N, and in Slay the Spire 2 GZFVM3. Tester log X49WBQ, scrubbed.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "trying"
+}

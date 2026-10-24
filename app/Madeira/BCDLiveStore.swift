@@ -127,6 +127,7 @@ import os
         rebuild()
         refreshSystem()
         refreshMetadata()
+        BCDLauncherModel.shared.refresh()   // the launchers' cards: is each one's program in drive_c now (an installer may have just run)?
         LogStore.shared.log("[bcd-ui] shown games=\(store.games.count) downloads=\(store.downloads.count)")
     }
 
@@ -175,6 +176,7 @@ import os
         var steamPositions: [Int: Int] = [:]
         var desktop = false
         for (position, entry) in library.entries.enumerated() {
+            if BCDLauncherSpec.hidesEntry(entry.id) { continue }   // build 600: Battle.net and the EA app are hidden (BCDLaunchers.swift)
             if let appID = entry.steamAppID {
                 if steamEntries[appID] == nil { steamEntries[appID] = entry; steamPositions[appID] = position }
                 continue
@@ -232,6 +234,8 @@ import os
                            store: .local, state: .ready, size: entry.folderBytes)
         game.lastPlayed = entry.lastPlayed
         game.thirtyTwoBit = entry.bits == 32
+        // A game on the SSD folder chosen in Settings > Storage (C:\External).
+        if entry.relativePath.hasPrefix("External/"), ExternalGameStorage.shared.hasSavedFolder { game.place = .externalDrive }
         if !isDesktop {
             game.recommended = GameRecommendations.match(windowsPath: entry.windowsPath, steamAppID: nil,
                                                          fileExists: GameRecommendations.driveFileExists) != nil
@@ -663,6 +667,22 @@ import os
     }
 
     func enableJIT() { settled { [weak self] in self?.requestJIT?() } }
+
+    /// A launcher's installer or program (BCDLaunchersLive; the Library's Battle.net and EA app cards): the library entry the
+    /// engine made for it, handed to the same connected Play as every other start, once nothing covers the interface.
+    /// `game` is the id the store's startingJIT names while Play turns JIT on (BCDLauncherSpec.gameID).
+    func startLauncherEntry(_ entry: LibraryEntry, game: String) {
+        guard !starting, LibraryModel.shared.current == nil else { return }
+        starting = true
+        settled { [weak self] in
+            guard let self else { return }
+            self.starting = false
+            guard let launch = self.launch else { return }
+            self.startingGame = game
+            LogStore.shared.log("[bcd-ui] play launcher")
+            launch(entry)
+        }
+    }
 
     /// Settings › BCD Dock's start: ContentView's own, once nothing covers the main screen.
     func startDock(_ game: DockGame, _ compactPool: Bool) { settled { [weak self] in self?.dockStart?(game, compactPool) } }

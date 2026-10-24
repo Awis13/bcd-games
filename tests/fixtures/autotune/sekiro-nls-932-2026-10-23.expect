@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "nls-extra-codepage-dock-sekiro"
+ ],
+ "next": [
+  "env.MADEIRA_NLS_EXTRA = 1"
+ ],
+ "note": "Sekiro: Shadows Die Twice (Steam 814380, BCD Dock), build 592, iPad17,3, Send Log 51Y0RM: two lookups of code page 932, a C++ exception, __fastfail(7) at sekiro.exe+0x23a6cc4 (9Y7G8T is the same). UNPROVEN: BCD's nls folder has no c_932.nls; env.MADEIRA_NLS_EXTRA = 1 serves it; the first session with the line decides.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

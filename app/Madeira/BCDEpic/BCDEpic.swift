@@ -49,6 +49,9 @@ import Foundation
     static var signInEnabled: Bool { MadeiraConfig.flag("BCD_EPIC_SIGNIN", fallback: true) }
     /// The signed-in start goes through BCD Host (on by default). 0 starts the game directly with the public arguments only.
     static var hostEnabled: Bool { MadeiraConfig.flag("BCD_EPIC_HOST", fallback: true) }
+    /// The signed-in start KEEPS BCD Host as the first program (off by default, a game's own config line turns it on). Builds 590 to 597 chose the
+    /// host but a second configureLaunch put the game's own program back, so the host never ran; 1 holds the host's values and sets them again.
+    static var hostStartDefault: Bool { MadeiraConfig.flag("BCD_EPIC_HOST_START", fallback: false) }
     /// BCD Host waits for every process the game starts, not only the game's own (on by default).
     static var treeWait: Bool { MadeiraConfig.flag("BCD_EPIC_TREE", fallback: true) }
     /// bcdhost.exe is in this build (it is a build output; without it every Epic game starts as in milestone 1).

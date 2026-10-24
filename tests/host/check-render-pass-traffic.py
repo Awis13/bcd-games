@@ -81,8 +81,10 @@ check("clear-defer on by default (a kill switch), rp-carry and rp-discard off by
       and block.count("if (g_clear_defer < 0)") == 1 and block.count("if (g_rp_carry < 0)") == 1
       and block.count("if (g_rp_discard < 0)") == 1)
 enum = between("enum mad_ck {", "};") + "};"
-check("MC_DISCARD is the last command kind (the others keep their values)", enum.rstrip("};\n ").endswith(
-      "MC_DISCARD,     /* madeira-bcd rp-discard: a DiscardResource (u.discard); the replay only notes it */"))
+check("MC_DISCARD comes after every older command kind, MC_WBI (WriteBufferImmediate, build 593) after it: the others keep their values",
+      enum.rstrip("};\n ").endswith(
+      "MC_DISCARD,     /* madeira-bcd rp-discard: a DiscardResource (u.discard); the replay only notes it */\n"
+      "    MC_WBI,         /* madeira-bcd: one WriteBufferImmediate value (u.wbi), written by a 4-byte blit copy */"))
 disc = func("static void STDMETHODCALLTYPE list_DiscardResource(")
 check("DiscardResource still counted, recorded for textures only, whole or not",
       "InterlockedIncrement(&g_discards);" in disc and "if (!r || !r->texture) return;" in disc

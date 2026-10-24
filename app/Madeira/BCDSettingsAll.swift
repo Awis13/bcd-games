@@ -101,6 +101,7 @@ struct BCDAllSettings<Backend: BCDAllSettingsBackend>: View {
         }
         // Rows below the screen are not built yet, so the whole order comes from here.
         .transformPreference(BCDSettingsOrderKey.self) { $0 = order(shown, unlisted) }
+        .bcdKeyboardDone { typing = nil }
         .onAppear {
             backend.refresh()
             if !model.allQuery.isEmpty { query = model.allQuery }

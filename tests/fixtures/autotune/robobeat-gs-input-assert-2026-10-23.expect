@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "gs-input-instance-id-assert"
+ ],
+ "next": [],
+ "note": "ROBOBEAT (Epic Games Store, Direct3D 11), build 592, iPhone18,1, Send Log HH0KNF: 8.6 s in, airconv's handle_signature_gs asserted on a geometry shader's dcl_input vGSInstanceID ('unhandled geometry shader input', exit 0x80000101). Fixed in code (build 598, tools/patch-airconv-gs-instance-id.py), no line.",
+ "outcome": "crashed",
+ "stage": 3,
+ "status": "known"
+}

@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "anon-cas-flush"
+ ],
+ "next": [
+  "env.MADEIRA_ANON_CAS_FLUSH = 1"
+ ],
+ "note": "Round 2026-10-24 (ajan22/loglar): Stardew Valley (Steam 413150, .NET 6 on CoreCLR, Dock), build 592: the CLR's emulated CAS, then the main thread spins at 11.8 million calls a second and nothing is ever presented (90 s); the player closed the game (graceful close, the Dock closed BCD: a killed run, scored hung). The same signature as Jetboard Joust; env.MADEIRA_ANON_CAS_FLUSH = 1 hands the CAS to FEX (an attempt, not proven).",
+ "outcome": "hung",
+ "stage": 3,
+ "status": "trying"
+}

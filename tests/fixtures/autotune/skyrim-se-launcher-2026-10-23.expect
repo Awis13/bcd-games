@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "skyrim-se-launcher-swap"
+ ],
+ "next": [
+  "env.MADEIRA_SPAWN_SWAP = SkyrimSELauncher.exe=SkyrimSE.exe"
+ ],
+ "note": "Skyrim Special Edition (Steam 489830) through BCD Dock, build 592: Valve's client starts SkyrimSELauncher.exe, its second instance fails with c0000018 and the Dock ends the session, as Fallout 4's launcher does. skyrim-se-launcher-swap proposes the spawn swap to SkyrimSE.exe (build 598).",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

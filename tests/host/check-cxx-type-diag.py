@@ -154,5 +154,12 @@ with tempfile.TemporaryDirectory() as tmp:
         check('at most twelve throws are reported (two lines each), 8 of 20 distinct ThrowInfos are left out',
               out.count('[cxx-type] build591') == 1 + 1 + 1 + 1 + (12 - 4), str(out.count('[cxx-type] build591')))
 
+# madeira-bcd (lead, 2026-10-23): the HRESULT of an ATL or COM exception (the EA installer's C7-2F79), read from the thrown object, log only
+_src = (Path(__file__).resolve().parents[2] / 'build/ntdll-unix/thread_ios.c').read_text()
+check('an ATL::CAtlException prints its hr (first field), a _com_error its m_hresult (after the vtable)',
+      'strstr( first, "CAtlException@ATL" ) && ios_cxx_read( obj, &hr, 4, guest32 )' in _src
+      and 'strstr( first, "_com_error@@" ) && ios_cxx_read( obj + ptr, &hr, 4, guest32 )' in _src
+      and '[cxx-type]   ATL::CAtlException hr=%#lx' in _src)
+
 print('PASS' if ok else 'FAIL')
 raise SystemExit(0 if ok else 1)

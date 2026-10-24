@@ -55,7 +55,8 @@ import SwiftUI
     func backUpSaves() async throws -> BCDSavesBackup { throw BCDGameError("no") }
     func restoreSaves(from file: URL) async throws -> Int { 0 }
     func lastLog(of game: BCDGame) async -> BCDGameLog? { nil }
-    func send(_ log: BCDGameLog, of game: BCDGame, progress: @escaping (String) -> Void) async throws -> String { "" }
+    func logComment() async -> String? { "" }
+    func send(_ log: BCDGameLog, of game: BCDGame, comment: String, progress: @escaping (String) -> Void) async throws -> String { "" }
     func configText(for game: BCDGame) -> String? { nil }
     func saveConfig(_ text: String, for game: BCDGame) {}
     func searchStore(_ text: String) async throws -> [BCDStoreMatch] { [] }

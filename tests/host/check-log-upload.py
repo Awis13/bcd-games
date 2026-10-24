@@ -80,7 +80,7 @@ check("by hand only: no toggle, no automatic path, no session hooks in the libra
 check("only the 20 newest logs are listed, and send refuses any other",
       "static let listed = 20" in app and "(runs + own).sorted { modified($0) > modified($1) }.prefix(listed)" in app
       and "let urls = LogUpload.recentLogs()" in bcd_logs and "guard !sending, let url = files[log.id] else { return }" in bcd_logs
-      and app.index("guard recentLogs().contains(") < app.index("LogUploadCore.pack(log, to: gz)")
+      and app.index("guard recentLogs().contains(") < app.index("LogUploadCore.pack(log, to: gz, comment: comment)")
       and "return finish(.failure(UploadError.notRecent))" in app)
 check("build 562's automatic setting and session marker are cleared",
       'UserDefaults.standard.removeObject(forKey: "madeira.bcd.logs.autosend")' in app and '"bcd-log-session.json"' in app
@@ -142,6 +142,30 @@ if sample and Path(sample).exists():
     with open(sample, "rb") as f:
         corpus += [l.decode("utf-8", "replace").rstrip("\r\n") for _, l in zip(range(200000), f)]
 
+# Send Log's comment box (the owner, 2026-10-24: "her yere ekle"): every place a person sends a log by hand asks for a comment
+# first (BCDLogComment, a system alert over whatever is on screen) and sends it with the log; the feedback form has its own
+# message and sends its log with none.
+APPDIR = R / "app/Madeira"
+comp_src = (APPDIR / "BCDComponents.swift").read_text()
+check("BCDLogComment asks with one text field, Send and Cancel, over the topmost screen",
+      "enum BCDLogComment" in comp_src and "alert.addTextField" in comp_src and 'UIAlertAction(title: "Cancel", style: .cancel)' in comp_src
+      and 'UIAlertAction(title: "Send", style: .default)' in comp_src and "while let presented = top?.presentedViewController" in comp_src)
+sites = {"AutoTuneViews.swift": "BCDLogComment.ask { LogUpload.send(log, game: offer.title, comment: $0) }",
+         "BCDSettingsSections.swift": "BCDLogComment.ask { backend.send(log, comment: $0) }",
+         "BCDGamePage.swift": "guard let comment = await backend.logComment() else { return }",
+         "BCDGamePageLive.swift": "BCDLogComment.ask({ continuation.resume(returning: $0) }, cancelled: { continuation.resume(returning: nil) })"}
+for name, want in sites.items():
+    check(f"{name}: Send Log asks for the comment first", want in (APPDIR / name).read_text())
+calls = {}
+for f in sorted(APPDIR.glob("*.swift")):
+    for line in f.read_text().splitlines():
+        if "LogUpload.send(" in line and "static func send" not in line:
+            calls.setdefault(f.name, []).append(line.strip())
+missing = {k: v for k, v in calls.items() for l in v if "comment:" not in l and k != "BCDSettingsLive.swift"}
+live = (APPDIR / "BCDSettingsLive.swift").read_text()
+check("every hand-sent log carries the comment (Settings, the game page, auto-tune); only the feedback form's log goes without",
+      not missing and live.count("LogUpload.send(") == 2 and "comment: comment, progress:" in live, (missing, calls))
+
 swiftc = shutil.which("swiftc")
 if not swiftc:
     check("Swift compiler available", not args.require_swift)
@@ -152,7 +176,8 @@ else:
         main.write_text(
             "import Foundation\n"
             "let a = CommandLine.arguments\n"
-            "do { let r = try LogUploadCore.pack(URL(fileURLWithPath: a[1]), to: URL(fileURLWithPath: a[2]))\n"
+            "do { let r = try LogUploadCore.pack(URL(fileURLWithPath: a[1]), to: URL(fileURLWithPath: a[2]),\n"
+            "                                    comment: a.count > 3 ? a[3] : nil)\n"
             "     print(\"\\(r.raw) \\(r.packed)\") } catch { print(\"error \\(error)\"); exit(1) }\n")
         exe = t / "pack"
         b = subprocess.run([swiftc, "-O", "-o", str(exe), str(R / "app/Madeira/LogUploadCore.swift"), str(main)],
@@ -168,6 +193,24 @@ else:
                 check(f"{name}: one gzip stream, scrubbed line for line as SCRUB does", got == want,
                       next(((i, g, w) for i, (g, w) in enumerate(zip((got or "").split("\n"), want.split("\n"))) if g != w),
                            (r.stdout, len(got or ""), len(want))))
+            # Send Log's comment box (2026-10-24): the sender's words go first, one "[user-comment] " line per line, scrubbed like
+            # the log, control characters out, at most 2000 characters; no comment (or only spaces) adds nothing.
+            src, dst = t / "c.txt", t / "c.gz"
+            src.write_text("line one\nline two\n")
+            comment = "  low FPS in the city\nfreezes when I open the map /var/mobile/Containers/Data/Application/AAAA\tx  "
+            r = subprocess.run([str(exe), str(src), str(dst), comment], capture_output=True, text=True)
+            got = gzip.decompress(dst.read_bytes()).decode("utf-8") if r.returncode == 0 else ""
+            want_first = ["[user-comment] low FPS in the city",
+                          fx.scrub("[user-comment] freezes when I open the map /var/mobile/Containers/Data/Application/AAAAx")]
+            check("a comment goes first, one [user-comment] line per line, scrubbed, without control characters, then the log",
+                  got.split("\n")[:4] == want_first + ["line one", "line two"], got[:400])
+            for empty in ("", "   \n  "):
+                r = subprocess.run([str(exe), str(src), str(dst), empty], capture_output=True, text=True)
+                got = gzip.decompress(dst.read_bytes()).decode("utf-8") if r.returncode == 0 else ""
+                check(f"an empty comment ({empty!r}) adds nothing", got == "line one\nline two\n", got[:200])
+            r = subprocess.run([str(exe), str(src), str(dst), "x" * 5000], capture_output=True, text=True)
+            got = gzip.decompress(dst.read_bytes()).decode("utf-8") if r.returncode == 0 else ""
+            check("a comment is cut at 2000 characters", got.split("\n")[0] == "[user-comment] " + "x" * 2000)
             check("a line that needs no scrub passes byte for byte, and the prefilter misses nothing a rule changes",
                   all(fx.scrub(l) == l for l in corpus if "Handled self" in l or l.startswith("[xp]") or l.startswith("self-")))
 

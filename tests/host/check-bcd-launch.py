@@ -200,7 +200,8 @@ check(ordered(launch, "DeviceCapability.libraryRefusal(entry)", "GameRecommendat
       "Play: device gate, recommended settings, BCD Dock or \"The game\" (Steam Cloud, program), one session, JIT, start")
 started = code(block(content, "private func startLibraryEntry(_ entry: LibraryEntry)"))
 check(ordered(started, "try entry.validate()", "entry.configureLaunch()", "BCDLaunch.applyLibrary(entry, sessionLog: false)",
-              "LogStore.shared.startSessionLog(program: program)", "library.begin(entry)", "runWineFullSequence(profile: entry)"),
+              "LogStore.shared.startSessionLog(program: program)", "library.begin(entry, remember: !BCDLaunchersLive.isSetup(entry))",
+              "runWineFullSequence(profile: entry)"),   # a launcher's installer run (BCDLaunchersLive) is the one start the library does not remember
       "Play with JIT on: the profile's checks, the game's options, its log, the session")
 dock = code(block(content, "private func startDock(_ game: DockGame, compactPool: Bool, profile: LibraryEntry? = nil)"))
 check(ordered(dock, "jitReadyForLaunch(entry: profile?.id,",

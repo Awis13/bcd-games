@@ -402,6 +402,26 @@ func contentPhase(_ fx: Fixture) async {
     do { _ = try BCDGOGContent.newestBuild(json(#"{"items":[]}"#)) } catch { check(error as? BCDGOGError == .noWindowsBuild, "no build: no Windows download") }
     check((try? BCDGOGContent.newestBuild(json(#"{"items":[{"build_id":"5","generation":2,"branch":null,"link":"https://evil.example/m"}]}"#))) == nil,
           "a build link off GOG's hosts is refused")
+    // GOG's list names the CDN it picks for the player; in some regions that is gog-cdn.gcdn.co (2026-10-24: BioShock 2,
+    // Cult of the Lamb, RollerCoaster Tycoon Deluxe). A manifest link of the exact content-addressed form moves to
+    // cdn.gog.com with the same path; a gog.com link stays as it was; anything else is still refused.
+    let gcdn = "https://gog-cdn.gcdn.co/content-system/v2/meta/f7/0d/f70d7d066327a1f183582c5535803eeb"
+    check((try? BCDGOGContent.newestBuild(json(#"{"items":[{"build_id":"59645104523292869","generation":2,"branch":null,"link":"\#(gcdn)"}]}"#)))?.link.absoluteString
+          == "https://cdn.gog.com/content-system/v2/meta/f7/0d/f70d7d066327a1f183582c5535803eeb",
+          "a manifest link on another CDN (gog-cdn.gcdn.co) is read from cdn.gog.com, same path")
+    check((try? BCDGOGContent.newestBuild(builds))?.link.absoluteString
+          == "https://gog-cdn-fastly.gog.com/content-system/v2/meta/e5/18/e518c17d90805e8e3998a35fac8b8505",
+          "a link on a gog.com host is used unchanged")
+    for bad in ["http://gog-cdn.gcdn.co/content-system/v2/meta/f7/0d/f70d7d066327a1f183582c5535803eeb",
+                "https://gog-cdn.gcdn.co/content-system/v2/meta/aa/0d/f70d7d066327a1f183582c5535803eeb",
+                "https://gog-cdn.gcdn.co/content-system/v2/meta/f7/0d/F70D7D066327A1F183582C5535803EEB",
+                "https://gog-cdn.gcdn.co/content-system/v2/meta/f7/0d/f70d7d066327a1f183582c5535803eeb?x=1",
+                "https://gog-cdn.gcdn.co/x/content-system/v2/meta/f7/0d/f70d7d066327a1f183582c5535803eeb",
+                "https://gog-cdn.gcdn.co/content-system/v1/manifests/1207658945/windows/48071975/repository.json",
+                "https://u@gog-cdn.gcdn.co/content-system/v2/meta/f7/0d/f70d7d066327a1f183582c5535803eeb"] {
+        check((try? BCDGOGContent.newestBuild(json(#"{"items":[{"build_id":"5","generation":2,"branch":null,"link":"\#(bad)"}]}"#))) == nil,
+              "refused off GOG's hosts: \(bad)")
+    }
     // The queue's "[content] failed ... reason=" used to print the error's type name for every GOG failure ("BCDGOGError",
     // 2026-10-20, two testers' installs); now the step: which reply GOG sent that BCD could not read.
     let reasonA = await BCDContentQueue.reason(BCDGOGError.badReply("builds"))

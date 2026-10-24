@@ -125,7 +125,19 @@ enum LogUploadCore {
 
     /// Scrubs `source` line by line into a gzip file at `dest`. Returns the bytes read and
     /// written. `progress` gets the fraction read, now and then.
-    static func pack(_ source: URL, to dest: URL, progress: ((Double) -> Void)? = nil) throws -> (raw: Int, packed: Int) {
+    /// The sender's own words (Send Log's comment box, 2026-10-24): what the log cannot show (low FPS, where it stutters,
+    /// what was on screen). At most 2000 characters, one "[user-comment] " line per line written, control characters out;
+    /// scrubbed like every other line. Empty: nothing.
+    static func commentLines(_ comment: String?) -> [String] {
+        let text = String((comment ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
+        guard !text.isEmpty else { return [] }
+        return text.split(whereSeparator: \.isNewline).map { line in
+            "[user-comment] " + String(line.unicodeScalars.filter { $0.value >= 0x20 && $0.value != 0x7F }.map(Character.init))
+        }
+    }
+
+    static func pack(_ source: URL, to dest: URL, comment: String? = nil,
+                     progress: ((Double) -> Void)? = nil) throws -> (raw: Int, packed: Int) {
         guard let input = try? FileHandle(forReadingFrom: source) else { throw PackError.read }
         defer { try? input.close() }
         let total = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.intValue ?? 0
@@ -171,6 +183,8 @@ enum LogUploadCore {
             }
             pending.append(0x0A)
         }
+        // The sender's comment goes first, so whoever opens the log reads it before anything else.
+        for line in commentLines(comment) { Data(line.utf8).withUnsafeBytes { emit($0) } }
         while true {
             let chunk = (try? input.read(upToCount: 1 << 20)) ?? nil
             guard let chunk, !chunk.isEmpty else { break }

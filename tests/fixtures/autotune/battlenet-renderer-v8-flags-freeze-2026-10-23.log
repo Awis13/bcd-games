@@ -1,0 +1,421 @@
+[22:11:59.897] [INFO] Checking entitlements...
+[22:11:59.897] [INFO] [build] v0.1.596 (596)
+[22:11:59.898] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.0 (Build 24A437) ram=11695MB available=6636MB cores=6
+[22:11:59.898] [INFO] [device] address-map=[0x1023a8000,0x8000000000) 512GB increased-memory=1 extended-va=1
+[22:11:59.921] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[22:12:08.339] [INFO] Requesting JIT with Built-in StikJIT...
+[22:12:09.831] [INFO] [bcd] library launch Battle.net.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[22:12:09.863] [INFO] Running full Wine sequence...
+[22:12:09.863] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x1023a8000,0x8000000000) 512GB available=8158MB low-power=0 thermal=nominal
+[22:12:09.868] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[22:12:09.869] [INFO] Allocating 896MB JIT pool via debugger...
+[22:12:09.869] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[22:12:09.869] [INFO] [jit-debugger] attached=1 at the pool request
+[22:12:09.872] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 592MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[22:12:10.607] [INFO] RX pool at 0x148000000
+[22:12:10.624] [INFO] Detaching debugger...
+[phase] wine-start             t+  0.799s rev=ml526
+[cage] holdback reserved 0x7200000000+0x1ffff0000 rev=ml433
+ml992: os_proc_available_memory=7553 MB + phys_footprint=638 MB = 8192 MB (hw.memsize says 11695 MB)
+ml985: preferred base 0x140000000+0x70000 REFUSED status=0xc0000018 image_flags=0x4 charact=0x22 map_addr=0 info_base=0x140000000 | STAGE=fixed-map err=3 at 0x140000000+0x70000 rev=ajan5-motor
+[wow-rwx] ml1279 MADEIRA_WOW_RWX_PLAIN=(unset) -> 32-bit guest RWX memory is plain read/write in a window once Wine Mono is mapped there
+[copy-verify] ?: OK, 4 .text pages executable (copy @0x148004000)
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x148078000)
+[ec-hook] #1 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d20a58+0x4: rva 0x10a58, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | pool before sync: 6a 7d 01 14 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | jump -> 0 (-) bytes there: -
+[ec-hook] #2 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d21038+0x4: rva 0x11038, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 42 6a 40 b9 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | pool before sync: f7 7b 01 14 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | jump -> 0 (-) bytes there: -
+[ec-hook] #3 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d213a4+0x4: rva 0x113a4, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 53 6a 40 b9 e0 03 16 aa 83 05 00 94 e4 03 00 aa | pool before sync: 21 7b 01 14 e0 03 16 aa 83 05 00 94 e4 03 00 aa | jump -> 0 (-) bytes there: -
+[ec-hook] #4 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d21a40+0x4: rva 0x11a40, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | pool before sync: 7f 79 01 14 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | jump -> 0 (-) bytes there: -
+[ec-hook] #5 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d20a58+0x4: rva 0x10a58, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | pool before sync: 6a 7d 01 14 e8 d3 00 b9 a8 00 00 f0 08 d5 41 f9 | jump -> 0 (-) bytes there: -
+[ec-hook] #6 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d21038+0x4: rva 0x11038, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 42 6a 40 b9 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | pool before sync: f7 7b 01 14 5f 68 11 71 c0 fb ff 54 5f f8 01 71 | jump -> 0 (-) bytes there: -
+[ec-hook] #7 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d213a4+0x4: rva 0x113a4, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 53 6a 40 b9 e0 03 16 aa 83 05 00 94 e4 03 00 aa | pool before sync: 21 7b 01 14 e0 03 16 aa 83 05 00 94 e4 03 00 aa | jump -> 0 (-) bytes there: -
+[ec-hook] #8 scope=difference view=difference tid=0024 image 0x117d10000 (pool copy 0x148004000) 0x117d21a40+0x4: rva 0x11a40, section #0 '.text' rva 0x10000+0xe424 chars 0x60000020 (R-X CODE) | PE bytes: 40 4a 40 b9 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | pool before sync: 7f 79 01 14 08 d5 41 f9 00 01 3f d6 40 02 00 b4 | jump -> 0 (-) bytes there: -
+[copy-verify] KERNEL32.dll: OK, 12 .text pages executable (copy @0x148190000)
+[copy-verify] kernelbase.dll: OK, 30 .text pages executable (copy @0x148238000)
+[nls-getptr] type=11 id=1252 peb=0x71ffff0000
+[nls-getptr] type=11 id=437 peb=0x71ffff0000
+[copy-verify] rpcrt4.dll: OK, 18 .text pages executable (copy @0x1483b8000)
+[copy-verify] advapi32.dll: OK, 9 .text pages executable (copy @0x14848c000)
+[footprint] rev=ml358 phys=650 MB (peak 650) internal=648 MB compressed=0 MB external=71 MB reusable=5 MB (cycle=1)
+[nls-getptr] type=11 id=20127 peb=0x71ffff0000
+[gdi-shared] session table 0x7025f50000 (1572864 bytes, section-backed, name=L"\\KernelObjects\\__wine_ios_gdi_shared")
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+[nls-getptr] type=11 id=10000 peb=0x71ffff0000
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winemac.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #1 L"winemac.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winex11.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #2 L"winex11.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0024:err:module:load_dll [dll-missing] ml718 UNCAPPED L"winewayland.drv" status=c0000135 (subsystem dependency)
+0024:err:module:load_dll [dll-missing] rev=ml336 #3 L"winewayland.drv" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[win-name] #3 hwnd=0x10020 class='' text="shell - Wine Desktop" rev=ml853
+[win-name] #8 hwnd=0x10032 class='' text="WineAppBar" rev=ml853
+[win-name] #10 hwnd=0x1003a class='' text="Default IME" rev=ml853
+[phase] spawn:L"C:\\windows\\system32\\cmd.exe" t+  1.294s rev=ml526
+[file-wfail] ml669 #2 status=0xc0000034 disp=1 access=0xc0100080 sharing=0x00000000 options=0x00000040 unix=(none) name=\??\pipe\svcctl
+[phase] spawn:L"C:\\windows\\system32\\conhost.exe" t+  1.341s rev=ml526
+[copy-verify] imm32.dll: OK, 4 .text pages executable (copy @0x14afac000)
+[phase] spawn:L"C:\\windows\\system32\\start.exe" t+  1.382s rev=ml526
+[phase] spawn:L"C:\\windows\\system32\\services.exe" t+  1.424s rev=ml526
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=377
+004c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x0) syscalls=0 unix_calls=380
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=138
+[ec-hook] #1 scope=other-jump view=pool tid=0054 image 0x11b950000 (pool copy 0x14cda8000) 0x11b967101+0x7: rva 0x17101, section #0 '.text' rva 0x10000+0x90d4 chars 0x60000020 (R-X CODE) | PE bytes: e9 0f 36 44 6a 40 b9 42 00 00 d0 42 00 29 91 43 | pool before sync: e9 0f 36 05 24 01 14 42 00 00 d0 42 00 29 91 43 | jump -> 0x170e12715 (no pool copy) bytes there: -
+[ec-hook] #2 scope=other-jump view=pool tid=0054 image 0x11b950000 (pool copy 0x14cda8000) 0x11b967101+0x7: rva 0x17101, section #0 '.text' rva 0x10000+0x90d4 chars 0x60000020 (R-X CODE) | PE bytes: e9 0f 36 44 6a 40 b9 42 00 00 d0 42 00 29 91 43 | pool before sync: e9 0f 36 05 24 01 14 42 00 00 d0 42 00 29 91 43 | jump -> 0x170e12715 (no pool copy) bytes there: -
+[Wine ntdll/server] process_exit_wrapper(0)
+[phase] spawn:L"C:\\windows\\system32\\start.exe" t+  1.440s rev=ml526
+[copy-verify] userenv.dll: OK, 1 .text pages executable (copy @0x14d948000)
+[launch-view] dismissed reason=surface logs=0
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+  1.495s rev=ml526
+[wow-window] session armed: a 32-bit process is expected
+[wow-window] B=0x7100000000 REJECTED: the 4GB range is not free (PARTIALLY OCCUPIED: free 0x7100000000..0x71f9d30000, then OCCUPIED 0x71f9d30000+0x10000 prot=1/3 shared=0 (0x62d0000 of the range is not free))
+[wow-window] B=0x7200000000 REJECTED: the 4GB range is not free (OCCUPIED 0x7200000000+0x8000000 prot=0/7 shared=0 (and the range continues past this region))
+[wow-window] B=0x7a00000000: window body after failed reservations (FREE: all 0x100000000 bytes from 0x7a00000000 are free, next region 0x7c00000000 (+0x100000000 past the end) <-- iOS REFUSED A FREE RANGE)
+[wow-window] B=0x7a00000000 REJECTED: 4GB+guard unavailable and the page at 0x7b00000000 is not an inaccessible neighbour (FREE: all 0x4000 bytes from 0x7b00000000 are free, next region 0x7c00000000 (+0xffffc000 past the end) <-- iOS REFUSED A FREE RANGE)
+[wow-window] B=0x7900000000: reserved 4GB + own guard page (+0x4000)
+[wow-window] reserved B=0x7900000000..0x7a00000000 (slot 0) guard=owned
+[wow-window] slot 0 B=0x7900000000 bound to peb=0x7900310000
+005c:err:process:NtTerminateProcess NtTerminateProcess(handle=0x0, exit_code=0x0) syscalls=0 unix_calls=561
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=145
+[Wine ntdll/server] process_exit_wrapper(0)
+[Wine ntdll/server] process_exit_wrapper(0): closing child fd_socket=102
+006c:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+006c:err:wow:load_cpu_dll CPU backend wow64cpu.dll not available, falling back to the platform default xtajit.dll
+[Wine ntdll/server] process_exit_wrapper(0)
+[free-delay] #1 release of 0x702e2b0000+0x100000 held for 2000 ms (1 in flight)
+[free-delay] #2 release of 0x702fbd0000+0x200000 held for 2000 ms (2 in flight)
+[free-delay] #3 release of 0x702fdd0000+0x400000 held for 2000 ms (3 in flight)
+[free-delay] #4 release of 0x70302a0000+0x800000 held for 2000 ms (4 in flight)
+[free-delay] #5 release of 0x7030ae0000+0xfd0000 held for 2000 ms (5 in flight)
+[free-delay] #6 release of 0x7031ab0000+0xfd0000 held for 2000 ms (6 in flight)
+[free-delay] #7 release of 0x7032a80000+0xfd0000 held for 2000 ms (7 in flight)
+[free-delay] #8 release of 0x7033a50000+0xfd0000 held for 2000 ms (8 in flight)
+D 6C Load module Battle.net.exe (battle.net.exe-5fc016bca34b3b3e): 7900400000
+D 6C Load module ntdll.dll (ntdll.dll-3903196a83f1c149): 79FFF40000
+D 6C Load module kernel32.dll (kernel32.dll-3a7c334be1ec35fe): 797BED0000
+D 6C Load module kernelbase.dll (kernelbase.dll-1bada4728a94276f): 797BC40000
+D 6C Load module WININET.dll (wininet.dll-7ed1ba985c00c7db): 797BBC0000
+D 6C Load module mpr.dll (mpr.dll-09c67d52a3f02504): 797BB90000
+ml985: map_image_view size=0x9f84000 base=0x796c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7900110000..0x79ffff0000
+D 6C Load module libcef.dll (libcef.dll-84b598e2350c977e): 796C7B0000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[nls-getptr] type=11 id=1254 peb=0x7900310000
+[win-name] #29 hwnd=0x1005a class='' text="QtPowerDummyWindow" rev=ml853
+[win-name] #31 hwnd=0x1005c class='' text="QtClipboardView" rev=ml853
+[footprint] rev=ml358 phys=1095 MB (peak 1095) internal=1093 MB compressed=0 MB external=170 MB reusable=5 MB (cycle=2)
+[win-name] #36 hwnd=0x10064 class='' text="Default IME" rev=ml853
+[wow-window] reserved B=0x7200000000..0x7300000000 (slot 1) guard=borrowed
+[wow-window] slot 1 B=0x7200000000 bound to peb=0x7200310000
+00d8:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00d8:err:wow:load_cpu_dll CPU backend wow64cpu.dll not available, falling back to the platform default xtajit.dll
+[wow-window] reserved B=0x7300000000..0x7400000000 (slot 2) guard=owned
+[wow-window] slot 2 B=0x7300000000 bound to peb=0x7300310000
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x14c990000)
+00e4:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+00e4:err:wow:load_cpu_dll CPU backend wow64cpu.dll not available, falling back to the platform default xtajit.dll
+[wow-window] slot 1 B=0x7200000000 released (owner peb=0x7200310000 exited); torn down when the next 32-bit process starts
+[wow-stack-free] #1 the dead thread 00c0's 32-bit stack (guest 0x6280000) is in window 0x7900000000 (live), the thread freeing its TEB is in window 0x0: the old address 0x6280000 is not a live view -> released at the old address (as before) rev=ajan11
+[iosb-dead] ajan16 #1 async I/O completion in a 32-bit process (window 0x7300000000): the status block pointer 0x10000 is not memory; the store of status=0 information=0x8e is skipped (a 64-bit caller's status block taken for a guest one; MADEIRA_IOSB_DEAD_TARGET=0 stores anyway)
+[iosb-dead] ajan16 #2 async I/O completion in a 32-bit process (window 0x7300000000): the status block pointer 0x10000 is not memory; the store of status=0 information=0x45 is skipped (a 64-bit caller's status block taken for a guest one; MADEIRA_IOSB_DEAD_TARGET=0 stores anyway)
+[iosb-dead] ajan16 #3 async I/O completion in a 32-bit process (window 0x7300000000): the status block pointer 0x10000 is not memory; the store of status=0 information=0x3b is skipped (a 64-bit caller's status block taken for a guest one; MADEIRA_IOSB_DEAD_TARGET=0 stores anyway)
+[iosb-dead] ajan16 #4 async I/O completion in a 32-bit process (window 0x7300000000): the status block pointer 0x10000 is not memory; the store of status=0 information=0x3f is skipped (a 64-bit caller's status block taken for a guest one; MADEIRA_IOSB_DEAD_TARGET=0 stores anyway)
+[footprint] rev=ml358 phys=1609 MB (peak 1609) internal=1606 MB compressed=0 MB external=198 MB reusable=5 MB (cycle=3)
+[wow-stack-free] #2 the dead thread 0148's 32-bit stack (guest 0xca50000) is in window 0x7300000000 (live), the thread freeing its TEB is in window 0x7900000000: the old address 0x790ca50000 is not a live view -> released at the old address (as before) rev=ajan11
+[store-noalias] #1 rev=ml348 addr=0x79761f7024 insn=0x889fff0a pc=0x164d551ac NO pool/anon alias | region 0x79761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #1 p0=WRITE p1=0x79761f7024 hostpc=0x164d551ac hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x163ffc000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=1 rip=0x0 pc=0x164d551ac addr=0x79761f7024 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x79761f4000+0x540000 rev=ml555
+[mach_exc] UNHANDLED #1 pc=0x164d551ac addr=0x79761f7024 x18=0x7900300000 type=1 lr=0x16cffc14c sp=0x1230ef350 x16=0x14ebfde94 x17=0x1230ef2b0
+[guest-code] rev=ml333 pool_rip=0x6c4b3fa0 (PE 0x6c4b3fa0) -- NO pool copy for this address (identity translate)
+[fault-host] 164d550ac: 54000200 aa0a03e4 8b284278 2940270a 11002108 b8684a74 11001108 a94a0780
+[fault-host] 164d550cc: 8a141021 8b010000 a9400001 cb140000 b4000060 f945b381 f9000f94 d65f0020
+[fault-host] 164d550ec: 52800594 51001108 b8284a74 5287e394 72adff74 51001108 b8284a74 10000040
+[fault-host] 164d5510c: 97fb55be 10fffa00 f9000380 f90f639f 11001108 aa0403ea 11006084 8b2a4278
+[fault-host] 164d5512c: d503201f 889fff04 6f00e410 91001158 3cb84a70 6b0700fa 52800007 11005154
+[fault-host] 164d5514c: 8b344278 d503201f 489fff07 91006158 3cb84a70 1100a154 8b344278 d503201f
+[mach_exc] insn_stream PC-12..PC+8: 11009094 8b344278 d503201f [889fff0a] f90f639f 17ffffbf 14000002
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-noalias] #2 rev=ml348 addr=0x79761f7024 insn=0x889fff0a pc=0x164d551ac NO pool/anon alias | region 0x79761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #2 p0=WRITE p1=0x79761f7024 hostpc=0x164d551ac hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=2 base=0x163ffc000 size=0x8000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=2 rip=0x0 pc=0x164d551ac addr=0x79761f7024 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x79761f4000+0x540000 rev=ml555
+[mach_exc] UNHANDLED #2 pc=0x164d551ac addr=0x79761f7024 x18=0x7900300000 type=1 lr=0x16cffc14c sp=0x1230ef350 x16=0x14ebfde94 x17=0x1230ef2b0
+[guest-code] rev=ml333 pool_rip=0x6c4b3fa0 (PE 0x6c4b3fa0) -- NO pool copy for this address (identity translate)
+[fault-host] 164d5510c: 97fb55be 10fffa00 f9000380 f90f639f 11001108 aa0403ea 11006084 8b2a4278
+[fault-host] 164d5512c: d503201f 889fff04 6f00e410 91001158 3cb84a70 6b0700fa 52800007 11005154
+[fault-host] 164d5514c: 8b344278 d503201f 489fff07 91006158 3cb84a70 1100a154 8b344278 d503201f
+[fault-host] 164d5516c: 489fff07 11001154 8b344278 b8e48304 5287e874 72adff74 51001108 b8284a74
+[fault-host] 164d5518c: 10000040 9400003d 10fff5e0 f9000380 f90f639f 11009094 8b344278 d503201f
+[fault-host] 164d551ac: 889fff0a f90f639f 17ffffbf 14000002 00000000 00000000 00000000 00000000
+[mach_exc] insn_stream PC-12..PC+8: 11009094 8b344278 d503201f [889fff0a] f90f639f 17ffffbf 14000002
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7900300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[wow-stack-free] #3 the dead thread 01b8's 32-bit stack (guest 0x17a10000) is in window 0x7900000000 (live), the thread freeing its TEB is in window 0x0: the old address 0x17a10000 is not a live view -> released at the old address (as before) rev=ajan11
+[footprint] rev=ml358 phys=1975 MB (peak 1975) internal=1971 MB compressed=0 MB external=199 MB reusable=5 MB (cycle=4)
+[wow-window] reserved B=0x7200000000..0x7300000000 (slot 1) guard=borrowed
+[wow-window] slot 1 B=0x7200000000 bound to peb=0x7200310000
+[wow-window] reserved B=0x7800000000..0x7900000000 (slot 3) guard=borrowed
+[wow-window] slot 3 B=0x7800000000 bound to peb=0x7800310000
+[copy-verify] ntdll.dll: OK, 29 .text pages executable (copy @0x150098000)
+[wow-window] reserved B=0x7700000000..0x7800000000 (slot 4) guard=borrowed
+ml985: map_image_view size=0x9f84000 base=0x726c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7200110000..0x72ffff0000
+D 1B4 Load module libcef.dll (libcef.dll-84b598e2350c977e): 726C7B0000
+ml985: map_image_view size=0x9f84000 base=0x786c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7800110000..0x78ffff0000
+D 1DC Load module libcef.dll (libcef.dll-84b598e2350c977e): 786C7B0000
+ml985: map_image_view size=0x9f84000 base=0x776c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7700110000..0x77ffff0000
+D 1E4 Load module libcef.dll (libcef.dll-84b598e2350c977e): 776C7B0000
+[store-noalias] #3 rev=ml348 addr=0x72761f7024 insn=0x889fff0a pc=0x16359168c NO pool/anon alias | region 0x72761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #3 p0=WRITE p1=0x72761f7024 hostpc=0x16359168c hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=3 rip=0x0 pc=0x16359168c addr=0x72761f7024 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x72761f4000+0x540000 rev=ml555
+[mach_exc] UNHANDLED #3 pc=0x16359168c addr=0x72761f7024 x18=0x7200300000 type=1 lr=0x16bffc14c sp=0x12632f350 x16=0x14e185e94 x17=0x12632f2b0
+[guest-code] rev=ml333 pool_rip=0x6fee0a30 (PE 0x6fee0a30) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: 11009094 8b344278 d503201f [889fff0a] f90f639f 17ffffbf 14000002
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[x86_seg] State.gs_cached=0x0 TEB=0x7200300000 TEB[0x58]=0x0 *(gs_cached+0x58)=0x0
+[store-noalias] #4 rev=ml348 addr=0x72761f7024 insn=0x889fff0a pc=0x16359168c NO pool/anon alias | region 0x72761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #4 p0=WRITE p1=0x72761f7024 hostpc=0x16359168c hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=4 rip=0x0 pc=0x16359168c addr=0x72761f7024 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x72761f4000+0x540000 rev=ml555
+[mach_exc] UNHANDLED #4 pc=0x16359168c addr=0x72761f7024 x18=0x7200300000 type=1 lr=0x16bffc14c sp=0x12632f350 x16=0x14e185e94 x17=0x12632f2b0
+[guest-code] rev=ml333 pool_rip=0x6fee0a30 (PE 0x6fee0a30) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: 11009094 8b344278 d503201f [889fff0a] f90f639f 17ffffbf 14000002
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[store-noalias] #5 rev=ml348 addr=0x78761f7024 insn=0x889fff0a pc=0x16159746c NO pool/anon alias | region 0x78761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #5 p0=WRITE p1=0x78761f7024 hostpc=0x16159746c hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=7 base=0x160ff4000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=5 rip=0x0 pc=0x16159746c addr=0x78761f7024 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x78761f4000+0x540000 rev=ml555
+[mach_exc] UNHANDLED #5 pc=0x16159746c addr=0x78761f7024 x18=0x7800300000 type=1 lr=0x161ff414c sp=0x17830f350 x16=0x1500fde94 x17=0x17830f2b0
+[guest-code] rev=ml333 pool_rip=0x6fee0a30 (PE 0x6fee0a30) -- NO pool copy for this address (identity translate)
+[mach_exc] insn_stream PC-12..PC+8: 11009094 8b344278 d503201f [889fff0a] f90f639f 17ffffbf 14000002
+[mach_exc] sym pc=?`?+0x0 lr=?`?+0x0
+[store-noalias] #6 rev=ml348 addr=0x78761f7024 insn=0x889fff0a pc=0x16159746c NO pool/anon alias | region 0x78761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[av-detail] ml613 #6 p0=WRITE p1=0x78761f7024 hostpc=0x16159746c hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=7 base=0x160ff4000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[fault_rip] cnt=6 rip=0x0 pc=0x16159746c addr=0x78761f7024 kr=2(PROTECTION_FAILURE) entryprot=1 nowprot=1 region=0x78761f4000+0x540000 rev=ml555
+[store-noalias] #7 rev=ml348 addr=0x77761f7024 insn=0x889fff0a pc=0x16059346c NO pool/anon alias | region 0x77761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[store-noalias] #8 rev=ml348 addr=0x77761f7024 insn=0x889fff0a pc=0x16059346c NO pool/anon alias | region 0x77761f4000+0x540000 prot=1 max=7 (prot without W = exec-downgraded page that never got dual-mapped)
+[footprint] rev=ml358 phys=3137 MB (peak 3137) internal=2995 MB compressed=134 MB external=216 MB reusable=0 MB (cycle=5)
+[wow-stack-free] #4 the dead thread 03d0's 32-bit stack (guest 0x24e00000) is in window 0x7900000000 (live), the thread freeing its TEB is in window 0x0: the old address 0x24e00000 is not a live view -> released at the old address (as before) rev=ajan11
+[footprint] rev=ml1060 fast phys=3168 MB compressed=134 MB
+[wow-stack-free] #5 the dead thread 0138's 32-bit stack (guest 0xaa20000) is in window 0x7300000000 (live), the thread freeing its TEB is in window 0x7900000000: the old address 0x790aa20000 is not a live view -> released at the old address (as before) rev=ajan11
+[footprint] rev=ml358 phys=3190 MB (peak 3190) internal=3040 MB compressed=142 MB external=216 MB reusable=0 MB (cycle=6)
+[vdcfg] QueryDisplayConfig flags=0x2 -> 0, 0 paths 0 modes
+[footprint] rev=ml1060 fast phys=3188 MB compressed=142 MB
+01a8:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" cmdline=L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"...
+01a8:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"... (fd=1338, unixdir=1336, dup_unixdir=1343) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[footprint] rev=ml1060 fast phys=3216 MB compressed=154 MB
+[footprint] rev=ml1060 fast phys=3244 MB compressed=154 MB
+[footprint] rev=ml1060 fast phys=3264 MB compressed=169 MB
+[nt-fail] #1 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0284 size=0x8000000 type=0x103000 prot=0x40 hint=0x0 zb=0x0 ext={attrs=0x40 addr[low=0x0 high=0x0 align=0x0]} hits=1 rev=ajan5-rockstar
+[nt-fail] #2 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0284 size=0x4000000 type=0x103000 prot=0x40 hint=0x0 zb=0x0 ext={attrs=0x40 addr[low=0x0 high=0x0 align=0x0]} hits=1 rev=ajan5-rockstar
+ml985: map_image_view size=0x9f84000 base=0x766c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7600110000..0x76ffff0000
+D 4C4 Load module libcef.dll (libcef.dll-84b598e2350c977e): 766C7B0000
+[footprint] rev=ml1060 fast phys=3288 MB compressed=211 MB
+[int3-guest] guest_rip=0x6de800e2 x28=0x7d15405140 read=1 rev=ml554
+[store-undecoded] #1 rev=ml350 insn=0xd4200000 pc=0x15ffec318 addr=0x15ffec318 rw_addr=0x7017fec318 — alias OK, ADD THIS ENCODING to the case-4 emulator
+04c4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=10270
+[Wine child thread] child exited with code -2147483645
+[store-undecoded] #2 rev=ml350 insn=0xb8e50305 pc=0x167503b38 addr=0x7902e11004 rw_addr=0x7006711004 — alias OK, ADD THIS ENCODING to the case-4 emulator
+[store-undecoded] #3 rev=ml350 insn=0xb8e50305 pc=0x167503b38 addr=0x7902e11004 rw_addr=0x7006711004 — alias OK, ADD THIS ENCODING to the case-4 emulator
+01a8:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" cmdline=L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"...
+01a8:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"... (fd=1335, unixdir=912, dup_unixdir=1339) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[wow-stack-free] #6 the dead thread 04c8's 32-bit stack (guest 0x26e00000) is in window 0x7900000000 (live), the thread freeing its TEB is in window 0x7300000000: the old address 0x7326e00000 is not a live view -> released at the old address (as before) rev=ajan11
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+ml985: map_image_view size=0x9f84000 base=0x756c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7500110000..0x75ffff0000
+D 508 Load module libcef.dll (libcef.dll-84b598e2350c977e): 756C7B0000
+[int3-guest] guest_rip=0x6de800e2 x28=0x7e60405140 read=1 rev=ml554
+[store-undecoded] #4 rev=ml350 insn=0xd4200000 pc=0x15ffec318 addr=0x15ffec318 rw_addr=0x7017fec318 — alias OK, ADD THIS ENCODING to the case-4 emulator
+0508:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=11489
+[Wine child thread] child exited with code -2147483645
+01a8:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" cmdline=L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"...
+01a8:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"... (fd=1696, unixdir=1707, dup_unixdir=1766) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x150c3c000)
+[int3-guest] guest_rip=0x6de800e2 x28=0x7dbe405140 read=1 rev=ml554
+[store-undecoded] #5 rev=ml350 insn=0xd4200000 pc=0x15ffec318 addr=0x15ffec318 rw_addr=0x7017fec318 — alias OK, ADD THIS ENCODING to the case-4 emulator
+0570:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=12649
+[Wine child thread] child exited with code -2147483645
+[free-delay] #1024 release of 0x7317ac0000+0x110000 held for 2000 ms (121 in flight)
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[int3-guest] guest_rip=0x6de800e2 x28=0x7dea405140 read=1 rev=ml554
+[store-undecoded] #6 rev=ml350 insn=0xd4200000 pc=0x15ffec318 addr=0x15ffec318 rw_addr=0x7017fec318 — alias OK, ADD THIS ENCODING to the case-4 emulator
+05a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=13493
+[Wine child thread] child exited with code -2147483645
+ml985: map_image_view size=0x9f84000 base=0x766c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7600110000..0x76ffff0000
+D 5E0 Load module libcef.dll (libcef.dll-84b598e2350c977e): 766C7B0000
+[av-detail] ml613 #19 p0=WRITE p1=0x76761f7024 hostpc=0x1635d74dc hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[av-detail] ml613 #20 p0=WRITE p1=0x76761f7024 hostpc=0x1635d74dc hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[int3-guest] guest_rip=0x6de800e2 x28=0x7c55405140 read=1 rev=ml554
+[store-undecoded] #7 rev=ml350 insn=0xd4200000 pc=0x15ffec318 addr=0x15ffec318 rw_addr=0x7017fec318 — alias OK, ADD THIS ENCODING to the case-4 emulator
+05e0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=14389
+[Wine child thread] child exited with code -2147483645
+[22:12:40.685] [INFO] detach-wait: presents=9 running=1 elapsed=30s
+[freeze] alive t+30s beats=1 gaps=0 iter=119 gen=1 threads=145 resident=3525MB dbg=DEBUGGED rev=ml525
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+ml985: map_image_view size=0x9f84000 base=0x756c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7500110000..0x75ffff0000
+D 610 Load module libcef.dll (libcef.dll-84b598e2350c977e): 756C7B0000
+[av-detail] ml613 #21 p0=WRITE p1=0x75761f7024 hostpc=0x1635d74dc hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[av-detail] ml613 #22 p0=WRITE p1=0x75761f7024 hostpc=0x1635d74dc hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[footprint] rev=ml1060 fast phys=4109 MB compressed=640 MB
+[int3-guest] guest_rip=0x6de800e2 x28=0x7f1b405140 read=1 rev=ml554
+[store-undecoded] #8 rev=ml350 insn=0xd4200000 pc=0x15ffec318 addr=0x15ffec318 rw_addr=0x7017fec318 — alias OK, ADD THIS ENCODING to the case-4 emulator
+0610:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=15179
+[Wine child thread] child exited with code -2147483645
+[wow-stack-free] #7 the dead thread 05d8's 32-bit stack (guest 0x11400000) is in window 0x7300000000 (live), the thread freeing its TEB is in window 0x7900000000: the old address 0x7911400000 is not a live view -> released at the old address (as before) rev=ajan11
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+ 39.891s rev=ml526
+[wow-window] reserved B=0x7600000000..0x7700000000 (slot 5) guard=borrowed
+ml985: map_image_view size=0x9f84000 base=0x766c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7600110000..0x76ffff0000
+D 640 Load module libcef.dll (libcef.dll-84b598e2350c977e): 766C7B0000
+[av-detail] ml613 #23 p0=WRITE p1=0x76761f7024 hostpc=0x1635d734c hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[av-detail] ml613 #24 p0=WRITE p1=0x76761f7024 hostpc=0x1635d734c hinsn=0x889fff0a rcx=0x0 r8=0x0 [rcx+8]=<unreadable>0x0 p1_is_rcx8=0 | carve=idx=3 base=0x162ffc000 size=0x1000000 state=live p1_in_carve=0 regs=0 rev=ml613
+[int3-guest] guest_rip=0x6de800e2 x28=0x7cdf405140 read=1 rev=ml554
+0640:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=15982
+[Wine child thread] child exited with code -2147483645
+[footprint] rev=ml1060 fast phys=4221 MB compressed=616 MB
+[wow-stack-free] #8 the dead thread 01d0's 32-bit stack (guest 0x1aa10000) is in window 0x7900000000 (live), the thread freeing its TEB is in window 0x7700000000: the old address 0x771aa10000 is not a live view -> released at the old address (as before) rev=ajan11
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+ 44.889s rev=ml526
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[wow-window] reserved B=0x7500000000..0x7600000000 (slot 6) guard=borrowed
+[copy-verify] win32u.dll: OK, 9 .text pages executable (copy @0x1524d8000)
+ml985: map_image_view size=0x9f84000 base=0x756c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7500110000..0x75ffff0000
+D 670 Load module libcef.dll (libcef.dll-84b598e2350c977e): 756C7B0000
+[int3-guest] guest_rip=0x6de800e2 x28=0x7d85405140 read=1 rev=ml554
+0670:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=16800
+[Wine child thread] child exited with code -2147483645
+[footprint] rev=ml1060 fast phys=4354 MB compressed=612 MB
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+ 49.890s rev=ml526
+[wow-window] reserved B=0x7600000000..0x7700000000 (slot 5) guard=borrowed
+ml985: map_image_view size=0x9f84000 base=0x766c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7600110000..0x76ffff0000
+D 6A0 Load module libcef.dll (libcef.dll-84b598e2350c977e): 766C7B0000
+06a0:err:module:load_dll [dll-missing] rev=ml336 #2 L"C:\\windows\\syswow64\\mfperfhelper.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml1060 fast phys=4424 MB compressed=610 MB
+[int3-guest] guest_rip=0x6de800e2 x28=0x7d75405140 read=1 rev=ml554
+06a0:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=17586
+[Wine child thread] child exited with code -2147483645
+[footprint] rev=ml1060 fast phys=4482 MB compressed=610 MB
+01a8:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" cmdline=L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"...
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+ 54.890s rev=ml526
+01a8:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"... (fd=721, unixdir=858, dup_unixdir=862) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[wow-window] B=0x7600000000 REJECTED: the slot is still held by an exited process whose teardown did not complete
+[wow-window] reserved B=0x7500000000..0x7600000000 (slot 6) guard=borrowed
+06d4:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+06d4:err:wow:load_cpu_dll CPU backend wow64cpu.dll not available, falling back to the platform default xtajit.dll
+ml985: map_image_view size=0x9f84000 base=0x756c7b0000 info_base=0x10000000 map_addr=0x6c7b0000 flags=0x4 charact=0x2122 limits=0x7500110000..0x75ffff0000
+D 6D4 Load module libcef.dll (libcef.dll-84b598e2350c977e): 756C7B0000
+D 6D4 Load module rtworkq.dll (rtworkq.dll-2285c1946427fece): 756A7B0000
+D 6D4 Load module msmpeg2vdec.dll (msmpeg2vdec.dll-f192bc2bc8edb137): 756A780000
+06d4:err:module:load_dll [dll-missing] rev=ml336 #1 L"C:\\windows\\syswow64\\Msmpeg2adec.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+D 6D4 Load module MSAudDecMFT.dll (msauddecmft.dll-aaa85422a9b450e5): 75696B0000
+D 6D4 Load module Mfreadwrite.dll (mfreadwrite.dll-ba29d9fb7c868b67): 7569670000
+D 6D4 Load module mfmp4srcsnk.dll (mfmp4srcsnk.dll-10cc9746fe3ec993): 7569640000
+D 6D4 Load module winedmo.dll (winedmo.dll-be7660c7e2b9d9e3): 7569620000
+06d4:err:module:load_dll [dll-missing] rev=ml336 #2 L"C:\\windows\\syswow64\\mfperfhelper.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+[footprint] rev=ml1060 fast phys=4612 MB compressed=606 MB
+[int3-guest] guest_rip=0x6de800e2 x28=0x7dcb405140 read=1 rev=ml554
+06d4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0x80000003) syscalls=0 unix_calls=18397
+[Wine child thread] child exited with code -2147483645
+01a8:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" cmdline=L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"...
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+ 59.890s rev=ml526
+01a8:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"... (fd=858, unixdir=859, dup_unixdir=867) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[Wine child thread] calling wine_ios_child_main...
+[wow-window] reserved B=0x7600000000..0x7700000000 (slot 5) guard=borrowed
+[nls-getptr] type=11 id=1252 peb=0x7600310000
+[nls-getptr] type=11 id=437 peb=0x7600310000
+0704:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+0704:err:wow:load_cpu_dll CPU backend wow64cpu.dll not available, falling back to the platform default xtajit.dll
+[nls-getptr] type=11 id=20127 peb=0x7600310000
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x10000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1920 maxgap=0x1000000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x10000000 (align 0x10000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0x1000000 over 158 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #3 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0704 size=0x10000000 type=0x2000 prot=0x1 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x10000]} hits=1 rev=ajan5-rockstar
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x1000000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1937 maxgap=0x810000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x1000000 (align 0x1000000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0x1000000 over 158 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #4 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0704 size=0x1000000 type=0x2000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x1000000]} hits=1 rev=ajan5-rockstar
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x1000000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1937 maxgap=0x810000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x1000000 (align 0x1000000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0x1000000 over 158 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #5 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0704 size=0x1000000 type=0x2000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x1000000]} hits=2 rev=ajan5-rockstar
+0704:err:seh:NtRaiseException Unhandled exception code c000001d flags 0 addr 0x71ef9e6b2c
+0704:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc000001d) syscalls=0 unix_calls=18577
+[Wine ntdll/server] process_exit_wrapper(-1073741795): closing child fd_socket=863
+[wow-window] slot 5 B=0x7600000000 released (owner peb=0x7600310000 exited); torn down when the next 32-bit process starts
+[Wine ntdll/server] process_exit_wrapper(-1073741795)
+[Wine child thread] child exited with code -1073741795
+[footprint] rev=ml358 phys=4422 MB (peak 4614) internal=3772 MB compressed=603 MB external=257 MB reusable=0 MB (cycle=30)
+01a8:err:process:NtCreateUserProcess NtCreateUserProcess: image=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" cmdline=L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"...
+[phase] spawn:L"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe" t+ 60.067s rev=ml526
+01a8:err:process:spawn_process spawn_process: creating child thread for L"\"C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\" --type=renderer --log-severity=error --user-agent-product=\"Battle.net/2.53.6.17952 (retail) Chrome/108.0.5359.125\" --disable-spell-checking --uncaught-exception-stack-size=10 --user-data-dir=\"C:\\users\\<user>\\AppData\\Local\\CEF"... (fd=861, unixdir=863, dup_unixdir=1209) cwd=L"C:\\Program Files (x86)\\Battle.net\\Battle.net.17952\\"
+[Wine child thread] calling wine_ios_child_main...
+[win-name] #265 hwnd=0xd00f0 class='' text="Chrome Legacy Window" rev=ml853
+[win-name] #266 hwnd=0xd00f0 class='' text="Chrome Legacy Window" rev=ml853
+[win-name] #267 hwnd=0xd00f0 class='' text="Chrome Legacy Window" rev=ml853
+[win-name] #268 hwnd=0xd00f0 class='' text="Chrome Legacy Window" rev=ml853
+[freeze] alive t+60s beats=2 gaps=0 iter=238 gen=1 threads=144 resident=4029MB dbg=DEBUGGED rev=ml525
+[22:13:10.770] [INFO] detach-wait: presents=22 running=1 elapsed=60s
+[footprint] rev=ml358 phys=4396 MB (peak 4614) internal=3772 MB compressed=603 MB external=257 MB reusable=0 MB (cycle=31)
+[wow-window] reserved B=0x7600000000..0x7700000000 (slot 5) guard=borrowed
+[wow-window] slot 5 B=0x7600000000 bound to peb=0x7600310000
+[nls-getptr] type=11 id=1252 peb=0x7600310000
+[nls-getptr] type=11 id=437 peb=0x7600310000
+070c:err:module:load_dll [dll-missing] rev=ml336 #1 L"\\??\\C:\\windows\\system32\\wow64cpu.dll" status=c0000135 -- if the webhelper dies right after this, it is the delay-load Chromium kills the process over
+070c:err:wow:load_cpu_dll CPU backend wow64cpu.dll not available, falling back to the platform default xtajit.dll
+[nls-getptr] type=11 id=20127 peb=0x7600310000
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x10000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1923 maxgap=0x7f0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x10000000 (align 0x10000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0xff0000 over 156 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #6 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=070c size=0x10000000 type=0x2000 prot=0x1 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x10000]} hits=2 rev=ajan5-rockstar
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x1000000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1940 maxgap=0x20000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x1000000 (align 0x1000000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0xff0000 over 155 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #7 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=070c size=0x1000000 type=0x2000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x1000000]} hits=3 rev=ajan5-rockstar
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x1000000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1940 maxgap=0x20000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x1000000 (align 0x1000000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0xff0000 over 155 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #8 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=070c size=0x1000000 type=0x2000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x1000000]} hits=4 rev=ajan5-rockstar
+070c:err:seh:NtRaiseException Unhandled exception code c000001d flags 0 addr 0x71ef176b2c
+070c:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc000001d) syscalls=0 unix_calls=18742
+[Wine ntdll/server] process_exit_wrapper(-1073741795): closing child fd_socket=1202
+[wow-window] slot 5 B=0x7600000000 released (owner peb=0x7600310000 exited); torn down when the next 32-bit process starts
+[Wine ntdll/server] process_exit_wrapper(-1073741795)
+[Wine child thread] child exited with code -1073741795
+[win-name] #269 hwnd=0x200d2 class='' text="Battle.net Login" rev=ml853
+[footprint] rev=ml358 phys=4230 MB (peak 4614) internal=3584 MB compressed=599 MB external=260 MB reusable=0 MB (cycle=32)
+[footprint] rev=ml358 phys=4201 MB (peak 4614) internal=3583 MB compressed=599 MB external=260 MB reusable=0 MB (cycle=33)
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1941 maxgap=0x7f0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x1000000 (align 0x10000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0xff0000 over 156 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #9 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0188 size=0x1000000 type=0x3000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x0]} hits=1 rev=ajan5-rockstar
+[fault_rip] cnt=45 rip=0x0 pc=0x14ee0c564 addr=0x800000 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x1023a8000+0x230c000 rev=ml555
+[fault_rip] cnt=46 rip=0x0 pc=0x14ee0c564 addr=0x800000 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x1023a8000+0x230c000 rev=ml555
+0188:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x71f99e7564
+0188:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=18819
+[Wine ntdll/server] process_exit_wrapper(-1073741819): closing child fd_socket=183
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1941 maxgap=0x7f0000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[va-scan] window room 0x7c00000000..0x8000000000 for 0x1000000 (align 0x10000): the free-range table holds 0 range(s) that fit (first 0x0), largest free 0xff0000 over 156 range(s); reserved area at the start: yes [0x7c00000000+0x400000000 fex_only=1] -- fit 0: the search found nothing; fit > 0: MAP_FIXED was refused rev=ajan5-motor
+[nt-fail] #10 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=01fc size=0x1000000 type=0x3000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x0]} hits=2 rev=ajan5-rockstar
+[wow-window] slot 0 B=0x7900000000 released (owner peb=0x7900310000 exited); torn down when the next 32-bit process starts
+[Wine ntdll/server] process_exit_wrapper(-1073741819)
+[win-name] #284 hwnd=0x10020 class='' text="shell - Wine Desktop" rev=ml853
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x1000000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1944 maxgap=0x800000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[fault_rip] cnt=47 rip=0x0 pc=0x14c27f984 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1945 maxgap=0x800000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[nt-fail] #11 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=0240 size=0x1000000 type=0x3000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x0]} hits=3 rev=ajan5-rockstar
+[fault_rip] cnt=48 rip=0x0 pc=0x14c27f984 addr=0x0 kr=1(INVALID_ADDRESS) entryprot=-1 nowprot=-1 region=0x0+0x0  <== UNMAPPED AT ENTRY (wild pointer) rev=ml555
+[fault_rip] cnt=49 rip=0x0 pc=0x14c264564 addr=0x800000 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x1023a8000+0x230c000 rev=ml555
+[fault_rip] cnt=50 rip=0x0 pc=0x14c264564 addr=0x800000 kr=1(INVALID_ADDRESS) entryprot=5 nowprot=5 region=0x1023a8000+0x230c000 rev=ml555
+0710:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x71f6062984
+0710:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=18859
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1945 maxgap=0x800000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+[nt-fail] #12 NtAllocateVirtualMemoryEx status=c0000017 proc=battle.net.exe tid=02a4 size=0x1000000 type=0x3000 prot=0x4 hint=0x0 zb=0x0 ext={addr[low=0x7c00000000 high=0x7fffffffff align=0x0]} hits=4 rev=ajan5-rockstar
+[Wine ntdll/server] process_exit_wrapper(-1073741819): closing child fd_socket=877
+[va-scan] FAILED window=0x7c00000000..0x8000000000 size=0x1000000 align=0x10000 bottom-up tries=0 skips=0 | seen=0x7c00001000..0x8000000000 views=1945 maxgap=0x800000 tailgap=0x0 stop=gaps-exhausted(bottom-up) | firstfail=0x0 errno=0(-)   <-- STATUS_NO_MEMORY (callers see a NULL alloc)
+02a4:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x71f68b7564
+02a4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=18862
+01b4:err:seh:NtRaiseException Unhandled exception code c0000005 flags 0 addr 0x71f68b7564
+01b4:err:process:NtTerminateProcess NtTerminateProcess(handle=0xffffffffffffffff, exit_code=0xc0000005) syscalls=0 unix_calls=18863
+[Wine ntdll/server] process_exit_wrapper(-1073741819): closing child fd_socket=810
+[wow-window] slot 3 B=0x7800000000 released (owner peb=0x7800310000 exited); torn down when the next 32-bit process starts
+[Wine ntdll/server] process_exit_wrapper(-1073741819)
+[wow-window] slot 1 B=0x7200000000 released (owner peb=0x7200310000 exited); torn down when the next 32-bit process starts
+[Wine ntdll/server] process_exit_wrapper(-1073741819)
+[footprint] rev=ml358 phys=4199 MB (peak 4614) internal=3583 MB compressed=597 MB external=260 MB reusable=0 MB (cycle=34)
+[footprint] rev=ml358 phys=4198 MB (peak 4614) internal=3582 MB compressed=597 MB external=260 MB reusable=0 MB (cycle=35)

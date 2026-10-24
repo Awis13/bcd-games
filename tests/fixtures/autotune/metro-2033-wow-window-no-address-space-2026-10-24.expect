@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "wow-window-no-address-space"
+ ],
+ "next": [],
+ "note": "Round tur600 (ajan36): Metro 2033 (Steam 43110, Metro2033.exe, a 32-bit program), Dock, build 592, iPad13,8 on a 454 GB map with a 7-day profile and no memory entitlements (8ZHPR2; ZSQP7H is the same tester's start half an hour earlier, cut at 40 s with Steam's error box on screen): CoreAnimation's range and the 4 GB FEX arena leave 1827 MB free, the 32-bit program was refused its window and Steam's launch failed (client error 46, host result 45). MADEIRA_WOW_MIN_FREE_GB=0 was set by the tester and changed nothing. No setting changes it, so auto-tune stops at once and says why.",
+ "outcome": "exited-early",
+ "stage": 3,
+ "status": "known"
+}

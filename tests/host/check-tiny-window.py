@@ -120,7 +120,7 @@ assert 'ConfigOption(key: "env.MADEIRA_TINY_WINDOW_FIX", title: "Size a tiny gam
 gen = (root / "build/tools/gen-config-catalog.py").read_text()
 assert '"env.MADEIRA_TINY_WINDOW_FIX": {"category": "Windows, display & input"' in gen and '"sources": ["build/win32u-unix/driver_ios.c"]' in gen
 policy = (root / "app/Madeira/GameRecommendationsList.swift").read_text()
-assert '"MADEIRA_TINY_WINDOW_FIX"' in policy and 'case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX":' in policy
+assert '"MADEIRA_TINY_WINDOW_FIX"' in policy and 'case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX"' in policy  # more 0/1 names may follow (2026-10-24)
 bridge = (root / "app/Madeira/WineProcessBridge.m").read_text()
 assert 'unsetenv("MADEIRA_TINY_WINDOW_FIX");' in bridge
 

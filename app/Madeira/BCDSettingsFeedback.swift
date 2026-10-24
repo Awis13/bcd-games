@@ -205,6 +205,7 @@ struct BCDFeedbackSettings<Backend: BCDFeedbackBackend>: View {
             counterRow
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
+        .bcdKeyboardDone { typing = false }
     }
 
     private var counterRow: some View {

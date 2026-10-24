@@ -2369,6 +2369,19 @@ static void ios_cxx_throw_diag( const EXCEPTION_RECORD *rec )
     ERR_(seh)( "[cxx-type]   exception parameters (%u): p0=%#lx p1=%#lx p2=%#lx p3=%#lx\n", (unsigned)rec->NumberParameters,
                (unsigned long)rec->ExceptionInformation[0], (unsigned long)rec->ExceptionInformation[1],
                (unsigned long)rec->ExceptionInformation[2], (unsigned long)(rec->NumberParameters > 3 ? rec->ExceptionInformation[3] : 0) );
+    /* madeira-bcd (lead, 2026-10-23): the HRESULT an ATL or COM exception carries, read from the thrown object. The EA app's installer
+     * (build 593, C7-2F79) dies on an uncaught ATL::CAtlException right after its telemetry step, and the log could not say which call
+     * failed. CAtlException is { HRESULT m_hr; }; _com_error is { vtable; HRESULT m_hresult; ... }. Log only. */
+    {
+        ULONG hr = 0;
+        ULONG_PTR obj = rec->ExceptionInformation[1];
+        int ptr = is64 ? 8 : 4;
+
+        if (strstr( first, "CAtlException@ATL" ) && ios_cxx_read( obj, &hr, 4, guest32 ))
+            ERR_(seh)( "[cxx-type]   ATL::CAtlException hr=%#lx\n", (unsigned long)hr );
+        else if (strstr( first, "_com_error@@" ) && ios_cxx_read( obj + ptr, &hr, 4, guest32 ))
+            ERR_(seh)( "[cxx-type]   _com_error hr=%#lx\n", (unsigned long)hr );
+    }
 }
 
 #endif

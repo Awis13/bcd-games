@@ -1,0 +1,14 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "unity-gc-stopped-thread-context"
+ ],
+ "next": [
+  "env.MADEIRA_CTX_FRAME = 1"
+ ],
+ "note": "Round 2026-10-24 (ajan22/loglar): No Rest for the Wicked (Unity IL2CPP, Dock), build 592: plays 139 s, then the object-header stop ([badrip]) 94 lines after the garbage collector's third stop-the-world (NtGetContextThread on its stopped threads, every answer a Mach-O state). env.MADEIRA_CTX_FRAME = 1 reports a parked thread by its saved call frame (an attempt, never run on a device).",
+ "outcome": "crashed",
+ "stage": 5,
+ "status": "trying"
+}

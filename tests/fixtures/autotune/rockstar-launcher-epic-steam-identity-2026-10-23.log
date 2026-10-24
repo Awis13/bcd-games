@@ -1,0 +1,198 @@
+[12:35:00.712] [INFO] [recs] in use: downloaded list v7 (2026-10-23), 78 rules, build 592
+[12:35:00.736] [INFO] [epic-install] start installed=1 refused=0
+[12:35:00.737] [INFO] [epic-launch] leftovers removed files=1
+[12:35:00.802] [INFO] [xinput] ml1920 physical controllers enabled=1
+[12:35:00.802] [INFO] [touch-xinput] ml1930 enabled=1
+[12:35:00.803] [INFO] [controllers] hub started: 0 connected, XInput on, keys and mouse off
+[12:35:00.809] [INFO] [steam-library] start signed-in=1 cached=82
+[12:35:00.833] [INFO] [bcd-ui] shown games=84 downloads=0
+[12:35:00.834] [INFO] CS_DEBUGGED flag: NOT SET (flags=0x22003305)
+[12:35:00.834] [INFO] SIGTRAP handler installed (no debugger)
+[12:35:00.834] [INFO] Checking entitlements...
+[12:35:00.834] [DBG]   allow-jit: false (macOS-only, inert on iOS)
+[12:35:00.834] [OK]   increased-memory-limit: true
+[12:35:00.834] [DBG]   extended-virtual-addressing: false
+[12:35:00.834] [DBG]   increased-debugging-memory-limit: false
+[12:35:00.834] [INFO] [build] v0.1.592 (592)
+[12:35:00.835] [INFO] [device] model=iPhone18,2 idiom=phone os=iOS Version 27.2 (Build 24B5099f) ram=11695MB available=8155MB cores=6
+[12:35:00.835] [INFO] [device] address-map=[0x102de8000,0x8000000000) 512GB increased-memory=1 extended-va=0
+[12:35:00.836] [INFO] [device] signing: cs-flags=0x22003305 get-task-allow=1 cs-debugged=0 debugger-attached=0 traced=0 profile=development lifetime=7d left=6d profile-get-task-allow=1 profile-increased-memory=1 profile-extended-va=0
+[12:35:00.836] [INFO] [jit-nodebug] debugger-less JIT pool: not here (iOS 27: every device is a TXM device); env.MADEIRA_JIT_NO_DEBUGGER_POOL=1
+[12:35:00.845] [INFO] [device] settings: low-power=0 thermal=nominal screen=1320x2868@3.0x max-fps=120 utc-offset=-04:00 free-disk=7GB stikdebug-url=0
+[12:35:00.848] [INFO] [device] gpu="Apple A19 Pro GPU" family=apple10 argument-buffers=tier2 mesh=1 bc=1 atomics64=1 cpu-lse=1 cpu-lrcpc=1 direct3d=ok x64=ok
+[12:35:00.914] [INFO] [steam-games] installed=0 ready=0
+[12:35:00.918] [INFO] MetalLayer: displaySyncEnabled=false (private API, MeloNX pattern)
+[12:35:00.937] [INFO] [gog-library] start signed-in=0 cached=0 installed=0
+[12:35:00.938] [INFO] [epic-auth] start signed-in=1
+[12:35:00.939] [INFO] [epic-library] start cached=73 listed=70
+[12:35:01.106] [INFO] [epic-auth] verify status=200 ms=166
+[12:35:01.870] [INFO] [steam-playtime] apps=61
+[12:35:01.871] [INFO] [steam-cloud] sync games=0 automatic=1
+[12:35:17.150] [INFO] [autotune] Grand Theft Auto V: inconclusive at stage 5 after 422 s; matched ; status known; next nothing; kept env.MADEIRA_GDI_SHARED_SECTION = 1, env.MADEIRA_X64_IMAGE_NOCOPY = 1
+[12:35:23.749] [INFO] [bcd-logs] sent bcd-log.prev.txt: code VX8ZZ0
+[12:35:32.462] [INFO] [recs] up to date: online v7, in use downloaded v7
+[12:35:33.027] [INFO] [recs] up to date: online v7, in use downloaded v7
+[12:35:35.633] [INFO] [epic-launch] play app=9d..82 arguments=epic deployment=0
+[12:35:35.635] [INFO] [jit-on-play] JIT is not on: enabling it, then starting the game
+[12:35:35.636] [INFO] Requesting JIT with Built-in StikJIT...
+[12:35:35.662] [INFO] [jit-loopback] reachable in 1 ms (vpn-interface=1, connected via utun4 <ip>)
+[12:35:35.717] [INFO] [jit-helper] enable: started com.thebcd69.bcd.C69ZTGM2D8.JITHelper as pid 899
+[12:35:37.009] [OK] JIT enabled and debugger attached.
+[12:35:37.010] [OK] JIT enabled! Debugger attached.
+[12:35:37.011] [INFO] [jit-on-play] JIT is on: starting the game
+[12:35:37.017] [INFO] [epic-launch] signing in app=9d..82 ownership=0
+[12:35:37.107] [INFO] [epic-launch] code status=200 ms=45
+[12:35:37.107] [INFO] [epic-launch] signed in app=9d..82 ownership=0
+[12:35:37.118] [INFO] [epic-launch] start app=9d..82 signed-in=1 ovt=0 deployment=0 host=1 tree=1 services=0 desktop=0 arguments=epic
+[12:35:37.121] [INFO] [autotune] Grand Theft Auto V: this session adds env.MADEIRA_GDI_SHARED_SECTION = 1; env.MADEIRA_X64_IMAGE_NOCOPY = 1
+[12:35:37.122] [INFO] [bcd] library launch PlayGTAV.exe: avx=0 wine-vcrt=0 nvidia=0 game-config=1 metalfx=off
+[12:35:37.123] [INFO] Session log: logs/PlayGTAV.exe-2026-10-23_12-35-37.txt
+[12:35:37.127] [INFO] [bcd-ui] in-game=1
+[12:35:37.132] [INFO] CS_DEBUGGED flag: SET (flags=0x32003005)
+[12:35:37.132] [INFO] [steam-depot] paused for a game session count=0
+[12:35:37.133] [INFO] [hid-pad] ml2100 session mode=xinput source=default
+[12:35:37.133] [INFO] [hidpad-out] ml2106 session env.MADEIRA_PAD_OUTPUT=1 xinput-rumble=1 dualsense-output=0
+[12:35:37.133] [INFO] bcd.cfg: env.MADEIRA_JIT_SHORTCUT=1
+[12:35:37.133] [INFO] Running full Wine sequence...
+[12:35:37.134] [INFO] [device] launch: cs-flags=0x32003005 get-task-allow=1 cs-debugged=1 debugger-attached=1 traced=1 address-map=[0x102de8000,0x8000000000) 512GB available=8153MB low-power=0 thermal=nominal
+[12:35:37.134] [INFO] [game-cfg] env.MADEIRA_EC_HOOK_TRACE=0 env.MADEIRA_GDI_SHARED_SECTION=1 env.MADEIRA_X64_IMAGE_NOCOPY=1
+[12:35:37.135] [INFO] [display-shape] resolution=1408x648 mode=fit
+[12:35:37.135] [INFO] [launch-route] library profile applied
+[12:35:37.135] [INFO] [msiexec64] Epic game: msiexec in system32 for this session
+[12:35:37.136] [INFO] Allocating 896MB JIT pool (BRK will suspend process)...
+[12:35:37.137] [INFO] Allocating 896MB JIT pool via debugger...
+[12:35:37.137] [INFO] [jit-pool] path: debugger (attached at the pool request; it makes every region)
+[12:35:37.137] [INFO] [jit-debugger] attached=1 at the pool request
+[12:35:37.137] [INFO] JIT-pool frontier already at 0x125400000 — no pin needed
+[12:35:37.137] [OK] ml1040: executable window [0x140000000,+128MB) held since image load
+[12:35:37.138] [INFO] ml1040: released the early pool placeholder 0x148000000+576MB for the debugger
+[12:35:37.138] [INFO] ml1135: the placeholder ended at the mapping 0x16cf18000+0MB (VM tag 30, prot 0), already there at image load
+[12:35:37.138] [INFO] ml1036: free holes >=64MB in [0x119000000,0x7000000000) with the window held: 0x127800000+392MB 0x148000000+591MB 0x16d590000+298MB
+[12:35:37.139] [ERR] ml1036: no hole fits a 896MB pool — SHRINKING to 576MB (the alternative is a pool in the guest window or on top of 0x140000000, both of which are fatal)
+[12:35:37.858] [INFO] RX pool at 0x148000000
+[12:35:37.864] [OK] ml977: RX=[0x148000000,0x16c000000) RW=[0x7000000000,0x7024000000) offset=0x6eb8000000 windowHeld=true rwOverlap=false
+[12:35:37.866] [INFO] RW mapping at 0x7000000000
+[12:35:37.866] [INFO] [no-footprint] pool-RW-alias: [plain/TASK_NULL] entry covers only 16384 of 603979776 bytes (partial)
+[12:35:37.866] [INFO] [no-footprint] pool-RW-alias: [plain/TASK_NULL] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[12:35:37.866] [INFO] [no-footprint] pool-RW-alias: [plain/self] entry covers only 16384 of 603979776 bytes (partial)
+[12:35:37.866] [INFO] [no-footprint] pool-RW-alias: [plain/self] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[12:35:37.868] [INFO] [touch] layout="PC keyboard" kind=keys keys-path=off pad=n/a controls=14
+[12:35:37.868] [INFO] [touch-xinput] connected=0 accepting=0 controls=0
+[12:35:37.869] [INFO] [no-footprint] pool-RW-alias: [share/self] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[12:35:37.872] [INFO] [no-footprint] pool-RW-alias: [share/TASK_NULL] ownership failed kr=4 ((os/kern) invalid argument) rev=ml458
+[12:35:37.872] [INFO] [no-footprint] pool-RW-alias: ALL 4 variants refused — pool stays jetsam-counted rev=ml458
+[12:35:37.872] [ERR] [no-footprint] pool applied=false
+[12:35:37.872] [OK] JIT pool ready (debugger still attached).
+[12:35:37.872] [INFO] BRK suspension lasted 0.74s
+[12:35:37.873] [DBG] madeira-d3d12: gate off (bcd.cfg d3d12 unset)
+[12:35:37.874] [OK] JIT pool: RX=0x148000000, RW=0x7000000000, size=576MB
+[12:35:37.874] [INFO] Detaching debugger...
+[12:35:37.878] [OK] Debugger detached.
+[12:35:37.880] [OK] [early-detach] rev=ml524 took 6 ms
+[12:35:37.886] [OK] MetalLayer registered with DXMT shim (window-hosted singleton)
+[12:35:37.889] [INFO] [jit-helper] enable: finished success=1
+[12:35:37.889] [INFO] Starting wineserver...
+[12:35:37.889] [OK] [jit-built-in] BCD detached cleanly from its built-in JIT helper.
+[12:35:37.889] [INFO] Wine prefix: <container>/Documents/wine
+[12:35:37.889] [wineserver-bridge] ws_log test - log file set up OK
+[12:35:37.889] [Wine] Wineserver thread started
+[12:35:37.890] [Wine] WINEPREFIX=<container>/Documents/wine
+[12:35:37.890] [OK] Wineserver thread launched successfully
+[phase] wineserver-up          t+  0.754s rev=ml526
+[12:35:37.890] [Wine] NLS dir=/private/var/containers/Bundle/Application/<uuid>/App.app/nls
+[12:35:37.890] [Wine] Calling wineserver_main...
+[12:35:37.890] [wineserver] starting init...
+[12:35:37.890] [wineserver] master_socket_timeout set to INFINITE (9223372036854775807)
+[12:35:37.890] [wineserver] init_limits...
+[12:35:37.890] [wineserver] sock_init...
+[12:35:37.890] [wineserver] open_master_socket...
+[12:35:37.890] [wineserver] acquire_lock: listening on fd=21 (NONBLOCK), server_dir=<container>/Documents/wine/.wineserver/server-100000c-2a40436
+[madsync] ml1058 in-process synchronisation disabled (bcd.cfg inproc-sync = 1 enables; fastsync is the default)
+[madsync] config inproc-sync=unset cfg=present dir=env (MADEIRA_CFG_EARLY_DOCS=0 restores the old lookup)
+[12:35:37.891] [wineserver-fd] init_epoll: SKIPPING kqueue on iOS, using poll()
+[12:35:37.891] [wineserver-fd] add_poll_user: user=0 unix_fd=-1 active_users=1
+[12:35:37.891] [wineserver] acquire_lock: master_socket->fd unix_fd=21
+[12:35:37.891] [wineserver] init_signals...
+[12:35:37.891] [wineserver-fd] add_poll_user: user=1 unix_fd=-1 active_users=2
+[12:35:37.891] [wineserver-fd] add_poll_user: user=2 unix_fd=-1 active_users=3
+[12:35:37.891] [wineserver-fd] add_poll_user: user=3 unix_fd=-1 active_users=4
+[12:35:37.891] [wineserver-fd] add_poll_user: user=4 unix_fd=-1 active_users=5
+[12:35:37.891] [wineserver-fd] add_poll_user: user=5 unix_fd=-1 active_users=6
+[12:35:00.737] [INFO] [epic-launch] leftovers removed files=1
+[12:35:17.150] [INFO] [autotune] Grand Theft Auto V: inconclusive at stage 5 after 422 s; matched ; status known; next nothing; kept env.MADEIRA_GDI_SHARED_SECTION = 1, env.MADEIRA_X64_IMAGE_NOCOPY = 1
+[12:35:35.633] [INFO] [epic-launch] play app=9d..82 arguments=epic deployment=0
+[12:35:37.017] [INFO] [epic-launch] signing in app=9d..82 ownership=0
+[12:35:37.107] [INFO] [epic-launch] code status=200 ms=45
+[12:35:37.107] [INFO] [epic-launch] signed in app=9d..82 ownership=0
+[12:35:37.118] [INFO] [epic-launch] start app=9d..82 signed-in=1 ovt=0 deployment=0 host=1 tree=1 services=0 desktop=0 arguments=epic
+[12:35:37.121] [INFO] [autotune] Grand Theft Auto V: this session adds env.MADEIRA_GDI_SHARED_SECTION = 1; env.MADEIRA_X64_IMAGE_NOCOPY = 1
+[iOS env] processing: SteamAppPath=C:\Program Files\Thumper
+[iOS env] INCLUDED: SteamAppPath=C:\Program Files\Thumper
+[iOS env] processing: SteamGameId=356400
+[iOS env] INCLUDED: SteamGameId=356400
+[iOS env] processing: SteamAppId=356400
+[iOS env] INCLUDED: SteamAppId=356400
+[phase] spawn:L"C:\\Program Files\\Epic Games\\GTAV\\Redistributables\\Rockstar-Games-Launcher.exe" t+  1.258s rev=ml526
+[phase] spawn:L"C:\\Program Files\\Rockstar Games\\Launcher\\Launcher.exe" t+  1.582s rev=ml526
+[phase] spawn:L"C:\\Program Files\\Rockstar Games\\Launcher\\ThirdParty\\Crashpad\\RockstarErrorHandler.exe" t+  3.678s rev=ml526
+[phase] spawn:L"C:\\Program Files\\Rockstar Games\\Launcher\\RockstarService.exe" t+  3.792s rev=ml526
+[phase] spawn:L"C:\\Program Files\\Rockstar Games\\Launcher\\RockstarService.exe" t+  4.510s rev=ml526
+[steam-api] steam_api found no running Steam; process 0038 sees:
+[steam-api]   HKCU ActiveProcess pid: DWORD 52
+[steam-api]   HKCU ActiveProcess ActiveUser: DWORD, not zero
+[steam-api]   HKCU ActiveProcess SteamClientDll64: SZ "C:\Program Files (x86)\Steam\steamclient64.dll"
+[steam-api]   HKCU Steam SteamPath: SZ "C:\Program Files (x86)\Steam"
+[steam-api]   HKLM(32) Steam SteamPID: no value, status 0xc0000034
+[steam-api]   HKLM(32) Steam InstallPath: SZ "C:\Program Files (x86)\Steam"
+[steam-api]   HKLM(64) Steam InstallPath: SZ "C:\Program Files (x86)\Steam"
+[steam-api]   OpenProcess(52): status 0xc000000b
+[steam-api]   \BaseNamedObjects\STEAM_DIPC_CONSUME: not opened, status 0xc0000034
+[steam-api]   \BaseNamedObjects\STEAM_DIPC_PRODUCE: not opened, status 0xc0000034
+[steam-api] steam_api found no running Steam; process 0038 sees:
+[steam-api]   HKCU ActiveProcess pid: DWORD 52
+[steam-api]   HKCU ActiveProcess ActiveUser: DWORD, not zero
+[steam-api]   HKCU ActiveProcess SteamClientDll64: SZ "C:\Program Files (x86)\Steam\steamclient64.dll"
+[steam-api]   HKCU Steam SteamPath: SZ "C:\Program Files (x86)\Steam"
+[steam-api]   HKLM(32) Steam SteamPID: no value, status 0xc0000034
+[steam-api]   HKLM(32) Steam InstallPath: SZ "C:\Program Files (x86)\Steam"
+[steam-api]   HKLM(64) Steam InstallPath: SZ "C:\Program Files (x86)\Steam"
+[steam-api]   OpenProcess(52): status 0xc000000b
+[steam-api]   \BaseNamedObjects\STEAM_DIPC_CONSUME: not opened, status 0xc0000034
+[steam-api]   \BaseNamedObjects\STEAM_DIPC_PRODUCE: not opened, status 0xc0000034
+[guest-log] #6 tid=0040 [2026-10-23 16:35:42.035] [ ERROR ] [Main ] [launcher] Steam is not initialized
+[guest-log] #10 tid=0040 [2026-10-23 16:35:42.035] [ ERROR ] [Main ] [error] * Code:      113 (LAUNCHER_ERR_STEAM_FAILED)
+[phase] spawn:L"C:\\Program Files\\Rockstar Games\\Launcher\\RockstarService.exe" t+  8.294s rev=ml526
+[phase] spawn:L"C:\\Program Files\\Rockstar Games\\Launcher\\RockstarService.exe" t+ 14.986s rev=ml526
+[12:41:48.480] [INFO] Wine finished after 370.6s
+[12:41:48.745] [INFO] [epic-launch] session ended cleaned files=1
+[12:41:53.853] [INFO] [autotune] Grand Theft Auto V: quit at stage 5 after 371 s; matched ; status found; next nothing; kept env.MADEIRA_GDI_SHARED_SECTION = 1, env.MADEIRA_X64_IMAGE_NOCOPY = 1
+[xp-names] m81693 "(unnamed)"
+[xp-names] m81696 "com.apple.SwiftUI.AsyncRenderer"
+[xp] 12:44:16.045 +517.86 dt=271 cpu=45 (thr 43) P=0 E=45 run=47 pgw=0.0 GHz P=0.00 E=1.22 Minst=99 IPC=1.83 mJ=4 pin=0 rdKB=0 fpMB=1645
+[xp-t] 12:44:16.045 m75930:0/25:0.0/1.3:51 m81696:0/11:0.0/0.9:26 m81693:0/3:0.0/1.2:12 m76602:0/2:0.0/2.1:3
+[xp-api] 12:44:16.045 x64->EC 0/s FPCR-writes 0/s EC->x64 0/s | CS contended 0/s (spin0 0%) spin-won 0/s wait 0.0 ms/s [<2us 0 <10 0 <50 0 <200 0 <1ms 0 >=1ms 0]/s wakes 0/s | WaitOnAddress 0/s wake1 0/s wakeAll 0/s | SetEvent 0/s ResetEvent 0/s Pulse 0/s | wait1 0/s waitN 0/s polls 0/s (empty 0/s) | yield 0/s (slept 0/s) | delay 0/s [0 0 <1ms 0 <5ms 0 <20ms 0 >=20ms 0 inf 0] | alert wait 0/s wake 0/s
+[xp] 12:44:16.329 +518.15 dt=285 cpu=37 (thr 38) P=0 E=37 run=40 pgw=0.0 GHz P=0.00 E=1.20 Minst=89 IPC=1.99 mJ=3 pin=0 rdKB=0 fpMB=1645
+[xp-t] 12:44:16.329 m75930:0/26:0.0/1.3:55 m81693:0/6:0.0/0.9:20 m75965:0/4:0.0/0.8:11 m81696:0/2:0.0/0.9:4
+[xp] 12:44:16.615 +518.43 dt=286 cpu=258 (thr 258) P=30 E=228 run=259 pgw=0.0 GHz P=1.97 E=2.17 Minst=2077 IPC=3.75 mJ=98 pin=0 rdKB=0 fpMB=1645
+[xp-t] 12:44:16.615 m81693:0/186:0.0/2.3:1773 m75930:30/40:2.0/1.5:298
+[xp] 12:44:16.905 +518.72 dt=289 cpu=292 (thr 292) P=4 E=288 run=297 pgw=0.0 GHz P=3.88 E=2.59 Minst=3361 IPC=4.41 mJ=147 pin=0 rdKB=0 fpMB=1645
+[xp-t] 12:44:16.905 m81693:0/287:0.0/2.6:3303 m75930:4/0:4.1/0.0:47
+[xp] 12:44:17.203 +519.02 dt=299 cpu=304 (thr 303) P=4 E=299 run=306 pgw=0.0 GHz P=3.86 E=2.59 Minst=3464 IPC=4.38 mJ=152 pin=0 rdKB=0 fpMB=1646
+[xp-t] 12:44:17.203 m81693:0/298:0.0/2.6:3406 m75930:4/0:4.0/0.0:47
+[xp-api] 12:44:17.203 x64->EC 0/s FPCR-writes 0/s EC->x64 0/s | CS contended 0/s (spin0 0%) spin-won 0/s wait 0.0 ms/s [<2us 0 <10 0 <50 0 <200 0 <1ms 0 >=1ms 0]/s wakes 0/s | WaitOnAddress 0/s wake1 0/s wakeAll 0/s | SetEvent 0/s ResetEvent 0/s Pulse 0/s | wait1 0/s waitN 0/s polls 0/s (empty 0/s) | yield 0/s (slept 0/s) | delay 0/s [0 0 <1ms 0 <5ms 0 <20ms 0 >=20ms 0 inf 0] | alert wait 0/s wake 0/s
+[xp] 12:44:17.530 +519.35 dt=326 cpu=331 (thr 331) P=3 E=328 run=332 pgw=0.0 GHz P=3.95 E=2.59 Minst=3450 IPC=4.00 mJ=162 pin=0 rdKB=0 fpMB=1648
+[xp-t] 12:44:17.530 m81693:0/325:0.0/2.6:3376 m75930:3/0:4.1/0.0:47
+[xp] 12:44:17.851 +519.67 dt=322 cpu=325 (thr 325) P=4 E=321 run=328 pgw=0.0 GHz P=3.95 E=2.59 Minst=3291 IPC=3.89 mJ=162 pin=0 rdKB=0 fpMB=1651
+[xp-t] 12:44:17.851 m81693:0/320:0.0/2.6:3235 m75930:3/0:4.2/0.0:47
+[alert-ring] pos=237 (+0 since last) last8: 006c->0074 0078->006c 0070->0078 009c->0090 00a4->009c 00a0->00a4 0098->00a0 0088->0098 rev=ml439
+[waiters] parked=5 over60s=5 rev=ml444
+[waiters]  tid=00ac addr=0x14b798908 age=175s INF w0=0000002d w1=00000000
+[waiters]  tid=00a8 addr=0x14b797cc8 age=175s INF w0=0000002c w1=00000000
+[waiters]  tid=00b8 addr=0x7027f590c8 age=515s INF w0=00000014 w1=00000000
+[waiters]  tid=00b4 addr=0x7027f590c8 age=515s INF w0=00000014 w1=00000000
+[waiters]  tid=00bc addr=0x7027f590c8 age=515s INF w0=00000014 w1=00000000
+[footprint] rev=ml358 phys=1652 MB (peak 2513) internal=1643 MB compressed=0 MB external=327 MB reusable=110 MB (cycle=257)
+[xp] 12:44:18.174 +519.99 dt=323 cpu=329 (thr 329) P=7 E=322 run=329 pgw=0.0 GHz P=4.07 E=2.59 Minst=3290 IPC=3.81 mJ=172 pin=0 rdKB=0 fpMB=1658
+[xp-t] 12:44:18.174 m81693:0/320:0.0/2.6:3174 m75930:6/0:4.1/0.0:93
+7 E=322 run=329 pgw=0.0 GHz P=4.07 E=2.59 Minst=3290 IPC=3.81 mJ=172 pin=0 rdKB=0 fpMB=1658
+[12:44:18.175] [xp-t] 12:44:18.174 m81693:0/320:0.0/2.6:3174 m75930:6/0:4.1/0.0:93

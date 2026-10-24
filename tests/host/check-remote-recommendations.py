@@ -483,6 +483,13 @@ check(["MADEIRA_FAULT_GUARD_RATE", "MADEIRA_MFC_DOCK", "MADEIRA_DOCK_SCRIPT_REGI
         .allSatisfy { kind(addLine("breakneck", "env.\($0) = 2")) == .policy && kind(addLine("breakneck", "env.\($0) = on")) == .policy
                       && kind(addLine("breakneck", "env.\($0) = 1;2")) == .policy },
       "...and nothing else: not 2, not text")
+check(kind(addLine("breakneck", "env.MADEIRA_CTX_FRAME = 1")) == .ok && kind(addLine("breakneck", "env.MADEIRA_CTX_FRAME = 0")) == .ok
+      && ["2", "on", "1;2", "-1"].allSatisfy { kind(addLine("breakneck", "env.MADEIRA_CTX_FRAME = \($0)")) == .policy },
+      "the Wine server's stopped-thread context switch (build 598): 0 or 1, nothing else")
+check(["MADEIRA_NTDLL_XSEC", "MADEIRA_SHARED_SECTION_EXEC", "MADEIRA_NTDLL_DATA_SYNC_RANGE", "MADEIRA_FAULT_LOOP_GUEST_PROGRESS", "MADEIRA_D2R_PROBE_RECOVERY"]
+        .allSatisfy { name in kind(addLine("breakneck", "env.\(name) = 1")) == .ok && kind(addLine("breakneck", "env.\(name) = 0")) == .ok
+                      && ["2", "on", "1;2", "-1"].allSatisfy { v in kind(addLine("breakneck", "env.\(name) = \(v)")) == .policy } },
+      "Diablo II: Resurrected's five executable-section switches (build 598, bcd-games#4): 0 or 1, nothing else")
 check(["8", "32", "64", "512"].allSatisfy { kind(addLine("breakneck", "env.MADEIRA_USER_VA_GB = \($0)")) == .ok }
       && ["0", "7", "513", "1000", "32GB", "-32", "3.5", "0x20"].allSatisfy { kind(addLine("breakneck", "env.MADEIRA_USER_VA_GB = \($0)")) == .policy },
       "the advertised address space in whole GiB, 8 to 512 (FINAL FANTASY TACTICS)")

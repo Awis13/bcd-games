@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "framegen-interpolator-assert"
+ ],
+ "next": [],
+ "note": "GTA V Enhanced (Steam, Dock), build 592, iPhone18,3 (A19, 7.6 GB): Frame generation (experimental) and MetalFX 2x on a 2622x1206 desktop, drawable 5244x2412; after 862 \"[framegen] interpolator ready\" lines (5244x2412 and 3072x1440 alternate) Metal's assertion about mismatched source and destination texture sizes ends the process (BCD abort 0x80000101 / 47e4f9e0). Tester log S2B3GE, scrubbed.",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "known"
+}

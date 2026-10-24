@@ -1,0 +1,10 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [],
+ "next": [],
+ "note": "Darksiders II Deathinitive Edition (Steam 388410), build 595, iPad16,5 (Discord tester): env.MADEIRA_D3D9_X64 = dxmt works (DXMT Direct3D 9 device 1112x832, first intro video at 60 fps), then the main thread reads a NULL object in the game's own code right after the second video opens (Darksiders2.exe+0x1eb937, mov rax,[rcx] with rcx=[r12]=0), c0000005. No config line is known to help; build 597 adds diagnostics (MADEIRA_D3D9_LAST, MADEIRA_FILE_TRACE) to the game's list.",
+ "outcome": "crashed",
+ "stage": 4,
+ "status": "stuck"
+}

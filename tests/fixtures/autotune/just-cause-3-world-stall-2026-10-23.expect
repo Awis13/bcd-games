@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "justcause3-world-stall"
+ ],
+ "next": [],
+ "note": "Just Cause 3 (Steam 225540) through Madeira Dock, build 592, iPad17,4 (Send Log Z0YFZ9, 2026-10-23, 13-inch M5 16 GB): after its world loaded the game drew one frame every 8.2-8.9 s for the 130 s the log shows (presents 2094, 2098, 2101, 2105, 2108), the process idle, the main thread waiting in WaitOnAddress (JustCause3.exe+0x11153c3), dxmt-finish-thr in waitUntilCompleted; no GPU error, no memory pressure. The 'froze' answer is assumed (the tester sent the log by hand and closed the app); the replay of the log alone reads it as a played session (no killed marker). No setting is known: the rule only names the stop.",
+ "outcome": "hung",
+ "stage": 4,
+ "status": "known"
+}

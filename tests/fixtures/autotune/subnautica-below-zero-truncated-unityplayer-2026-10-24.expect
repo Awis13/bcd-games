@@ -1,0 +1,12 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "game-file-truncated-import"
+ ],
+ "next": [],
+ "note": "Subnautica: Below Zero whose UnityPlayer.dll is shorter than its section table (Send Log ZVHPH8, build 592, iPhone16,2): the loader says 'file probably truncated' and the program ends at the import (c0000135). No setting helps; auto-tune says a file is incomplete.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "known"
+}

@@ -213,8 +213,16 @@ check(bool(mm) and mm["title"] == "Marvel's Spider-Man: Miles Morales", "Marvel'
 if mm:
     check("quiet-log = 1" in config(mm) and not any("MADEIRA_SRV_FGETPATH" in line for line in config(mm)),
           "Miles Morales' list sets quiet-log only (its draw dump of presents 1520-1560 stalled the game 2.4 s, build 576 log)")
+for sid, sname in (("marvels-spider-man-remastered", "Spider-Man Remastered"), ("marvels-spider-man-2", "Spider-Man 2")):
+    sm = rules.get(sid)   # 2026-10-23: the owner's latest settings for both (quiet-log as in Miles Morales' list)
+    check(bool(sm) and "quiet-log = 1" in config(sm) and not any("MADEIRA_SRV_FGETPATH" in line for line in config(sm)),
+          "%s's list sets quiet-log only (the owner's latest settings, 2026-10-23)" % sname)
+mcd = rules.get("minecraft-dungeons-2")   # 2026-10-24: the recipe of thebcd69/bcd-games#16 by le0-VV (debug-output waits of ten seconds)
+check(bool(mcd) and "quiet-log = 1" in config(mcd) and not any("MADEIRA_SRV_FGETPATH" in line for line in config(mcd)),
+      "Minecraft Dungeons II's list sets quiet-log only (the PR's recipe: the D3D12 runtime's OutputDebugString waits)")
 others = [line for ident, rule in rules.items()
-          if ident not in ("horizon-zero-dawn", "horizon-forbidden-west", "ratchet-clank-rift-apart", "marvels-spider-man-miles-morales")
+          if ident not in ("horizon-zero-dawn", "horizon-forbidden-west", "ratchet-clank-rift-apart", "marvels-spider-man-miles-morales",
+                           "marvels-spider-man-remastered", "marvels-spider-man-2", "minecraft-dungeons-2")
           for line in config(rule)]
 check(not any("quiet-log" in line or "MADEIRA_SRV_FGETPATH" in line for line in others),
       "no other game's list sets either switch")

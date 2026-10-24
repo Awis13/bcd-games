@@ -1,0 +1,18 @@
+{
+ "dialogs": [],
+ "end": {},
+ "matched": [
+  "d2r-loader-empty-code-view"
+ ],
+ "next": [
+  "env.MADEIRA_NTDLL_XSEC = 1",
+  "env.MADEIRA_SHARED_SECTION_EXEC = 1",
+  "env.MADEIRA_NTDLL_DATA_SYNC_RANGE = 1",
+  "env.MADEIRA_FAULT_LOOP_GUEST_PROGRESS = 1",
+  "env.MADEIRA_D2R_PROBE_RECOVERY = 1"
+ ],
+ "note": "Round 2026-10-24 (ajan22/loglar): Diablo II Resurrected, build 592 (sfc, sfc_os and tbs load, so the imports are past): D2R_loader.dll maps one section twice, runs the first (empty) view, FEX answers NOEXEC and the game gets an execute fault. Round 2026-10-24 (ajan31, thebcd69/bcd-games#4 by mckenna654): the five executable-section lines of build 598 (the view that is made executable keeps its shared memory, ntdll-xsec.dll tells the emulator about it, plus the reporter's three later findings); an attempt, not run on a device.",
+ "outcome": "crashed",
+ "stage": 2,
+ "status": "trying"
+}

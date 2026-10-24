@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "virtual-mutex-fault-self-deadlock"
+ ],
+ "next": [],
+ "note": "Demons Roots (NW.js, Game.exe), build 579, iPhone18,1, through Madeira Dock: the same stop as OMORI (the renderer's main thread in memset under NtFreeVirtualMemory, the exception thread waiting)",
+ "outcome": "hung",
+ "stage": 3,
+ "status": "known"
+}

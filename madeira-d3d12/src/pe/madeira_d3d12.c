@@ -1876,6 +1876,7 @@ enum mad_ck {
     MC_BARRIER,   /* ml1091: a ResourceBarrier; ends an open compute or blit encoder so the fence chain orders what follows */
     MC_CBV_LATCH,   /* madeira-bcd static-cbv: a table's constant-buffer descriptors as they were when a draw was recorded */
     MC_DISCARD,     /* madeira-bcd rp-discard: a DiscardResource (u.discard); the replay only notes it */
+    MC_WBI,         /* madeira-bcd: one WriteBufferImmediate value (u.wbi), written by a 4-byte blit copy */
 };
 struct mad_cmd {
     enum mad_ck kind;
@@ -1910,6 +1911,7 @@ struct mad_cmd {
         struct { struct mad_queryheap *heap; UINT type, index, count; struct mad_resource *dst; UINT64 off; } query;   /* ml1088 */
         struct { UINT bp, index, data, n; UINT64 va; } latch;   /* madeira-bcd static-cbv: bind point (0 graphics, 1 compute), parameter, descriptors in cdata */
         struct { struct mad_resource *res; UINT whole; } discard;   /* madeira-bcd rp-discard: whole = every subresource, no rectangles */
+        struct { struct mad_resource *res; UINT64 off; UINT32 value; UINT32 mode; } wbi;   /* madeira-bcd: WriteBufferImmediate */
     } u;
 };
 
@@ -2044,6 +2046,7 @@ struct mad_queue {
     const IID *iid;
     const char *name;
     D3D12_COMMAND_LIST_TYPE type;
+    int wbi_flush;   /* madeira-bcd: a replayed list wrote a WriteBufferImmediate value; mad_ecl_run commits the batch */
     UINT64 executed;
     UINT64 rejected;
     struct mad_device *device;
@@ -3655,6 +3658,7 @@ static int mad_cmd_names(const struct mad_cmd *c, const struct mad_resource *r) 
     case MC_FILL_TEX: return c->u.filltex.res == r;
     case MC_CLEAR_RT: case MC_CLEAR_DS: return c->u.clear.res == r;
     case MC_DISCARD: return c->u.discard.res == r;
+    case MC_WBI: return c->u.wbi.res == r;
     default: return 0;
     }
 }
@@ -3758,7 +3762,7 @@ static void exec_discard(struct mad_exec *e, const struct mad_cmd *c) {
 static void exec_rp_note(struct mad_exec *e, const struct mad_cmd *c) {
     switch (c->kind) {
     case MC_DISCARD: exec_discard(e, c); return;
-    case MC_BARRIER: case MC_COPY_BB: case MC_COPY_B2T: case MC_COPY_T2B: case MC_COPY_T2T: case MC_FILL_BB: case MC_FILL_TEX:
+    case MC_BARRIER: case MC_COPY_BB: case MC_COPY_B2T: case MC_COPY_T2B: case MC_COPY_T2T: case MC_FILL_BB: case MC_FILL_TEX: case MC_WBI:
         if (e->npend && mad_clear_defer_on()) exec_flush_named(e, c);
         break;
     case MC_CLEAR_RT: case MC_CLEAR_DS:
@@ -6728,7 +6732,7 @@ static int mad_rs_bucket(enum mad_ck k) {
     case MC_DRAW: case MC_DRAW_INDEXED: return RS_DRAW;
     case MC_DRAW_INDIRECT: case MC_DRAW_INDEXED_INDIRECT: case MC_DISPATCH_INDIRECT: return RS_INDIRECT;
     case MC_DISPATCH: return RS_DISPATCH;
-    case MC_COPY_BB: case MC_COPY_B2T: case MC_COPY_T2B: case MC_COPY_T2T: case MC_RESOLVE: return RS_COPY;
+    case MC_COPY_BB: case MC_COPY_B2T: case MC_COPY_T2B: case MC_COPY_T2T: case MC_RESOLVE: case MC_WBI: return RS_COPY;
     case MC_CLEAR_RT: case MC_CLEAR_DS: case MC_FILL_BB: case MC_FILL_TEX: return RS_CLEAR;
     case MC_BARRIER: return RS_BARRIER;
     case MC_RTS: return RS_RTS;
@@ -9145,6 +9149,7 @@ static void exec_copy(struct mad_exec *e, const struct mad_cmd *c) {
     switch (c->kind) {   /* ml1116: the destination is written */
     case MC_FILL_BB: exec_note_write(e, c->u.fill.res); break;
     case MC_COPY_BB: exec_note_write(e, c->u.bb.dst); break;
+    case MC_WBI: exec_note_write(e, c->u.wbi.res); break;
     default: e->wr_all = 1; break;   /* texture copies: destination fields differ per kind; be conservative */
     }
     switch (c->kind) {
@@ -9166,6 +9171,20 @@ static void exec_copy(struct mad_exec *e, const struct mad_cmd *c) {
         memset(&k, 0, sizeof k);
         k.type = WMTBlitCommandFillBuffer;
         k.buffer = c->u.fill.res->buffer; k.offset = c->u.fill.off; k.length = c->u.fill.len; k.value = c->u.fill.byte;
+        MTLBlitCommandEncoder_encodeCommands(e->benc, (const struct wmtcmd_base *)&k);
+        return;
+    }
+    case MC_WBI: {   /* madeira-bcd: WriteBufferImmediate, see list_WriteBufferImmediate */
+        struct wmtcmd_blit_copy_from_buffer_to_buffer k;
+        obj_handle_t src = 0; UINT64 soff = 0, gpu = 0; void *cpu = NULL;
+        if (!c->u.wbi.res->buffer || !exec_ring_take_z(e, 1, 0, &src, &soff, &cpu, &gpu) || !src || !cpu) { MAD_SKIP(e); return; }
+        memcpy(cpu, &c->u.wbi.value, 4);   /* the ring slot lives until the GPU has run this batch */
+        e->q->wbi_flush = 1;   /* the CPU may wait for the value right after ExecuteCommandLists: commit, do not hold the batch open */
+        memset(&k, 0, sizeof k);
+        k.type = WMTBlitCommandCopyFromBufferToBuffer;
+        k.src = src; k.src_offset = soff;
+        k.dst = c->u.wbi.res->buffer; k.dst_offset = c->u.wbi.off;
+        k.copy_length = 4;
         MTLBlitCommandEncoder_encodeCommands(e->benc, (const struct wmtcmd_base *)&k);
         return;
     }
@@ -9921,6 +9940,7 @@ static void mad_capture_log_op(const struct mad_cmd *c) {
                                                 c->u.tt.w, c->u.tt.h, c->u.tt.dx, c->u.tt.dy); break;
     case MC_FILL_BB: r = c->u.fill.res; snprintf(extra, sizeof extra, "fill buffer +%llu len %llu", (unsigned long long)c->u.fill.off, (unsigned long long)c->u.fill.len); break;
     case MC_FILL_TEX: r = c->u.filltex.res; snprintf(extra, sizeof extra, "UAV texture clear mip %u", c->u.filltex.level); break;
+    case MC_WBI: r = c->u.wbi.res; snprintf(extra, sizeof extra, "WriteBufferImmediate %#x -> +%llu", c->u.wbi.value, (unsigned long long)c->u.wbi.off); break;
     default: return;
     }
     if (!r || InterlockedIncrement(&said) > 1500) return;
@@ -10070,7 +10090,7 @@ static void mad_exec_list(struct mad_queue *q, struct mad_list *l, obj_handle_t 
             if (g_sd_state > 0 && g_ic_frames) mad_ic_note(&e, c);   /* madeira-bcd: ind-count */
             break;
         }
-        case MC_COPY_BB: case MC_COPY_B2T: case MC_COPY_T2B: case MC_COPY_T2T: case MC_FILL_BB: case MC_FILL_TEX: exec_copy(&e, c);
+        case MC_COPY_BB: case MC_COPY_B2T: case MC_COPY_T2B: case MC_COPY_T2T: case MC_FILL_BB: case MC_FILL_TEX: case MC_WBI: exec_copy(&e, c);
             if (g_vt_on > 0) InterlockedIncrement(&g_vt_copy_q[q->type & 3]);   /* madeira-bcd vis-trace */
             break;
         case MC_BLEND_FACTOR: memcpy(e.blend, c->u.blend.rgba, sizeof e.blend); e.has_blend = 1; break;
@@ -10231,6 +10251,11 @@ static void mad_ecl_run(ID3D12CommandQueue *This, UINT count, ID3D12CommandList 
     mad_rp_close(q); q->rp_carry = NULL; q->rp_next = NULL; q->rp_lists = NULL; q->rp_nlists = 0;   /* madeira-bcd rp-carry: never past the call */
     mad_es_finish(eb);   /* madeira-bcd encode-batch: anything still queued goes out under the queue's lock */
     if (ml1021_q) LeaveCriticalSection(&ml1021_q->submit_lock);   /* ml1021 */
+    if (q && q->wbi_flush) {   /* madeira-bcd: WriteBufferImmediate (list_WriteBufferImmediate): the batch goes to the GPU now,
+                                * as a D3D12 submission does, instead of waiting for the next Signal or the 48th list */
+        q->wbi_flush = 0;
+        mad_queue_flush(q);
+    }
     if (g_sd_state > 0 && g_gpu_sync && q) {   /* madeira-bcd: gpu-sync -- this submission runs to completion before the game goes on */
         mad_queue_flush(q);
         mad_strict_drain(q->device);
@@ -13792,6 +13817,30 @@ static HRESULT STDMETHODCALLTYPE device_CreateQueryHeap(ID3D12Device *This,
 }
 
 static int mad_query_is_occlusion(D3D12_QUERY_TYPE t) { return t == D3D12_QUERY_TYPE_OCCLUSION || t == D3D12_QUERY_TYPE_BINARY_OCCLUSION; }
+/* madeira-bcd query-timestamps (opt-in; a game's settings or bcd.cfg
+ * query-timestamps = 1, default 0 = every timestamp resolves to zero and
+ * GetClockCalibration's GPU value is zero, as before). Marvel's Spider-Man
+ * Remastered, build 592 (2026-10-23): its "Render Thread" spins forever right
+ * after the game's first timestamp resolve and first WriteBufferImmediate (see
+ * list_WriteBufferImmediate). With the switch a resolved timestamp is the
+ * process's monotonic clock in nanoseconds (GetTimestampFrequency's unit) when the
+ * resolve is recorded, plus the query's place in the range, so values are non-zero
+ * and increase; GetClockCalibration's GPU value is the same clock. Nothing is
+ * measured on the GPU: a game's GPU timings come out near zero. */
+static int g_qts_on = -1;
+static int mad_qts_on(void) {
+    if (g_qts_on < 0) {
+        g_qts_on = mad_cfg_int_pe("query-timestamps", 0) ? 1 : 0;   /* madeira-bcd: opt-in; 0 = timestamps resolve to zero */
+        if (g_qts_on) d3d12_log("[madeira-d3d12] query-timestamps = 1 (opt-in): timestamps resolve to the CPU's monotonic clock in ns (not GPU-measured)\n");
+    }
+    return g_qts_on;
+}
+static UINT64 mad_qts_now_ns(void) {
+    LARGE_INTEGER t, f;
+    QueryPerformanceCounter(&t); QueryPerformanceFrequency(&f);
+    if (f.QuadPart <= 0) return (UINT64)t.QuadPart;
+    return (UINT64)(t.QuadPart / f.QuadPart) * 1000000000ull + (UINT64)(t.QuadPart % f.QuadPart) * 1000000000ull / (UINT64)f.QuadPart;
+}
 static void STDMETHODCALLTYPE list_BeginQuery(ID3D12GraphicsCommandList *This, ID3D12QueryHeap *heap,
         D3D12_QUERY_TYPE type, UINT index) {
     struct mad_cmd *c;
@@ -13813,6 +13862,16 @@ static void STDMETHODCALLTYPE list_ResolveQueryData(ID3D12GraphicsCommandList *T
     if (mad_query_is_occlusion(type)) {   /* ml1088: delivered when the batch completes */
         struct mad_cmd *c = mad_list_push((struct mad_list *)This, MC_QUERY_RESOLVE);
         if (c) { c->u.query.heap = (struct mad_queryheap *)heap; c->u.query.type = type; c->u.query.index = start; c->u.query.count = count; c->u.query.dst = r; c->u.query.off = offset; }
+        return;
+    }
+    if (type == D3D12_QUERY_TYPE_TIMESTAMP && mad_qts_on()) {   /* madeira-bcd query-timestamps (opt-in) */
+        static LONG said_ts;
+        if (r->cpu && offset + (UINT64)count * 8 <= r->size) {
+            UINT64 now = mad_qts_now_ns(); UINT i;
+            for (i = 0; i < count; i++) { UINT64 v = now + i; memcpy((char *)r->cpu + offset + (UINT64)i * 8, &v, 8); }
+            if (InterlockedIncrement(&said_ts) <= 2)
+                d3d12_log("[madeira-d3d12] query-timestamps: %u timestamp(s) resolved to %llu ns and on\n", count, (unsigned long long)now);
+        }
         return;
     }
     if (!said++) d3d12_log("[madeira-d3d12] ResolveQueryData: non-occlusion queries resolve to zero (not measured yet)\n");
@@ -13979,7 +14038,7 @@ static HRESULT STDMETHODCALLTYPE queue_GetClockCalibration(ID3D12CommandQueue *T
     LARGE_INTEGER now;
     (void)This;
     QueryPerformanceCounter(&now);
-    if (gpu) *gpu = 0;
+    if (gpu) *gpu = mad_qts_on() ? mad_qts_now_ns() : 0;   /* madeira-bcd query-timestamps (opt-in): the clock timestamps resolve to */
     if (cpu) *cpu = (UINT64)now.QuadPart;
     return S_OK;
 }
@@ -19792,6 +19851,56 @@ static void STDMETHODCALLTYPE list_CopyBufferRegion(ID3D12GraphicsCommandList *T
     if (!c) return;
     c->u.bb.dst = d; c->u.bb.doff = dst_off; c->u.bb.src = s; c->u.bb.soff = src_off; c->u.bb.len = len;
 }
+/* madeira-bcd: WriteBufferImmediate (ID3D12GraphicsCommandList2). Marvel's
+ * Spider-Man Remastered, build 592 (2026-10-23, five logs): the game writes a
+ * value with it and its "Render Thread" then waits for that value in a loop of
+ * QueryPerformanceCounter and GetDeviceRemovedReason (~38 million calls a second,
+ * one core at 100 %). The method was a stub that wrote nothing, so the value never
+ * came: a black screen after the launcher, at the same command in every run,
+ * whether or not the GPU had finished its work (gpu-sync = 1 changed nothing).
+ * Each value is recorded in order with the list's other commands; at replay it is
+ * stored in a slot of the list's argument ring (shared memory that lives until
+ * the GPU has run the batch) and copied to the destination by a 4-byte blit, so
+ * it lands after the commands before it, as D3D12 orders it. The two marker modes
+ * (MARKER_IN / MARKER_OUT) only say when the write may happen relative to the
+ * surrounding work; an in-order write satisfies both.
+ * OPT-IN (owner, 2026-10-23: no other game may see any change): a game's settings
+ * or bcd.cfg write-buffer-immediate = 1 turns it on; without the line the method
+ * stays the stub it was (nothing recorded, nothing written, no extra commit).
+ * CheckFeatureSupport still reports no WriteBufferImmediate support (OPTIONS3 all
+ * zero) either way. None of the 2,894 archived logs before 2026-10-23 reached the
+ * stub. */
+static int g_wbi_on = -1;
+static void STDMETHODCALLTYPE list_WriteBufferImmediate(ID3D12GraphicsCommandList7 *This, UINT count,
+        const D3D12_WRITEBUFFERIMMEDIATE_PARAMETER *params, const D3D12_WRITEBUFFERIMMEDIATE_MODE *modes) {
+    struct mad_list *l = (struct mad_list *)This;
+    static LONG said, said_bad;
+    UINT i;
+    if (g_wbi_on < 0) {
+        g_wbi_on = mad_cfg_int_pe("write-buffer-immediate", 0) ? 1 : 0;   /* madeira-bcd: opt-in; 0 (default) = the stub, nothing written */
+        if (g_wbi_on) d3d12_log("[madeira-d3d12] write-buffer-immediate = 1 (opt-in): WriteBufferImmediate values are written by the GPU in list order, "
+                                "and a submission that wrote one is committed at once\n");
+    }
+    if (!g_wbi_on) { madeira_d3d12_note_unimplemented("ID3D12GraphicsCommandList7", "WriteBufferImmediate"); return; }
+    if (!l || !params) return;
+    for (i = 0; i < count; i++) {
+        UINT64 off = 0; struct mad_resource *r = mad_resolve_address(l->device, params[i].Dest, &off);
+        struct mad_cmd *c;
+        if (!r || !r->buffer || (params[i].Dest & 3) || off + 4 > r->size) {
+            if (InterlockedIncrement(&said_bad) <= 4)
+                d3d12_log("[madeira-d3d12] WriteBufferImmediate: address 0x%llx %s; value %#x skipped\n", (unsigned long long)params[i].Dest,
+                          !r ? "is in no live resource" : !r->buffer ? "is not a buffer" : (params[i].Dest & 3) ? "is not 4-byte aligned" : "runs past its buffer",
+                          params[i].Value);
+            continue;
+        }
+        c = mad_list_push(l, MC_WBI);
+        if (!c) return;
+        c->u.wbi.res = r; c->u.wbi.off = off; c->u.wbi.value = params[i].Value; c->u.wbi.mode = modes ? (UINT32)modes[i] : 0;
+        if (InterlockedIncrement(&said) <= 8)
+            d3d12_log("[madeira-d3d12] WriteBufferImmediate: value %#x -> '%s' +%llu (%llu bytes, heap type %u, mode %u)\n", params[i].Value,
+                      r->name ? r->name : "?", (unsigned long long)off, (unsigned long long)r->size, (unsigned)r->heap, c->u.wbi.mode);
+    }
+}
 static void STDMETHODCALLTYPE list_CopyTextureRegion(ID3D12GraphicsCommandList *This,
         const D3D12_TEXTURE_COPY_LOCATION *dst, UINT x, UINT y, UINT z,
         const D3D12_TEXTURE_COPY_LOCATION *src, const D3D12_BOX *box) {
@@ -20470,6 +20579,46 @@ static HRESULT STDMETHODCALLTYPE piplib_Serialize(ID3D12PipelineLibrary1 *This, 
     (void)This;
     return mad_piplib_serialize(data, size);
 }
+/* ---- ID3D12PipelineState::GetCachedBlob ------------------------------------------
+ * madeira-bcd, opt-in: bcd.cfg / game file d3d12-pso-cached-blob = 1. Off (the default) the call is the
+ * generated stub, E_NOTIMPL, as before.
+ *
+ * Resident Evil Requiem's demo (Steam 4459100, re9demo.exe; Send Logs E952YC, SAG071, 0FEAMR, PTSY5G, build
+ * 592, iPhone18,3) creates its first two pipelines (the config-rect pair, "DrawConfigRectPS" and
+ * "DrawHDRConfigRectPS"), calls GetCachedBlob ("[madeira-d3d12] unimplemented: ID3D12PipelineState::
+ * GetCachedBlob") and in the same instant calls an unimplemented COMCTL32.dll ordinal (345), the way its
+ * fatal-error dialog would, and ends with 0x80000100. The runtime reports D3D12_FEATURE_SHADER_CACHE with
+ * D3D12_SHADER_CACHE_SUPPORT_SINGLE_PSO, which promises exactly this call, so an engine that asks the
+ * feature first treats the failure as fatal. 37 other D3D12 sessions of the logs (GTA V Enhanced, RDR2, Ghost
+ * of Tsushima, Horizon Zero Dawn, Spider-Man: Miles Morales...) never make the call, which is why the default
+ * stays. With the key on the answer is a 16-byte blob (a magic and reserved zeros): an engine that stores it
+ * and hands it back as D3D12_CACHED_PIPELINE_STATE finds nothing wrong, because creating a pipeline never reads
+ * CachedPSO (the pipeline is compiled again, as D3D12 does for a blob it cannot use). */
+#define MAD_PSOBLOB_MAGIC "MADPSOC1"
+#define MAD_PSOBLOB_SIZE 16
+/* psoblob-test:begin */
+static void mad_psoblob_fill(unsigned char *data) {
+    memset(data, 0, MAD_PSOBLOB_SIZE);
+    memcpy(data, MAD_PSOBLOB_MAGIC, 8);
+}
+/* psoblob-test:end */
+static HRESULT mad_make_blob(const void *bytes, SIZE_T n, ID3D10Blob **out);
+static int mad_psoblob_on(void) {
+    static int v = -1;
+    if (v < 0) {
+        v = mad_cfg_int_pe("d3d12-pso-cached-blob", 0) ? 1 : 0;   /* 1: ID3D12PipelineState::GetCachedBlob answers a 16-byte blob (the shader-cache feature already promises it); 0: E_NOTIMPL, as before */
+        if (v) d3d12_log("[madeira-d3d12] d3d12-pso-cached-blob = 1 (opt-in): GetCachedBlob answers a 16-byte blob\n");
+    }
+    return v;
+}
+static HRESULT STDMETHODCALLTYPE pso_GetCachedBlob(ID3D12PipelineState *This, ID3DBlob **blob) {
+    unsigned char data[MAD_PSOBLOB_SIZE];
+    if (!mad_psoblob_on()) return stub_ID3D12PipelineState_GetCachedBlob(This, blob);
+    if (!blob) return E_POINTER;
+    *blob = NULL;
+    mad_psoblob_fill(data);
+    return mad_make_blob(data, MAD_PSOBLOB_SIZE, (ID3D10Blob **)blob);
+}
 static HRESULT STDMETHODCALLTYPE device_CreatePipelineLibrary(ID3D12Device10 *This, const void *blob, SIZE_T blob_size,
         REFIID riid, void **out) {
     struct mad_piplib *l;
@@ -20857,6 +21006,7 @@ static void build_vtables(void) {
     g_list_vtbl.ResourceBarrier         = (void *)list_ResourceBarrier;
     g_list_vtbl.Dispatch                = (void *)list_Dispatch;
     g_list_vtbl.ExecuteIndirect         = (void *)list_ExecuteIndirect;
+    g_list_vtbl.WriteBufferImmediate    = (void *)list_WriteBufferImmediate;   /* madeira-bcd */
     g_list_vtbl.SetGraphicsRootShaderResourceView  = (void *)list_SetGraphicsRootShaderResourceView;
     g_list_vtbl.SetGraphicsRootUnorderedAccessView = (void *)list_SetGraphicsRootUnorderedAccessView;
     g_list_vtbl.SetGraphicsRoot32BitConstant       = (void *)list_SetGraphicsRoot32BitConstant;
@@ -20887,6 +21037,7 @@ static void build_vtables(void) {
     g_pso_vtbl.QueryInterface = pso_QI;
     g_pso_vtbl.AddRef = pso_AddRef;
     g_pso_vtbl.Release = pso_Release;
+    g_pso_vtbl.GetCachedBlob = pso_GetCachedBlob;   /* madeira-bcd: d3d12-pso-cached-blob (the stub when off) */
 
     madeira_fill_ID3D12DescriptorHeap(&g_heap_vtbl);
     g_heap_vtbl.GetDevice = heap_GetDevice;

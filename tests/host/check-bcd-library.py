@@ -167,6 +167,7 @@ check("Add a game finds its live backend by its Objective-C name",
 for what, needle in [
     ("drive_c's folders and programs (.exe, .bat, .cmd)", "LibraryModel.programExtensions.contains(file.pathExtension.lowercased())"),
     ("... only what lies inside drive_c, links followed", 'url.resolvingSymlinksInPath().path.hasPrefix(drive.path + "/")'),
+    ("... and, while the SSD folder is connected, that folder (C:\\External; check-external-storage.py)", ' || ExternalGameStorage.shared.admits(url)'),
     ("... folders first, then by name", "$0.folder != $1.folder ? $0.folder : $0.name.localizedStandardCompare($1.name) == .orderedAscending"),
     ("the program is read as the library reads one", "let entry = try LibraryModel.inspect(url(path))"),
     ("it is saved to the library with its name", "if !name.isEmpty { entry.title = name }\n        library.save(entry)"),
@@ -193,7 +194,7 @@ for focus_id in ('"add.close"', '"add.back"', '"add.every"', '"add.item." + item
 
 # ---- the app shows BCD's screens -----------------------------------------------------------------
 check("the app shows Add a game and the game page full screen, never the classic browser or Game details",
-      ".fullScreenCover(item: pageShown) { page in pageScreen(page) }" in front and "BCDAddGame(close:" in front
+      ".fullScreenCover(item: pageShown, onDismiss: BCDPresentation.didClose) { page in pageScreen(page) }" in front and "BCDAddGame(close:" in front
       and "BCDGamePage(gameID:" in front and "ExecutableBrowser" not in code(front) and "LibraryDetail" not in code(front))
 check("a game just added opens on its Library section; Choose saves opens on Cloud saves",
       'opening = .group("library")' in front

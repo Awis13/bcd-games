@@ -1,0 +1,16 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true
+ },
+ "matched": [
+  "cuphead-bc-decode-memory-kill-dock",
+  "swap-8gb-memory-kill",
+  "swap-8gb-more"
+ ],
+ "next": [],
+ "note": "Cuphead (Steam 268910, 64-bit Unity, D3D11), build 592, iPhone15,2 (A16, bc=0, 4075 MB limit), started through Madeira Dock: closed by iOS at 4052 MB, 26 s after Cuphead.exe started, while BC7 4096x4096 textures were decoded to RGBA8 (64 MB each); the swap file (4096 MB, 138 MB used at most) cannot hold GPU memory. A noFix verdict that names the cause",
+ "outcome": "killed",
+ "stage": 3,
+ "status": "known"
+}

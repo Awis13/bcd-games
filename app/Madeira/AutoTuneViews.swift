@@ -18,6 +18,7 @@ import SwiftUI
 struct AutoTuneAlert: ViewModifier {
     @ObservedObject private var offers = AutoTuneOffers.shared
     @ObservedObject private var library = LibraryModel.shared
+    @ObservedObject private var gate = AutoTuneAlertGate.shared
 
     func body(content: Content) -> some View {
         content.alert(offers.offer?.headline ?? "Auto-tune", isPresented: presented, presenting: offers.offer) { offer in
@@ -37,7 +38,7 @@ struct AutoTuneAlert: ViewModifier {
                    let name = offer.state.attempts.last?.log, let log = LogUpload.log(named: name) {
                     Button("Send Log") {
                         offers.offer = nil
-                        LogUpload.send(log, game: offer.title)
+                        BCDLogComment.ask { LogUpload.send(log, game: offer.title, comment: $0) }
                     }
                 }
                 Button("Stop for this game", role: .destructive) {
@@ -52,7 +53,46 @@ struct AutoTuneAlert: ViewModifier {
     }
 
     private var presented: Binding<Bool> {
-        Binding(get: { AutoTune.enabled && offers.offer != nil && library.error == nil && library.restartNotice == nil },
+        Binding(get: { AutoTune.enabled && offers.offer != nil && library.error == nil && library.restartNotice == nil
+                       && gate.mayShow(offers.offer != nil) },
                 set: { if !$0 { offers.offer = nil } })
+    }
+}
+
+/// madeira-bcd (2026-10-24, the owner): an earlier session's auto-tune question came up while a game's page was open, and whatever
+/// was pressed, the page was gone and the library's first screen was back. The alert hangs on ContentView, under every page and
+/// sheet BCD presents (a game's page is a full-screen cover, its Game config a sheet), and iOS made room for it by taking them down.
+/// Now an offer waits while anything is presented over the app's root screen and comes up once the person is back on it; once up it
+/// stays until answered. What the alert says and what its buttons do are unchanged. Nothing runs while it waits: the pages and
+/// sheets of BCD's interface call BCDPresentation.didClose when they close, and that is when it looks again.
+final class AutoTuneAlertGate: ObservableObject {
+    static let shared = AutoTuneAlertGate()
+    /// The alert is up (or on its way) for the current offer: nothing is checked again until the offer is gone.
+    private var showing = false
+
+    /// Whether the alert may come up now (`pending`: an offer is waiting).
+    func mayShow(_ pending: Bool) -> Bool {
+        guard pending else { showing = false; return false }
+        if showing { return true }
+        if Self.nothingPresented() {
+            showing = true
+            return true
+        }
+        BCDPresentation.closed = { AutoTuneAlertGate.shared.lookAgain() }
+        return false
+    }
+
+    /// A page or sheet closed: if an offer still waits, the alert's binding is read again.
+    func lookAgain() {
+        guard AutoTuneOffers.shared.offer != nil, !showing else { return }
+        objectWillChange.send()
+    }
+
+    /// Nothing is presented over the app's root screen: no page, sheet, cover or alert of BCD's, no UIKit sheet.
+    static func nothingPresented() -> Bool {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        guard let root = scene?.keyWindow?.rootViewController else { return true }
+        return root.presentedViewController == nil
     }
 }

@@ -188,6 +188,10 @@ struct BCDResolution: Hashable {
     /// 32-bit Direct3D 9 games: "" (emulated, the standard) or "native".
     var direct3D9: String { get }
     func setDirect3D9(_ value: String)
+    /// What the screen does while a game runs (BCDOrientation.swift): "" follows the device, else one of the
+    /// BCDOrientationChoice words ("landscape", ...). A game's own page can choose for that game.
+    var orientation: String { get }
+    func setOrientation(_ value: String)
     /// The build can hide the display switch.
     var displaySwitchesShown: Bool { get }
     var restartNeeded: Bool { get }
@@ -200,7 +204,7 @@ struct BCDGraphicsSettings<Backend: BCDGraphicsBackend>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             BCDSettingsGroup(title: "For every game",
-                             footer: "A game's own choices, on its page, come first: its resolution, its FPS limit (60 unless you change it), its MetalFX.") {
+                             footer: "A game's own choices, on its page, come first: its resolution, its FPS limit (60 unless you change it), its MetalFX, its screen orientation.") {
                 BCDSettingsValueRow(id: BCDSettingsID.control(.graphics, "resolution"), title: "Resolution",
                                     note: "The size of the Windows desktop, and of Steam games started through BCD Dock that have none of their own.",
                                     choices: resolutionChoices, value: backend.resolution) { backend.setResolution($0) }
@@ -219,6 +223,10 @@ struct BCDGraphicsSettings<Backend: BCDGraphicsBackend>: View {
                                     choices: [BCDSettingsChoice(value: "", label: "Emulated (standard)"),
                                               BCDSettingsChoice(value: "native", label: "Native ARM64")],
                                     value: backend.direct3D9) { backend.setDirect3D9($0) }
+                BCDSettingsValueRow(id: BCDSettingsID.control(.graphics, "orientation"), title: "Screen orientation",
+                                    note: "How the screen turns while a game runs. Landscape keeps it in landscape however you hold the device, lying down, say; it goes back to following the device when the game ends.",
+                                    choices: BCDOrientationChoice.offered.map { BCDSettingsChoice(value: $0.setting ?? "", label: $0.label) },
+                                    value: backend.orientation) { backend.setOrientation($0) }
             }
             if backend.displaySwitchesShown && backend.displayRate > 60 {
                 BCDSettingsGroup(title: "Display") {
@@ -575,6 +583,29 @@ struct BCDStorageItem: Identifiable, Hashable {
     var addingGames: Bool { get }
     var addGamesMessage: String? { get }
     func addEveryGame()
+    /// Games kept on an SSD (USB-C): the folder chosen in Files appears as C:\External. Only the live backend has it.
+    var supportsExternalGames: Bool { get }
+    var externalGamesMessage: String? { get }
+    var externalGamesFree: Int64? { get }
+    /// The name of the folder chosen last, once one was (the Reconnect button); nil before.
+    var externalGamesSavedFolder: String? { get }
+    var canConnectExternalGames: Bool { get }
+    func connectExternalGames(_ url: URL)
+    /// The saved folder again, without the picker. `chooseAgain` runs when iOS no longer lets BCD open it.
+    func reconnectExternalGames(chooseAgain: @escaping () -> Void)
+    /// What the folder picker did ("opened", "answered", "failed: ...", "closed"), for the log.
+    func noteExternalPicker(_ what: String)
+}
+
+extension BCDStorageBackend {
+    var supportsExternalGames: Bool { false }
+    var externalGamesMessage: String? { nil }
+    var externalGamesFree: Int64? { nil }
+    var externalGamesSavedFolder: String? { nil }
+    var canConnectExternalGames: Bool { false }
+    func connectExternalGames(_ url: URL) {}
+    func reconnectExternalGames(chooseAgain: @escaping () -> Void) {}
+    func noteExternalPicker(_ what: String) {}
 }
 
 struct BCDStorageSettings<Backend: BCDStorageBackend>: View {
@@ -584,10 +615,12 @@ struct BCDStorageSettings<Backend: BCDStorageBackend>: View {
     @Environment(\.bcdLayout) private var layout
     @State private var backup: BCDShareItems?
     @State private var choosingBackup = false
+    @State private var choosingExternalGames = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             room
+            if backend.supportsExternalGames { externalGames }
             BCDSettingsGroup(title: "Games", footer: games.isEmpty ? nil : "Largest first.") {
                 if games.isEmpty {
                     BCDSettingsInfoRow(title: "No games installed yet", value: "")
@@ -646,6 +679,46 @@ struct BCDStorageSettings<Backend: BCDStorageBackend>: View {
             }
         }
         .bcdCard(padding: 16)
+    }
+
+    /// Settings > Storage > External SSD (thebcd69/bcd-games#12 by Pardoxum, with Reconnect). The folder picker is attached
+    /// here, on the group, not on the page: the page already carries the saves backup's importer, and two importers
+    /// on one view can displace each other.
+    private var externalGames: some View {
+        let saved = backend.externalGamesSavedFolder
+        return BCDSettingsGroup(title: "External SSD",
+                                footer: "Connect a USB-C SSD and choose its games folder in Files. Open Add a game → External to add its programs. Windows and existing saves stay on this device. Store downloads still install on this device. After you unplug the SSD or restart the phone, tap Reconnect; if iOS has forgotten the folder, BCD opens Files for you to choose it again. Quit games before changing the connection, and keep the SSD connected while playing.") {
+            if let saved {
+                BCDSettingsActionRow(id: BCDSettingsID.control(.storage, "external-reconnect"),
+                                     title: "Reconnect \(saved)", note: backend.externalGamesMessage,
+                                     symbol: "externaldrive.badge.checkmark", enabled: backend.canConnectExternalGames) {
+                    backend.reconnectExternalGames {
+                        backend.noteExternalPicker("opened (after reconnect)")
+                        choosingExternalGames = true
+                    }
+                }
+            }
+            BCDSettingsActionRow(id: BCDSettingsID.control(.storage, "external-games"),
+                                 title: saved == nil ? "Choose an SSD folder" : "Choose another SSD folder",
+                                 note: saved == nil ? backend.externalGamesMessage : nil, symbol: "externaldrive",
+                                 enabled: backend.canConnectExternalGames) {
+                backend.noteExternalPicker("opened")
+                choosingExternalGames = true
+            }
+            if let free = backend.externalGamesFree {
+                BCDSettingsInfoRow(title: "Free on external drive", value: BCDFormat.bytes(free))
+            }
+        }
+        .fileImporter(isPresented: $choosingExternalGames, allowedContentTypes: [.folder]) { result in
+            switch result {
+            case .success(let url):
+                backend.noteExternalPicker("answered")
+                backend.connectExternalGames(url)
+            case .failure(let error):
+                backend.noteExternalPicker("failed: \(error.localizedDescription)")
+            }
+        }
+        .onChange(of: choosingExternalGames) { _, open in if !open { backend.noteExternalPicker("closed") } }
     }
 
     private var games: [BCDGame] {
@@ -909,7 +982,8 @@ enum BCDDiagnostic: String, CaseIterable, Identifiable {
     var sent: [BCDSentLog] { get }
     var sending: Bool { get }
     var sendStatus: String? { get }
-    func send(_ log: BCDLogFile)
+    /// `comment`: the sender's words for the top of the log (BCDLogComment), empty for none.
+    func send(_ log: BCDLogFile, comment: String)
     func copy(_ code: String)
     /// BCD's own logs, ready for the share sheet.
     func exportable() -> [URL]
@@ -1004,7 +1078,7 @@ struct BCDLogsSettings<Backend: BCDLogsBackend>: View {
         model.ask(BCDSettingsConfirm(title: "Send \(BCDSettingsText.logName(log.name))?",
                                      message: "\(BCDFormat.bytes(log.bytes)), cleaned on this device before it leaves."
                                         + (backend.sendLogAdvice.map { "\n\n" + $0 } ?? ""),
-                                     choices: [.init(title: "Send") { backend.send(log) }]))
+                                     choices: [.init(title: "Send") { BCDLogComment.ask { backend.send(log, comment: $0) } }]))
     }
 }
 

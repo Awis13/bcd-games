@@ -1,0 +1,15 @@
+{
+ "dialogs": [],
+ "end": {
+  "killed": true,
+  "userSaid": "froze"
+ },
+ "matched": [
+  "virtual-mutex-fault-self-deadlock"
+ ],
+ "next": [],
+ "note": "Saints Row IV, build 592, iPhone18,2: presents=0 for 120 s, a thread parked in memset under NtFreeVirtualMemory and the exception thread waiting for virtual_mutex. The session before it had hung at stage 5 after 301 s (the log's auto-tune line); this one never drew a frame",
+ "outcome": "hung",
+ "stage": 3,
+ "status": "known"
+}

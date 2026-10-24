@@ -419,26 +419,31 @@ struct RecommendationsPolicy {
     /// (build/tools/autotune_rules.py), nothing else. A new name joins this list in the build
     /// that reads it; a downloaded line that uses it carries that build as its minBuild.
     static let allowedEnvNames: Set<String> = [
+        "BCD_EPIC_HOST_START",
         "_JAVA_OPTIONS", "DOTNET_EnableWriteXorExecute", "DOTNET_GCRegionRange",
         "DXMT_SMALL_RINGS", "DXMT_WSI_MODE_TABLE", "DXMT_WSI_MONITOR_IDENTITY", "FEX_VECTORTSOENABLED", "FEX_X87REDUCEDPRECISION", "LC_ALL",
         "MADEIRA_ALIAS_RELEASE", "MADEIRA_ANON_CAS_FLUSH", "MADEIRA_APP_DLL_SHADOW", "MADEIRA_BAND_CENSUS", "MADEIRA_CAGE_RELEASE",
-        "MADEIRA_CHILD_ARGS", "MADEIRA_D3D11_SRC", "MADEIRA_DEVICE_STATS", "MADEIRA_DOCK_GAME_SCM",
+        "MADEIRA_CHILD_ARGS", "MADEIRA_CTX_FRAME", "MADEIRA_D3D11_SRC", "MADEIRA_D3D9", "MADEIRA_D3D9_LAST", "MADEIRA_D3D9_X64", "MADEIRA_DEVICE_STATS", "MADEIRA_STEAM_IDENTITY", "MADEIRA_DOCK_GAME_SCM",
         "MADEIRA_DOCK_KEEP_ALIVE", "MADEIRA_DOCK_SCRIPT_REGISTRY", "MADEIRA_DXGI_BUDGET_EVENTS", "MADEIRA_DXGI_SRC", "MADEIRA_EC_HOOK_TRACE",
-        "MADEIRA_EXECREQ_LEAVE", "MADEIRA_FASTSYNC_SEM", "MADEIRA_FAULT_GUARD_RATE", "MADEIRA_FEX_AVX", "MADEIRA_FEX_BAND_KEEP_MB",
-        "MADEIRA_FREE_DELAY_MS",
+        "MADEIRA_EXECREQ_LEAVE", "MADEIRA_FASTSYNC_SEM", "MADEIRA_FAULT_GUARD_GUEST_RIP", "MADEIRA_FAULT_GUARD_RATE", "MADEIRA_FEX_AVX", "MADEIRA_FEX_BAND_KEEP_MB",
+        "MADEIRA_FILE_TRACE", "MADEIRA_FILE_TRACE_LIMIT", "MADEIRA_FREE_DELAY_MS", "MADEIRA_GUEST_LOG", "MADEIRA_GUEST_LOG_LIMIT",
         "MADEIRA_INPUT_FOREGROUND", "MADEIRA_JUMBO_HALF", "MADEIRA_KMT_ADAPTER", "MADEIRA_LD_BOUNDS",
         "MADEIRA_OPTIN_DLLS", "MADEIRA_WINTYPES",
         "MADEIRA_LEAN_DIAG", "MADEIRA_LOCK_ORPHAN", "MADEIRA_METAL_HUD_MAIN", "MADEIRA_MFC_DOCK", "MADEIRA_NLS_EXTRA", "MADEIRA_PAD_MODE",
         "MADEIRA_PIN_GRAPHICS_DLLS", "MADEIRA_POOL_HEAD_RESERVE_MB", "MADEIRA_POOL_LOW_IMAGES",
-        "MADEIRA_POOL_RECYCLE_IMAGES", "MADEIRA_PRELOAD_DLLS", "MADEIRA_RDR2_VA_HOLD", "MADEIRA_SC_PA_POOLS",
-        "MADEIRA_SMALL_STACK_EXES", "MADEIRA_SPAWN_BLOCK", "MADEIRA_SRV_FGETPATH", "MADEIRA_SWAP_MIN_KB",
+        "MADEIRA_POOL_RECYCLE_IMAGES", "MADEIRA_PRELOAD_DLLS", "MADEIRA_RDR2_VA_HOLD", "MADEIRA_RECOVERY_LOG_SAMPLE", "MADEIRA_SC_PA_POOLS",
+        "MADEIRA_SMALL_STACK_EXES", "MADEIRA_SPAWN_BLOCK", "MADEIRA_SPAWN_SWAP", "MADEIRA_SRV_FGETPATH", "MADEIRA_SWAP_MIN_KB",
         "MADEIRA_SWAP_RESERVE_MAX_MB", "MADEIRA_THREAD_STACK_SPILL", "MADEIRA_TINY_WINDOW_FIX", "MADEIRA_TLS_CLEAR_OWN_PROCESS",
         "MADEIRA_TOUCH_MOUSE",
         "MADEIRA_USER_VA_GB", "MADEIRA_VA_PRESSURE_GAP_OK", "MADEIRA_VCRT_ARM64_KEY", "MADEIRA_VDCFG_PATH", "MADEIRA_WGI_HOST_PADS", "MADEIRA_WG_64BIT",
         "MADEIRA_WG_VIDEO",
         "MADEIRA_WOW_MIN_FREE_GB",
         "MADEIRA_WOW_RWX_PLAIN",
+        "DXMT_DUMP_D9_SHADER", "MADEIRA_FRAME_STATS", "MADEIRA_GPU_TRACE",   // diagnostics read since build 592: LEGO Batman, Silent Hunter 3, Just Cause 3 (build 598 lists)
+        "MADEIRA_X86_FAULT_DUMP",
+        "MADEIRA_D2R_PROBE_RECOVERY", "MADEIRA_FAULT_LOOP_GUEST_PROGRESS", "MADEIRA_NTDLL_DATA_SYNC_RANGE", "MADEIRA_NTDLL_XSEC", "MADEIRA_SHARED_SECTION_EXEC",   // Diablo II: Resurrected's executable-section switches (build 598; thebcd69/bcd-games#4)
         "MADEIRA_X64_GRAPHICS_ENTRY", "MADEIRA_X64_IMAGE_NOCOPY", "MADEIRA_X64_MACHINE", "SteamDeck", "WINEDEBUG",
+        "MADEIRA_ZERO_MITIGATION_POLICY",   // build 600 (Glyphica: Typing Survival, ChakraCore's fail-fast over an unwritten policy buffer)
         "WINEDLLOVERRIDES",
         "WINE_D3D_CONFIG",
     ]
@@ -466,15 +471,65 @@ struct RecommendationsPolicy {
                 // Only DLLs BCD ships as <name>-optin.dll (tools/build-wine-extra-dlls.sh: OPTIN_WANT, and setupapi,
                 // the shipped setupapi.dll with a lock round its device node table). mfasfsrcsnk, wmvdecod and
                 // wmadmod: Wine's ASF byte stream handler and the WMV and WMA decoder MFTs (Resident Evil 2).
-                // oledlg, fwpuclnt and sensapi: small system DLLs a program imports (2026-10-23).
+                // oledlg, fwpuclnt and sensapi: small system DLLs a program imports (2026-10-23). ddraw: Dying Light's renderer (same day).
+                // msi, mspatcha, odbccp32, sxs and rstrtmgr: what the EA app's 64-bit EABackgroundService.exe imports (same day).
                 let names = value.lowercased().split(whereSeparator: { ",; ".contains($0) })
                 guard !names.isEmpty, names.allSatisfy({ ["dxva2", "evr", "xpsprint", "sfc", "sfc_os", "tbs", "twinapi.appcore", "setupapi"].contains($0)
-                        || ["mfasfsrcsnk", "wmvdecod", "wmadmod"].contains($0) || ["oledlg", "fwpuclnt", "sensapi"].contains($0) }) else {
-                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore or setupapi, or mfasfsrcsnk, wmvdecod, wmadmod, or oledlg, fwpuclnt, sensapi")
+                        || ["mfasfsrcsnk", "wmvdecod", "wmadmod"].contains($0) || ["oledlg", "fwpuclnt", "sensapi", "ddraw"].contains($0)
+                        || ["msi", "mspatcha", "odbccp32", "sxs", "rstrtmgr"].contains($0) }) else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_OPTIN_DLLS may only name dxva2, evr, xpsprint, sfc, sfc_os, tbs, twinapi.appcore or setupapi, or mfasfsrcsnk, wmvdecod, wmadmod, or oledlg, fwpuclnt, sensapi, ddraw, or msi, mspatcha, odbccp32, sxs, rstrtmgr")
                 }
-            case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX":
+            case "MADEIRA_STEAM_IDENTITY":
+                // No Steam game identity for this session (build 598, Rockstar's launcher of the Epic GTA V / RDR2): the one value, none.
+                guard value == "none" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_STEAM_IDENTITY may only be none")
+                }
+            case "MADEIRA_D3D9":
+                // The 32-bit Direct3D 9 frontend (build 598): the one value, emulated, the standard frontend. A game whose native frontend
+                // crashes (Resident Evil 6, Resident Evil Revelations 2: a call of address 0) gets the standard one over the app's global
+                // Settings > Graphics choice; "native" is the player's own switch and no list sets it.
+                guard value == "emulated" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_D3D9 may only be emulated")
+                }
+            case "MADEIRA_D3D9_X64":
+                // DXMT's Direct3D 9 for a 64-bit game (build 595): the one value, dxmt; Wine's d3d9.dll stays for everything else.
+                guard value == "dxmt" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_D3D9_X64 may only be dxmt")
+                }
+            case "MADEIRA_WINTYPES", "MADEIRA_X64_MACHINE", "MADEIRA_TINY_WINDOW_FIX", "BCD_EPIC_HOST_START", "MADEIRA_ZERO_MITIGATION_POLICY":
+                // MADEIRA_ZERO_MITIGATION_POLICY (build 600): Wine's GetProcessMitigationPolicy writes zeros into the caller's buffer, as it
+                // should (it wrote nothing); only the exact value 1 turns it on, and only Glyphica's list line does.
+                // BCD_EPIC_HOST_START (build 598): an Epic game's signed-in start keeps BCD Host as its first program; off unless a game's list says 1.
                 guard value == "0" || value == "1" else {
                     throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
+                }
+            case "MADEIRA_D3D9_LAST", "MADEIRA_FILE_TRACE":
+                // Diagnostics (build 597, Darksiders II's crash after its intro video): DXMT's last-Direct3D-9-calls ring and the 64-bit
+                // fault report of d3d9-dxmt.dll; Wine's file open trace. They only add log lines; 0 or 1.
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
+                }
+            case "MADEIRA_GUEST_LOG":
+                // Diagnostics (build 598, BioShock Infinite's silent exit): the mirror of the game's own text log files into BCD's log, every line
+                // ("all") instead of the error/GPU/display lines; only log lines are added.
+                guard value == "all" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_GUEST_LOG may only be all")
+                }
+            case "MADEIRA_GUEST_LOG_LIMIT":
+                // How many lines the mirror may write: a whole number from 100 to 4000 (the mirror caps itself there).
+                guard value.range(of: #"^[0-9]{3,4}$"#, options: .regularExpression) != nil, let n = Int(value), n >= 100, n <= 4000 else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_GUEST_LOG_LIMIT is a whole number from 100 to 4000")
+                }
+            case "MADEIRA_X86_FAULT_DUMP":
+                // A diagnostic (build 598, Need for Speed Most Wanted and Underground 2): the report of a 32-bit program's access violation or
+                // int3 (the code, the stack, the modules and the objects the registers point at). It only adds log lines; 0 or 1.
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_X86_FAULT_DUMP is 0 or 1")
+                }
+            case "MADEIRA_FILE_TRACE_LIMIT":
+                // How many lines the file trace may write: a whole number from 1000 to 100000 (the trace caps itself there).
+                guard value.range(of: #"^[0-9]{4,6}$"#, options: .regularExpression) != nil, let n = Int(value), n >= 1000, n <= 100000 else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_FILE_TRACE_LIMIT is a whole number from 1000 to 100000")
                 }
             case "FEX_X87REDUCEDPRECISION", "MADEIRA_TLS_CLEAR_OWN_PROCESS", "MADEIRA_VDCFG_PATH":
                 // Three engine switches that are 0 or 1 (build 580 reads these names from a list: Batman: Arkham City GOTY's exact
@@ -487,11 +542,40 @@ struct RecommendationsPolicy {
                 guard value == "0" || value == "1" else {
                     throw RecommendationsError.policy("\(path): MADEIRA_WG_64BIT is 0 or 1")
                 }
+            case "MADEIRA_RECOVERY_LOG_SAMPLE":
+                // Build 598 (thebcd69/bcd-games#16 by le0-VV, Minecraft Dungeons II): samples FEX's routine invalid-instruction recovery records; log output only; 0 or 1.
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_RECOVERY_LOG_SAMPLE is 0 or 1")
+                }
+            case "MADEIRA_FAULT_GUARD_GUEST_RIP":
+                // Build 598 (thebcd69/bcd-games#16 by le0-VV, Minecraft Dungeons II): the fault guards tell FEX's shared invalid-instruction
+                // thunk apart by the guest instruction, and the 50-fault page breaker counts memory faults only. Off unless a game's list says 1.
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_FAULT_GUARD_GUEST_RIP is 0 or 1")
+                }
             case "MADEIRA_FAULT_GUARD_RATE", "MADEIRA_MFC_DOCK", "MADEIRA_DOCK_SCRIPT_REGISTRY", "MADEIRA_ANON_CAS_FLUSH", "MADEIRA_NLS_EXTRA", "MADEIRA_WG_VIDEO":
                 // Six engine and app switches that are 0 or 1 (build 591 reads the first five from a list: the fault-storm guards that count a
                 // real storm only, the MFC DLLs in a Dock session, a Steam install script's Registry values before a Dock start, FEX's
                 // translation dropped after an emulated CAS, the extra code-page tables; MADEIRA_WG_VIDEO is older: 0 limits the media
                 // parser to MP3 and WAV, Albino Lullaby's intro).
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
+                }
+            case "MADEIRA_CTX_FRAME":
+                // Build 598 (round 2026-10-24, the Unity IL2CPP crash that follows a garbage collection): the Wine server reports a thread parked
+                // in a system call by its saved call frame, not by the Mach-O registers it happens to be executing (build/wineserver/mach_ios.c,
+                // ml716). The garbage collector reads that report to find a stopped thread's registers and stack; 0 or 1.
+                guard value == "0" || value == "1" else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_CTX_FRAME is 0 or 1")
+                }
+            case "MADEIRA_NTDLL_XSEC", "MADEIRA_SHARED_SECTION_EXEC", "MADEIRA_NTDLL_DATA_SYNC_RANGE", "MADEIRA_FAULT_LOOP_GUEST_PROGRESS", "MADEIRA_D2R_PROBE_RECOVERY":
+                // Build 598 (round 2026-10-24, thebcd69/bcd-games#4 by mckenna654, Diablo II: Resurrected): five engine switches for a program
+                // whose loader maps one section twice (a write view and a run view) and runs the second. Each reads the value 1 only and is off
+                // otherwise; only that game's list line turns them on: the executable section view keeps its shared backing
+                // (MADEIRA_SHARED_SECTION_EXEC), the emulator is told about it by the ntdll-xsec.dll variant (MADEIRA_NTDLL_XSEC) whose
+                // unreadable-target recovery of the emulator's own probe is MADEIRA_D2R_PROBE_RECOVERY, ntdll's .data syncs only the requested
+                // bytes (MADEIRA_NTDLL_DATA_SYNC_RANGE) and a run of breakpoints at different guest addresses is not a stuck thread
+                // (MADEIRA_FAULT_LOOP_GUEST_PROGRESS); 0 or 1.
                 guard value == "0" || value == "1" else {
                     throw RecommendationsError.policy("\(path): \(name) is 0 or 1")
                 }
@@ -526,6 +610,14 @@ struct RecommendationsPolicy {
                 // Only switching a DLL off, or to Wine's own: never a native DLL from a game's folder.
                 guard value.range(of: #"^[A-Za-z0-9_.,-]+=b?(;[A-Za-z0-9_.,-]+=b?)*$"#, options: .regularExpression) != nil else {
                     throw RecommendationsError.policy("\(path): WINEDLLOVERRIDES may only switch DLLs off or to Wine's own")
+                }
+            case "MADEIRA_SPAWN_SWAP":
+                // Build 598 (Fallout 4, Steam 377160): a program that is about to start is replaced by another program of the same folder,
+                // <from.exe>=<to.exe>, several separated by ';'. Plain file names only (ASCII letters, digits, blanks inside, . _ - ( ) + ,
+                // and ~), both ending in .exe, no folder: the replacement is always a file next to the program Valve's client asked for.
+                let program = #"[A-Za-z0-9_.()+,~-]([A-Za-z0-9_.()+,~ -]{0,253}[A-Za-z0-9_.()+,~-])?\.[Ee][Xx][Ee]"#
+                guard value.range(of: "^" + program + "=" + program + "(;" + program + "=" + program + ")*$", options: .regularExpression) != nil else {
+                    throw RecommendationsError.policy("\(path): MADEIRA_SPAWN_SWAP is <from.exe>=<to.exe>, program names of one folder")
                 }
             case "MADEIRA_PRELOAD_DLLS", "MADEIRA_APP_DLL_SHADOW":
                 guard value.range(of: #"^[A-Za-z0-9_.-]+(;[A-Za-z0-9_.-]+)*$"#, options: .regularExpression) != nil else {

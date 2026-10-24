@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright 2026 125hz
 // Madeira Converter Exception: see LICENSE-EXCEPTION.md
+// Modified by BCD (thebcd69), 2026-10-24: Steam launch option choice for a Dock start (SteamDirectStart.dockOptions, dockLaunch).
 
 import SwiftUI
 
@@ -304,6 +305,77 @@ enum SteamDirectStart {
                           launchIndex: option.index)
         }
         return nil
+    }
+
+    // MARK: Steam launch option (a BCD Dock start)
+
+    /// A launch entry a BCD Dock start can ask Valve's client for: Game details › Steam › Steam launch option
+    /// (2026-10-24). Valve's client starts whatever `config.launch.<key>` names; Dock hands it the key.
+    struct DockOption: Equatable {
+        /// The config.launch key.
+        var index: UInt32
+        /// The program, relative to the install folder and spelt as on disk.
+        var program: String
+        var arguments: String
+        /// Steam's description of the entry, cleaned for the screen ("" when it has none).
+        var description: String
+
+        /// `Launch: <program>`, or `<program> <arguments>` when Steam gave no description.
+        var label: String {
+            let call = arguments.isEmpty ? program : program + " " + arguments
+            return description.isEmpty ? call : description + ": " + call
+        }
+    }
+
+    /// The entries the choice lists, in Steam's order: Windows entries of the public branch whose program is an .exe
+    /// inside the install folder (and whose working folder exists there), that need no DLC and are of a kind that is the
+    /// game itself (not a server, editor or VR entry). Entries `choose` would skip are skipped here too, so a listed entry
+    /// is always one a Dock start can run; nothing is listed for a cache that has no keys.
+    static func dockOptions(_ options: [SteamLaunchOption], installFolder root: URL) -> [DockOption] {
+        var listed: [DockOption] = []
+        let spaces = CharacterSet.whitespaces
+        for option in options {
+            let type = option.type.lowercased()
+            guard let index = option.index, option.betaKey.isEmpty, !otherKinds.contains(type),
+                  option.requiredDLC == nil || option.requiredDLC == "" || option.requiredDLC == "0",
+                  option.oslist.isEmpty || option.oslist.lowercased().contains("windows"),
+                  let path = relativePath(option.executable), !path.isEmpty,
+                  URL(fileURLWithPath: path).pathExtension.lowercased() == "exe",
+                  let program = onDisk(path, in: root, directory: false) else { continue }
+            if !option.workingDir.trimmingCharacters(in: spaces).isEmpty {
+                guard let relative = relativePath(option.workingDir) else { continue }
+                if !relative.isEmpty, onDisk(relative, in: root, directory: true) == nil { continue }
+            }
+            let words = String(String.UnicodeScalarView((option.description ?? "").unicodeScalars.filter { $0.value >= 0x20 && $0.value != 0x7f }))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let shown = String(String.UnicodeScalarView(option.arguments.unicodeScalars.filter { $0.value >= 0x20 && $0.value != 0x7f }))
+                .trimmingCharacters(in: spaces)
+            listed.append(DockOption(index: index, program: program, arguments: String(shown.prefix(80)),
+                                     description: String(words.prefix(80))))
+        }
+        return listed
+    }
+
+    /// What a BCD Dock start asks Valve's client to launch: the key, and the log lines that say so.
+    struct DockLaunch: Equatable {
+        var index: UInt32
+        var lines: [String]
+    }
+
+    /// The key a Dock start hands Valve's client. Without a choice (`chosen` nil: the game's page never set one) it is
+    /// exactly what every Dock start used before: `choose`'s entry, else key 0, with the same log line. A choice counts
+    /// only while the entry is still listed for this install (`dockOptions`); a stale one falls back to the default and
+    /// says so.
+    static func dockLaunch(chosen: Int?, options: [SteamLaunchOption]?, installFolder root: URL) -> DockLaunch {
+        let fallback = options.flatMap { choose($0, installFolder: root)?.launchIndex }
+        let standard = "[madeira-dock] launch option \(fallback ?? 0)\(fallback == nil ? " (none chosen: the default)" : "")"
+        guard let chosen else { return DockLaunch(index: fallback ?? 0, lines: [standard]) }
+        if let options, let key = UInt32(exactly: chosen), dockOptions(options, installFolder: root).contains(where: { $0.index == key }) {
+            return DockLaunch(index: key, lines: ["[madeira-dock] launch option \(key) (chosen on the game's page)"])
+        }
+        return DockLaunch(index: fallback ?? 0, lines: [
+            "[madeira-dock] the launch option chosen on the game's page (\(chosen)) is not in Steam's list for this install: the default is used",
+            standard])
     }
 
     /// The install folder's Windows programs for the Program picker: every .exe up to
