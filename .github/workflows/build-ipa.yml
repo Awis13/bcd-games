@@ -1515,7 +1515,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p app/Madeira/d3d12
-          curl -fsSL -o "$RUNNER_TEMP/bcd.ipa" https://github.com/thebcd69/bcd-games/releases/download/v0.1.592/BCD.ipa
+          curl -fsSL -o "$RUNNER_TEMP/bcd.ipa" https://github.com/thebcd69/bcd-games/releases/download/v0.1.600/BCD.ipa
           unzip -p "$RUNNER_TEMP/bcd.ipa" Payload/Madeira.app/d3d12/libmetalirconverter.dylib > app/Madeira/d3d12/libmetalirconverter.dylib
           SHA=$(shasum -a 256 app/Madeira/d3d12/libmetalirconverter.dylib | cut -d' ' -f1)
           [ "$SHA" = "4865c8ec999833d8df0df69b8a52eb819adf452b0b12df7651c409425d311e3b" ] || { echo "::error::unexpected converter library $SHA"; exit 1; }
@@ -1589,6 +1589,12 @@ jobs:
       # SM 4.x vertex pulls use byte-aligned loads, and [vb-align] counts them.
       - name: Patch DXMT byte-aligned vertex fetch
         run: python3 tools/patch-dxmt-vb-align.py
+
+      # GTA IV spends 38% of its time copying whole dynamic buffer mirrors after
+      # small NOOVERWRITE locks; DXMT_D9_BUFFER_SPAN=1/2 (per game) stores only
+      # the locked span in place. Unset: unchanged.
+      - name: Patch DXMT NOOVERWRITE span refresh
+        run: python3 tools/patch-dxmt-buffer-span.py
 
       # Wine's d2d1 brackets its draws with SwapDeviceContextState, which was
       # IMPLEMENT_ME (abort): Rockstar Games Launcher exited with code 3.
